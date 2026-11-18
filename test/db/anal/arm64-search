@@ -398,3 +398,74 @@ case.90: 0x1000040f8
 case.91: 0x100003cf4
 EOF
 RUN
+
+NAME=a:sixc registers call xrefs to many targets, with tail calls
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 40000094 @ 0x0
+wx 7f000094 @ 0x4
+wx 3e000014 @ 0x8
+wx f4ffff97 @ 0x40
+a:sixc 0x0 0x100 0x100 0x10
+axt @ 0x100
+?e --
+axtq @ 0x10
+?e --
+axtq @ 0x200
+?e ==
+ax-*
+a:sixc 0x0 0x100
+axtq @ 0x100
+?e --
+axtq @ 0x10
+?e --
+axtq @ 0x200
+?e ==
+ax-*
+a:sixc 0x4 0x8 0x200
+axtq @ 0x200
+?e --
+a:sixcx
+EOF
+EXPECT=<<EOF
+(nofunc) 0x0 [CALL:--x] bl 0x100
+(nofunc) 0x8 [JUMP:--x] b 0x100
+--
+0x40
+--
+==
+0x0
+--
+0x40
+--
+0x4
+==
+0x4
+--
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid command 'a:sixcx'. See 'a:six?' for help
+EOF
+RUN
+
+NAME=a:sixc scans each mapped region of a range with gaps
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+o malloc://0x100 0x200
+wx 80000094 @ 0x10
+wx 84ffff97 @ 0x210
+a:sixc 0x0 0x300 0x210 0x20
+axtq @ 0x210
+?e --
+axtq @ 0x20
+EOF
+EXPECT=<<EOF
+0x10
+--
+0x210
+EOF
+RUN

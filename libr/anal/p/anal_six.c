@@ -7,6 +7,9 @@
 
 #define SIX_CMD "six"
 #define SIX_CHUNK_SIZE 0x10000
+// call mode decodes single instructions: no lookahead, and bigger reads since each
+// read has a fixed cost on targets with many maps (dyld caches)
+#define SIX_CALLS_CHUNK_SIZE 0x100000
 #define SIX_LOOKAHEAD_SIZE 0x1000
 #define SIX_ARM64_NOP 0xd503201f
 
@@ -50,6 +53,40 @@ static const ut8 *resolve_stub(const ut8 *p, const ut8 *end, ut32 reg, ut64 *tar
 		p = skip_nops (p + 4, end);
 	}
 	return reg != 31 && !(*target & 3) && end - p >= 4 && r_read_le32 (p) == (0xd61f0000 | (reg << 5))? p: NULL;
+}
+
+typedef struct {
+	RAnal *anal;
+	RStrBuf *sb; // matches are listed here when not registering
+	bool register_refs;
+	bool islands;
+	ut64 search;
+	// call mode ("a:sixc", used by "/rc"): only bl, plus b when targets are given
+	bool calls;
+	const ut64 *targets; // sorted
+	size_t ntargets;
+} SixScan;
+
+static int six_cmp_addr(const void *a, const void *b) {
+	const ut64 x = *(const ut64 *)a;
+	const ut64 y = *(const ut64 *)b;
+	return (x > y) - (x < y);
+}
+
+static inline void six_call_ref(const SixScan *ss, ut32 v, ut64 addr) {
+	if ((v & 0x7c000000) != 0x14000000) {
+		return;
+	}
+	const bool is_bl = (v & 0x80000000) != 0;
+	// tail calls only count against explicit targets, otherwise every jump would be a ref
+	if (!is_bl && !ss->ntargets) {
+		return;
+	}
+	ut64 dst = addr + (((st64)((ut64)(v & 0x3ffffff) << 38)) >> 36);
+	if (ss->ntargets && !bsearch (&dst, ss->targets, ss->ntargets, sizeof (ut64), six_cmp_addr)) {
+		return;
+	}
+	addref (ss->anal, addr, dst, is_bl? R_ANAL_REF_TYPE_CALL: R_ANAL_REF_TYPE_JUMP);
 }
 
 static const char *lookup_inst_name(uint32_t opc_size) {
@@ -128,13 +165,22 @@ static void append_signed_mem_instr(RStrBuf *sb, ut64 addr, bool is_adrp, ut32 r
 	}
 }
 
-static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, bool register_refs, bool islands, ut64 search, const ut8 *mem, ut64 addr, int process_len, int mem_len) {
+static void siguza_xrefs_chunked(const SixScan *ss, const ut8 *mem, ut64 addr, int process_len, int mem_len) {
+	RAnal *anal = ss->anal;
+	RStrBuf *sb = ss->sb;
+	const bool register_refs = ss->register_refs;
+	const bool islands = ss->islands;
+	const ut64 search = ss->search;
 	const ut8 *p = mem;
 	const ut8 *e = mem + (mem_len & ~3);
 	const ut8 *pe = mem + (process_len & ~3);
 
 	for (; p < pe; p += 4, addr += 4) {
 		ut32 v = r_read_le32 (p);
+		if (ss->calls) {
+			six_call_ref (ss, v, addr);
+			continue;
+		}
 		if ((v & 0x1f000000) == 0x10000000) // adr and adrp
 		{
 			ut32 reg = v & 0x1f;
@@ -290,25 +336,28 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, bool register_refs, b
  * @param start Address at which to start looking for xrefs.
  * @param lenbytes Reach of the search for xrefs, in bytes.
  */
-static void siguza_xrefs(RAnal *anal, RStrBuf *sb, bool register_refs, bool islands, ut64 search, ut64 start, ut64 lenbytes) {
-	ut8 *buf = malloc (SIX_CHUNK_SIZE + SIX_LOOKAHEAD_SIZE);
+static void siguza_xrefs(const SixScan *ss, ut64 start, ut64 lenbytes) {
+	RAnal *anal = ss->anal;
+	const int chunk = ss->calls? SIX_CALLS_CHUNK_SIZE: SIX_CHUNK_SIZE;
+	const int lookahead = ss->calls? 0: SIX_LOOKAHEAD_SIZE;
+	ut8 *buf = malloc (chunk + lookahead);
 	if (!buf) {
 		R_LOG_ERROR ("Failed to allocate buffer");
 		return;
 	}
 
-	ut64 pos = islands? (4 - (start & 3)) & 3: 0;
+	ut64 pos = (ss->islands || ss->calls)? (4 - (start & 3)) & 3: 0;
 	while (pos < lenbytes) {
-		int process_len = (int)R_MIN (lenbytes - pos, SIX_CHUNK_SIZE);
+		int process_len = (int)R_MIN (lenbytes - pos, chunk);
 		ut64 lookahead_rem = lenbytes - pos - process_len;
-		int to_read = process_len + (int)R_MIN (lookahead_rem, SIX_LOOKAHEAD_SIZE);
+		int to_read = process_len + (int)R_MIN (lookahead_rem, lookahead);
 		if (anal->iob.read_at (anal->iob.io, start + pos, buf, to_read) != to_read) {
 			break;
 		}
 		if (process_len < 4) {
 			break;
 		}
-		siguza_xrefs_chunked (anal, sb, register_refs, islands, search, buf, start + pos, process_len, to_read);
+		siguza_xrefs_chunked (ss, buf, start + pos, process_len, to_read);
 		pos += process_len;
 	}
 	free (buf);
@@ -325,7 +374,8 @@ static char *six_help(void) {
 		"| a:six                 register xrefs in arm64 executable sections or current map\n"
 		"| a:sixi                also resolve stub islands and install jump hints (opt-in)\n"
 		"| a:six[i] <target>     list xrefs to target address without changing xrefs or hints\n"
-		"| a:six[i] <target> <len> list xrefs to target from $$ in current executable section or map\n");
+		"| a:six[i] <target> <len> list xrefs to target from $$ in current executable section or map\n"
+		"| a:sixc <from> <to> [target ..] register call xrefs (bl, and b when targets are given) in [from, to)\n");
 }
 
 static bool parse_num(RAnal *anal, RCore *core, const char *arg, const char *name, ut64 *out) {
@@ -349,11 +399,82 @@ static bool parse_num(RAnal *anal, RCore *core, const char *arg, const char *nam
 	return true;
 }
 
+// "a:sixc <from> <to> [target ..]": register call xrefs in [from, to), matching all
+// targets in one pass. Returns NULL when not on arm64, so callers such as "/rc" can
+// fall back to their generic search.
+static char *six_calls_cmd(RAnal *anal, const char *args) {
+	if (*args && *args != ' ' && *args != '?') {
+		R_LOG_ERROR ("Invalid command 'a:sixc%s'. See 'a:six?' for help", args);
+		return strdup ("");
+	}
+	args = r_str_trim_head_ro (args);
+	if (*args == '?') {
+		return six_help ();
+	}
+	if (!is_arm64 (anal)) {
+		return NULL;
+	}
+	RCore *core = (RCore *)anal->coreb.core;
+	int argc = 0;
+	char **argv = r_str_argv (args, &argc);
+	if (!argv || argc < 2) {
+		R_LOG_ERROR ("Usage: a:sixc <from> <to> [target ..]");
+		r_str_argv_free (argv);
+		return strdup ("");
+	}
+	ut64 from = 0, to = 0;
+	const size_t ntargets = argc - 2;
+	ut64 *targets = ntargets? R_NEWS (ut64, ntargets): NULL;
+	bool ok = (!ntargets || targets)
+		&& parse_num (anal, core, argv[0], "from", &from)
+		&& parse_num (anal, core, argv[1], "to", &to);
+	size_t i;
+	for (i = 0; ok && i < ntargets; i++) {
+		ok = parse_num (anal, core, argv[i + 2], "target", &targets[i]);
+	}
+	if (ok && to > from) {
+		if (ntargets > 1) {
+			qsort (targets, ntargets, sizeof (ut64), six_cmp_addr);
+		}
+		const SixScan ss = {
+			.anal = anal,
+			.register_refs = true,
+			.calls = true,
+			.targets = targets,
+			.ntargets = ntargets,
+		};
+		// scan only the mapped parts: a read spanning an unmapped gap comes back
+		// short, which would end the scan and drop the whole chunk
+		RIO *io = core? core->io: NULL;
+		RInterval itv = { from, to - from };
+		RVecRIORegion *regions = (io && io->va)? r_io_bank_get_regions (io, io->bank, itv): NULL;
+		if (regions) {
+			RIORegion *r;
+			R_VEC_FOREACH (regions, r) {
+				const ut64 lo = R_MAX (r->itv.addr, from);
+				const ut64 hi = R_MIN (r_itv_end (r->itv), to);
+				if (hi > lo) {
+					siguza_xrefs (&ss, lo, hi - lo);
+				}
+			}
+			RVecRIORegion_free (regions);
+		} else {
+			siguza_xrefs (&ss, from, to - from);
+		}
+	}
+	free (targets);
+	r_str_argv_free (argv);
+	return strdup ("");
+}
+
 static char *r_cmdsix_call(RAnal *anal, const char *input) {
 	if (!r_str_startswith (input, SIX_CMD)) {
 		return NULL;
 	}
 	size_t cmd_len = strlen (SIX_CMD);
+	if (input[cmd_len] == 'c') {
+		return six_calls_cmd (anal, input + cmd_len + 1);
+	}
 	bool islands = input[cmd_len] == 'i';
 	if (islands) {
 		cmd_len++;
@@ -413,6 +534,13 @@ static char *r_cmdsix_call(RAnal *anal, const char *input) {
 	if (!register_refs && !sb) {
 		return strdup ("");
 	}
+	const SixScan ss = {
+		.anal = anal,
+		.sb = sb,
+		.register_refs = register_refs,
+		.islands = islands,
+		.search = search,
+	};
 
 	bool scanned = false;
 	RVecRBinSection *sections = anal->binb.get_sections_vec? anal->binb.get_sections_vec (anal->binb.bin): NULL;
@@ -420,7 +548,7 @@ static char *r_cmdsix_call(RAnal *anal, const char *input) {
 		RBinSection *s;
 		R_VEC_FOREACH (sections, s) {
 			if (!s->is_segment && (s->perm & R_PERM_X)) {
-				siguza_xrefs (anal, sb, register_refs, islands, search, s->vaddr, s->vsize);
+				siguza_xrefs (&ss, s->vaddr, s->vsize);
 				scanned = true;
 			}
 		}
@@ -448,7 +576,7 @@ static char *r_cmdsix_call(RAnal *anal, const char *input) {
 			len = end - offset;
 			R_LOG_WARN ("Length is not within range for this section, using 0x%" PFMT64x " instead", len);
 		}
-		siguza_xrefs (anal, sb, register_refs, islands, search, offset, len);
+		siguza_xrefs (&ss, offset, len);
 	}
 
 	if (register_refs) {
