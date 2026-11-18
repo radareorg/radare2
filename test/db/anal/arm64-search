@@ -512,7 +512,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=a:six registers bl as call and b as jump
+NAME=a:six registers bl as call and b as code
 FILE=malloc://0x1000
 CMDS=<<EOF
 e asm.arch=arm
@@ -523,7 +523,7 @@ axt @ 0x100
 EOF
 EXPECT=<<EOF
 (nofunc) 0x0 [CALL:--x] bl 0x100
-(nofunc) 0x4 [JUMP:--x] b 0x100
+(nofunc) 0x4 [CODE:--x] b 0x100
 EOF
 RUN
 
