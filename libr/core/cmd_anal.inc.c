@@ -10105,12 +10105,12 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		break;
 	case ' ':
 	case 'q': // "aeq"
-		r_esil_set_pc (esil, core->addr);
-		r_esil_parse (esil, r_str_trim_head_ro (input + 1));
+		r_esil_set_pc (&core->esil.esil, core->addr);
+		r_core_esil_run_expr_at (core, r_str_trim_head_ro (input + 1), core->addr);
 		if (verbose && *input != 'q') {
-			r_esil_dumpstack (esil);
+			r_esil_dumpstack (&core->esil.esil);
 		}
-		r_esil_stack_free (esil);
+		r_esil_stack_free (&core->esil.esil);
 		break;
 	case 0:
 		R_LOG_ERROR ("Expected argument or subcommand. See 'ae?' for details");
