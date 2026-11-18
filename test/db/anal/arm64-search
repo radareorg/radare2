@@ -501,3 +501,22 @@ EXPECT=<<EOF
 (nofunc) 0x4 [JUMP:--x] b 0x100
 EOF
 RUN
+
+NAME=a:sixc scans the bytes returned by a short read
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 40000094
+mkdir .tmp
+wtf .tmp/six-short-read 0x1000 @ 0
+o .tmp/six-short-read
+e io.va=false
+a:sixc 0 0x2000 0x100
+axtq @ 0x100
+rm .tmp/six-short-read
+EOF
+EXPECT=<<EOF
+0x0
+EOF
+RUN

@@ -361,13 +361,24 @@ static void siguza_xrefs(const SixScan *ss, ut64 start, ut64 lenbytes) {
 		int process_len = (int)R_MIN (lenbytes - pos, chunk);
 		ut64 lookahead_rem = lenbytes - pos - process_len;
 		int to_read = process_len + (int)R_MIN (lookahead_rem, lookahead);
-		if (anal->iob.read_at (anal->iob.io, start + pos, buf, to_read) != to_read) {
-			break;
+		int got = anal->iob.read_at (anal->iob.io, start + pos, buf, to_read);
+		if (got < 0) {
+			got = 0;
+		}
+		// a short read (end of file, unmapped gap) still scans the complete
+		// instructions it returned, with lookahead bounded by the bytes read
+		const bool short_read = got < to_read;
+		if (short_read) {
+			to_read = got;
+			process_len = R_MIN (process_len, got);
 		}
 		if (process_len < 4) {
 			break;
 		}
 		siguza_xrefs_chunked (ss, buf, start + pos, process_len, to_read);
+		if (short_read && process_len == got) {
+			break;
+		}
 		pos += process_len;
 	}
 	free (buf);
