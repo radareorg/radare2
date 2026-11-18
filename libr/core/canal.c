@@ -4394,8 +4394,9 @@ static bool opiscall(RCore *core, RAnalOp *aop, ut64 addr, const ut8* buf, int l
 			addr = addr - diff;
 			buf = buf - diff;
 		}
-		// if is not bl do not analyze
-		if (buf[3] == 0x94 && r_anal_op (core->anal, aop, addr, buf, len, R_ARCH_OP_MASK_BASIC)) {
+		// if is not bl do not analyze. the top byte also holds the two high
+		// bits of imm26, so it is 0x94-0x97 (backward or beyond +64MB)
+		if ((buf[3] & 0xfc) == 0x94 && r_anal_op (core->anal, aop, addr, buf, len, R_ARCH_OP_MASK_BASIC)) {
 			ut32 ot = aop->type;
 			int os = aop->size;
 			r_anal_op_fini (aop);
