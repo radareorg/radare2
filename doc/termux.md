@@ -16,6 +16,12 @@ for this platform.
 sudo apt install radare2
 ```
 
+## Content URIs
+
+Android document providers can be opened through the `content://` IO plugin.
+See [Content URIs](android.md#content-uris) for Termux:API requirements and
+the read-only snapshot behavior.
+
 ## Building from git
 
 The packages required to build r2 and most of the dependencies are:
