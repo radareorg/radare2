@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2020 - thestr4ng3r, Yaroslav Stavnichiy */
 /* r_json based on nxjson by Yaroslav Stavnichiy */
 
+#include <r_util/r_print.h>
 #include <r_util/pj.h>
 #include <r_util/r_json.h>
 #include <r_util/r_strbuf.h>
@@ -1315,11 +1316,39 @@ static int test_json(int test_number, char *input, int(*check)(RJson *j)) {
 	mu_end;
 }
 
+static int test_json_indent(void) {
+	const char *pal[] = { "<F>", "<T>", "<K>", "<V>", "<R>" };
+	char *o = r_print_json_indent ("{\"k\":\"v\\\\\",\"b\":[true,\"x\\\"y\"]}", true, " ", pal);
+	mu_assert_streq (o, "{\n <K>\"k\"<R>: <V>\"v\\\\\"<R><R>,\n <K>\"b\"<R>: [\n  true<R>,\n  <K>\"x\\\"y\"<R><R>\n ]<R>\n}", "json indent colors");
+	free (o);
+	o = r_print_json_human ("{\"k\":\"v\\\\\",\"b\":{\"c\":1}}");
+	mu_assert_streq (o, "k: v\\\\\nb: \n  c: 1", "json human escaped backslash");
+	free (o);
+	// deep nesting with long escapes must not overflow
+	const char *longpal[] = { "\x1b[38;2;255;0;0;48;2;0;0;0;1;4m", "\x1b[38;2;0;128;0;48;2;0;0;0;1;4m", "\x1b[38;2;0;128;128;48;2;0;0;0;1;4m", "\x1b[38;2;128;128;0;48;2;0;0;0;1;4m", "\x1b[0m" };
+	RStrBuf *sb = r_strbuf_new ("");
+	int i;
+	for (i = 0; i < 100; i++) {
+		r_strbuf_append (sb, "{\"a\":");
+	}
+	r_strbuf_append (sb, "\"value\"");
+	for (i = 0; i < 100; i++) {
+		r_strbuf_append (sb, "}");
+	}
+	o = r_print_json_indent (r_strbuf_get (sb), true, "  ", longpal);
+	mu_assert_notnull (o, "deep json indent");
+	mu_assert_notnull (strstr (o, "\x1b[38;2;128;128;0;48;2;0;0;0;1;4m\"value\"\x1b[0m"), "deep json value colored once");
+	free (o);
+	r_strbuf_free (sb);
+	mu_end;
+}
+
 static int all_tests(void) {
 	size_t i;
 
 	mu_run_test_named (test_pj_param_raw, "test_pj_param_raw");
 	mu_run_test_named (test_pj_rj_integers, "test_pj_rj_integers");
+	mu_run_test_named (test_json_indent, "test_json_indent");
 	for (i = 1; i < sizeof (tests) / sizeof (tests[0]); i++) {
 		char *input = strdup (tests[i].json);
 		char testname[256];

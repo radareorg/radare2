@@ -4,24 +4,45 @@
 
 #define MAX_JSON_INDENT 128
 
-static void doIndent(int idt, char **o, const char *tab) {
+// "\n" followed by the tab repeated for the deepest indentation level
+static char *indent_string(const char *tab) {
+	RStrBuf *sb = r_strbuf_new ("\n");
 	int i;
-	char *x;
-	for (i = 0; i < idt; i++) {
-		for (x = (char *)tab; *x; x++) {
-			*(*o)++ = *x;
-		}
+	for (i = 0; i <= MAX_JSON_INDENT; i++) {
+		r_strbuf_append (sb, tab);
 	}
+	return r_strbuf_drain (sb);
 }
 
-#define EMIT_ESC(s, code) \
+static void doIndent(RStrBuf *sb, const char *ind, size_t tabsz, int idt, bool newline) {
+	const size_t n = R_MIN (R_MAX (idt, 0), MAX_JSON_INDENT + 1) * tabsz;
+	r_strbuf_append_n (sb, newline? ind: ind + 1, n + newline);
+}
+
+// returns the closing quote or the terminating NUL of the string opened at s
+static const char *json_string_end(const char *s) {
+	for (s++; *s && *s != '"'; s++) {
+		if (*s == '\\' && s[1]) {
+			s++;
+		}
+	}
+	return s;
+}
+
+static size_t json_literal_len(const char *s) {
+	size_t n = 0;
+	while (IS_PRINTABLE (s[n]) && !strchr ("\"{}[],: ", s[n])) {
+		n++;
+	}
+	return n;
+}
+
+#define EMIT_ESC(sb, code) \
 	do { \
 		if (color) { \
-			size_t codelen = strlen (code); \
-			memcpy (s, code, codelen); \
-			s += codelen; \
+			r_strbuf_append (sb, code); \
 		} \
-	} while (0);
+	} while (0)
 
 enum {
 	JC_FALSE,
@@ -153,229 +174,147 @@ R_API char *r_print_json_path(const char *s, int pos) {
 
 R_API char *r_print_json_human(const char *s) {
 	R_RETURN_VAL_IF_FAIL (s, NULL);
-	int indent = 0;
 	const char *tab = "  ";
-	const int indentSize = strlen (tab);
-	int instr = 0;
-	char *o, *tmp;
-	size_t osz = (1 + strlen (s)) * 20;
-	if (osz < 1) {
-		return NULL;
-	}
-	char *O = malloc (osz);
-	if (!O) {
-		return NULL;
-	}
-	char *OE = O + osz;
-	for (o = O; *s; s++) {
-		char s0 = *s;
-		if (o + (indent * indentSize) + 10 > OE) {
-			int delta = o - O;
-			osz += 0x1000 + (indent * indentSize);
-			if (osz < 1) {
-				free (O);
-				return NULL;
-			}
-			tmp = realloc (O, osz);
-			if (!tmp) {
-				free (O);
-				return NULL;
-			}
-			O = tmp;
-			OE = tmp + osz;
-			o = O + delta;
-		}
-		if (instr) {
-			if (s0 == '"') {
-				instr = 0;
-			} else if (s[0] == '\\' && s[1] == '"') {
-				// XXX maybe buggy
-				*o++ = *s++;
-			}
-			if (*s != '"') {
-				*o++ = *s;
-			}
+	char *ind = indent_string (tab);
+	const size_t tabsz = strlen (tab);
+	int indent = 0;
+	RStrBuf *sb = r_strbuf_new ("");
+	r_strbuf_reserve (sb, strlen (s) * 2);
+	for (; *s; s++) {
+		const char s0 = *s;
+		if (indent <= 0 && s0 != '{' && s0 != '[') {
+			// non-JSON part
+			r_strbuf_append_n (sb, s, 1);
 			continue;
 		}
-		if (indent <= 0) {
-			// non-JSON part
-			if (s[0] != '{' && s[0] != '[') {
-				*o++ = *s;
-				continue;
-			}
-		}
-		s0 = *s;
-		if (s0 == '"') {
-			instr = 1;
-		}
-		if (s0 == '\n' || s0 == '\r' || s0 == '\t' || s0 == ' ') {
+		if (!IS_PRINTABLE (s0) || s0 == ' ') {
 			continue;
 		}
 		switch (s0) {
+		case '"':
+			{
+				const char *end = json_string_end (s);
+				r_strbuf_append_n (sb, s + 1, end - s - 1);
+				s = *end? end: end - 1;
+			}
+			break;
 		case ':':
-			*o++ = s0;
-			*o++ = ' ';
+			r_strbuf_append (sb, ": ");
 			break;
 		case ',':
-			*o++ = '\n';
-			doIndent (indent - 1, &o, tab);
+			doIndent (sb, ind, tabsz, indent - 1, true);
 			break;
 		case '{':
 		case '[':
-			if (indent > 0) {
-				*o++ = (indent != -1)? '\n': ' ';
+			{
+				const bool nested = indent > 0;
+				if (indent > MAX_JSON_INDENT) {
+					R_LOG_ERROR ("JSON indentation is too deep");
+					indent = 0;
+				} else {
+					indent++;
+				}
+				doIndent (sb, ind, tabsz, indent - 1, nested);
 			}
-			if (indent > MAX_JSON_INDENT) {
-				R_LOG_ERROR ("JSON indentation is too deep");
-				indent = 0;
-			} else {
-				indent++;
-			}
-			doIndent (indent - 1, &o, tab);
 			break;
 		case '}':
 		case ']':
 			indent--;
-			doIndent (indent - 1, &o, tab);
+			doIndent (sb, ind, tabsz, indent - 1, false);
 			break;
 		default:
-			if (!instr) {
-				*o++ = s0;
+			{
+				const size_t n = json_literal_len (s);
+				r_strbuf_append_n (sb, s, n);
+				s += n - 1;
 			}
+			break;
 		}
 	}
-	*o = 0;
-	return O;
+	free (ind);
+	return r_strbuf_drain (sb);
 }
 
 R_API char *r_print_json_indent(const char *s, bool color, const char *tab, const char **palette) {
 	R_RETURN_VAL_IF_FAIL (s, NULL);
-	int indent = 0;
-	const int indentSize = strlen (tab);
-	int instr = 0;
-	bool isValue = false;
-	char *o, *tmp;
 	const char **colors = palette? palette: origColors;
-	// each step may emit one color escape, theme palettes can be longer than the 10 spare bytes
-	size_t esc_max = 0;
-	if (color) {
-		int i;
-		for (i = JC_FALSE; i <= JC_RESET; i++) {
-			esc_max = R_MAX (esc_max, strlen (colors[i]));
-		}
-	}
-	size_t osz = (1 + strlen (s)) * 20;
-	if (osz < 1) {
-		return NULL;
-	}
-
-	char *O = malloc (osz);
-	if (!O) {
-		return NULL;
-	}
-	char *OE = O + osz;
-	for (o = O; *s; s++) {
-		if (o + (indent * indentSize) + esc_max + 10 > OE) {
-			int delta = o - O;
-			osz += 0x1000 + (indent * indentSize) + esc_max;
-			if (osz < 1) {
-				free (O);
-				return NULL;
+	char *ind = indent_string (tab);
+	const size_t tabsz = strlen (tab);
+	int indent = 0;
+	bool isValue = false;
+	RStrBuf *sb = r_strbuf_new ("");
+	r_strbuf_reserve (sb, strlen (s) * 2);
+	for (; *s; s++) {
+		const char s0 = *s;
+		const bool isSpace = s0 == '\n' || s0 == '\r' || s0 == '\t' || s0 == ' ';
+		if (indent <= 0 && s0 != '{' && s0 != '[') {
+			// non-JSON part, skip it
+			if (isSpace) {
+				r_strbuf_append_n (sb, s, 1);
 			}
-			tmp = realloc (O, osz);
-			if (!tmp) {
-				free (O);
-				return NULL;
-			}
-			O = tmp;
-			OE = tmp + osz;
-			o = O + delta;
-		}
-		if (instr) {
-			if (s[0] == '"') {
-				instr = 0;
-			} else if (s[0] == '\\' && s[1] == '"') {
-				*o++ = *s++;
-			}
-			if (instr) {
-				if (isValue) {
-					// TODO: do not emit color in every char
-					EMIT_ESC (o, colors[JC_VAL]);
-				} else {
-					EMIT_ESC (o, colors[JC_KEY]);
-				}
-			} else {
-				EMIT_ESC (o, colors[JC_RESET]);
-			}
-			*o++ = *s;
 			continue;
 		}
-		if (indent <= 0) {
-			// non-JSON part, skip it
-			if (s[0] != '{' && s[0] != '[') {
-				if (*s == '\n' || *s == '\r' || *s == '\t' || *s == ' ') {
-					*o++ = *s;
-				}
-				continue;
-			}
-		}
-
-		const char s0 = *s;
-		if (s0 == '"') {
-			instr = 1;
-		}
-		if (s0 == '\n' || s0 == '\r' || s0 == '\t' || s0 == ' ' || !IS_PRINTABLE (s0)) {
+		if (isSpace || !IS_PRINTABLE (s0)) {
 			continue;
 		}
 		switch (s0) {
+		case '"':
+			{
+				const char *end = json_string_end (s);
+				EMIT_ESC (sb, colors[isValue? JC_VAL: JC_KEY]);
+				r_strbuf_append_n (sb, s, end - s + (*end? 1: 0));
+				EMIT_ESC (sb, colors[JC_RESET]);
+				s = *end? end: end - 1;
+			}
+			break;
 		case ':':
-			*o++ = s0;
-			*o++ = ' ';
+			r_strbuf_append (sb, ": ");
 			s = r_str_trim_head_ro (s + 1);
 			if (r_str_startswith (s, "true")) {
-				EMIT_ESC (o, colors[JC_TRUE]);
+				EMIT_ESC (sb, colors[JC_TRUE]);
 			} else if (r_str_startswith (s, "false")) {
-				EMIT_ESC (o, colors[JC_FALSE]);
+				EMIT_ESC (sb, colors[JC_FALSE]);
 			}
 			s--;
 			isValue = true;
 			break;
 		case ',':
-			EMIT_ESC (o, colors[JC_RESET]);
-			*o++ = s0;
-			*o++ = '\n';
+			EMIT_ESC (sb, colors[JC_RESET]);
+			r_strbuf_append_n (sb, s, 1);
 			isValue = false;
-			doIndent (indent, &o, tab);
+			doIndent (sb, ind, tabsz, indent, true);
 			break;
 		case '{':
 		case '[':
 			isValue = false;
-			*o++ = s0;
-			*o++ = (indent != -1)? '\n': ' ';
+			r_strbuf_append_n (sb, s, 1);
 			if (indent > MAX_JSON_INDENT) {
 				R_LOG_ERROR ("JSON indentation is too deep");
 				indent = 0;
 			} else {
 				indent++;
 			}
-			doIndent (indent, &o, tab);
+			doIndent (sb, ind, tabsz, indent, true);
 			break;
 		case '}':
 		case ']':
-			EMIT_ESC (o, colors[JC_RESET]);
+			EMIT_ESC (sb, colors[JC_RESET]);
 			isValue = false;
-			*o++ = '\n';
 			indent--;
-			doIndent (indent, &o, tab);
-			*o++ = *s;
+			doIndent (sb, ind, tabsz, indent, true);
+			r_strbuf_append_n (sb, s, 1);
 			break;
 		default:
-			*o++ = s0;
+			{
+				const size_t n = json_literal_len (s);
+				r_strbuf_append_n (sb, s, n);
+				s += n - 1;
+			}
 			break;
 		}
 	}
-	*o = 0;
-	return O;
+	free (ind);
+	return r_strbuf_drain (sb);
 }
 
 #undef EMIT_ESC

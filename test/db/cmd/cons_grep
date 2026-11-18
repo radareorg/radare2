@@ -1080,3 +1080,22 @@ EXPECT=<<EOF
   "AA": 1
 EOF
 RUN
+
+NAME=json indent with escaped backslash before the closing quote
+FILE=-
+CMDS=<<EOF
+?e '{"k":"v\\\\","b":[true,"x\\"y"]}'~{}
+?e '{"k":"v\\\\","c":"x\\"y"}'~{:
+EOF
+EXPECT=<<EOF
+{
+  "k": "v\\",
+  "b": [
+    true,
+    "x\"y"
+  ]
+}
+k: v\\
+c: x\"y
+EOF
+RUN
