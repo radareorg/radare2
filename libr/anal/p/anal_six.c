@@ -443,19 +443,34 @@ static char *six_calls_cmd(RAnal *anal, const char *args) {
 			.targets = targets,
 			.ntargets = ntargets,
 		};
-		// scan only the mapped parts: a read spanning an unmapped gap comes back
-		// short, which would end the scan and drop the whole chunk
+		// scan runs of adjacent readable regions as one range, splitting only at
+		// gaps or unreadable regions: per-region scans would lose an instruction
+		// straddling two maps, and a read across a gap comes back short
 		RIO *io = core? core->io: NULL;
 		RInterval itv = { from, to - from };
 		RVecRIORegion *regions = (io && io->va)? r_io_bank_get_regions (io, io->bank, itv): NULL;
 		if (regions) {
+			ut64 run_lo = 0, run_hi = 0;
 			RIORegion *r;
 			R_VEC_FOREACH (regions, r) {
+				const ut64 end = r_itv_end (r->itv);
 				const ut64 lo = R_MAX (r->itv.addr, from);
-				const ut64 hi = R_MIN (r_itv_end (r->itv), to);
-				if (hi > lo) {
-					siguza_xrefs (&ss, lo, hi - lo);
+				const ut64 hi = (end < r->itv.addr)? to: R_MIN (end, to);
+				if (hi <= lo || !(r->perm & R_PERM_R)) {
+					continue;
 				}
+				if (run_hi > run_lo && lo == run_hi) {
+					run_hi = hi;
+					continue;
+				}
+				if (run_hi > run_lo) {
+					siguza_xrefs (&ss, run_lo, run_hi - run_lo);
+				}
+				run_lo = lo;
+				run_hi = hi;
+			}
+			if (run_hi > run_lo) {
+				siguza_xrefs (&ss, run_lo, run_hi - run_lo);
 			}
 			RVecRIORegion_free (regions);
 		} else {
