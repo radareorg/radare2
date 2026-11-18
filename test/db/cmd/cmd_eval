@@ -25,19 +25,20 @@ CMDS=<<EOF
 e,key/cols/value,key/str/color
 EOF
 EXPECT=<<EOF
-key               value
------------------------
-asm.bytes.opcolor false
-asm.trace.color   true
-log.color         false
-scr.color         0
-scr.color.args    true
-scr.color.bytes   true
-scr.color.grep    false
-scr.color.ophex   false
-scr.color.ops     true
-scr.color.pipe    false
-scr.color.regs    false
+key                 value
+-------------------------
+asm.bytes.opcolor   false
+asm.trace.color     true
+log.color           false
+scr.color           0
+scr.color.args      true
+scr.color.bytes     true
+scr.color.grep      false
+scr.color.mnemonics true
+scr.color.ophex     false
+scr.color.ops       true
+scr.color.pipe      false
+scr.color.regs      false
 
 EOF
 RUN

@@ -41,3 +41,81 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=Mnemonic colors are independent of registers and numbers
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+ecd
+ec mov red
+ec reg green
+ec num blue
+e scr.color=1
+e asm.flags=false
+e asm.comments=false
+e asm.lines=false
+e asm.bytes=false
+e asm.addr=false
+e asm.tabs=0
+wx b82a000000488d042578563412c3
+e scr.color.mnemonics=false
+pd 3
+pi 3
+pdi 3
+wx 90
+pia 1
+wx 0f
+pia 1
+EOF
+EXPECT=<<EOF
+     mov[32m eax[0m,[33m[33m [34m0x2a[0m
+     lea[32m rax[0m,[33m[33m [0m[[34m0x12345678[0m][32m[0m
+     ret[0m
+[0mmov[32m eax[0m,[33m[33m [34m0x2a[0m[0m
+[0mlea[32m rax[0m,[33m[33m [0m[[34m0x12345678[0m][32m[0m[0m
+[0mret[0m[0m
+[0mmov[32m eax[0m,[33m[33m [34m0x2a[0m[0m
+[0mlea[32m rax[0m,[33m[33m [0m[[34m0x12345678[0m][32m[0m[0m
+[0mret[0m[0m
+[0mnop[0m
+[0minvalid[0m
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Mnemonic coloring can be restored and colors can still be disabled
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+ecd
+ec mov red
+ec reg green
+ec num blue
+e scr.color=1
+e asm.flags=false
+e asm.comments=false
+e asm.lines=false
+e asm.bytes=false
+e asm.addr=false
+e asm.tabs=0
+wx b82a000000488d042578563412c3
+e scr.color.mnemonics=false
+pd 1
+e scr.color.mnemonics=true
+pd 1
+e scr.color=0
+pd 1
+e scr.color=1
+e scr.color.ops=false
+e scr.color.args=false
+e scr.color.regs=false
+pd 1
+EOF
+EXPECT=<<EOF
+     mov[32m eax[0m,[33m[33m [34m0x2a[0m
+     [31mmov[32m eax[0m,[33m[33m [34m0x2a[0m
+     mov eax, 0x2a
+     mov eax, 0x2a
+EOF
+EXPECT_ERR=
+RUN

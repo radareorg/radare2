@@ -5025,6 +5025,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.color.grep", "false", &cb_scr_color_grep, "enable colors when using ~grep");
 	SETB ("scr.color.pipe", "false", "enable colors when using pipes");
 	SETB ("scr.color.ops", "true", "colorize numbers and registers in opcodes");
+	SETB ("scr.color.mnemonics", "true", "colorize instruction mnemonics by opcode type");
 	SETB ("scr.color.regs", "false", "colorize each register differently");
 	SETB ("scr.rainbow.regs", "false", "use static rainbow color palette for registers (requires scr.color.regs to be enabled, overrides theme colors)");
 	SETCB ("scr.color.ophex", "false", &cb_scr_color_ophex, "colorize in hexdump depending on opcode type (px)");

@@ -86,6 +86,7 @@ typedef struct r_disasm_state_t {
 	bool show_color_bytes;
 	bool show_color_args;
 	bool colorop;
+	bool color_mnemonics;
 	int acase;
 	bool capitalize;
 	bool show_flgoff;
@@ -839,6 +840,7 @@ static RDisasmState *ds_init(RCore *core, bool for_json) {
 	ds->show_color_bytes = r_config_get_i (core->config, "scr.color.bytes");
 	ds->show_color_args = r_config_get_i (core->config, "scr.color.args");
 	ds->colorop = r_config_get_b (core->config, "scr.color.ops");
+	ds->color_mnemonics = ds->colorop && r_config_get_b (core->config, "scr.color.mnemonics");
 	ds->show_utf8 = r_config_get_i (core->config, "scr.utf8");
 	ds->acase = r_config_get_b (core->config, "asm.ucase");
 	ds->capitalize = r_config_get_b (core->config, "asm.capitalize");
@@ -1180,7 +1182,7 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color
 		return strdup (source);
 	}
 
-	if (print_color && ds->colorop) {
+	if (print_color && ds->color_mnemonics) {
 		r_cons_print (core->cons, r_print_color_op_type (core->print, ds->analop.type));
 	}
 	// When scr.color.ops is false, use input color for ops but still allow register rainbow coloring
@@ -4483,7 +4485,7 @@ static void ds_print_bytes(RDisasmState *ds) {
 			}
 			free (str);
 			if (ds->show_color && ds->show_color_bytes && !ds->show_bytes_ascmt) {
-				if (ds->colorop) {
+				if (ds->color_mnemonics) {
 					str = nstr;
 				} else {
 					str = r_str_newf ("%s"Color_RESET, nstr);
@@ -8007,7 +8009,7 @@ toro:
 				ds->opstr = strdup (unaligned? "unaligned": "invalid");
 			}
 			if (ds->show_color) {
-				opcolor = r_print_color_op_type (core->print, ds->analop.type);
+				opcolor = ds->color_mnemonics? r_print_color_op_type (core->print, ds->analop.type): Color_RESET;
 				r_cons_printf (core->cons, "%s%s" Color_RESET "\n", opcolor, ds->opstr);
 			} else {
 				r_cons_println (core->cons, ds->opstr);
@@ -8534,7 +8536,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 		}
 		ret = r_asm_disassemble (core->rasm, &asmop, buf + i, l - i);
 		if (ret < 1) {
-			const char *invcolor = r_print_color_op_type (core->print, R_ANAL_OP_TYPE_ILL);
+			const char *invcolor = ds->color_mnemonics? r_print_color_op_type (core->print, R_ANAL_OP_TYPE_ILL): Color_RESET;
 			ret = asmop.size;
 			switch (mode) {
 			case 'j':
@@ -8571,7 +8573,8 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 						char *buf_asm = r_print_colorize_opcode (core->print, res? res: asmop.mnemonic,
 								core->cons->context->pal.reg, core->cons->context->pal.num, false, f ? f->addr : 0);
 						if (buf_asm) {
-							r_cons_printf (core->cons, "%s%s\n", r_print_color_op_type (core->print, aop.type), buf_asm);
+							const char *opcolor = ds->color_mnemonics? r_print_color_op_type (core->print, aop.type): Color_RESET;
+							r_cons_printf (core->cons, "%s%s\n", opcolor, buf_asm);
 							free (buf_asm);
 						}
 						r_anal_op_fini (&aop);
@@ -8644,6 +8647,7 @@ R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 n
 	bool decode = r_config_get_b (core->config, "asm.decode");
 	bool subnames = r_config_get_b (core->config, "asm.sub.names");
 	bool show_color = r_config_get_i (core->config, "scr.color") > 0;
+	bool color_mnemonics = r_config_get_b (core->config, "scr.color.mnemonics");
 	bool asm_ucase = r_config_get_b (core->config, "asm.ucase");
 	bool asm_instr = r_config_get_i (core->config, "asm.instr");
 	bool esil = r_config_get_b (core->config, "asm.esil");
@@ -8867,9 +8871,8 @@ toro:
 					r_anal_op (core->anal, &aop, addr + i,
 						buf + addrbytes * i, nb_bytes - addrbytes * i, R_ARCH_OP_MASK_BASIC);
 					asm_str = r_print_colorize_opcode (core->print, asm_str, color_reg, color_num, false, f ? f->addr : 0);
-					r_cons_printf (core->cons, "%s%s"Color_RESET "\n",
-						r_print_color_op_type (core->print, aop.type),
-						asm_str);
+					const char *opcolor = color_mnemonics? r_print_color_op_type (core->print, aop.type): Color_RESET;
+					r_cons_printf (core->cons, "%s%s"Color_RESET "\n", opcolor, asm_str);
 					r_anal_op_fini (&aop);
 					free (asm_str);
 				} else {

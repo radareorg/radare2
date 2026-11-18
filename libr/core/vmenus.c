@@ -141,7 +141,9 @@ static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype, u
 		return source;
 	}
 	char *res = strdup ("");
-	res = r_str_append (res, r_print_color_op_type (core->print, optype));
+	const char *opcolor = r_config_get_b (core->config, "scr.color.mnemonics")
+		? r_print_color_op_type (core->print, optype): Color_RESET;
+	res = r_str_append (res, opcolor);
 	tmp = r_print_colorize_opcode (core->print, source, color_reg, color_num, false, fcn ? fcn->addr : 0);
 	res = r_str_append (res, tmp);
 	free (tmp);
