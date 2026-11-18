@@ -4022,3 +4022,53 @@ fcomp qword [arg_18h]
    var_28h  0x3a
 EOF
 RUN
+
+NAME=aaft types again the callees a caller retypes, down the call chain
+FILE=malloc://256
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5589e5ff7508e83500000083c4045dc3
+wx 5589e5ff7508e83500000083c4045dc3 @ 0x40
+wx 5589e58b45085dc3 @ 0x80
+af leaf @ 0x80
+af middle @ 0x40
+af caller @ 0
+afvt arg_8h char *
+aaft
+afs @ 0x40
+afs @ 0x80
+tk func.middle.arg.0
+tk func.leaf.arg.0
+EOF
+EXPECT=<<EOF
+void middle (char *arg_8h);
+void leaf (char *arg_8h);
+char *,arg_8h
+char *,arg_8h
+EOF
+RUN
+
+NAME=aaft types again the mutually recursive callees a caller retypes
+FILE=malloc://256
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5589e5ff7508e83500000083c4045dc3
+wx 5589e5ff7508e83500000083c4045dc3 @ 0x40
+wx 5589e5ff7508e8b5ffffff83c4045dc3 @ 0x80
+af g @ 0x80
+af f @ 0x40
+af caller @ 0
+afvt arg_8h char *
+aaft
+afs @ 0x40
+afs @ 0x80
+tk func.f.arg.0
+tk func.g.arg.0
+EOF
+EXPECT=<<EOF
+void f (char *arg_8h);
+void g (char *arg_8h);
+char *,arg_8h
+char *,arg_8h
+EOF
+RUN

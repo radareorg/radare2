@@ -1522,30 +1522,54 @@ typedef struct {
 R_VEC_TYPE (RVecAaftFrame, AaftFrame);
 R_VEC_TYPE (RVecAaftAddr, ut64);
 
-// the callee a call or a tail jump (like the j.* thunks) of the frame enters, when not seen yet
+typedef struct {
+	ut64 addr;
+	char *types;
+} AaftCallee;
+
+static void aaft_callee_fini(AaftCallee *callee) {
+	free (callee->types);
+}
+
+R_VEC_TYPE_WITH_FINI (RVecAaftCallee, AaftCallee, aaft_callee_fini);
+
+typedef struct {
+	RCore *core;
+	ut8 *arena;
+	int arena_size;
+	HtUU *runs;
+	SetU *queued;
+	RVecAaftAddr queue;
+} AaftState;
+
+// a revisit needs an arg type to change and types only get more specific: this only stops a cycle that keeps flipping
+#define AAFT_MAX_RUNS 16
+
+// the function a call or a tail jump (like the j.* thunks) enters; a jump inside the function lands on one of its blocks
+static RAnalFunction *aaft_callee(RCore *core, const RAnalRef *ref) {
+	const int type = R_ANAL_REF_TYPE_MASK (ref->type);
+	if (type != R_ANAL_REF_TYPE_CALL && type != R_ANAL_REF_TYPE_CODE) {
+		return NULL;
+	}
+	return r_anal_get_function_at (core->anal, ref->addr);
+}
+
 static ut64 aaft_next_callee(RCore *core, AaftFrame *frame, SetU *seen) {
 	while (frame->refs && frame->next < RVecAnalRef_length (frame->refs)) {
 		const RAnalRef *ref = RVecAnalRef_at (frame->refs, frame->next++);
-		const int type = R_ANAL_REF_TYPE_MASK (ref->type);
-		if (type != R_ANAL_REF_TYPE_CALL && type != R_ANAL_REF_TYPE_CODE) {
-			continue;
-		}
-		// a jump inside the function lands on one of its blocks, not on a function entry
-		if (!set_u_contains (seen, ref->addr) && r_anal_get_function_at (core->anal, ref->addr)) {
+		if (!set_u_contains (seen, ref->addr) && aaft_callee (core, ref)) {
 			return ref->addr;
 		}
 	}
 	return UT64_MAX;
 }
 
-// A call types its args with the signature its callee has at that moment, and the callee
-// refines it (int32_t to uint32_t) when its own turn comes, so the callees go first: the
-// types do not depend on the order the functions were found in. Addresses, not pointers,
-// because a:tp can delete functions.
-static void aaft_order(RCore *core, RVecAaftAddr *order) {
+// callees first, as a call reads the signature its callee has at that moment. Addresses, not pointers: a:tp can delete functions
+static bool aaft_order(RCore *core, RVecAaftAddr *order) {
 	SetU *seen = set_u_new ();
 	RVecAaftFrame stack;
 	RVecAaftFrame_init (&stack);
+	bool breaked = false;
 	RListIter *it;
 	RAnalFunction *fcn;
 	r_list_foreach_prev (core->anal->fcns, it, fcn) {
@@ -1556,6 +1580,10 @@ static void aaft_order(RCore *core, RVecAaftAddr *order) {
 		AaftFrame root = { fcn->addr, r_anal_function_get_refs (fcn), 0 };
 		RVecAaftFrame_push_back (&stack, &root);
 		while (!RVecAaftFrame_empty (&stack)) {
+			if (r_cons_is_breaked (core->cons)) {
+				breaked = true;
+				break;
+			}
 			AaftFrame *top = RVecAaftFrame_last (&stack);
 			const ut64 callee = aaft_next_callee (core, top, seen);
 			if (callee != UT64_MAX) {
@@ -1568,13 +1596,125 @@ static void aaft_order(RCore *core, RVecAaftAddr *order) {
 			RVecAnalRef_free (top->refs);
 			RVecAaftFrame_pop_back (&stack);
 		}
+		if (breaked) {
+			break;
+		}
+	}
+	AaftFrame *frame;
+	R_VEC_FOREACH (&stack, frame) {
+		RVecAnalRef_free (frame->refs);
 	}
 	RVecAaftFrame_fini (&stack);
 	set_u_free (seen);
+	return !breaked;
+}
+
+// the arg types a caller reads from the signature of the function
+static char *aaft_arg_types(RCore *core, RAnalFunction *fcn) {
+	RStrBuf *sb = r_strbuf_new ("");
+	RAnalFcnVarsCache cache;
+	r_anal_function_vars_cache_init (core->anal, &cache, fcn);
+	RAnalVar **it;
+	R_VEC_FOREACH_VARS_CACHE (&cache, it) {
+		const RAnalVar *var = *it;
+		if (var->isarg && !r_anal_var_is_abi_role (var)) {
+			r_strbuf_appendf (sb, "%s,", var->type);
+		}
+	}
+	r_anal_function_vars_cache_fini (&cache);
+	return r_strbuf_drain (sb);
+}
+
+static void aaft_callees(RCore *core, RAnalFunction *fcn, RVecAaftCallee *callees) {
+	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
+	if (!refs) {
+		return;
+	}
+	SetU *seen = set_u_new ();
+	RAnalRef *ref;
+	R_VEC_FOREACH (refs, ref) {
+		RAnalFunction *callee = aaft_callee (core, ref);
+		if (callee && !set_u_contains (seen, callee->addr)) {
+			set_u_add (seen, callee->addr);
+			AaftCallee entry = { callee->addr, aaft_arg_types (core, callee) };
+			RVecAaftCallee_push_back (callees, &entry);
+		}
+	}
+	set_u_free (seen);
+	RVecAnalRef_free (refs);
+}
+
+// type again a function a:tp already ran on, as the types it read changed
+static void aaft_queue(AaftState *st, ut64 addr) {
+	const ut64 runs = ht_uu_find (st->runs, addr, NULL);
+	if (runs > 0 && runs < AAFT_MAX_RUNS && !set_u_contains (st->queued, addr)) {
+		set_u_add (st->queued, addr);
+		RVecAaftAddr_push_back (&st->queue, &addr);
+	}
+}
+
+static void aaft_queue_callers(AaftState *st, RAnalFunction *fcn, ut64 skip) {
+	RVecAnalRef *xrefs = r_anal_function_get_xrefs (fcn);
+	if (!xrefs) {
+		return;
+	}
+	RAnalRef *ref;
+	R_VEC_FOREACH (xrefs, ref) {
+		const int type = R_ANAL_REF_TYPE_MASK (ref->type);
+		RAnalFunction *caller = (type == R_ANAL_REF_TYPE_CALL || type == R_ANAL_REF_TYPE_CODE)
+			? r_anal_get_fcn_in (st->core->anal, ref->at, 0): NULL;
+		if (caller && caller->addr != skip) {
+			aaft_queue (st, caller->addr);
+		}
+	}
+	RVecAnalRef_free (xrefs);
+}
+
+// run a:tp on a function and queue the functions it leaves with stale types
+static bool aaft_run(AaftState *st, ut64 addr) {
+	RCore *core = st->core;
+	RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
+	if (!fcn || !r_core_seek (core, fcn->addr, true)) {
+		return true;
+	}
+	r_reg_arena_poke (core->anal->reg, st->arena, st->arena_size);
+	r_esil_set_pc (core->anal->esil, fcn->addr);
+	// type propagation reads arg types from the sdb signature, so retyped vars (afvt) must land there first
+	__add_vars_sdb (core, fcn);
+	char *types = aaft_arg_types (core, fcn);
+	RVecAaftCallee callees;
+	RVecAaftCallee_init (&callees);
+	aaft_callees (core, fcn, &callees);
+	r_core_cmd0 (core, "a:tp");
+	ht_uu_update (st->runs, addr, ht_uu_find (st->runs, addr, NULL) + 1);
+	const bool breaked = r_cons_is_breaked (core->cons);
+	fcn = breaked? NULL: r_anal_get_function_at (core->anal, addr);
+	if (fcn) {
+		__add_vars_sdb (core, fcn);
+		AaftCallee *entry;
+		R_VEC_FOREACH (&callees, entry) {
+			RAnalFunction *callee = r_anal_get_function_at (core->anal, entry->addr);
+			char *now = callee? aaft_arg_types (core, callee): NULL;
+			// the call retyped the args of a user callee: its callees and its other callers read the old ones
+			if (now && strcmp (now, entry->types)) {
+				__add_vars_sdb (core, callee);
+				aaft_queue (st, callee->addr);
+				aaft_queue_callers (st, callee, addr);
+			}
+			free (now);
+		}
+		char *now = aaft_arg_types (core, fcn);
+		if (strcmp (now, types)) {
+			aaft_queue_callers (st, fcn, UT64_MAX);
+		}
+		free (now);
+	}
+	RVecAaftCallee_fini (&callees);
+	free (types);
+	return !breaked;
 }
 
 static bool cmd_anal_aaft(RCore *core) {
-	ut64 *addr;
 	r_core_anal_type_init (core);
 	ut64 seek;
 	const char *io_cache_key = "io.pcache.write";
@@ -1593,32 +1733,32 @@ static bool cmd_anal_aaft(RCore *core) {
 	r_reg_arena_zero (core->anal->reg);
 	cmd_aei (core);
 	r_core_call (core, "aeim");
-	int saved_arena_size = 0;
-	ut8 *saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
+	AaftState st = { core, NULL, 0, ht_uu_new0 (), set_u_new () };
+	RVecAaftAddr_init (&st.queue);
+	st.arena = r_reg_arena_peek (core->anal->reg, &st.arena_size);
 	RVecAaftAddr order;
 	RVecAaftAddr_init (&order);
-	aaft_order (core, &order);
-	R_VEC_FOREACH (&order, addr) {
-		RAnalFunction *fcn = r_anal_get_function_at (core->anal, *addr);
-		if (!fcn || !r_core_seek (core, fcn->addr, true)) {
-			continue;
+	bool ok = aaft_order (core, &order);
+	size_t i;
+	for (i = 0; ok && i < RVecAaftAddr_length (&order); i++) {
+		ok = aaft_run (&st, *RVecAaftAddr_at (&order, i));
+		// the callees a call retyped are typed again before the next caller reads their signatures
+		while (ok && !RVecAaftAddr_empty (&st.queue)) {
+			const ut64 addr = *RVecAaftAddr_last (&st.queue);
+			RVecAaftAddr_pop_back (&st.queue);
+			set_u_delete (st.queued, addr);
+			ok = aaft_run (&st, addr);
 		}
-		r_reg_arena_poke (core->anal->reg, saved_arena, saved_arena_size);
-		r_esil_set_pc (core->anal->esil, fcn->addr);
-		// type propagation reads arg types from the sdb signature, so retyped vars (afvt) must land there first
-		__add_vars_sdb (core, fcn);
-		r_core_cmd0 (core, "a:tp");
-		if (r_cons_is_breaked (core->cons)) {
-			break;
-		}
-		__add_vars_sdb (core, fcn);
 	}
 	RVecAaftAddr_fini (&order);
+	RVecAaftAddr_fini (&st.queue);
+	set_u_free (st.queued);
+	ht_uu_free (st.runs);
 	r_config_set_b (core->config, "io.va", iova);
 	r_core_seek (core, seek, true);
 	r_reg_arena_pop (core->anal->reg);
 	r_config_set_i (core->config, io_cache_key, io_cache);
-	free (saved_arena);
+	free (st.arena);
 	return true;
 }
 
