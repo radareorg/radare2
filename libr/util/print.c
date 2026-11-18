@@ -548,14 +548,9 @@ static void r_print_addr(RPrint *p, ut64 addr) {
 	r_print_font_print_cfg (p, "scr.font.addr", buf);
 }
 
-static int print_offset_len(ut64 off, bool with_delta) {
+static int print_offset_len(ut64 off) {
 	char buf[64];
-	buf[0] = 0;
-	if (with_delta) {
-		snprintf (buf, sizeof (buf), "+0x%" PFMT64x, off);
-	} else {
-		snprintf (buf, sizeof (buf), "0x%08" PFMT64x, off);
-	}
+	snprintf (buf, sizeof (buf), "0x%08" PFMT64x, off);
 	return strlen (buf);
 }
 
@@ -587,6 +582,30 @@ R_API bool r_print_offset_strbuf(RPrint *p, RStrBuf *sb, ut64 off, int invert, i
 			k = "";
 		}
 	}
+	if ((delta > 0 || label) && (!offseg || base8 || base36)) {
+		char delta_str[32] = "";
+		if (delta > 0) {
+			if (base36) {
+				char b36str[16];
+				b36_fromnum (b36str, delta);
+				snprintf (delta_str, sizeof (delta_str), "+%s", b36str);
+			} else {
+				const char *fmt = base8? "+0%o": offdec? "+%d": "+0x%x";
+				snprintf (delta_str, sizeof (delta_str), fmt, delta);
+			}
+		}
+		const int sz = print_offset_len (off);
+		const int sz2 = strlen (delta_str);
+		if (label) {
+			const int label_padding = 10;
+			ok &= r_strbuf_appendf (sb, "%s%s%s%s%s", k, inv, label, show_color? reset: "", delta_str);
+			ok &= r_strbuf_pad (sb, ' ', sz - sz2 + label_padding);
+		} else {
+			ok &= r_strbuf_pad (sb, ' ', show_color? sz - sz2: sz - 5 - sz2 - 3);
+			ok &= r_strbuf_appendf (sb, "%s%s", delta_str, reset);
+		}
+		return ok && (!show_color || r_strbuf_append (sb, " "));
+	}
 	if (base8) {
 		if (show_color) {
 			ok &= r_strbuf_appendf (sb, "%s%s0%" PFMT64o "%s", k, inv, off, reset);
@@ -615,32 +634,13 @@ R_API bool r_print_offset_strbuf(RPrint *p, RStrBuf *sb, ut64 off, int invert, i
 			} else {
 				ok &= r_strbuf_appendf (sb, "%s%s%04x:%04x%s", k, inv, s, a, reset);
 			}
+		} else if (offdec) {
+			snprintf (space, sizeof (space), "%" PFMT64u, off);
+			ok &= r_strbuf_appendf (sb, "%s%s%10s%s", k, inv, space, reset);
+		} else if (p->wide_offsets) {
+			ok &= r_strbuf_appendf (sb, "%s%s0x%016" PFMT64x "%s", k, inv, off, reset);
 		} else {
-			const int sz = print_offset_len (off, false);
-			const int sz2 = print_offset_len (delta, true);
-			if (delta > 0 || label) {
-				if (label) {
-					const int label_padding = 10;
-					ok &= r_strbuf_appendf (sb, "%s%s%s%s", k, inv, label, reset);
-					if (delta > 0) {
-						ok &= r_strbuf_appendf (sb, offdec? "+%d": "+0x%x", delta);
-						ok &= r_strbuf_pad (sb, ' ', sz - sz2 + label_padding);
-					} else {
-						ok &= r_strbuf_pad (sb, ' ', sz + label_padding);
-					}
-				} else {
-					ok &= r_strbuf_pad (sb, ' ', sz - sz2);
-					ok &= r_strbuf_appendf (sb, offdec? "+%d": "+0x%x", delta);
-					ok &= r_strbuf_append (sb, reset);
-				}
-			} else if (offdec) {
-				snprintf (space, sizeof (space), "%" PFMT64u, off);
-				ok &= r_strbuf_appendf (sb, "%s%s%10s%s", k, inv, space, reset);
-			} else if (p->wide_offsets) {
-				ok &= r_strbuf_appendf (sb, "%s%s0x%016" PFMT64x "%s", k, inv, off, reset);
-			} else {
-				ok &= r_strbuf_appendf (sb, "%s%s0x%08" PFMT64x "%s", k, inv, off, reset);
-			}
+			ok &= r_strbuf_appendf (sb, "%s%s0x%08" PFMT64x "%s", k, inv, off, reset);
 		}
 		return ok && r_strbuf_append (sb, " ");
 	}
@@ -652,25 +652,6 @@ R_API bool r_print_offset_strbuf(RPrint *p, RStrBuf *sb, ut64 off, int invert, i
 			return r_strbuf_appendf (sb, "%9s%s", space, reset);
 		}
 		return r_strbuf_appendf (sb, "%04x:%04x", s & 0xffff, a & 0xffff);
-	}
-	const int sz = print_offset_len (off, false);
-	const int sz2 = print_offset_len (delta, true);
-	if (delta > 0 || label) {
-		if (label) {
-			const int label_padding = 10;
-			ok &= r_strbuf_append (sb, label);
-			if (delta > 0) {
-				ok &= r_strbuf_appendf (sb, offdec? "+%d": "+0x%x", delta);
-				ok &= r_strbuf_pad (sb, ' ', sz - sz2 + label_padding);
-			} else {
-				ok &= r_strbuf_pad (sb, ' ', sz + label_padding);
-			}
-		} else {
-			ok &= r_strbuf_pad (sb, ' ', sz - 5 - sz2 - 3);
-			ok &= r_strbuf_appendf (sb, offdec? "+%d": "+0x%x", delta);
-			ok &= r_strbuf_append (sb, reset);
-		}
-		return ok;
 	}
 	if (offdec) {
 		snprintf (space, sizeof (space), "%" PFMT64u, off);

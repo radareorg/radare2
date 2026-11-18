@@ -86,6 +86,75 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pd relative offsets in every address base with colors
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e asm.bytes=false
+e asm.lines=false
+e asm.flags=false
+e asm.comments=false
+e asm.functions=false
+wx b82a000000909090909090909090909090c3 @ 0x100
+wx 90 @ 0x120
+af @ 0x100
+afn testfunc @ 0x100
+e asm.addr.relto=func
+e scr.color=0
+e asm.addr.base=8
+pd 1 @ 0x100; pd 2 @ 0x109; pd 1 @ 0x120
+e asm.addr.base=10
+pd 1 @ 0x100; pd 2 @ 0x109; pd 1 @ 0x120
+e asm.addr.base=16
+pd 1 @ 0x100; pd 2 @ 0x109; pd 1 @ 0x120
+e asm.addr.base=36
+pd 1 @ 0x100; pd 2 @ 0x109; pd 1 @ 0x120
+e scr.color=1
+e asm.addr.base=8
+pd 1 @ 0x100; pd 2 @ 0x109; pd 1 @ 0x120
+e asm.addr.base=10
+pd 1 @ 0x100; pd 2 @ 0x109; pd 1 @ 0x120
+e asm.addr.base=16
+pd 1 @ 0x100; pd 2 @ 0x109; pd 1 @ 0x120
+e asm.addr.base=36
+pd 1 @ 0x100; pd 2 @ 0x109; pd 1 @ 0x120
+EOF
+EXPECT=<<EOF
+testfunc                         mov eax, 0x2a
+testfunc+011                     nop
+testfunc+012                     nop
+0440      nop
+testfunc                         mov eax, 0x2a
+testfunc+9                       nop
+testfunc+10                      nop
+       288     nop
+testfunc                         mov eax, 0x2a
+testfunc+0x9                     nop
+testfunc+0xa                     nop
+0x00000120      nop
+testfunc                         mov eax, 0x2a
+testfunc+0_9                     nop
+testfunc+0_a                     nop
+0_80      nop
+[32mtestfunc[0m                          [36mmov[37m eax[0m,[33m[33m [32m0x2a[0m
+[32mtestfunc[0m+011                      [34mnop[0m
+[32mtestfunc[0m+012                      [34mnop[0m
+[32m0440[0m      [34mnop[0m
+[32mtestfunc[0m                          [36mmov[37m eax[0m,[33m[33m [32m0x2a[0m
+[32mtestfunc[0m+9                        [34mnop[0m
+[32mtestfunc[0m+10                       [34mnop[0m
+[32m       288[0m      [34mnop[0m
+[32mtestfunc[0m                          [36mmov[37m eax[0m,[33m[33m [32m0x2a[0m
+[32mtestfunc[0m+0x9                      [34mnop[0m
+[32mtestfunc[0m+0xa                      [34mnop[0m
+[32m0x00000120[0m      [34mnop[0m
+[32mtestfunc[0m                          [36mmov[37m eax[0m,[33m[33m [32m0x2a[0m
+[32mtestfunc[0m+0_9                      [34mnop[0m
+[32mtestfunc[0m+0_a                      [34mnop[0m
+[32m0_80[0m      [34mnop[0m
+EOF
+RUN
+
 NAME=pd flag without realname
 FILE=malloc://512
 ARGS=-a x86 -b 32
