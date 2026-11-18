@@ -24,7 +24,7 @@ pi 1
 ao 1~type
 EOF
 EXPECT=<<EOF
-invalid
+truncated
 type: ill
 EOF
 RUN

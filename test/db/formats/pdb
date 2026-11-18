@@ -473,6 +473,7 @@ RUN
 
 NAME=idp keeps the members after the vtable pointer of a class
 FILE=-
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 idp bins/pdb/r_bp.pdb
 tsc std::exception

@@ -1,10 +1,9 @@
 /* radare - LGPL - Copyright 2014-2025 - inisider, pancake */
 
-#include <sdb/set.h>
-
 #include "types.h"
 #include "tpi.h"
 #include "stream_file.h"
+#include <sdb/set.h>
 
 // Valid streams only refer to earlier records, so this only cuts cycles in crafted files
 #define TPI_MAX_DEPTH 64
@@ -1832,8 +1831,8 @@ static int parse_lf_onemethod(SLF_ONEMETHOD *lf_onemethod, const ut8 *leaf_data,
 	lf_onemethod->index = r_read_le32 (leaf_data + 2);
 	leaf_data += fixed_size;
 	*read_bytes += fixed_size;
-	if ((lf_onemethod->fldattr.bits.mprop == eMTintro) ||
-		(lf_onemethod->fldattr.bits.mprop == eMTpureintro)) {
+	const ut16 mprop = (lf_onemethod->fldattr.fldattr >> 2) & 7;
+	if (mprop == eMTintro || mprop == eMTpureintro) {
 		if (!can_read (*read_bytes, 4, len)) {
 			return 0;
 		}
