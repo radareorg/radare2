@@ -99,10 +99,14 @@ afb+ 0x10 0x10 8
 s 0x10
 afia+ NT
 afiaq
+afij~{[0].attrs}
+afiJ~{[0].attribute_names[0]}
+afiJ~{[0].attribute_names[2]}
 afia- T
 afiaq
 afia= IL
 afiaq
+afiJ~{[0].attribute_names[0]}
 afia+ thunk,static
 afl*~afia
 afia=
@@ -110,8 +114,12 @@ afiaq
 EOF
 EXPECT=<<EOF
 NPTE
+NPTE
+noreturn
+thunk
 NPE
 IPLE
+inline
 '0x00000010'afia+ ITLS
 PE
 EOF

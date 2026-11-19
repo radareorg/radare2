@@ -3046,7 +3046,7 @@ static char *filename(RCore *core, ut64 addr) {
 	return NULL;
 }
 
-static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) {
+static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, bool named_attrs, PJ *pj) {
 	if (!pj) {
 		return -1;
 	}
@@ -3220,6 +3220,17 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	char *attrs = r_anal_function_attrs_tostring (fcn->attrs, false);
 	pj_ks (pj, "attrs", attrs);
 	free (attrs);
+	if (named_attrs) {
+		pj_ka (pj, "attribute_names");
+		const RAnalFcnAttrInfo *ai;
+		size_t i;
+		for (i = 0; (ai = r_anal_function_attr_info (i)); i++) {
+			if (fcn->attrs & ai->bit) {
+				pj_s (pj, ai->name);
+			}
+		}
+		pj_end (pj);
+	}
 	pj_ki (pj, "indegree", indegree);
 	pj_ki (pj, "outdegree", outdegree);
 
@@ -3259,7 +3270,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	return 0;
 }
 
-static int fcn_list_json(RCore *core, RList *fcns, bool quiet, bool dorefs) {
+static int fcn_list_json(RCore *core, RList *fcns, bool quiet, bool dorefs, bool named_attrs) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	PJ *pj = r_core_pj_new (core);
@@ -3268,7 +3279,7 @@ static int fcn_list_json(RCore *core, RList *fcns, bool quiet, bool dorefs) {
 		if (quiet) {
 			pj_n (pj, fcn->addr);
 		} else {
-			fcn_print_json (core, fcn, dorefs, pj);
+			fcn_print_json (core, fcn, dorefs, named_attrs, pj);
 		}
 	}
 	pj_end (pj);
@@ -3278,7 +3289,7 @@ static int fcn_list_json(RCore *core, RList *fcns, bool quiet, bool dorefs) {
 }
 
 static int fcn_list_verbose_json(RCore *core, RList *fcns) {
-	return fcn_list_json (core, fcns, false, true);
+	return fcn_list_json (core, fcns, false, true, false);
 }
 
 static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
@@ -3684,7 +3695,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 	}
 	R_RETURN_VAL_IF_FAIL (core && core->anal, 0);
 	if (r_list_empty (core->anal->fcns)) {
-		if (*rad == 'j') {
+		if (*rad == 'j' || *rad == 'J') {
 			r_cons_println (core->cons, "[]");
 		}
 		return 0;
@@ -3780,13 +3791,14 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		break;
 	case 'q':
 		if (rad[1] == 'j') {
-			fcn_list_json (core, fcns, true, dorefs);
+			fcn_list_json (core, fcns, true, dorefs, false);
 		} else {
 			fcn_list_default (core, fcns, true, dorefs);
 		}
 		break;
 	case 'j':
-		fcn_list_json (core, fcns, false, dorefs);
+	case 'J':
+		fcn_list_json (core, fcns, false, dorefs, *rad == 'J');
 		break;
 	case '*':
 		fcn_list_detail (core, fcns);
