@@ -431,8 +431,8 @@ R_API bool r_bplist_parse(PJ *pj, const ut8 *data, size_t data_len) {
 		return false;
 	}
 
-	const ut8 *start_data = data + BPLIST_MAGIC_SIZE + BPLIST_VERSION_SIZE;
-	const ut8 *end_data = data + data_len - sizeof (BPlistTrailer);
+	const ut64 trailer_offset = data_len - sizeof (BPlistTrailer);
+	const ut8 *end_data = data + trailer_offset;
 
 	// now parse trailer
 	BPlistTrailer *trailer = (BPlistTrailer*)end_data;
@@ -440,7 +440,7 @@ R_API bool r_bplist_parse(PJ *pj, const ut8 *data, size_t data_len) {
 	ut8 ref_size = trailer->ref_size;
 	ut64 num_objects = be64toh (trailer->num_objects);
 	ut64 root_object = be64toh (trailer->root_object_index);
-	const ut8 *offset_table = (ut8 *)(data + be64toh (trailer->offset_table_offset));
+	ut64 offset_table_offset = be64toh (trailer->offset_table_offset);
 
 	if (num_objects == 0) {
 		R_LOG_ERROR ("number of objects must be larger than 0");
@@ -458,16 +458,18 @@ R_API bool r_bplist_parse(PJ *pj, const ut8 *data, size_t data_len) {
 		R_LOG_ERROR ("root object index (%" PRIu64 ") must be smaller than number of objects (%" PRIu64 ")", root_object, num_objects);
 		return false;
 	}
-	if (offset_table < start_data || offset_table >= end_data) {
+	// bound the offset before adding it to data, compilers fold the wrapped pointer compare
+	if (offset_table_offset < BPLIST_MAGIC_SIZE + BPLIST_VERSION_SIZE || offset_table_offset >= trailer_offset) {
 		R_LOG_ERROR ("offset table offset points outside of valid range");
 		return false;
 	}
+	const ut8 *offset_table = data + offset_table_offset;
 	ut64 offset_table_size;
 	if (r_mul_overflow (num_objects, offset_size, &offset_table_size)) {
 		R_LOG_ERROR ("integer overflow when calculating offset table size");
 		return false;
 	}
-	if (offset_table_size > (ut64)(end_data - offset_table)) {
+	if (offset_table_size > trailer_offset - offset_table_offset) {
 		R_LOG_ERROR ("offset table points outside of valid range");
 		return false;
 	}
