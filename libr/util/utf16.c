@@ -10,9 +10,9 @@ R_API int r_utf16_decode(const ut8 *ptr, int ptrlen, RRune *ch, bool bigendian) 
 	}
 	int high = !bigendian;
 	int low = !high;
-	if (ptrlen > 3 && (ptr[high] & 0xdc) == 0xd8 && (ptr[high + 2] & 0xdc) == 0xdc) {
+	if (ptrlen > 3 && (ptr[high] & 0xfc) == 0xd8 && (ptr[high + 2] & 0xfc) == 0xdc) {
 		if (ch) {
-			*ch = ((ptr[high] & 3) << 24 | ptr[low] << 16 | (ptr[high + 2] & 3) << 8 | ptr[low + 2])
+			*ch = ((ptr[high] & 3) << 18 | ptr[low] << 10 | (ptr[high + 2] & 3) << 8 | ptr[low + 2])
 			      + 0x10000;
 		}
 		return 4;

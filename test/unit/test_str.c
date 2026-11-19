@@ -996,6 +996,22 @@ bool test_r_str_ansi_len(void) {
 	mu_end;
 }
 
+bool test_r_utf16_decode_surrogates(void) {
+	RRune ch = 0;
+	int len = r_utf16le_decode ((const ut8 *)"\x3d\xd8\x00\xde", 4, &ch);
+	mu_assert_eq (len, 4, "utf16le surrogate pair is 4 bytes");
+	mu_assert_eq (ch, 0x1f600, "utf16le surrogate pair decodes to U+1F600");
+
+	len = r_utf16be_decode ((const ut8 *)"\xdb\xff\xdf\xff", 4, &ch);
+	mu_assert_eq (len, 4, "utf16be surrogate pair is 4 bytes");
+	mu_assert_eq (ch, 0x10ffff, "utf16be surrogate pair decodes to U+10FFFF");
+
+	len = r_utf16le_decode ((const ut8 *)"\x01\xfb\x5e\xfc", 4, &ch);
+	mu_assert_eq (len, 2, "U+FB01 is not a high surrogate");
+	mu_assert_eq (ch, 0xfb01, "U+FB01 decodes on its own");
+	mu_end;
+}
+
 bool test_r_str_len_utf8_ansi(void) {
 	int len;
 
@@ -1751,6 +1767,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_rchr);
 	mu_run_test (test_r_str_ansi_crop);
 	mu_run_test (test_r_str_ansi_len);
+	mu_run_test (test_r_utf16_decode_surrogates);
 	mu_run_test (test_r_str_len_utf8_ansi);
 	mu_run_test (test_r_str_len_utf8_ansi_truncated_utf8_tail);
 	mu_run_test (test_r_str_is_printable_limited_utf8);
