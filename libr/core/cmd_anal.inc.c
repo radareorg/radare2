@@ -7925,9 +7925,8 @@ static bool core_esil_decode_op(RCore *core, RAnalOp *op, ut64 addr) {
 static bool core_esil_skip_op(RCore *core, RAnalOp *op, ut64 addr) {
 	const int align = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
 	if (align > 1 && (addr % align)) {
-		if (R_STR_ISNOTEMPTY (core->esil.cmds.trap)) {
-			r_core_cmd0 (core, core->esil.cmds.trap);
-		}
+		r_esil_set_fault (&core->esil.esil, R_ANAL_TRAP_UNALIGNED, addr);
+		r_core_esil_report_trap (core, addr);
 		return false;
 	}
 	char *expr = r_str_newf ("0x%" PFMT64x ",PC,:=", op->addr + op->size);

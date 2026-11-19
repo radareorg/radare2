@@ -1261,7 +1261,7 @@ static int analop_esil(RArchSession *a, RAnalOp *op, const ut8 *buf, int len, In
 
 	switch (insn->operation) {
 	case ARM64_BRK:
-		r_strbuf_setf (&op->esil, "0,%d,TRAP", (int) (GETIMM64 (0) & 0xffff));
+		r_strbuf_setf (&op->esil, "%d,%d,TRAP", (int) (GETIMM64 (0) & 0xffff), R_ANAL_TRAP_BREAKPOINT);
 		break;
 	case ARM64_REV:
 	case ARM64_REV64:

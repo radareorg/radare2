@@ -435,7 +435,8 @@ static bool esil_trap(REsil *esil) {
 		return r_esil_fire_trap (esil, (int)s, (int)d);
 	}
 	R_LOG_DEBUG ("esil_trap: missing parameters in stack");
-	if (esil->cmd_trap) {
+	r_esil_set_trap (esil, R_ANAL_TRAP_INVALID, R_ANAL_TRAP_INVALID);
+	if (esil->cmd && R_STR_ISNOTEMPTY (esil->cmd_trap)) {
 		esil->cmd (esil, esil->cmd_trap, esil->addr, R_ANAL_TRAP_INVALID);
 	}
 	return false;

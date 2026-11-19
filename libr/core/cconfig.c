@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_core.h>
+#include <r_core_priv.h>
 #include <r_types_base.h>
 #include <r_util/r_cfloat.h>
 #include <r_util/r_print.h>
@@ -2465,6 +2466,11 @@ static bool cb_iopcachewrite(void *user, void *data) {
 R_API bool r_core_esil_cmd(REsil *esil, const char *cmd, ut64 a1, ut64 a2) {
 	if (cmd && *cmd) {
 		RCore *core = esil->anal->user;
+		if (cmd == esil->cmd_trap) {
+			const REsilTrap trap = r_esil_get_trap (esil);
+			core->num->value = 0;
+			return r_core_esil_trap_cmd (core, cmd, esil->addr, &trap);
+		}
 		r_core_cmdf (core, "%s %" PFMT64d " %" PFMT64d, cmd, a1, a2);
 		return core->num->value;
 	}
@@ -2555,7 +2561,6 @@ static bool cb_cmd_esil_trap(void *user, void *data) {
 	if (core) {
 		core_esil_set_cmd (&core->esil.cmds.trap, node->value);
 		core->esil.esil.cmd = r_core_esil_cmd;
-		core_esil_set_cmd (&core->esil.esil.cmd_trap, node->value);
 		REsil *esil = R_UNWRAP3 (core, anal, esil);
 		if (esil) {
 			esil->cmd = r_core_esil_cmd;
@@ -4650,10 +4655,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cmd.esil.step", "", &cb_cmd_esil_step, "command to run before performing a step in the emulator");
 	SETCB ("cmd.esil.stepout", "", &cb_cmd_esil_step_out, "command to run after performing a step in the emulator");
 	SETCB ("cmd.esil.mdev", "", &cb_cmd_esil_mdev, "command to run when memory device address is accessed");
-	SETCB ("cmd.esil.intr", "", &cb_cmd_esil_intr, "command to run when an esil interrupt happens");
-	SETCB ("cmd.esil.trap", "", &cb_cmd_esil_trap, "command to run when an esil trap happens");
+	SETCB ("cmd.esil.intr", "", &cb_cmd_esil_intr, "ESIL interrupt notification: intr_num 0");
+	SETCB ("cmd.esil.trap", "", &cb_cmd_esil_trap, "ESIL trap handler: pc type code has_addr fault_addr (raw TRAP resumes on nonzero)");
 	SETCB ("cmd.esil.todo", "", &cb_cmd_esil_todo, "command to run when the esil instruction contains TODO");
-	SETCB ("cmd.esil.ioer", "", &cb_cmd_esil_ioer, "command to run when esil fails to IO (invalid read/write)");
+	SETCB ("cmd.esil.ioer", "", &cb_cmd_esil_ioer, "ESIL invalid I/O check: step_pc is_write (0 read, 1 write)");
 
 	SETCB ("dbg.maxsnapsize", "32M", &cb_dbg_maxsnapsize, "dont make snapshots of maps bigger than a specific size");
 	SETCB ("dbg.wrap", "false", &cb_dbg_wrap, "enable the ptrace-wrap abstraction layer (needed for debugging from iaito)");
