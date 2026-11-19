@@ -4030,7 +4030,7 @@ R_API void r_anal_update_analysis_range(RAnal *anal, ut64 addr, int size) {
 			calc_reachable_and_remove_block (fcns, fcn, bb, reachable);
 		}
 	}
-	r_list_free (blocks); // This will call r_anal_block_unref to actually remove blocks from RAnal
+	r_list_free (blocks); // This will call r_unref to actually remove blocks from RAnal
 	update_analysis (anal, fcns, reachable);
 	ht_up_free (reachable);
 	r_list_free (fcns);

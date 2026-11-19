@@ -2293,96 +2293,62 @@ static bool agraph_recolor_nodes(RAGraph *g, RCore *core) {
 }
 
 static char *get_body(RCore *core, ut64 addr, int size, int opts) {
-	char *body;
-	int disas_size = size;
 	RConfigHold *hc = r_config_hold_new (core->config);
 	if (!hc) {
 		return NULL;
 	}
-	r_config_hold (hc, "asm.lines", "asm.bytes", "asm.flags.inbytes",
+	r_config_hold (hc, "asm.lines", "asm.bytes", "asm.flags.inbytes", "scr.html", "asm.bbmiddle",
 		"asm.cmt.col", "asm.marks", "asm.addr", "asm.dwarf.file",
 		"asm.comments", "asm.cmt.right", "asm.lines.bb", NULL);
-	const bool o_comments = r_config_get_b (core->config, "graph.comments");
-	const bool o_cmtright = r_config_get_b (core->config, "graph.cmtright");
-	const bool o_bytes = r_config_get_b (core->config, "graph.bytes");
-	bool o_flags_in_bytes = r_config_get_b (core->config, "asm.flags.inbytes");
-	const bool o_graph_addr = r_config_get_b (core->config, "graph.addr");
-	const int graph_bb_maxsize = r_config_get_i (core->config, "graph.bb.maxsize");
-	const bool truncated = graph_bb_maxsize > 0 && disas_size > graph_bb_maxsize;
+	const int maxsize = r_config_get_i (core->config, "graph.bb.maxsize");
+	const bool truncated = maxsize > 0 && size > maxsize;
 	if (truncated) {
-		disas_size = graph_bb_maxsize;
+		size = maxsize;
 	}
-	int o_cursor = core->print->cur_enabled;
+	const int cursor = core->print->cur_enabled;
+	const int width = r_config_get_i (core->config, "graph.bb.maxwidth");
+	const bool aeab = !(opts & BODY_COMMENTS) && r_config_get_b (core->config, "graph.aeab");
 	r_config_set_b (core->config, "asm.dwarf.file", false);
-	int mw = r_config_get_i (core->config, "graph.bb.maxwidth");
+	char *body;
 	if (opts & BODY_COMMENTS) {
 		r_core_visual_toggle_decompiler_disasm (core, true, false);
-		char *res = r_core_cmd_strf (core, "pD %d @ 0x%08" PFMT64x, disas_size, addr);
-		res = r_str_replace (res, "; ", "", true);
-		// res = r_str_replace (res, "\n", "(\n)", true);
-		r_str_trim (res);
-		res = r_str_trim_lines (res);
-		if (truncated && res) {
-			char *trunc_res = r_str_newf ("%s\n...", res);
-			free (res);
-			res = trunc_res;
-		}
-		if (mw > 0) {
-			res = r_str_ansi_crop (res, 0, 0, mw, -1);
-		}
+		body = r_core_cmd_strf (core, "pD %d @ 0x%08" PFMT64x, size, addr);
+		body = r_str_replace (body, "; ", "", true);
+		r_str_trim (body);
+		body = r_str_trim_lines (body);
 		r_core_visual_toggle_decompiler_disasm (core, true, false);
-		r_config_hold_restore (hc);
-		r_config_hold_free (hc);
-		return res;
-	}
-
-	// configure options
-	if (r_config_get_b (core->config, "cfg.debug")) {
-		r_config_set_b (core->config, "asm.flags.inbytes", true);
-		o_flags_in_bytes = true;
-	}
-	r_config_set_b (core->config, "asm.lines.bb", false);
-	r_config_set_b (core->config, "asm.lines", false);
-	r_config_set_i (core->config, "asm.cmt.col", 0);
-	r_config_set_b (core->config, "asm.marks", false);
-	r_config_set_b (core->config, "asm.cmt.right", (opts & BODY_SUMMARY) || o_cmtright);
-	r_config_set_b (core->config, "asm.comments", (opts & BODY_SUMMARY) || o_comments);
-	r_config_set_b (core->config, "asm.bytes",
-		(opts &(BODY_SUMMARY | BODY_OFFSETS)) || o_bytes || o_flags_in_bytes);
-	r_config_set_b (core->config, "asm.bbmiddle", false);
-	core->print->cur_enabled = false;
-
-	const bool asm_addr = (opts & BODY_OFFSETS || opts & BODY_SUMMARY || o_graph_addr);
-	r_config_set_b (core->config, "asm.addr", asm_addr);
-
-	const bool html = r_config_get_b (core->config, "scr.html");
-	r_config_set_b (core->config, "scr.html", false);
-
-	const char *cmd = (opts & BODY_SUMMARY)? "pds": "pD";
-	const char *bbcmd = r_config_get (core->config, "cmd.bbgraph");
-	if (R_STR_ISNOTEMPTY (bbcmd)) {
-		cmd = bbcmd;
-	}
-	if (r_config_get_b (core->config, "graph.aeab")) {
-		body = r_core_cmd_strf (core, "%s 0x%08" PFMT64x, "aeab", addr);
 	} else {
-		body = r_core_cmd_strf (core, "%s %d @ 0x%08" PFMT64x, cmd, disas_size, addr);
-		if (truncated && body) {
-			char *trunc_body = r_str_newf ("%s\n...", body);
-			free (body);
-			body = trunc_body;
+		const bool flags_in_bytes = r_config_get_b (core->config, "cfg.debug")
+			|| r_config_get_b (core->config, "asm.flags.inbytes");
+		r_config_set_b (core->config, "asm.flags.inbytes", flags_in_bytes);
+		r_config_set_b (core->config, "asm.lines.bb", false);
+		r_config_set_b (core->config, "asm.lines", false);
+		r_config_set_i (core->config, "asm.cmt.col", 0);
+		r_config_set_b (core->config, "asm.marks", false);
+		r_config_set_b (core->config, "asm.cmt.right", (opts & BODY_SUMMARY) || r_config_get_b (core->config, "graph.cmtright"));
+		r_config_set_b (core->config, "asm.comments", (opts & BODY_SUMMARY) || r_config_get_b (core->config, "graph.comments"));
+		r_config_set_b (core->config, "asm.bytes", (opts & (BODY_SUMMARY | BODY_OFFSETS))
+			|| flags_in_bytes || r_config_get_b (core->config, "graph.bytes"));
+		r_config_set_b (core->config, "asm.bbmiddle", false);
+		r_config_set_b (core->config, "asm.addr", (opts & (BODY_OFFSETS | BODY_SUMMARY)) || r_config_get_b (core->config, "graph.addr"));
+		r_config_set_b (core->config, "scr.html", false);
+		core->print->cur_enabled = false;
+		const char *cmd = r_config_get (core->config, "cmd.bbgraph");
+		if (R_STR_ISEMPTY (cmd)) {
+			cmd = (opts & BODY_SUMMARY)? "pds": "pD";
 		}
+		body = aeab? r_core_cmd_strf (core, "aeab 0x%08" PFMT64x, addr)
+			: r_core_cmd_strf (core, "%s %d @ 0x%08" PFMT64x, cmd, size, addr);
 	}
-	if (mw > 0) {
-		body = r_str_ansi_crop (body, 0, 0, mw, -1);
+	if (truncated && body && !aeab) {
+		body = r_str_append (body, "\n...");
 	}
-	r_config_set_b (core->config, "scr.html", html);
-	// r_cons_canvas_bgfill (g->can, n->x, n->y, n->w, n->h, get_node_bgcolor (color, cur));
-	// body = r_str_ansi_crop (body, 0, 0, 40, 20);
-	// body = r_str_ansi_resetbg (body, Color_BGRED); // color);
-	// r_str_ansi_filter (body, NULL, NULL, -1);
-	// restore original options
-	core->print->cur_enabled = o_cursor;
+	if (width > 0 && body) {
+		char *cropped = r_str_ansi_crop (body, 0, 0, width, -1);
+		free (body);
+		body = cropped;
+	}
+	core->print->cur_enabled = cursor;
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 	return body;
@@ -2406,105 +2372,24 @@ static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fc
 		core->anal->stackptr = b->parent_stackptr;
 	}
 	char *body = get_body (core, b->addr, b->size, opts);
-	if (b->jump != UT64_MAX) {
-		if (b->jump > b->addr) {
-			RAnalBlock *jumpbb = r_anal_get_block_at (b->anal, b->jump);
-			if (jumpbb && r_list_contains (jumpbb->fcns, fcn)) {
-				if (emu && core->anal->last_disasm_reg && !jumpbb->parent_reg_arena) {
-					jumpbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
-				}
-				if (jumpbb->parent_stackptr == INT_MAX) {
-					jumpbb->parent_stackptr = core->anal->stackptr + b->stackptr;
-				}
-			}
-		}
-	}
-	if (b->fail != UT64_MAX) {
-		if (b->fail > b->addr) {
-			RAnalBlock *failbb = r_anal_get_block_at (b->anal, b->fail);
-			if (failbb && r_list_contains (failbb->fcns, fcn)) {
-				if (emu && core->anal->last_disasm_reg && !failbb->parent_reg_arena) {
-					failbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
-				}
-				if (failbb->parent_stackptr == INT_MAX) {
-					failbb->parent_stackptr = core->anal->stackptr + b->stackptr;
-				}
-			}
-		}
-	}
-	// body = r_str_ansi_resetbg (body, Color_BGRED); // color);
-	// r_cons_canvas_bgfill (g->can, n->x, n->y, n->w, n->h, get_node_bgcolor (color, cur));
-	return body;
-}
-
-static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
-	RAnalBlock *bb;
-	RAnalBlock **iter;
-	ut64 saved_gp = core->anal->gp;
-	ut8 *saved_arena = NULL;
-	int saved_arena_size = 0;
-	int saved_stackptr = core->anal->stackptr;
-	core->keep_asmqjmps = false;
-
-	const bool emu = r_config_get_b (core->config, "asm.emu");
-	if (emu) {
-		saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
-	}
-	if (!RVecAnalBlockPtr_empty (&fcn->bbs)) {
-		r_anal_function_sort_blocks (fcn);
-	}
-
-	int shortcuts = r_config_get_b (core->config, "graph.nodejmps");
-	RAGraphPalette palette;
-	graph_palette_begin (core, g, &palette);
-	R_VEC_FOREACH (&fcn->bbs, iter) {
-		bb = *iter;
-		if (bb->addr == UT64_MAX) {
+	ut64 targets[] = { b->jump, b->fail };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (targets); i++) {
+		if (targets[i] == UT64_MAX || targets[i] <= b->addr) {
 			continue;
 		}
-		char *body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena, saved_arena_size);
-		char *title = get_title (bb->addr);
-
-		// r_cons_canvas_bgfill (g->can, n->x, n->y, n->w, n->h, get_node_bgcolor (color, cur));
-		char *shortcut = shortcuts? r_core_add_asmqjmp (core, bb->addr): NULL;
-		RANode *node = r_agraph_get_node (g, title);
-		if (node) {
-			char *colored = palette.context? graph_color_body (body, &palette.saved): body;
-			if (!colored) {
-				free (body);
-				free (shortcut);
-				free (title);
-				continue;
-			}
-			ranode_set_shortcut (node, shortcut);
-			shortcut = NULL;
-			free (node->body);
-			node->body = colored;
-			ranode_cache_colors (node, palette.context? body: NULL);
-			if (palette.context) {
-				free (body);
-			}
-			R_FREE (node->color);
-			if (bb->color.r || bb->color.g || bb->color.b) {
-				node->color = r_cons_rgb_str (core->cons, NULL, -1, &bb->color);
-			}
-		} else {
-			free (body);
+		RAnalBlock *target = r_anal_get_block_at (b->anal, targets[i]);
+		if (!target || !r_list_contains (target->fcns, fcn)) {
+			continue;
 		}
-		free (shortcut);
-		free (title);
-		core->keep_asmqjmps = true;
-	}
-	graph_palette_end (&palette);
-
-	if (emu) {
-		core->anal->gp = saved_gp;
-		if (saved_arena) {
-			r_reg_arena_poke (core->anal->reg, saved_arena, saved_arena_size);
-			R_FREE (saved_arena);
+		if (emu && core->anal->last_disasm_reg && !target->parent_reg_arena) {
+			target->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
+		}
+		if (target->parent_stackptr == INT_MAX) {
+			target->parent_stackptr = core->anal->stackptr + b->stackptr;
 		}
 	}
-	core->anal->stackptr = saved_stackptr;
+	return body;
 }
 
 static void fold_asm_trace(RCore *core, RAGraph *g) {
@@ -5303,10 +5188,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			}
 			g->edgemode = r_config_get_i (core->config, "graph.edges");
 			if (!agraph_recolor_nodes (g, core)) {
-				fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
-				if (fcn) {
-					get_bbupdate (g, core, fcn);
-				}
+				g->need_reload_nodes = true;
 			}
 			break;
 		case '$':
@@ -5416,10 +5298,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			{
 				showcursor (core, true);
 				r_core_visual_define (core, "", 0);
-				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
-				if (fcn) {
-					get_bbupdate (g, core, fcn);
-				}
+				g->need_reload_nodes = true;
 				showcursor (core, false);
 			}
 			break;

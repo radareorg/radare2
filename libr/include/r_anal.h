@@ -1013,7 +1013,7 @@ static inline bool r_anal_block_contains(RAnalBlock *bb, ut64 addr) {
 
 // Split the block at the given address into two blocks.
 // bb will stay the first block, the second block will be returned (or NULL on failure)
-// The returned block will always be refd, i.e. it is necessary to always call r_anal_block_unref() on the return value!
+// The returned block will always be refd, i.e. it is necessary to always call r_unref() on the return value!
 R_API RAnalBlock *r_anal_block_split(RAnalBlock *bb, ut64 addr);
 
 static inline bool r_anal_block_is_contiguous(RAnalBlock *a, RAnalBlock *b) {
