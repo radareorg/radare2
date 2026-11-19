@@ -553,3 +553,23 @@ EXPECT=<<EOF
 vaddr=0x00000f81 paddr=0x00000f81
 EOF
 RUN
+
+NAME=mach0 object initial seek at its first executable section
+FILE=bins/mach0/watchos-relocs.obj
+CMDS=<<EOF
+s
+pi 1
+EOF
+EXPECT=<<EOF
+0x0
+push {r7, lr}
+EOF
+RUN
+
+NAME=mach0 aot initial seek at __TEXT.__text
+FILE=bins/mach0/libswiftCoreImage.dylib.aot
+CMDS=s
+EXPECT=<<EOF
+0x1000
+EOF
+RUN
