@@ -4,3 +4,15 @@ CMDS=q!
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=PE: foldedhdr.exe SizeOfRawData rounded up to FileAlignment
+FILE=bins/pe/foldedhdr.exe
+CMDS=<<EOF
+iS
+EOF
+EXPECT=<<EOF
+nth paddr        size vaddr        vsize perm flags      type name
+------------------------------------------------------------------
+0   0x00000200  0x200 0x00401000  0x1000 --w- 0x80000000 ---- sect_0
+EOF
+RUN

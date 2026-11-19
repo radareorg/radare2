@@ -4552,6 +4552,12 @@ static bool PE_(r_bin_pe_load_sections)(RBinPEObj *pe) {
 					section.paddr -= diff;
 					section.size += diff;
 				}
+				// the loader reads SizeOfRawData rounded up to FileAlignment
+				const ut64 rem = section.size % fa;
+				if (rem && pe->size > 0 && section.paddr < (ut64)pe->size) {
+					const ut64 avail = (ut64)pe->size - section.paddr;
+					section.size = R_MIN (section.size + fa - rem, R_MAX (section.size, avail));
+				}
 			}
 		}
 		section.flags = shdr[i].Characteristics;
