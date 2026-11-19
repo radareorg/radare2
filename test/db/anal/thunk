@@ -100,13 +100,13 @@ s 0x10
 afia+ NT
 afiaq
 afij~{[0].attrs}
-afiJ~{[0].attribute_names[0]}
-afiJ~{[0].attribute_names[2]}
+afiJ~{[0].attr[0]}
+afiJ~{[0].attr[2]}
 afia- T
 afiaq
 afia= IL
 afiaq
-afiJ~{[0].attribute_names[0]}
+afiJ~{[0].attr[0]}
 afia+ thunk,static
 afl*~afia
 afia=

@@ -3221,7 +3221,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, bool nam
 	pj_ks (pj, "attrs", attrs);
 	free (attrs);
 	if (named_attrs) {
-		pj_ka (pj, "attribute_names");
+		pj_ka (pj, "attr");
 		const RAnalFcnAttrInfo *ai;
 		size_t i;
 		for (i = 0; (ai = r_anal_function_attr_info (i)); i++) {
