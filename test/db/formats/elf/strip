@@ -43,3 +43,16 @@ __gmon_start__
 uncaps   false
 EOF
 RUN
+
+NAME=ELF: stripped static constructors are entries
+FILE=bins/elf/static-glibc-2.27
+CMDS=iee
+EXPECT=<<EOF
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000b20 0x00400b20 0x000b6140 0x006b6140 init
+0x000005a0 0x004005a0 0x000b6148 0x006b6148 init
+0x00000ae0 0x00400ae0 0x000b6150 0x006b6150 fini
+0x00000570 0x00400570 0x000b6158 0x006b6158 fini
+EOF
+RUN

@@ -1349,7 +1349,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=zbr try match 5 but only 4
+NAME=zbr match 5 in a stripped static binary
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 aa
@@ -1360,9 +1360,10 @@ zbr sym.exact ~[5]
 EOF
 EXPECT=<<EOF
 fcn.00410210
+entry.init1
+fcn.0048f380
 main
 entry0
-fcn.00400de0
 EOF
 RUN
 
