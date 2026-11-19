@@ -2574,14 +2574,17 @@ bool Elf_(is_static)(ELFOBJ *eo) {
 	if (!eo->phdr) {
 		return false;
 	}
+	bool dynamic = false;
 	size_t i;
 	for (i = 0; i < eo->phnum; i++) {
 		const Elf_(Word) pt = eo->phdr[i].p_type;
-		if (pt == PT_INTERP || pt == PT_DYNAMIC) {
+		if (pt == PT_INTERP) {
 			return false;
 		}
+		dynamic |= pt == PT_DYNAMIC;
 	}
-	return true;
+	// a static PIE keeps PT_DYNAMIC only to relocate itself
+	return !dynamic || ((eo->dyn_info.dt_flags_1 & DF_1_PIE) && RVecElfOff_empty (&eo->dyn_info.dt_needed));
 }
 
 char* Elf_(get_data_encoding)(ELFOBJ *eo) {

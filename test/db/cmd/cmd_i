@@ -4207,3 +4207,13 @@ EXPECT=<<EOF
 static   false
 EOF
 RUN
+
+NAME=i static true for a static PIE
+FILE=bins/elf/rust_nonnull_x86_64
+CMDS=<<EOF
+i~^static
+EOF
+EXPECT=<<EOF
+static   true
+EOF
+RUN
