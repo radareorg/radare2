@@ -2,7 +2,7 @@
 
 #define R_LOG_ORIGIN "core.anal"
 
-#include <r_core.h>
+#include <r_core_priv.h>
 #include <r_anal_priv.h>
 #include <r_hash.h>
 #include "cbin.h"
@@ -1477,7 +1477,19 @@ R_API void r_core_anal_hint_print(RCore *core, ut64 addr, int mode) {
 	r_rbtree_free (tree, hint_node_free, NULL);
 }
 
-static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
+static char *core_graph_block_body(RCore *core, RAnalBlock *bb, HtUP *decompiled) {
+	if (!r_config_get_b (core->config, "graph.body")) {
+		return strdup ("");
+	}
+	const char *cmd = r_config_get (core->config, "cmd.bbgraph");
+	if (r_str_eq (cmd, "pdcb")) {
+		RStrBuf *body = decompiled? ht_up_find (decompiled, bb->addr, NULL): NULL;
+		return strdup (body? r_strbuf_get (body): "");
+	}
+	return r_core_cmd_str_at (core, bb->addr, R_STR_ISEMPTY (cmd)? "pdb": cmd);
+}
+
+static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts, HtUP *decompiled) {
 	const bool is_html = core->cons->context->is_html;
 	const bool is_json = opts & R_CORE_ANAL_JSON;
 	char *cmdstr = NULL, *filestr = NULL, *str = NULL;
@@ -1507,6 +1519,8 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 			}
 		}
 		cmdstr = r_strbuf_drain (sb);
+	} else if (!(opts & R_CORE_ANAL_GRAPHDIFF) && R_STR_ISNOTEMPTY (r_config_get (core->config, "cmd.bbgraph"))) {
+		cmdstr = core_graph_block_body (core, bb, decompiled);
 	} else if (opts & R_CORE_ANAL_STAR) {
 		str = r_core_cmd_strf (core, "'@0x%08"PFMT64x"'pdb %"PFMT64u, bb->addr, bb->size);
 	} else if (opts & R_CORE_ANAL_GRAPHBODY) {
@@ -1698,6 +1712,10 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 	bool color_current = r_config_get_i (core->config, "graph.gv.current");
 	char *str;
 	int nodes = 0;
+	const bool custom = !(opts & (R_CORE_ANAL_GRAPHDIFF | R_CORE_ANAL_GRAPHLINES))
+		&& !is_keva && R_STR_ISNOTEMPTY (r_config_get (core->config, "cmd.bbgraph"));
+	HtUP *decompiled = custom && r_config_get_b (core->config, "graph.body")
+		&& r_str_eq (r_config_get (core->config, "cmd.bbgraph"), "pdcb")? r_core_pdc_blocks (core, fcn): NULL;
 	R_VEC_FOREACH (&fcn->bbs, iter) {
 		bbi = *iter;
 		if (is_keva) {
@@ -1708,6 +1726,11 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 			pj_o (pj);
 			pj_kn (pj, "addr", bbi->addr);
 			pj_kn (pj, "size", bbi->size);
+			if (custom) {
+				char *body = core_graph_block_body (core, bbi, decompiled);
+				pj_ks (pj, "body", r_str_get (body));
+				free (body);
+			}
 			if (bbi->jump != UT64_MAX) {
 				pj_kn (pj, "jump", bbi->jump);
 			}
@@ -1778,7 +1801,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 			pj_end (pj);
 			continue;
 		}
-		if ((str = core_anal_graph_label (core, bbi, opts))) {
+		if ((str = core_anal_graph_label (core, bbi, opts, decompiled))) {
 			if (opts & R_CORE_ANAL_GRAPHDIFF) {
 				const bool ismatch = (bbi->diff && bbi->diff->type == R_ANAL_DIFF_TYPE_MATCH);
 				const bool isunmatch = (bbi->diff && bbi->diff->type == R_ANAL_DIFF_TYPE_UNMATCH);
@@ -1834,6 +1857,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 								free (body_b64);
 								free (title);
 								r_diff_free (d);
+								ht_up_free (decompiled);
 								return false;
 							}
 							body_b64 = r_str_prepend (body_b64, "base64:");
@@ -1859,6 +1883,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 								free (body_b64);
 								free (title);
 								r_diff_free (d);
+								ht_up_free (decompiled);
 								return false;
 							}
 							body_b64 = r_str_prepend (body_b64, "base64:");
@@ -1908,6 +1933,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 						if (!title || !body_b64) {
 								free (body_b64);
 								free (title);
+								ht_up_free (decompiled);
 								return false;
 						}
 						body_b64 = r_str_prepend (body_b64, "base64:");
@@ -1936,6 +1962,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 			free (str);
 		}
 	}
+	ht_up_free (decompiled);
 	return nodes;
 }
 
@@ -2201,20 +2228,23 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 	r_config_set_i (core->config, "asm.lines.fcn", 0);
 	r_config_set_i (core->config, "asm.bytes", 0);
 
+	HtUP *decompiled = r_config_get_b (core->config, "graph.body")
+		&& r_str_eq (r_config_get (core->config, "cmd.bbgraph"), "pdcb")? r_core_pdc_blocks (core, fcn): NULL;
 	R_VEC_FOREACH (&fcn->bbs, iter) {
 		bb = *iter;
 		if (bb->addr == UT64_MAX) {
 			continue;
 		}
 		char *title = get_title (bb->addr);
-		char *body = r_core_cmd_strf (core, "pdb @ 0x%08"PFMT64x, bb->addr);
-		char *body_b64 = r_base64_encode_dyn ((const ut8*)body, -1);
+		char *body = core_graph_block_body (core, bb, decompiled);
+		char *body_b64 = body? r_base64_encode_dyn ((const ut8 *)body, -1): NULL;
 		if (!title || !body || !body_b64) {
 			free (body_b64);
 			free (body);
 			free (title);
 			r_config_hold_restore (hc);
 			r_config_hold_free (hc);
+			ht_up_free (decompiled);
 			return false;
 		}
 		body_b64 = r_str_prepend (body_b64, "base64:");
@@ -2226,6 +2256,7 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
+	ht_up_free (decompiled);
 
 	R_VEC_FOREACH (&fcn->bbs, iter) {
 		bb = *iter;

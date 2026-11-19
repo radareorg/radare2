@@ -384,9 +384,19 @@ static int context_graph_option_cb(void *user) {
 	const GraphMenuOption *option = &graph_menu_options[parent->selectedIndex];
 	RPanel *panel = r_panels_get_cur_panel (core->panels);
 	if (option->key) {
-		int count = option->states[2]? 3: 2;
-		int value = R_CLAMP (r_config_get_i (core->config, option->key), 0, count - 1);
-		r_config_set_i (core->config, option->key, (value + 1) % count);
+		RConfigNode *node = r_config_node_get (core->config, option->key);
+		int count = 0, value = -1;
+		while (count < R_ARRAY_SIZE (option->states) && option->states[count]) {
+			if (r_str_eq (node->value, option->states[count])) {
+				value = count;
+			}
+			count++;
+		}
+		if (r_config_node_is_str (node)) {
+			r_config_set (core->config, option->key, option->states[(value + 1) % count]);
+		} else {
+			r_config_set_i (core->config, option->key, (node->i_value + 1) % count);
+		}
 		r_panels_refresh_tabs (core, true);
 	} else {
 		bool tiny = !strcmp (panel->model->cmd, "agft");
@@ -406,7 +416,9 @@ static void r_panels_graph_menu_fill(RCore *core, RPanel *panel, RPanelsMenuItem
 		const GraphMenuOption *option = &graph_menu_options[i];
 		int value = option->key? r_config_get_i (core->config, option->key): tiny;
 		int max = option->states[2]? 2: 1;
-		char *name = r_str_newf ("%s (%s)", option->name, option->states[R_CLAMP (value, 0, max)]);
+		RConfigNode *node = option->key? r_config_node_get (core->config, option->key): NULL;
+		const char *state = node && r_config_node_is_str (node)? node->value: option->states[R_CLAMP (value, 0, max)];
+		char *name = r_str_newf ("%s (%s)", option->name, R_STR_ISEMPTY (state)? "disassembly": state);
 		RPanelsMenuItem *item = r_panels_menu_item_add (parent, name, NULL, NULL, context_graph_option_cb);
 		free (name);
 		if (!item) {

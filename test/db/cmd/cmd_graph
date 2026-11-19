@@ -664,6 +664,36 @@ iretd
 EOF
 RUN
 
+NAME=cmd.bbgraph renders decompilation without importing metadata
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx b80100000085ff740483c002c331c0c3
+af
+CCu user-note @ 9
+CL 0x9 graph.c:12 original-source
+e cmd.bbgraph=pdcb
+agf~eax += 2~?
+agf~mov eax,add eax~?
+CC. @ 9
+CLj
+e cmd.bbgraph=
+agf~add eax~?
+e cmd.bbgraph=pdcb
+$backendj=base64:eyJjb2RlIjoiZmlyc3QoKTtcbnJpZ2h0KCk7XG5vdXRzaWRlKCk7XG4iLCJhbm5vdGF0aW9ucyI6W3sidHlwZSI6Im9mZnNldCIsIm9mZnNldCI6NSwic3RhcnQiOjAsImVuZCI6NX0seyJ0eXBlIjoib2Zmc2V0Iiwib2Zmc2V0Ijo5LCJzdGFydCI6OSwiZW5kIjoxNH0seyJ0eXBlIjoib2Zmc2V0Iiwib2Zmc2V0IjozMiwic3RhcnQiOjE4LCJlbmQiOjI1fSx7InR5cGUiOiJvZmZzZXQiLCJvZmZzZXQiOjAsInN0YXJ0IjoxMDAwLCJlbmQiOjIwMDB9XX0=
+e cmd.pdc=$backend
+agf~first,right,outside~?
+EOF
+EXPECT=<<EOF
+1
+0
+user-note
+[{"file":"graph.c","line":12,"addr":9}]
+1
+2
+EOF
+RUN
+
 NAME=fanout nodes in the same layer use separate bend lanes
 FILE=-
 CMDS=<<EOF
@@ -701,5 +731,44 @@ EXPECT=<<EOF
 .--------------------.    .--------------------.    .--------------------.    .--------------------.
 |  f                 |    |  d                 |    |  e                 |    |  c                 |
 `--------------------'    `--------------------'    `--------------------'    `--------------------'
+EOF
+RUN
+
+NAME=cmd.bbgraph supports block commands and restores their seek and temporary settings
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 31c0c3
+af
+CCu graph-note @ 1
+e cmd.bbgraph=CCb
+agf~graph-note~?
+agfj~graph-note~?
+.agf*
+aggj~graph-note~?
+e cmd.bbgraph=?e renderer
+agf~renderer~?
+agf~renderer 3~?
+e cmd.bbgraph=pdsb
+agf~mov eax~?
+"e cmd.bbgraph=pdb @e:asm.esil=true"
+e asm.esil=false
+agf~ret~?
+e asm.esil
+s
+e graph.body=false
+agfj~"body":""~?
+EOF
+EXPECT=<<EOF
+1
+1
+1
+1
+0
+0
+0
+false
+0x0
+1
 EOF
 RUN

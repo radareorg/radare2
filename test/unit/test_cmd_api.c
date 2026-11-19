@@ -344,6 +344,7 @@ typedef struct {
 } CorePluginState;
 
 static CorePluginState core_plugin_state;
+static const char *core_plugin_decompiler_json;
 
 static bool test_core_plugin_init(RCorePluginSession *cps) {
 	core_plugin_state = (CorePluginState) { 0 };
@@ -368,6 +369,9 @@ static bool test_core_plugin_legacy_call(RCorePluginSession *cps, const char *in
 	CorePluginState *state = cps->data;
 	if (!strcmp (input, "legacyplug") || !strcmp (input, "pddA")) {
 		state->legacy_calls++;
+		if (core_plugin_decompiler_json && !strcmp (input, "pddA")) {
+			r_cons_print (cps->core->cons, core_plugin_decompiler_json);
+		}
 		return true;
 	}
 	return false;
@@ -463,6 +467,61 @@ static bool test_r_cmd_alias_growth(void) {
 	mu_end;
 }
 
+static bool test_graph_block_decompiler(void) {
+	RCore *core = r_core_new ();
+	mu_assert_notnull (r_core_file_open (core, "malloc://64", R_PERM_RWX, 0), "open graph memory");
+	mu_assert_true (r_core_bin_load (core, "malloc://64", 0), "load graph memory");
+	r_config_set (core->config, "asm.arch", "x86");
+	r_config_set_i (core->config, "asm.bits", 64);
+	r_config_set_i (core->config, "scr.color", 0);
+	r_core_cmd0 (core, "wx b80100000085ff740483c002c331c0c3; af");
+	RCorePlugin plugin = {
+		.meta = { .name = "test-block-decompiler", .license = "MIT" },
+		.init = test_core_plugin_init,
+		.call = test_core_plugin_legacy_call,
+	};
+	mu_assert_true (r_core_plugin_add (core->rcmd, &plugin), "add decompiler backend");
+	core_plugin_decompiler_json = "{\"code\":\"one();\\ntwo();\\n\",\"annotations\":["
+		"{\"type\":\"offset\",\"offset\":0,\"start\":0,\"end\":6},"
+		"{\"type\":\"offset\",\"offset\":9,\"start\":7,\"end\":13}]}";
+	r_config_set (core->config, "cmd.pdc", "pdd");
+	r_config_set (core->config, "cmd.bbgraph", "pdcb");
+	char *output = r_core_cmd_str (core, "pdcb @ 12");
+	mu_assert_streq_free (output, "two();\n", "pdcb prints only the current block");
+	output = r_core_cmd_str (core, "agf");
+	mu_assert_notnull (strstr (output, "one();"), "first graph block rendered");
+	mu_assert_notnull (strstr (output, "two();"), "second graph block rendered");
+	free (output);
+	mu_assert_eq (core_plugin_state.legacy_calls, 2, "ASCII graph decompiles once per function");
+	output = r_core_cmd_str (core, "agfj");
+	RJson *json = r_json_parsedup (output);
+	free (output);
+	mu_assert_notnull (json, "parse graph JSON");
+	const RJson *blocks = r_json_get (r_json_item (json, 0), "blocks");
+	mu_assert_streq (r_json_get_str (r_json_item (blocks, 1), "body"), "two();\n", "JSON contains selected block content");
+	mu_assert_streq (r_json_get_str (r_json_item (blocks, 2), "body"), "", "optimized away block stays empty");
+	r_json_free (json);
+	mu_assert_eq (core_plugin_state.legacy_calls, 3, "JSON graph decompiles once per function");
+	output = r_core_cmd_str (core, "agf*");
+	mu_assert_notnull (strstr (output, "agn 0x9 base64:dHdvKCk7Cg=="), "export uses selected block contents");
+	free (output);
+	mu_assert_eq (core_plugin_state.legacy_calls, 4, "graph export decompiles once per function");
+	r_config_set_b (core->config, "graph.body", false);
+	output = r_core_cmd_str (core, "agf");
+	free (output);
+	mu_assert_eq (core_plugin_state.legacy_calls, 4, "hidden graph bodies skip decompilation");
+	r_config_set_b (core->config, "graph.body", true);
+	core_plugin_decompiler_json = "{\"code\":\"fresh();\",\"annotations\":[{\"type\":\"offset\",\"offset\":0,\"start\":0,\"end\":8}]}";
+	output = r_core_cmd_str (core, "pdcb");
+	mu_assert_streq_free (output, "fresh();", "new request refreshes decompilation and handles an unterminated line");
+	mu_assert_streq (r_config_get (core->config, "cmd.bbgraph"), "pdcb", "graph renderer restored after decompilation");
+	mu_assert_streq (r_config_get (core->config, "cmd.pdc"), "pdd", "decompiler selection restored");
+	mu_assert_true (r_core_plugin_remove (core->rcmd, &plugin), "remove decompiler backend");
+	core_plugin_decompiler_json = NULL;
+	r_core_free (core);
+	mu_end;
+}
+
 static int all_tests(void) {
 	mu_run_test (test_r_cmd_register);
 	mu_run_test (test_r_cmd_unregister);
@@ -476,6 +535,7 @@ static int all_tests(void) {
 	mu_run_test (test_r_cmd_unregister_current);
 	mu_run_test (test_r_core_plugin_context_callback);
 	mu_run_test (test_r_core_plugin_fini);
+	mu_run_test (test_graph_block_decompiler);
 	return tests_passed != tests_run;
 }
 

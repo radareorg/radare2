@@ -76,7 +76,7 @@ static RCoreHelpMessage help_msg_visual_graph = {
 	"u/U", "undo/redo seek",
 	"V", "toggle basicblock / call graphs",
 	"w", "toggle between movements speed 1 and graph.scroll",
-	// W            AVAILABLE
+	"W", "toggle disassembly/decompiler blocks (cmd.bbgraph, cmd.pdc)",
 	"x/X", "jump to xref/ref",
 	"y", "toggle graph.comments",
 	"Y", "toggle tiny graph",
@@ -2301,7 +2301,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 		"asm.cmt.col", "asm.marks", "asm.addr", "asm.dwarf.file",
 		"asm.comments", "asm.cmt.right", "asm.lines.bb", NULL);
 	const int maxsize = r_config_get_i (core->config, "graph.bb.maxsize");
-	const bool truncated = maxsize > 0 && size > maxsize;
+	const bool truncated = maxsize > 0 && size > maxsize && R_STR_ISEMPTY (r_config_get (core->config, "cmd.bbgraph"));
 	if (truncated) {
 		size = maxsize;
 	}
@@ -2334,11 +2334,13 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 		r_config_set_b (core->config, "scr.html", false);
 		core->print->cur_enabled = false;
 		const char *cmd = r_config_get (core->config, "cmd.bbgraph");
-		if (R_STR_ISEMPTY (cmd)) {
+		if (R_STR_ISNOTEMPTY (cmd)) {
+			body = r_core_cmd_str_at (core, addr, cmd);
+		} else {
 			cmd = (opts & BODY_SUMMARY)? "pds": "pD";
+			body = aeab? r_core_cmd_strf (core, "aeab 0x%08" PFMT64x, addr)
+				: r_core_cmd_strf (core, "%s %d @ 0x%08" PFMT64x, cmd, size, addr);
 		}
-		body = aeab? r_core_cmd_strf (core, "aeab 0x%08" PFMT64x, addr)
-			: r_core_cmd_strf (core, "%s %d @ 0x%08" PFMT64x, cmd, size, addr);
 	}
 	if (truncated && body && !aeab) {
 		body = r_str_append (body, "\n...");
@@ -2354,7 +2356,13 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	return body;
 }
 
-static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fcn, bool emu, ut64 saved_gp, ut8 *saved_arena, int saved_arena_size) {
+static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fcn, bool emu, ut64 saved_gp, ut8 *saved_arena, int saved_arena_size, HtUP *decompiled) {
+	if (r_str_eq (r_config_get (core->config, "cmd.bbgraph"), "pdcb")) {
+		RStrBuf *body = decompiled? ht_up_find (decompiled, b->addr, NULL): NULL;
+		const char *text = body? r_strbuf_get (body): "";
+		int width = r_config_get_i (core->config, "graph.bb.maxwidth");
+		return width > 0? r_str_ansi_crop (text, 0, 0, width, -1): strdup (text);
+	}
 	if (emu) {
 		core->anal->gp = saved_gp;
 		if (b->parent_reg_arena) {
@@ -2525,6 +2533,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		r_cons_break_push (core->cons, NULL, NULL);
 	}
 	RAGraphPalette palette;
+	HtUP *decompiled = g->show_node_body && r_str_eq (r_config_get (core->config, "cmd.bbgraph"), "pdcb")? r_core_pdc_blocks (core, fcn): NULL;
 	graph_palette_begin (core, g, &palette);
 	R_VEC_FOREACH (&fcn->bbs, iter) {
 		bb = *iter;
@@ -2537,7 +2546,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		if (few && !isbbfew (curbb, bb)) {
 			continue;
 		}
-		char *body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena, saved_arena_size);
+		char *body = g->show_node_body? get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena, saved_arena_size, decompiled): strdup ("");
 		char *title = get_title (bb->addr);
 		char *color = (bb->color.r || bb->color.g || bb->color.b)
 			? r_cons_rgb_str (core->cons, NULL, -1, &bb->color)
@@ -2590,6 +2599,7 @@ interrupted:
 
 cleanup:
 	graph_palette_end (&palette);
+	ht_up_free (decompiled);
 	if (emu) {
 		core->anal->gp = saved_gp;
 		if (saved_arena) {
@@ -2643,7 +2653,7 @@ static bool get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 				size = bb->size;
 			}
 
-			char *body = get_body (core, ref->addr, size, mode2opts (g));
+			char *body = g->show_node_body? get_body (core, ref->addr, size, mode2opts (g)): strdup ("");
 			title = get_title (ref->addr);
 
 			RANode *node = agraph_add_colored_node (g, title, body, NULL, &palette);
@@ -5201,6 +5211,10 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			break;
 		case 'y':
 			r_config_toggle (core->config, "graph.comments");
+			g->need_reload_nodes = true;
+			break;
+		case 'W':
+			r_config_set (core->config, "cmd.bbgraph", r_str_eq (r_config_get (core->config, "cmd.bbgraph"), "pdcb")? "": "pdcb");
 			g->need_reload_nodes = true;
 			break;
 		case '[':

@@ -1035,9 +1035,9 @@ static bool cb_emuskip(void *user, void *data) {
 	return true;
 }
 
-static bool cb_tableformat(void *user, void *data) {
+static bool cb_options(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
-	if (*node->value == '?') {
+	if (!strcmp (node->value, "?")) {
 		print_node_options (user, node);
 		return false;
 	}
@@ -4630,7 +4630,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETS ("cmd.open", "", "run when file is opened");
 	SETS ("cmd.exit", "", "run command before leaving the shell (atexit)");
 	SETS ("cmd.load", "", "run when binary is loaded");
-	SETS ("cmd.bbgraph", "", "show the output of this command in the graph basic blocks");
+	SETCB ("cmd.bbgraph", "", &cb_options, "basic block renderer (pdcb, CCb, CLLb, pdsb, or any command; empty for disassembly)");
+	SETOPTIONS (r_config_node_get (cfg, "cmd.bbgraph"), "pdb", "pdcb", "CCb", "CLLb", "pdsb", "pdb @e:asm.esil=true", NULL);
 	RConfigNode *cmdpdc = NODECB ("cmd.pdc", "", &cb_cmdpdc);
 	SETDESC (cmdpdc, "select pseudo-decompiler command to run after pdc");
 	update_cmdpdc_options (core, cmdpdc);
@@ -4898,7 +4899,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* table encodings */
 	SETI ("cfg.table.maxcol", 0, "Define maximum column width in tables");
 	SETB ("cfg.table.wrap", "false", "Wrap text to not exceed maxcol");
-	n = SETCB ("cfg.table.format", "", cb_tableformat, "Change the default output format for tables");
+	n = SETCB ("cfg.table.format", "", cb_options, "Change the default output format for tables");
 	SETOPTIONS (n, "simple", NULL);
 	SETOPTIONS (n, "fancy", NULL);
 	SETOPTIONS (n, "html", NULL);

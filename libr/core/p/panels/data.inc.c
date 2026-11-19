@@ -211,6 +211,7 @@ static const GraphMenuOption graph_menu_options[] = {
 	{ "Node bodies", "graph.body", { "off", "on" } },
 	{ "Node titles", "graph.ntitles", { "off", "on" } },
 	{ "Comments", "graph.comments", { "off", "on" } },
+	{ "Contents", "cmd.bbgraph", { "", "pdcb", "CCb", "CLLb", "pdsb", "pdb @e:asm.esil=true" } },
 	{ "Edges", "graph.edges", { "off", "simple", "avoid collisions" } },
 };
 

@@ -600,6 +600,9 @@ e graph.layout
 <=jqQ
 $capture > /dev/null
 cat $panel~Cache (on)~?
+"<\x1b[<2;10;6Mjljjjjj Q"
+v @e:scr.interactive=true > /dev/null
+e cmd.bbgraph
 EOF
 EXPECT=<<EOF
 1
@@ -607,6 +610,7 @@ false
 0
 1
 1
+pdcb
 EOF
 RUN
 
