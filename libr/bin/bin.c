@@ -226,6 +226,7 @@ R_IPI void r_bin_reloc_slot_row(RVecRBinReloc *relocs, const RBinReloc *site, ut
 	if (row) {
 		*row = copy;
 		row->to_slot = false;
+		row->unwritten = false;
 		row->vaddr = vaddr;
 		row->import = copy.import? r_bin_import_clone (copy.import): NULL;
 	}
