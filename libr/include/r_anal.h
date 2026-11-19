@@ -1137,6 +1137,23 @@ static inline bool r_anal_function_rename_unique(RAnalFunction *fcn, const char 
 	return renamed;
 }
 
+// R2_640: make this public; a lone jmp thunk (j.*) hands the call over to its target untouched
+static inline RAnalFunction *r_anal_function_thunk_target(RAnalFunction *fcn) {
+	int depth;
+	for (depth = 0; depth < 4 && RVecAnalBlockPtr_length (&fcn->bbs) == 1; depth++) {
+		RAnalBlock *bb = *RVecAnalBlockPtr_at (&fcn->bbs, 0);
+		if (bb->ninstr != 1 || bb->jump == UT64_MAX || bb->fail != UT64_MAX) {
+			break;
+		}
+		RAnalFunction *target = r_anal_get_function_at (fcn->anal, bb->jump);
+		if (!target || target == fcn) {
+			break;
+		}
+		fcn = target;
+	}
+	return fcn;
+}
+
 R_API void r_anal_function_sort_blocks(RAnalFunction *fcn);
 R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb);
 R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb);

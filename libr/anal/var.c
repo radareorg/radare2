@@ -1017,13 +1017,6 @@ R_API RAnalVarAccess *r_anal_var_get_access_at(RAnalVar *var, ut64 addr) {
 }
 
 R_API void r_anal_var_add_constraint(RAnalVar *var, R_UNOWNED RAnalVarConstraint *constraint) {
-	RAnalVarConstraint *c;
-	// type matching runs again on a function (aaft revisits), and the same check adds nothing
-	R_VEC_FOREACH (&var->constraints, c) {
-		if (c->cond == constraint->cond && c->val == constraint->val) {
-			return;
-		}
-	}
 	RVecAnalVarConstraint_push_back (&var->constraints, constraint);
 }
 

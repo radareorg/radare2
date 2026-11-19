@@ -1544,21 +1544,27 @@ typedef struct {
 
 // a revisit needs an arg type to change and types only get more specific: this only stops a cycle that keeps flipping
 #define AAFT_MAX_RUNS 16
+// the j.* thunks in a row r_anal_function_thunk_target follows
+#define AAFT_MAX_THUNKS 4
 
-// the function a call or a tail jump (like the j.* thunks) enters; a jump inside the function lands on one of its blocks
-static RAnalFunction *aaft_callee(RCore *core, const RAnalRef *ref) {
+// a call or a tail jump (normal ones are jump refs, the j.* thunks code refs) enters the function it refers to
+static bool aaft_enters(const RAnalRef *ref) {
 	const int type = R_ANAL_REF_TYPE_MASK (ref->type);
-	if (type != R_ANAL_REF_TYPE_CALL && type != R_ANAL_REF_TYPE_CODE) {
-		return NULL;
-	}
-	return r_anal_get_function_at (core->anal, ref->addr);
+	return type == R_ANAL_REF_TYPE_CALL || type == R_ANAL_REF_TYPE_CODE || type == R_ANAL_REF_TYPE_JUMP;
+}
+
+// the function whose signature the call reads, past the j.* thunks like the type matcher; a jump inside the function lands on one of its blocks
+static RAnalFunction *aaft_callee(RCore *core, const RAnalRef *ref) {
+	RAnalFunction *fcn = aaft_enters (ref)? r_anal_get_function_at (core->anal, ref->addr): NULL;
+	return fcn? r_anal_function_thunk_target (fcn): NULL;
 }
 
 static ut64 aaft_next_callee(RCore *core, AaftFrame *frame, SetU *seen) {
 	while (frame->refs && frame->next < RVecAnalRef_length (frame->refs)) {
 		const RAnalRef *ref = RVecAnalRef_at (frame->refs, frame->next++);
-		if (!set_u_contains (seen, ref->addr) && aaft_callee (core, ref)) {
-			return ref->addr;
+		RAnalFunction *callee = aaft_callee (core, ref);
+		if (callee && !set_u_contains (seen, callee->addr)) {
+			return callee->addr;
 		}
 	}
 	return UT64_MAX;
@@ -1653,18 +1659,22 @@ static void aaft_queue(AaftState *st, ut64 addr) {
 	}
 }
 
-static void aaft_queue_callers(AaftState *st, RAnalFunction *fcn, ut64 skip) {
+// the functions that read the signature of fcn, also through the j.* thunks to it
+static void aaft_queue_callers(AaftState *st, RAnalFunction *fcn, int thunks) {
 	RVecAnalRef *xrefs = r_anal_function_get_xrefs (fcn);
 	if (!xrefs) {
 		return;
 	}
 	RAnalRef *ref;
 	R_VEC_FOREACH (xrefs, ref) {
-		const int type = R_ANAL_REF_TYPE_MASK (ref->type);
-		RAnalFunction *caller = (type == R_ANAL_REF_TYPE_CALL || type == R_ANAL_REF_TYPE_CODE)
-			? r_anal_get_fcn_in (st->core->anal, ref->at, 0): NULL;
-		if (caller && caller->addr != skip) {
-			aaft_queue (st, caller->addr);
+		// an xref is at the function it refers to and comes from addr
+		RAnalFunction *caller = aaft_enters (ref)? r_anal_get_fcn_in (st->core->anal, ref->addr, 0): NULL;
+		if (!caller) {
+			continue;
+		}
+		aaft_queue (st, caller->addr);
+		if (thunks > 0 && caller != fcn && r_anal_function_thunk_target (caller) != caller) {
+			aaft_queue_callers (st, caller, thunks - 1);
 		}
 	}
 	RVecAnalRef_free (xrefs);
@@ -1695,17 +1705,18 @@ static bool aaft_run(AaftState *st, ut64 addr) {
 		R_VEC_FOREACH (&callees, entry) {
 			RAnalFunction *callee = r_anal_get_function_at (core->anal, entry->addr);
 			char *now = callee? aaft_arg_types (core, callee): NULL;
-			// the call retyped the args of a user callee: its callees and its other callers read the old ones
+			// the call retyped the args of a user callee: its callees and its callers, this one too, read the old ones
 			if (now && strcmp (now, entry->types)) {
 				__add_vars_sdb (core, callee);
+				aaft_queue_callers (st, callee, AAFT_MAX_THUNKS);
+				// queued last, it runs before its callers read its signature again
 				aaft_queue (st, callee->addr);
-				aaft_queue_callers (st, callee, addr);
 			}
 			free (now);
 		}
 		char *now = aaft_arg_types (core, fcn);
 		if (strcmp (now, types)) {
-			aaft_queue_callers (st, fcn, UT64_MAX);
+			aaft_queue_callers (st, fcn, AAFT_MAX_THUNKS);
 		}
 		free (now);
 	}

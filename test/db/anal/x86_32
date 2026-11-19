@@ -4072,3 +4072,98 @@ char *,arg_8h
 char *,arg_8h
 EOF
 RUN
+
+NAME=aaft types again every caller of a callee a call retypes, the one making the call too
+FILE=malloc://256
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5589e5ff7508e87500000083c4045dc3
+wx 5589e5ff7508e83500000083c4045dc3 @ 0x40
+wx 5589e58b45085dc3 @ 0x80
+e asm.bytes=false
+af leaf @ 0x80
+af b @ 0
+af a @ 0x40
+afvt arg_8h char *
+aaft
+afs @ 0x80
+pd 1 @ 0x43
+pd 1 @ 0x3
+EOF
+EXPECT=<<EOF
+void leaf (char *arg_8h);
+|           0x00000043      push dword [arg_8h]                        ; char *arg_8h
+|           0x00000003      push dword [arg_8h]                        ; char *arg_8h
+EOF
+RUN
+
+NAME=aaft types a tail jump target before the function jumping to it
+FILE=malloc://256
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5589e5ff7508e83500000083c4045dc3
+wx 5589e58b45085de934000000 @ 0x40
+wx 5589e5837d080a720231c05dc3 @ 0x80
+e asm.bytes=false
+af target @ 0x80
+af wrapper @ 0x40
+af caller @ 0
+afvn count arg_8h @ 0x80
+aaft
+afs @ 0x40
+afs @ 0x80
+pd 1 @ 0x3
+EOF
+EXPECT=<<EOF
+void wrapper (uint32_t count);
+void target (uint32_t count);
+|           0x00000003      push dword [arg_8h]                        ; uint32_t count
+EOF
+RUN
+
+NAME=aaft types again the function a call through its j. thunk retypes
+FILE=malloc://256
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5589e5e838000000e8730000005dc3
+wx 5589e5ff7508e87500000083c4045dc3 @ 0x40
+wx 5589e5ff7508e85500000083c4045dc3 @ 0x80
+wx 5589e58b45085dc3 @ 0xc0
+wx e95bffffff @ 0xe0
+af leaf @ 0xc0
+af middle @ 0x40
+af j.middle @ 0xe0
+af other @ 0x80
+af root @ 0
+afvt arg_8h char * @ 0x80
+aaft
+afs @ 0x40
+afs @ 0xc0
+tk func.middle.arg.0
+tk func.leaf.arg.0
+EOF
+EXPECT=<<EOF
+void middle (char *arg_8h);
+void leaf (char *arg_8h);
+char *,arg_8h
+char *,arg_8h
+EOF
+RUN
+
+NAME=aaft keeps the ranges of the constraints sharing a bound, run after run
+FILE=malloc://256
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 5589e5837d08017c0d837d08037f07b8010000005dc3837d08017c0d837d08057f07b8020000005dc331c05dc3
+e asm.bytes=false
+e asm.var.summary=0
+e types.constraint=true
+af
+aaft
+aaft
+pd 1~ebp+0x8
+EOF
+EXPECT=<<EOF
+|           ; arg signed int arg_8h  { >= 0x1 && <= 0x3 || >= 0x1 && <= 0x5 } @ ebp+0x8
+EOF
+RUN
