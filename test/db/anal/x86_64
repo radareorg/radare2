@@ -4658,3 +4658,14 @@ var int32_t var_20h @ rsp+0x20
 var int64_t var_8h @ rsp+0x50
 EOF
 RUN
+
+NAME=af keeps a jump to an endbr64 inside the sized symbol in the function
+FILE=bins/elf/libc-2.31.so
+CMDS=<<EOF
+af @ sym._IO_gets
+afl
+EOF
+EXPECT=<<EOF
+0x000766c0   24    433 sym._IO_gets
+EOF
+RUN
