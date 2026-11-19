@@ -1835,8 +1835,8 @@ EXPECT=<<EOF
 0x40
 __libc_dlerror_result
 64
-1330 0x00000040 0x00000040 GLOBAL TLS    8         __libc_dlerror_result
-7046 0x00000040 0x00000040 GLOBAL TLS    8         __libc_dlerror_result
+1330 ---------- 0x00000040 GLOBAL TLS    8         __libc_dlerror_result
+7046 ---------- 0x00000040 GLOBAL TLS    8         __libc_dlerror_result
 EOF
 RUN
 

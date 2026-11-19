@@ -409,3 +409,15 @@ paddr,vaddr,type,name
 ----------,0x00041e40,OBJ,rabin_cmd
 EOF
 RUN
+
+NAME=ELF: a tls symbol value is an offset in the tls block, not a file offset
+FILE=bins/elf/ifunc_rel64
+CMDS=<<EOF
+is~ TLS ~errno,data.9107
+EOF
+EXPECT=<<EOF
+569  ---------- 0x00000048 LOCAL  TLS    8         data.9107
+894  ---------- 0x00000020 GLOBAL TLS    4         errno
+1294 ---------- 0x00000020 GLOBAL TLS    4         __libc_errno
+EOF
+RUN
