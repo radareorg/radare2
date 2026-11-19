@@ -148,3 +148,16 @@ addiu a0, zero, -1
 0
 EOF
 RUN
+
+NAME=noreturn propagates from a call through an import's GOT slot
+FILE=bins/elf/true
+CMDS=<<EOF
+aaa
+afi @ 0x2210~^noreturn
+afb @ 0x2050~^0x00002103
+EOF
+EXPECT=<<EOF
+noreturn: true
+0x00002103 0x0000210a 00:0000 7
+EOF
+RUN
