@@ -269,6 +269,9 @@ static int hacky_arm_asm(RArchSession *a, RAnalOp *op, const ut8 *buf, int len) 
 			break;
 		}
 
+		if (!buf_asm && IS_A64_HINT (insn)) {
+			buf_asm = r_str_newf ("hint 0x%x", (insn >> 5) & 0x7f);
+		}
 		if (buf_asm) {
 			op->mnemonic = buf_asm;
 			return op->size;

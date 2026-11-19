@@ -277,6 +277,8 @@ static int hack_handle_dp_imm(ut32 insn, RAnalOp *op) {
 	return -1;
 }
 
+#define IS_A64_HINT(insn) (((insn) & 0xfffff01f) == 0xd503201f)
+
 static int hack_handle_br_exc_sys(ut32 insn, RAnalOp *op) {
 	if (insn == 0xd503251f) { // chkfeat x16
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -416,6 +418,10 @@ static inline int hacky_arm_anal(RArchSession *a, RAnalOp *op, const ut8 *buf, i
 
 		if (ret > 0) {
 			op->family = R_ANAL_OP_FAMILY_SECURITY;
+		} else if (IS_A64_HINT (insn)) {
+			// an unallocated or unnamed HINT executes as a NOP
+			op->type = R_ANAL_OP_TYPE_NOP;
+			ret = op->size = 4;
 		}
 
 	}
