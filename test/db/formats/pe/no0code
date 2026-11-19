@@ -4,3 +4,15 @@ CMDS=q!
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=PE: corkami no0code.exe - e_lfanew past 64 KiB
+FILE=bins/pe/no0code.exe
+CMDS=<<EOF2
+i~^format
+ie~program[1]
+EOF2
+EXPECT=<<EOF2
+format   pe
+0x00400041
+EOF2
+RUN
