@@ -5564,6 +5564,68 @@ EXPECT_ERR=<<EOF
 EOF
 RUN
 
+# zdebug-line-zlib.o with __zdebug_line size (0xe0) 0x3e -> 0x30, the rest of the deflate stream follows the section
+NAME=mach0: a truncated __zdebug_line does not inflate the bytes after it
+FILE=malloc://480
+CMDS=<<EOF
+wff bins/mach0/zdebug-line-zlib.o
+wx 30 @ 0xe0
+oba 0
+id~?
+idx
+EOF
+EXPECT=<<EOF
+0
+EOF
+EXPECT_ERR=<<EOF
+ERROR: inflate failed: -5 buffer error
+EOF
+RUN
+
+# zdebug-line-zlib.o with __zdebug_line size (0xe0) 0x3e -> 0x30, the segment vmsize (0x40) and filesize (0x50) 0x3f -> 0x31
+# and LC_DYSYMTAB (0x138) replaced by a segment __ZD mapping vaddr 0x31 (vsize 0x2b) to the deflate stream at paddr 0x194 (size 0x20)
+NAME=mach0: a truncated __zdebug_line followed by a separately mapped segment does not inflate its bytes
+FILE=malloc://480
+CMDS=<<EOF
+wff bins/mach0/zdebug-line-zlib.o
+wx 30 @ 0xe0
+wx 31 @ 0x40
+wx 31 @ 0x50
+wx 19000000500000005f5f5a4400000000000000000000000031000000000000002b00000000000000940100000000000020000000000000000100000001000000000000000000000000000000 @ 0x138
+oba 0
+iSS~MAP
+id~?
+idx
+EOF
+EXPECT=<<EOF
+0   0x00000188  0x31 0x00000000   0x31 -rwx 0x0   MAP
+1   0x00000194  0x20 0x00000031   0x2b -r-- 0x0   MAP  __ZD
+0
+EOF
+EXPECT_ERR=<<EOF
+ERROR: inflate failed: -5 buffer error
+EOF
+RUN
+
+# zdebug-line-zlib.o with the segment vmsize (0x40) and filesize (0x50) 0x3f -> 0x31, the whole __zdebug_line still inflates
+NAME=mach0: a __zdebug_line past its segment end still inflates
+FILE=malloc://480
+CMDS=<<EOF
+wff bins/mach0/zdebug-line-zlib.o
+wx 31 @ 0x40
+wx 31 @ 0x50
+oba 0
+id~?
+idx
+EOF
+EXPECT=<<EOF
+43
+.//a.c
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
 # zdebug-line-zlib.o with __zdebug_line size (0xe0) 0x3e -> 0x1000 past EOF and its ZLIB size (0x18d) 0 -> 0xff
 NAME=mach0: a __zdebug_line past EOF states no size
 FILE=malloc://480
