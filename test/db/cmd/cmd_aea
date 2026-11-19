@@ -212,3 +212,20 @@ EXPECT=<<EOF
  V: 3735879688 -1
 EOF
 RUN
+
+NAME=aea arm pop does not read its destination registers
+FILE=malloc://16
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 3080bde8
+aea 1
+EOF
+EXPECT=<<EOF
+ I: sp
+ A: sp r4 r5 pc
+ R: sp
+ W: r4 r5 pc sp
+ V: 0 12
+@R: 0x00000000 0x00000004 0x00000008
+EOF
+RUN
