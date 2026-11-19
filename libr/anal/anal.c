@@ -586,10 +586,10 @@ static bool __nonreturn_print_commands(void *p, const char *k, const char *v) {
 static bool __nonreturn_print(void *p, const char *k, const char *v) {
 	NoreturnListCtx *ctx = p;
 	if (r_str_startswith (k, "func.") && strstr (k, ".noreturn") && r_str_is_true (v)) {
+		// a name may hold dots (runtime.gopanic), cut at the suffix
 		char *s = strdup (k + 5);
-		char *d = strchr (s, '.');
-		if (d) {
-			*d = 0;
+		if (r_str_endswith (s, ".noreturn")) {
+			s[strlen (s) - strlen (".noreturn")] = 0;
 		}
 		r_strbuf_appendf (ctx->sb, "%s\n", s);
 		free (s);
