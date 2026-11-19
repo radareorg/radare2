@@ -3249,7 +3249,8 @@ static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) * bin, HtPP *symca
 		}
 	}
 
-	if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
+	// bit 0 selects Thumb only on code, a data symbol keeps its odd address
+	if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64 && !strcmp (sym->type, R_BIN_TYPE_FUNC_STR)) {
 		_handle_arm_thumb (sym);
 	}
 
