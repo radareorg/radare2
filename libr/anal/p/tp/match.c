@@ -286,23 +286,6 @@ typedef struct {
 	bool be;
 } TypeMatchCtx;
 
-// a lone jmp thunk (j.*) hands the call over to its target untouched
-static RAnalFunction *tp_thunk_target(RAnal *anal, RAnalFunction *fcn) {
-	int depth;
-	for (depth = 0; depth < 4 && RVecAnalBlockPtr_length (&fcn->bbs) == 1; depth++) {
-		RAnalBlock *bb = *RVecAnalBlockPtr_at (&fcn->bbs, 0);
-		if (bb->ninstr != 1 || bb->jump == UT64_MAX || bb->fail != UT64_MAX) {
-			break;
-		}
-		RAnalFunction *target = r_anal_get_function_at (anal, bb->jump);
-		if (!target || target == fcn) {
-			break;
-		}
-		fcn = target;
-	}
-	return fcn;
-}
-
 static bool tp_tailcall_reg_overlaps(RAnal *anal, const RRegItem *reg, const char *loc) {
 	if (R_STR_ISEMPTY (loc) || *loc == '^') {
 		return false;
@@ -409,7 +392,7 @@ static RAnalFunction *tp_tailcall_target(TPState *tps, RAnalFunction *fcn) {
 static void tp_tailcall_args(TPState *tps, RAnalFunction *fcn) {
 	RAnal *anal = tps->anal;
 	RAnalFunction *target = tp_tailcall_target (tps, fcn);
-	target = target? tp_thunk_target (anal, target): NULL;
+	target = target? r_anal_function_thunk_target (target): NULL;
 	if (!target || target == fcn || !target->callconv || strcmp (fcn->callconv, target->callconv)) {
 		return;
 	}
@@ -463,7 +446,7 @@ const char *tp_call_target_name(RAnal *anal, RAnalOp *aop, ut32 type, RAnalFunct
 	*fcn_call = NULL;
 	if (type == R_ANAL_OP_TYPE_CALL) {
 		RAnalFunction *callee = r_anal_get_fcn_in (anal, aop->jump, -1);
-		*fcn_call = callee? tp_thunk_target (anal, callee): NULL;
+		*fcn_call = callee? r_anal_function_thunk_target (callee): NULL;
 		return *fcn_call? (*fcn_call)->name: NULL;
 	}
 	if (aop->ptr != UT64_MAX && anal->flb.f) {
@@ -883,6 +866,14 @@ static void type_match_op_cb(void *user, RAnalOp *aop, RAnalOp *next_op, ut64 ad
 	}
 }
 
+// a pass works the constraints out again, the ones of an earlier pass (aaft revisits, retries) would repeat
+static void tp_constraints_clear(RAnalFunction *fcn) {
+	RAnalVar **it;
+	R_VEC_FOREACH (&fcn->vars, it) {
+		RVecAnalVarConstraint_clear (&(*it)->constraints);
+	}
+}
+
 R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn) {
 	R_RETURN_IF_FAIL (anal && fcn);
 	TPState *tps = tps_init (anal);
@@ -898,6 +889,9 @@ R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn) {
 	};
 	int retries = 2;
 	for (;;) {
+		if (tps->cfg_chk_constraint) {
+			tp_constraints_clear (fcn);
+		}
 		const TPEmuResult res = tp_emulate_linear (tps, fcn, 0, type_match_op_cb, &ctx, true, true);
 		if (res == TP_EMU_DONE || res == TP_EMU_BUDGET) {
 			break;
