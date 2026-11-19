@@ -50,11 +50,12 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=cmd.esil.trap receives raw type and code for every trap type
+NAME=cmd.esil.trap receives the expression address and raw type and code
 FILE=malloc://64
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 e cmd.esil.trap=?e trap
+s 0x10
 aeq 0,0,TRAP
 aeq 0x11,1,TRAP
 aeq 0x22,2,TRAP
@@ -66,19 +67,21 @@ aeq 0x77,7,TRAP
 aeq 0x88,8,TRAP
 aeq 0x99,9,TRAP
 aeq 0xaa,10,TRAP
+aeq 0xffffffff,2,TRAP
 EOF
 EXPECT=<<EOF
-trap 0 0
-trap 1 17
-trap 2 34
-trap 3 51
-trap 4 68
-trap 5 85
-trap 6 102
-trap 7 119
-trap 8 136
-trap 9 153
-trap 10 170
+trap 16 0 0 0 0
+trap 16 1 17 0 0
+trap 16 2 34 0 0
+trap 16 3 51 0 0
+trap 16 4 68 0 0
+trap 16 5 85 0 0
+trap 16 6 102 0 0
+trap 16 7 119 0 0
+trap 16 8 136 0 0
+trap 16 9 153 0 0
+trap 16 10 170 0 0
+trap 16 2 4294967295 0 0
 EOF
 EXPECT_ERR=
 RUN
@@ -118,10 +121,10 @@ e cmd.esil.trap=?e restored
 aeq 8,4,TRAP
 EOF
 EXPECT=<<EOF
-first 1 2
-second 2 4
+first 0 1 2 0 0
+second 0 2 4 0 0
 0x00000000
-restored 4 8
+restored 0 4 8 0 0
 EOF
 EXPECT_ERR=
 RUN
@@ -139,10 +142,10 @@ aeq 2,nope,TRAP,0x42,rax,=
 aer rax
 EOF
 EXPECT=<<EOF
-invalid 16 7
-invalid 16 7
-invalid 16 7
-invalid 16 7
+invalid 16 7 7 0 0
+invalid 16 7 7 0 0
+invalid 16 7 7 0 0
+invalid 16 7 7 0 0
 0x00000000
 EOF
 EXPECT_ERR=
@@ -158,15 +161,25 @@ aer rax=0x100000005
 e cmd.esil.trap=?e read
 aes
 ae*
+e esil.nonull=true
+aer rip=0x10
+aer rax=0
+aes
+ae*
 EOF
 EXPECT=<<EOF
-read 16 4294967301
+read 16 5 0 1 4294967301
 trap: 5
 trap-code: 0
 trap-addr: 0x100000005
+read 16 5 0 1 0
+trap: 5
+trap-code: 0
+trap-addr: 0x0
 EOF
 EXPECT_ERR=<<EOF
 ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x100000005)
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00000000)
 EOF
 RUN
 
@@ -183,7 +196,7 @@ aes
 ae*
 EOF
 EXPECT=<<EOF
-write 16 4294967303
+write 16 4 0 1 4294967303
 trap: 4
 trap-code: 0
 trap-addr: 0x100000007
@@ -205,7 +218,7 @@ aes
 ae*
 EOF
 EXPECT=<<EOF
-divbyzero 16 0
+divbyzero 16 3 0 0 0
 trap: 3
 trap-code: 0
 EOF
@@ -227,7 +240,7 @@ aes
 ae*
 EOF
 EXPECT=<<EOF
-noexec 16 16
+noexec 16 6 0 1 16
 trap: 6
 trap-code: 0
 trap-addr: 0x10
@@ -247,7 +260,7 @@ aes
 ae*
 EOF
 EXPECT=<<EOF
-unaligned 17 17
+unaligned 17 8 0 1 17
 trap: 8
 trap-code: 0
 trap-addr: 0x11
@@ -284,11 +297,10 @@ ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x100000005)
 EOF
 RUN
 
-# PR #27426: dispatch step traps once with PC/code, rather than type/code then PC/code.
+# Trap hints must dispatch once, after the step.
 NAME=cmd.esil.trap fires once for a valid TRAP hint
 FILE=malloc://64
 ARGS=-a x86 -b 64
-BROKEN=1
 CMDS=<<EOF
 wx 90 @ 0x10
 ahe 2,1,TRAP @ 0x10
@@ -298,7 +310,7 @@ aes
 ae*
 EOF
 EXPECT=<<EOF
-trap 16 2
+trap 16 1 2 0 0
 trap: 1
 trap-code: 2
 EOF
@@ -311,7 +323,6 @@ RUN
 NAME=cmd.esil.trap records invalid TRAP hints
 FILE=malloc://64
 ARGS=-a x86 -b 64
-BROKEN=1
 CMDS=<<EOF
 wx 90 @ 0x10
 e esil.breakoninvalid=true
@@ -334,16 +345,16 @@ aes
 ae*
 EOF
 EXPECT=<<EOF
-invalid 16 7
+invalid 16 7 7 0 0
 trap: 7
 trap-code: 7
-invalid 16 7
+invalid 16 7 7 0 0
 trap: 7
 trap-code: 7
-invalid 16 7
+invalid 16 7 7 0 0
 trap: 7
 trap-code: 7
-invalid 16 7
+invalid 16 7 7 0 0
 trap: 7
 trap-code: 7
 EOF
@@ -355,11 +366,10 @@ ERROR: ESIL stopped at 0x00000010: invalid instruction (invalid)
 EOF
 RUN
 
-# The legacy VM currently receives the trap record after the crashlog hook runs.
+# The crashlog hook must see the current trap before the step returns.
 NAME=cmd.esil.trap crashlogs contain the current step fault
 FILE=malloc://64
 ARGS=-a x86 -b 64
-BROKEN=1
 CMDS=<<EOF
 wx 8b008900 @ 0x10
 aer rip=0x10
@@ -390,7 +400,6 @@ RUN
 NAME=cmd.esil.trap receives AArch64 brk zero once
 FILE=malloc://64
 ARGS=-a arm -b 64
-BROKEN=1
 CMDS=<<EOF
 wx 000020d4 @ 0x10
 aer pc=0x10
@@ -399,7 +408,7 @@ aes
 ae*
 EOF
 EXPECT=<<EOF
-breakpoint 16 0
+breakpoint 16 2 0 0 0
 trap: 2
 trap-code: 0
 EOF
@@ -409,7 +418,6 @@ RUN
 NAME=cmd.esil.trap receives AArch64 brk immediate once
 FILE=malloc://64
 ARGS=-a arm -b 64
-BROKEN=1
 CMDS=<<EOF
 wx 400520d4 @ 0x10
 aer pc=0x10
@@ -418,9 +426,28 @@ aes
 ae*
 EOF
 EXPECT=<<EOF
-breakpoint 16 42
+breakpoint 16 2 42 0 0
 trap: 2
 trap-code: 42
 EOF
 EXPECT_ERR=
+RUN
+
+
+NAME=cmd.esil.trap identifies a fault in a MIPS delay slot
+FILE=malloc://64
+ARGS=-a mips -b 32 -e cfg.bigendian=true
+CMDS=<<EOF
+wx 100000018c82000000000000 @ 0x10
+aer pc=0x10
+aer a0=0x3000
+e cmd.esil.trap=?e read
+aes
+EOF
+EXPECT=<<EOF
+read 20 5 0 1 12288
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00003000)
+EOF
 RUN

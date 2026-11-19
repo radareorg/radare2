@@ -5,7 +5,7 @@ e cmd.esil.trap=?e hello world
 ae 2,1,TRAP
 EOF
 EXPECT=<<EOF
-hello world 1 2
+hello world 0 1 2 0 0
 EOF
 RUN
 
@@ -18,7 +18,7 @@ dr PC=0xdeadbeef
 aes
 EOF
 EXPECT=<<EOF
-its a trap 3735928559 3735928559
+its a trap 3735928559 6 0 1 3735928559
 EOF
 EXPECT_ERR=<<EOF
 ERROR: ESIL stopped at 0xdeadbeef: execute error (execute-err at 0xdeadbeef)
@@ -37,7 +37,7 @@ aes
 EOF
 EXPECT=<<EOF
 type: ill
-its a trap 0 7
+its a trap 0 7 7 0 0
 EOF
 EXPECT_ERR=
 RUN
@@ -104,7 +104,7 @@ ahe TRAP
 aes
 EOF
 EXPECT=<<EOF
-its a trap 0 7
+its a trap 0 7 7 0 0
 EOF
 RUN
 
@@ -150,7 +150,7 @@ aer rax=0xdeadbeef
 aes
 EOF
 EXPECT=<<EOF
-trapped 0 3735928559
+trapped 0 4 0 1 3735928559
 EOF
 EXPECT_ERR=<<EOF
 ERROR: ESIL stopped at 0x00000000: write error (write-err at 0xdeadbeef)

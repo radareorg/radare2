@@ -55,6 +55,8 @@ typedef struct r_core_priv_t {
 	RCoreGraphCapture *graph_capture; // borrowed while capturing graph output
 } RCorePriv;
 
+R_IPI void r_core_esil_report_trap(RCore *core, ut64 pc);
+R_IPI bool r_core_esil_trap_cmd(RCore *core, const char *cmd, ut64 pc, const REsilTrap *trap);
 R_IPI bool isVisualDisasm(RCore *core);
 R_IPI int r_core_vmark_select(RCore *core, bool delete_mark);
 typedef int (*RCoreVisualDefineReadCallback)(RCore *core, const char **lines);

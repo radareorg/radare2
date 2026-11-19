@@ -123,10 +123,38 @@ rollback without a plugin-private copy of the address.
 The core preserves this record across expression rollback and synchronizes it to
 the legacy analysis VM after stepping. `ae*` displays `trap-addr` when present;
 step diagnostics and the debugger's reason address/pointer retain all 64 bits.
-`cmd.esil.trap` receives the stopped instruction PC and the fault address when
-valid, otherwise the trap code. Memory faults no longer truncate their address
-into `trap_code`; clients that relied on that behavior must use the new fields.
-Instruction-fetch and instruction-alignment faults also carry their address.
+Instruction fetch and alignment faults carry the instruction address. Memory
+faults store the full address separately instead of truncating it into the code.
+
+### ESIL command hooks
+
+Each command receives the following positional arguments:
+
+| Setting | Arguments | When it runs |
+| --- | --- | --- |
+| `cmd.esil.trap` | `pc type code has_addr fault_addr` | Once for a failed core emulation step, after any rollback, or synchronously for an explicit `TRAP` in a raw `ae`/`aeq` expression. |
+| `cmd.esil.intr` | `intr_num 0` | When ESIL fires a software interrupt. The second argument is reserved. |
+| `cmd.esil.ioer` | `step_pc is_write` | When an emulated I/O address fails a permission/mapping check. `0` is a read, `1` is a write. It can fire multiple times per instruction and does not imply a trap. |
+
+For the trap hook, addresses are unsigned 64-bit decimal values. `pc` is the
+faulting instruction's address (the slot address for a delay-slot fault), or the
+seek where a raw expression was evaluated. `type` is an `R_ANAL_TRAP_*` value;
+`code` is the unsigned 32-bit detail from `REsilTrap` (for example, the immediate
+of AArch64 `BRK`). `has_addr` is 1 for an available fault address and 0 otherwise;
+`fault_addr` is 0 when unavailable. A valid fault at address zero is `1 0`.
+
+For example, `e cmd.esil.trap=?e trap` prints the fields. The handler can query
+`ae*` for the current trap and `aer` for the live registers. Use the passed PC as
+the crash location even if the emulated PC has already advanced. A script that
+needs a backtrace can inspect the current register/stack state or consult its
+own call history; ESIL does not unwind the stack or allocate a trace for this
+hook. A failed core step stays failed regardless of the handler's numeric
+result. In a valid raw `TRAP`, a nonzero numeric result resumes the expression;
+a malformed `TRAP` always stops.
+
+This replaces the old two-argument trap hook: step handlers formerly received
+`pc` and either the fault address or the code; raw handlers received
+`type code`. Update trap scripts to use the five named positions above.
 
 This records a stop. It does not select a guest exception vector, populate an
 architecture's fault registers, deliver an interrupt, or make a multi-access

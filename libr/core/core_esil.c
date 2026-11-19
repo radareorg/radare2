@@ -2,6 +2,7 @@
 
 #define R_LOG_ORIGIN "core.esil"
 #include <r_core.h>
+#include <r_core_priv.h>
 #include <r_esil.h>
 #include <r_reg.h>
 #include <r_io.h>
@@ -26,9 +27,7 @@ static void core_esil_voyeur_interrupt(void *user, ut32 intr_num) {
 	}
 }
 
-// the first argument passed to esil cmd handlers is an address, the second one
-// is a meaning-dependent value (trap code, write flag, ..). Both are printed in
-// hex so addresses like 0xdeadbeef stay readable
+// The generic step and I/O hooks keep their existing two-argument contract.
 static bool core_esil_cmd(RCore *core, const char *cmd, ut64 addr, ut64 a2) {
 	if (R_STR_ISEMPTY (cmd)) {
 		return false;
@@ -39,6 +38,23 @@ static bool core_esil_cmd(RCore *core, const char *cmd, ut64 addr, ut64 a2) {
 	}
 	r_core_cmdf (core, "%s 0x%" PFMT64x " 0x%" PFMT64x, cmd, addr, a2);
 	return core->num->value;
+}
+
+R_IPI bool r_core_esil_trap_cmd(RCore *core, const char *cmd, ut64 pc, const REsilTrap *trap) {
+	r_core_cmdf (core, "%s %" PFMT64u " %d %" PFMT32u " %d %" PFMT64u,
+		cmd, pc, trap->type, trap->code, trap->addr_valid, trap->addr_valid? trap->addr: 0);
+	return core->num->value;
+}
+
+R_IPI void r_core_esil_report_trap(RCore *core, ut64 pc) {
+	const char *cmd = core->esil.cmds.trap;
+	if (R_STR_ISNOTEMPTY (cmd)) {
+		const REsilTrap trap = r_esil_get_trap (&core->esil.esil);
+		if (core->anal->esil) {
+			r_esil_restore_trap (core->anal->esil, &trap);
+		}
+		r_core_esil_trap_cmd (core, cmd, pc, &trap);
+	}
 }
 
 static bool core_esil_mem_is_valid(RCore *core, ut64 addr, bool write) {
@@ -505,9 +521,7 @@ R_API bool r_core_esil_run_expr_at(RCore *core, const char *expr, ut64 addr) {
 		r_esil_reg_write_silent (&core->esil.esil, "PC", pc);
 	}
 	r_esil_restore_trap (&core->esil.esil, &fault);
-	if (R_STR_ISNOTEMPTY (core->esil.cmds.trap)) {
-		core_esil_cmd (core, core->esil.cmds.trap, pc, fault.addr_valid? fault.addr: fault.code);
-	}
+	r_core_esil_report_trap (core, addr);
 	return false;
 }
 
@@ -520,6 +534,7 @@ R_API bool r_core_esil_single_step(RCore *core) {
 		return false;
 	}
 	const ut64 old_pc = pc;
+	ut64 fault_pc = old_pc;
 	bool trap_revert = false;
 	r_esil_set_trap (&core->esil.esil, R_ANAL_TRAP_NONE, 0);
 	ut32 trap_code = R_ANAL_TRAP_UNALIGNED;
@@ -630,6 +645,7 @@ R_API bool r_core_esil_single_step(RCore *core) {
 	bool success = !core->esil.esil.trap;
 	if (success && has_delay && core->esil.esil.delay &&
 		!core_esil_step_delay_slot (core, as, ds_addr, max_opsize)) {
+		fault_pc = ds_addr;
 		trap_code = R_ANAL_TRAP_INVALID;
 		success = false;
 	}
@@ -671,10 +687,7 @@ trap:
 	if (!core->esil.esil.trap) {
 		r_esil_set_trap (&core->esil.esil, trap_code, trap_code);
 	}
-	if (R_STR_ISNOTEMPTY (core->esil.cmds.trap)) {
-		const REsilTrap trap = r_esil_get_trap (&core->esil.esil);
-		core_esil_cmd (core, core->esil.cmds.trap, old_pc, trap.addr_valid? trap.addr: trap.code);
-	}
+	r_core_esil_report_trap (core, fault_pc);
 	return false;
 }
 

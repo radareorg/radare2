@@ -2093,7 +2093,7 @@ static int analop64_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *bu
 
 	switch (id) {
 	case ARM64_INS_BRK:
-		r_strbuf_setf (&op->esil, "0,%d,TRAP", (int) (IMM64 (0) & 0xffff));
+		r_strbuf_setf (&op->esil, "%d,%d,TRAP", (int) (IMM64 (0) & 0xffff), R_ANAL_TRAP_BREAKPOINT);
 		break;
 	case ARM64_INS_SHA256SU0:
 		r_strbuf_setf (&op->esil, "%d,%d,ARM64_SHA256SU0", atoi (REG64 (1) + 1), atoi (REG64 (0) + 1));
