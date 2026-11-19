@@ -1042,6 +1042,15 @@ typedef struct {
 	ReadAhead ra; // one cache for the walk, so a block inside the last read reads no io
 } FcnWalk;
 
+// a prelude inside the sized symbol that starts fcn is a jump target, not a callee
+static bool jump_in_own_symbol(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
+	if (!anal->binb.bin || !anal->binb.get_symbol_at) {
+		return false;
+	}
+	RBinSymbol *sym = anal->binb.get_symbol_at (anal->binb.bin, fcn->addr);
+	return sym && sym->attr.size > 0 && addr > fcn->addr && addr < fcn->addr + sym->attr.size;
+}
+
 // name a tail call target like the core names new functions: after the flag at its address
 static const char *tailcall_name(RAnal *anal, ut64 addr) {
 	RFlagItem *fi = anal->flag_get? anal->flag_get (anal->flb.f, false, addr): NULL;
@@ -1899,7 +1908,8 @@ noskip:
 				RAnalFunction *nfcn = r_anal_get_function_at (anal, op->jump);
 				RFlagItem *flag = anal->flag_get? anal->flag_get (anal->flb.f, false, op->jump): NULL;
 				bool function_flag = flag && flag->space && !strcmp (flag->space->name, R_FLAGS_FS_FUNCTIONS);
-				if (nfcn || function_flag || (nread > 0 && r_anal_is_prelude (anal, op->jump, buf, nread))) {
+				const bool prelude = nread > 0 && !jump_in_own_symbol (anal, fcn, op->jump) && r_anal_is_prelude (anal, op->jump, buf, nread);
+				if (nfcn || function_flag || prelude) {
 					R_LOG_DEBUG ("tail call jump found at 0x%08"PFMT64x, op->addr);
 					// XXX using type-jump wont analyze the destination as a function
 					// walking it from here wont make it analyze it either
