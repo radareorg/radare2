@@ -428,6 +428,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pe section paddr rounds down to 0x200, not FileAlignment
+FILE=bins/pe/Lab01-03.exe
+CMDS=iS~sect_2;ie~program
+EXPECT=<<EOF
+2   0x00000e00  0x200 0x00405000  0x1000 -rw- 0xc00000e0 ---- sect_2
+0x00000e00 0x00405000 0x00000088 ---------- program
+EOF
+RUN
+
+NAME=pe section paddr rounds down to 0x200 with a large FileAlignment
+FILE=bins/pe/weirdsord.exe
+CMDS=iS~sect_0;ie~program
+EXPECT=<<EOF
+0   0x00000200  0x10f 0x00440000  0x40000 -rwx 0xa0000000 ---- sect_0
+0x00000200 0x00440000 0x00000068 ---------- program
+EOF
+RUN
+
 NAME=PE: reject fuzzed PL without PE optional header
 FILE=bins/fuzzed/minified_crash
 CMDS=aaa;afl~entry0

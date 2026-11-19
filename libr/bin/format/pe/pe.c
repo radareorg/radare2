@@ -4543,7 +4543,8 @@ static bool PE_(r_bin_pe_load_sections)(RBinPEObj *pe) {
 					R_LOG_WARN ("section %s not aligned to SectionAlignment", section.name);
 				}
 			}
-			const ut32 fa = pe->optional_header->FileAlignment;
+			// the loader rounds PointerToRawData down to a 0x200 sector, not to FileAlignment
+			const ut32 fa = R_MIN (pe->optional_header->FileAlignment, 0x200);
 			if (fa) {
 				const ut64 diff = section.paddr % fa;
 				if (diff != 0) {
