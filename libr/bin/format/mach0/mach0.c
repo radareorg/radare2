@@ -3188,7 +3188,6 @@ static void _handle_arm_thumb(RBinSymbol *sym) {
 }
 
 static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) * bin, HtPP *symcache, RBinSymbol *sym, ut32 section_index) {
-	int wordsize = MACH0_(get_bits) (bin);
 
 	const char *oname = r_bin_name_tostring2 (sym->name, 'o');
 	if (oname) {
@@ -3249,7 +3248,9 @@ static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) * bin, HtPP *symca
 		}
 	}
 
-	if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
+	// bit 0 is the Thumb mode marker, but only on code: a data symbol
+	// at an odd address must keep it (see N_ARM_THUMB_DEF and the export trie)
+	if (bin->hdr.cputype == CPU_TYPE_ARM && MACH0_(get_bits) (bin) < 64 && !strcmp (sym->type, R_BIN_TYPE_FUNC_STR)) {
 		_handle_arm_thumb (sym);
 	}
 
@@ -3493,6 +3494,11 @@ static bool parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 				sym->ordinal = ordinal++;
 				_update_main_addr_if_needed (mo, sym);
 				_enrich_symbol (bf, mo, symcache, sym, nl->n_sect);
+				// N_ARM_THUMB_DEF is the authoritative Thumb marker, also for
+				// symbols _enrich_symbol cannot type as FUNC
+				if (mo->hdr.cputype == CPU_TYPE_ARM && (nl->n_desc & N_ARM_THUMB_DEF)) {
+					_handle_arm_thumb (sym);
+				}
 				j++;
 				if (exceeds_bin_limit (limit, ordinal)) {
 					R_LOG_WARN ("symbols mo.limit reached");
@@ -3617,6 +3623,9 @@ static bool parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 
 			_update_main_addr_if_needed (mo, sym);
 			_enrich_symbol (bf, mo, symcache, sym, st->n_sect);
+			if (mo->hdr.cputype == CPU_TYPE_ARM && (st->n_desc & N_ARM_THUMB_DEF)) {
+				_handle_arm_thumb (sym);
+			}
 			j++;
 		}
 	}

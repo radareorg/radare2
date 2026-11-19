@@ -35,3 +35,18 @@ EXPECT=<<EOF
   0x00015e24      push {r4, r5, r6, r7, lr}
 EOF
 RUN
+
+NAME=mach0 armv7 odd data symbols keep bit 0
+FILE=bins/mach0/TestRTTI-armv7
+CMDS=is,vaddr/cols/name~ZTS1,_ZN1A1fEv,_main
+EXPECT=<<EOF
+0x0000a234 __ZN1A1fEv
+0x0000bff1 __ZTS1A
+0x0000bff4 __ZTS1B
+0x0000bff7 __ZTS1C
+0x0000bffa __ZTS1D
+0x0000a376 _main
+0x0000a234 __ZN1A1fEv
+0x0000a376 _main
+EOF
+RUN
