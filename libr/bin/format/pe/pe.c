@@ -629,7 +629,8 @@ static bool bin_pe_parse_imports(RBinPEObj *pe,
 		}
 	} while (import_table);
 
-	success = i > 0;
+	// the loader skips a descriptor whose thunk list is empty and reads the next one
+	success = true;
 	goto beach;
 
 error:
