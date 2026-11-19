@@ -3046,7 +3046,33 @@ static char *filename(RCore *core, ut64 addr) {
 	return NULL;
 }
 
-static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) {
+static int fcn_json_refs(PJ *pj, const char *key, RVecAnalRef *refs, RAnalFunction *source, bool *recursive) {
+	const bool incoming = !source;
+	int degree = 0;
+	pj_ka (pj, key);
+	if (refs) {
+		RAnalRef *ref;
+		R_VEC_FOREACH (refs, ref) {
+			const int type = R_ANAL_REF_TYPE_MASK (ref->type);
+			if (type == R_ANAL_REF_TYPE_CALL || (incoming && type == R_ANAL_REF_TYPE_CODE)) {
+				degree++;
+				if (source && ref->addr == source->addr) {
+					*recursive = true;
+				}
+			}
+			pj_o (pj);
+			pj_kn (pj, "from", incoming? ref->addr: ref->at);
+			pj_kn (pj, "to", incoming? ref->at: ref->addr);
+			pj_ks (pj, "type", r_anal_ref_type_tostring (ref->type));
+			pj_end (pj);
+		}
+		RVecAnalRef_free (refs);
+	}
+	pj_end (pj);
+	return degree;
+}
+
+static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, bool detail, PJ *pj) {
 	if (!pj) {
 		return -1;
 	}
@@ -3114,7 +3140,21 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	}
 	int outdegree = 0;
 	int indegree = 0;
-	if (dorefs) {
+	bool recursive = false;
+	if (detail) {
+		pj_ko (pj, "refs");
+		outdegree = fcn_json_refs (pj, "out", r_anal_function_get_refs (fcn), fcn, &recursive);
+		indegree = fcn_json_refs (pj, "in", r_anal_function_get_xrefs (fcn), NULL, NULL);
+		pj_end (pj);
+		pj_ko (pj, "vars");
+		pj_k (pj, "reg");
+		r_anal_var_list_show (core->anal, fcn, R_ANAL_VAR_KIND_REG, 'j', pj);
+		pj_k (pj, "sp");
+		r_anal_var_list_show (core->anal, fcn, R_ANAL_VAR_KIND_SPV, 'j', pj);
+		pj_k (pj, "bp");
+		r_anal_var_list_show (core->anal, fcn, R_ANAL_VAR_KIND_BPV, 'j', pj);
+		pj_end (pj);
+	} else if (dorefs) {
 		fcn->attrs &= ~R_ANAL_FCN_ATTR_RECURSIVE;
 		RVecAnalRef *refs = r_anal_function_get_refs (fcn);
 		if (refs && !RVecAnalRef_empty (refs)) {
@@ -3217,9 +3257,23 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 		RVecAnalRef_free (xrefs);
 	}
 
-	char *attrs = r_anal_function_attrs_tostring (fcn->attrs, false);
-	pj_ks (pj, "attrs", attrs);
-	free (attrs);
+	if (detail) {
+		ut64 attrs = fcn->attrs;
+		R_MASK_SET (attrs, R_ANAL_FCN_ATTR_RECURSIVE, recursive);
+		pj_ka (pj, "attr");
+		const RAnalFcnAttrInfo *ai;
+		size_t i;
+		for (i = 0; (ai = r_anal_function_attr_info (i)); i++) {
+			if (attrs & ai->bit) {
+				pj_s (pj, ai->name);
+			}
+		}
+		pj_end (pj);
+	} else {
+		char *attrs = r_anal_function_attrs_tostring (fcn->attrs, false);
+		pj_ks (pj, "attrs", attrs);
+		free (attrs);
+	}
 	pj_ki (pj, "indegree", indegree);
 	pj_ki (pj, "outdegree", outdegree);
 
@@ -3268,7 +3322,7 @@ static int fcn_list_json(RCore *core, RList *fcns, bool quiet, bool dorefs) {
 		if (quiet) {
 			pj_n (pj, fcn->addr);
 		} else {
-			fcn_print_json (core, fcn, dorefs, pj);
+			fcn_print_json (core, fcn, dorefs, false, pj);
 		}
 	}
 	pj_end (pj);
@@ -3672,6 +3726,37 @@ static RCoreHelpMessage help_msg_aflm = {
 	NULL
 };
 
+static int fcn_info_json(RCore *core, const char *input) {
+	ut64 addr = core->addr;
+	RAnalFunction *fcn = NULL;
+	const char *error = NULL;
+	const char *arg = input? r_str_trim_head_ro (input): "";
+	if (*arg) {
+		fcn = r_anal_get_function_byname (core->anal, arg);
+		if (!fcn) {
+			addr = r_num_math_err (core->num, arg, &error);
+		}
+	}
+	if (!error && !fcn) {
+		fcn = r_anal_get_function_at (core->anal, addr);
+		if (!fcn) {
+			fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+		}
+	}
+	if (!fcn) {
+		r_cons_println (core->cons, "null");
+		return 0;
+	}
+	PJ *pj = r_core_pj_new (core);
+	if (!pj) {
+		return -1;
+	}
+	fcn_print_json (core, fcn, false, true, pj);
+	r_cons_println (core->cons, pj_string (pj));
+	pj_free (pj);
+	return 0;
+}
+
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) {
 	char temp[SDB_NUM_BUFSZ];
 	bool dorefs = (*rad == 'x'); // "afix"
@@ -3683,6 +3768,9 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		return 0;
 	}
 	R_RETURN_VAL_IF_FAIL (core && core->anal, 0);
+	if (*rad == 'J') {
+		return fcn_info_json (core, input);
+	}
 	if (r_list_empty (core->anal->fcns)) {
 		if (*rad == 'j') {
 			r_cons_println (core->cons, "[]");

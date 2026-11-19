@@ -754,9 +754,10 @@ static RCoreHelpMessage help_msg_afi_fields = {
 };
 
 static RCoreHelpMessage help_msg_afi = {
-	"Usage:", "afi[jlpa*]", " <addr>",
+	"Usage:", "afi[jJlpa*]", " <addr>",
 	"afi", "", "show information of the function",
 	"afi", "[.j*]", "function, variables and arguments",
+	"afiJ", " [addr|name]", "one detailed function as a JSON object (or null)",
 	"afia", "[?jq+-=] [attr]", "show/set function attributes (noreturn, inline, thunk, library, ...)",
 	"afii", "[?][-][import]", "show/add/delete imports used in function (see aii)",
 	"afil", "", "verbose function info",
@@ -6602,6 +6603,7 @@ static int cmd_af(RCore *core, const char *input) {
 			}
 			break;
 		case 'j': // "afij"
+		case 'J': // "afiJ"
 		case '*': // "afi*"
 			r_core_anal_fcn_list (core, input + 3, input + 2);
 			break;
