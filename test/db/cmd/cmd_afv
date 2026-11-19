@@ -108,3 +108,18 @@ EXPECT=<<EOF
 arg int32_t arg_8h @ ebp+0x8
 EOF
 RUN
+
+NAME=afv arm sp+4 int32 is not folded into the int32 at sp+0
+FILE=bins/elf/swift-klass
+CMDS=<<EOF
+aa
+afv @ 0x1ae0~var
+EOF
+EXPECT=<<EOF
+var int32_t var_0h @ sp+0x0
+var int32_t var_4h @ sp+0x4
+var int64_t var_8h @ sp+0x8
+var int32_t var_14h @ sp+0x14
+var int64_t var_18h @ sp+0x18
+EOF
+RUN

@@ -1233,8 +1233,13 @@ static RAnalVar *get_stack_var(RAnal *anal, RAnalFunction *fcn, int delta, int a
 		if (is_stack && var->delta == delta) {
 			return var;
 		}
-		if (fuzzy && is_stack && access_size > 0 && access_size < var_size && delta > var->delta && delta < var->delta + var_size) {
-			return var;
+		if (fuzzy && is_stack && access_size > 0 && access_size < var_size && delta > var->delta) {
+			// a typed variable ends where its type does, not a word later
+			const int typed = R_STR_ISNOTEMPTY (var->type)? (int)(r_anal_type_bitsize (anal, var->type) / 8): 0;
+			const int extent = typed > 0? R_MIN (typed, var_size): var_size;
+			if (delta < var->delta + extent) {
+				return var;
+			}
 		}
 		// An address taken inside a variable the function stores to belongs to
 		// that variable: the store fixed the extent, and lea establishes none.
