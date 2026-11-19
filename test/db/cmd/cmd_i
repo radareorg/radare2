@@ -4197,3 +4197,13 @@ public: void __thiscall A::f(void)
 {"lang":"msvc","mangled":"?f@A@@QAEXXZ","demangled":"public: void __thiscall A::f(void)"}
 EOF
 RUN
+
+NAME=i static false for an ELF with PT_DYNAMIC and no DT_NEEDED
+FILE=bins/elf/libflutterapp.so
+CMDS=<<EOF
+i~^static
+EOF
+EXPECT=<<EOF
+static   false
+EOF
+RUN
