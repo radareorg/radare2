@@ -2732,3 +2732,51 @@ pdc
 10
 EOF
 RUN
+
+NAME=pdcb decompiles only the current block and preserves metadata
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx b80100000085ff740483c002c331c0c3
+af
+CCu user-note @ 9
+CL 0x9 graph.c:12 original-source
+pdcb @ 9~eax += 2~?
+pdcb @ 9~eax = 1~?
+pdcb @ 13~eax = 0~?
+pdcb?~current basic block~?
+CC. @ 9
+CLj
+EOF
+EXPECT=<<EOF
+1
+0
+1
+1
+user-note
+[{"file":"graph.c","line":12,"addr":9}]
+EOF
+RUN
+
+NAME=pdcb rejects missing blocks and malformed decompiler results
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx c3
+af
+pdcb @ 0x30 || echo no-block
+$backendj=$[]
+e cmd.pdc=$backend
+pdcb || echo invalid-backend
+pdcbj || echo unsupported-mode
+EOF
+EXPECT=<<EOF
+no-block
+invalid-backend
+unsupported-mode
+EOF
+EXPECT_ERR=<<EOF
+ERROR: No basic block at 0x30
+ERROR: Decompiler did not produce annotated code
+EOF
+RUN

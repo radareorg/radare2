@@ -366,7 +366,7 @@ static RCmdResult test_core_plugin_call(RCmdContext *ctx) {
 
 static bool test_core_plugin_legacy_call(RCorePluginSession *cps, const char *input) {
 	CorePluginState *state = cps->data;
-	if (!strcmp (input, "legacyplug")) {
+	if (!strcmp (input, "legacyplug") || !strcmp (input, "pddA")) {
 		state->legacy_calls++;
 		return true;
 	}
@@ -393,6 +393,9 @@ static bool test_r_core_plugin_context_callback(void) {
 	mu_assert_true (core_plugin_state.context_ok, "plugin receives its session and command context");
 	mu_assert_eq (r_core_call (core, "legacyplug"), 1, "legacy callback remains available");
 	mu_assert_eq (core_plugin_state.legacy_calls, 1, "legacy callback called once");
+	r_config_set (core->config, "cmd.pdc", "pdd");
+	r_core_call (core, "pdcj");
+	mu_assert_eq (core_plugin_state.legacy_calls, 2, "pdcj requests r2dec offset annotations");
 	mu_assert_true (r_core_plugin_remove (core->rcmd, &plugin), "remove contextual core plugin");
 	r_core_call (core, "ctxplug?");
 	mu_assert_eq (core_plugin_state.calls, 1, "removed plugin is no longer dispatched");

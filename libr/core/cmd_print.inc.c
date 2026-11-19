@@ -323,6 +323,7 @@ static RCoreHelpMessage help_msg_pd = {
 	"pdaj", "", "disassemble all possible opcodes (byte per byte) in JSON",
 	"pdb", "[j]", "disassemble basic block (j for JSON)",
 	"pdc", "[?][c]", "pseudo disassembler output in C-like syntax",
+	"pdcb", "", "decompile the current basic block using cmd.pdc",
 	"pdC", "", "show comments found in N instructions",
 	"pde", "[q|qq|j] N", "disassemble N instructions following execution flow from current PC",
 	"pdo", " N", "convert esil expressions of N instructions to C (pdO for bytes)",

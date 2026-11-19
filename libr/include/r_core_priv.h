@@ -55,6 +55,9 @@ typedef struct r_core_priv_t {
 	RCoreGraphCapture *graph_capture; // borrowed while capturing graph output
 } RCorePriv;
 
+// Function-scoped map of block addresses to owned RStrBuf values; release with ht_up_free.
+R_IPI HtUP *r_core_pdc_blocks(RCore *core, RAnalFunction *fcn);
+
 R_IPI bool isVisualDisasm(RCore *core);
 R_IPI int r_core_vmark_select(RCore *core, bool delete_mark);
 typedef int (*RCoreVisualDefineReadCallback)(RCore *core, const char **lines);
