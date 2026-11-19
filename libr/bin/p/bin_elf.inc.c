@@ -2735,6 +2735,9 @@ static RBinInfo* info(RBinFile *bf) {
 	if (Elf_(is_static) (obj)) {
 		ret->dbg_info |= R_BIN_DBG_STATIC;
 		ret->has_libinjprot = true;
+	} else if (!((ELFOBJ *)obj)->phdr) {
+		// without program headers nothing is linked at load time
+		ret->dbg_info |= R_BIN_DBG_STATIC;
 	}
 	lookup_sections (bf, ret);
 	lookup_symbols (bf, ret);
