@@ -1822,6 +1822,23 @@ func.wcstombs.arg.1=const wchar_t *,pwcs
 func.wcstombs.arg.2=size_t,n
 func.wcstombs.ret=size_t
 
+abort=func
+func.abort.args=0
+func.abort.noreturn=true
+func.abort.ret=void
+
+exit=func
+func.exit.args=1
+func.exit.arg.0=int,status
+func.exit.noreturn=true
+func.exit.ret=void
+
+_Exit=func
+func._Exit.args=1
+func._Exit.arg.0=int,status
+func._Exit.noreturn=true
+func._Exit.ret=void
+
 at_quick_exit=func
 func.at_quick_exit.args=0
 func.at_quick_exit.ret=int
@@ -1829,6 +1846,7 @@ func.at_quick_exit.ret=int
 quick_exit=func
 func.quick_exit.args=1
 func.quick_exit.arg.0=int,status
+func.quick_exit.noreturn=true
 func.quick_exit.ret=void
 
 aligned_alloc=func

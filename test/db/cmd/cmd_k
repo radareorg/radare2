@@ -2240,6 +2240,7 @@ EXPECT=<<EOF
       "func.qsort.args=4",
       "func.quick_exit.arg.0=int,status",
       "func.quick_exit.args=1",
+      "func.quick_exit.noreturn=true",
       "func.quick_exit.ret=void",
       "func.raise.arg.0=int,sig",
       "func.raise.args=1",

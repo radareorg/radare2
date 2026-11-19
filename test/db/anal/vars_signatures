@@ -311,10 +311,10 @@ afvs~^var~?
 EOF
 EXPECT=<<EOF
 BOOL entry2 (HANDLE hDllHandle, DWORD dwReason, LPVOID lpreserved);
-4
-0
-4
-0
+3
+2
+3
+2
 EOF
 RUN
 
