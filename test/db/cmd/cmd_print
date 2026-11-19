@@ -1259,6 +1259,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pFBj rejects an offset table offset that wraps the data pointer
+FILE=malloc://64
+CMDS=<<EOF
+wx 62706c6973743030000000000000010100000000000000010000000000000000fffffffffffffff0
+pFBj 40
+EOF
+EXPECT=<<EOF
+
+EOF
+EXPECT_ERR=<<EOF
+ERROR: offset table offset points outside of valid range
+ERROR: bplist parse error
+EOF
+RUN
+
 NAME=print rejects a length whose magnitude exceeds signed int
 FILE=-
 CMDS=<<EOF
