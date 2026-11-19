@@ -3349,6 +3349,12 @@ static bool dysym_bounds(struct MACH0_(obj_t) * mo, size_t s, ut64 *f, ut64 *t) 
 	ut32 from = 0;
 	ut32 to = 0;
 	struct dysymtab_command *ds = &mo->dysymtab;
+	if (ds->cmd != LC_DYSYMTAB) {
+		// a dSYM has no LC_DYSYMTAB: its symbols are the whole symbol table
+		*f = 0;
+		*t = mo->nsymtab;
+		return !s && *t > 0;
+	}
 	switch (s) {
 	case 0:
 		from = ds->iextdefsym;
@@ -3565,7 +3571,8 @@ static bool parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 	}
 	free (stubs);
 
-	for (i = 0; i < mo->nsymtab && i < symbols_count; i++) {
+	const size_t text_count = ds->cmd == LC_DYSYMTAB? mo->nsymtab: 0;
+	for (i = 0; i < text_count && i < symbols_count; i++) {
 		struct MACH0_(nlist) *st = &mo->symtab[i];
 		if (st->n_type & N_STAB) {
 			continue;
