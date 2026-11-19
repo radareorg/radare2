@@ -757,7 +757,7 @@ static RCoreHelpMessage help_msg_afi = {
 	"Usage:", "afi[jJlpa*]", " <addr>",
 	"afi", "", "show information of the function",
 	"afi", "[.j*]", "function, variables and arguments",
-	"afiJ", "", "function information in JSON with named attributes",
+	"afiJ", " [addr|name]", "one detailed function as a JSON object (or null)",
 	"afia", "[?jq+-=] [attr]", "show/set function attributes (noreturn, inline, thunk, library, ...)",
 	"afii", "[?][-][import]", "show/add/delete imports used in function (see aii)",
 	"afil", "", "verbose function info",

@@ -100,13 +100,13 @@ s 0x10
 afia+ NT
 afiaq
 afij~{[0].attrs}
-afiJ~{[0].attr[0]}
-afiJ~{[0].attr[2]}
+afiJ~{attr[0]}
+afiJ~{attr[2]}
 afia- T
 afiaq
 afia= IL
 afiaq
-afiJ~{[0].attr[0]}
+afiJ~{attr[0]}
 afia+ thunk,static
 afl*~afia
 afia=
@@ -168,5 +168,39 @@ EXPECT=<<EOF
 PTLEM
 '0x00000010'afia+ TL
 '0x00000010'afia- L
+EOF
+RUN
+
+NAME=afiJ returns one function with structured variables and references
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+afiJ
+wx e81b000000c3
+wx c3 @ 0x20
+af @ 0
+af @ 0x20
+afvb -8 local_value int @ 0
+afiJ 0~{vars.bp[0].name}
+afiJ 0~{vars.bp[0].ref.offset}
+afiJ 0~{refs.out[0]}
+afiJ fcn.00000020~{refs.in[0]}
+afiJ fcn.00000020~{refs.out}
+afiJ 5~{addr}
+afiJ not_a_function
+afiJ @ 0x80
+s
+EOF
+EXPECT=<<EOF
+null
+local_value
+-8
+{"from":0,"to":32,"type":"CALL"}
+{"from":0,"to":32,"type":"CALL"}
+[]
+0
+null
+null
+0x0
 EOF
 RUN
