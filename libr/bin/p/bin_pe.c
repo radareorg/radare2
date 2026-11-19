@@ -10,7 +10,7 @@ static bool check(RBinFile *bf, RBuffer *b) {
 	if (length <= 0x3d) {
 		return false;
 	}
-	ut16 idx = r_buf_read_le16_at (b, 0x3c);
+	ut64 idx = r_buf_read_le32_at (b, 0x3c);
 	if (idx + 26 < length) {
 		ut8 buf[2];
 		r_buf_read_at (b, 0, buf, sizeof (buf));
