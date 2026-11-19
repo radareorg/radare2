@@ -405,6 +405,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=izz utf16le surrogate pairs
+FILE=-
+CMDS=<<EOF
+wx 4100420043003dd800de3dd801de3dd802de3dd803de0000
+e bin.str.enc=utf16le
+izz~:2..
+EOF
+EXPECT=<<EOF
+0   0x00000000 0x00000000 7   24           utf16le ABC😀😁😂😃
+EOF
+RUN
+
 NAME=bin.str.enc string reset
 FILE=--
 CMDS=<<EOF
