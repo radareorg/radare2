@@ -127,6 +127,7 @@ typedef struct Elf_(dynamic_info) {
 	bool dt_android_is_rela;      // true for DT_ANDROID_RELA, false for DT_ANDROID_REL
 	bool dt_bind_now;
 	bool dt_aarch64_pac_plt; /* AArch64 -z pac-plt: 24 byte plt entries */
+	bool dt_soname;
 	Elf_(Xword) dt_flags;
 	Elf_(Xword) dt_flags_1;
 	// the dt_*sz above as declared, these cut to the bytes that are loaded

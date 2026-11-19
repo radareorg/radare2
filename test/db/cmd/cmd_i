@@ -4197,3 +4197,38 @@ public: void __thiscall A::f(void)
 {"lang":"msvc","mangled":"?f@A@@QAEXXZ","demangled":"public: void __thiscall A::f(void)"}
 EOF
 RUN
+
+NAME=i static false for an ELF with PT_DYNAMIC and no DT_NEEDED
+FILE=bins/elf/libflutterapp.so
+CMDS=<<EOF
+i~^static
+EOF
+EXPECT=<<EOF
+static   false
+EOF
+RUN
+
+NAME=i static true for a static PIE
+FILE=bins/elf/rust_nonnull_x86_64
+CMDS=<<EOF
+i~^static
+EOF
+EXPECT=<<EOF
+static   true
+EOF
+RUN
+
+NAME=i static true for a static PIE without DF_1_PIE
+FILE=malloc://0x6b9a8
+CMDS=<<EOF
+wff bins/elf/rust_nonnull_x86_64
+wx 00 @ 0x69c8b
+oba 0
+i~^static
+ij~{bin.static}
+EOF
+EXPECT=<<EOF
+static   true
+true
+EOF
+RUN
