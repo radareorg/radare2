@@ -426,30 +426,26 @@ static RList* entries(RBinFile *bf) {
 
 	// add entrypoint for jni libraries
 	// NOTE: this is slow, we shouldnt find for java constructors here
-	if (!Elf_(load_symbols) (eo)) {
-		return ret;
-	}
-
-	RBinElfSymbol *symbol;
-	RVecRBinElfSymbol *symbols = eo->g_symbols_vec;
-	if (!symbols) {
-		return ret;
-	}
-	R_VEC_FOREACH (symbols, symbol) {
-		// why?
-		if (!r_str_startswith (symbol->name, "Java")) {
-			continue;
+	// a stripped binary has no symbols, but its constructors are still entries
+	RVecRBinElfSymbol *symbols = Elf_(load_symbols) (eo)? eo->g_symbols_vec: NULL;
+	if (symbols) {
+		RBinElfSymbol *symbol;
+		R_VEC_FOREACH (symbols, symbol) {
+			// why?
+			if (!r_str_startswith (symbol->name, "Java")) {
+				continue;
+			}
+			if (!r_str_endswith (symbol->name, "_init")) {
+				continue;
+			}
+			RBinAddr *ptr = R_NEW0 (RBinAddr);
+			ptr->paddr = symbol->offset;
+			ptr->vaddr = Elf_(p2v) (eo, ptr->paddr);
+			ptr->hpaddr = UT64_MAX;
+			ptr->type = R_BIN_ENTRY_TYPE_INIT;
+			r_list_append (ret, ptr);
+			break;
 		}
-		if (!r_str_endswith (symbol->name, "_init")) {
-			continue;
-		}
-		RBinAddr *ptr = R_NEW0 (RBinAddr);
-		ptr->paddr = symbol->offset;
-		ptr->vaddr = Elf_(p2v) (eo, ptr->paddr);
-		ptr->hpaddr = UT64_MAX;
-		ptr->type = R_BIN_ENTRY_TYPE_INIT;
-		r_list_append (ret, ptr);
-		break;
 	}
 
 	const int bin_bits = Elf_(get_bits) (eo);
