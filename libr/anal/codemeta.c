@@ -385,6 +385,9 @@ static char *r_codemeta_print_internal(RCodeMeta *code, RVecCodeMetaOffset *line
 		case R_SYNTAX_HIGHLIGHT_TYPE_DATATYPE: color = PAL (var_type, Color_BLUE); break;
 		case R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME: color = PAL (fname, Color_RED); break;
 		case R_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE: color = PAL (num, Color_YELLOW); break;
+		case R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_PARAMETER: color = PAL (args, Color_CYAN); break;
+		case R_SYNTAX_HIGHLIGHT_TYPE_LOCAL_VARIABLE: color = PAL (var_name, Color_GREEN); break;
+		case R_SYNTAX_HIGHLIGHT_TYPE_GLOBAL_VARIABLE: color = PAL (flag, Color_CYAN); break;
 		default: break;
 		}
 
