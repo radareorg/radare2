@@ -1886,7 +1886,7 @@ static PdcCmt *pdc_cmt_at(RList *cmts, ut64 addr) {
 static void pdc_print_comment(RCore *core, ut64 addr, const char *text) {
 	char *b64 = r_base64_encode_dyn ((const ut8 *)text, -1);
 	if (b64) {
-		r_cons_printf (r_core_get_cons (core), "CCu base64:%s @ 0x%08" PFMT64x "\n", b64, addr);
+		r_cons_printf (r_core_get_cons (core), "'@0x%08"PFMT64x"'CCu base64:%s\n", addr, b64);
 		free (b64);
 	}
 }

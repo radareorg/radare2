@@ -245,7 +245,7 @@ EXPECT=<<EOF
  0x00000040 | add eax, 1                     |         eax += 1
 0
 5
-CCu base64:ZWF4ICs9IDE= @ 0x00000040
+'@0x00000040'CCu base64:ZWF4ICs9IDE=
 0x90
 true
 false

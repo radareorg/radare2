@@ -351,8 +351,8 @@ static bool test_r_codemeta_print(void) {
 static bool test_r_codemeta_print_comment_cmds(void) {
 	RCodeMeta *code = get_hello_world ();
 	char *actual;
-	char *expected = "CCu base64:c3ltLmltcC5wdXRzKCJIZWxsbywgV29ybGQhIik= @ 0x1158\n"
-			 "CCu base64:cmV0dXJu @ 0x115f\n";
+	char *expected = "'@0x1158'CCu base64:c3ltLmltcC5wdXRzKCJIZWxsbywgV29ybGQhIik=\n"
+			 "'@0x115f'CCu base64:cmV0dXJu\n";
 	
 	actual = r_codemeta_print_comment_cmds (code);
 	mu_assert_streq (actual, expected, "pdg* OUTPUT DOES NOT MATCH");

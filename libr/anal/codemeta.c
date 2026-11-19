@@ -443,7 +443,7 @@ static bool foreach_offset_annotation(void *user, const ut64 offset, const void 
 	CodeMetaCommentData *data = user;
 	const RCodeMetaItem *annotation = val;
 	char *b64statement = r_base64_encode_dyn ((const ut8 *)data->code->code + annotation->start, annotation->end - annotation->start);
-	r_strbuf_appendf (data->sb, "CCu base64:%s @ 0x%" PFMT64x "\n", b64statement, annotation->offset.offset);
+	r_strbuf_appendf (data->sb, "'@0x%"PFMT64x"'CCu base64:%s\n", annotation->offset.offset, b64statement);
 	free (b64statement);
 	return true;
 }
