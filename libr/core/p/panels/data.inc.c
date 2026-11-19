@@ -211,8 +211,21 @@ static const GraphMenuOption graph_menu_options[] = {
 	{ "Node bodies", "graph.body", { "off", "on" } },
 	{ "Node titles", "graph.ntitles", { "off", "on" } },
 	{ "Comments", "graph.comments", { "off", "on" } },
-	{ "Contents", "cmd.bbgraph", { "", "pdcb", "CCb", "CLLb", "pdsb", "pdb @e:asm.esil=true" } },
+	{ "Contents", "cmd.bbgraph", { NULL } },
 	{ "Edges", "graph.edges", { "off", "simple", "avoid collisions" } },
+};
+
+static const struct {
+	const char *name;
+	const char *cmd;
+} graph_content_options[] = {
+	{ "Disassembly", "" },
+	{ "Decompiler", "pdcb" },
+	{ "Comments", "CCb" },
+	{ "Source lines", "CLLb" },
+	{ "Summary", "pdsb" },
+	{ "ESIL", "pdb @e:asm.esil=true" },
+	{ "Empty", NULL },
 };
 
 static const ModalEntryDef modal_entries_db[] = {

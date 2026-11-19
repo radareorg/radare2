@@ -600,9 +600,10 @@ e graph.layout
 <=jqQ
 $capture > /dev/null
 cat $panel~Cache (on)~?
-"<\x1b[<2;10;6Mjljjjjj Q"
+"<\x1b[<2;10;6Mjljjjjjlj Q"
 v @e:scr.interactive=true > /dev/null
 e cmd.bbgraph
+e graph.body
 EOF
 EXPECT=<<EOF
 1
@@ -611,6 +612,58 @@ false
 1
 1
 pdcb
+true
+EOF
+RUN
+
+NAME=panels graph contents submenu selects named renderers and Empty
+FILE=-
+TIMEOUT=10
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+"$capture=v @e:scr.interactive=true > $panel"
+e scr.wheel=false
+e scr.cols=100
+e scr.rows=30
+e scr.utf8=false
+wx 85c0740290c3c3
+af
+CCu menu-note @ 0
+"<Mlljljjjjj Q"
+$capture > /dev/null
+"<\x1b[<2;10;6MjljjjjjlqqqQ"
+$capture > /dev/null
+cat $panel~* Disassembly~?
+e cmd.bbgraph=echo custom
+"<\x1b[<2;10;6Mjljjjjjljjjjjj Q"
+$capture > /dev/null
+e graph.body
+e cmd.bbgraph
+"<\x1b[<2;10;6Mjljjjjjljj Q"
+$capture > /dev/null
+e graph.body
+e cmd.bbgraph
+<Q
+$capture > /dev/null
+cat $panel~menu-note~?
+"<\x1b[<2;10;6MjljjjjjlqqqQ"
+$capture > /dev/null
+cat $panel~* Comments~?
+"<\x1b[<2;10;6Mjljjjjjljjjjj Q"
+$capture > /dev/null
+e cmd.bbgraph
+e asm.esil
+EOF
+EXPECT=<<EOF
+1
+false
+echo custom
+true
+CCb
+1
+1
+pdb @e:asm.esil=true
+false
 EOF
 RUN
 

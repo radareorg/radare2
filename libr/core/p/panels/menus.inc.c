@@ -384,19 +384,9 @@ static int context_graph_option_cb(void *user) {
 	const GraphMenuOption *option = &graph_menu_options[parent->selectedIndex];
 	RPanel *panel = r_panels_get_cur_panel (core->panels);
 	if (option->key) {
-		RConfigNode *node = r_config_node_get (core->config, option->key);
-		int count = 0, value = -1;
-		while (count < R_ARRAY_SIZE (option->states) && option->states[count]) {
-			if (r_str_eq (node->value, option->states[count])) {
-				value = count;
-			}
-			count++;
-		}
-		if (r_config_node_is_str (node)) {
-			r_config_set (core->config, option->key, option->states[(value + 1) % count]);
-		} else {
-			r_config_set_i (core->config, option->key, (node->i_value + 1) % count);
-		}
+		int count = option->states[2]? 3: 2;
+		int value = R_CLAMP (r_config_get_i (core->config, option->key), 0, count - 1);
+		r_config_set_i (core->config, option->key, (value + 1) % count);
 		r_panels_refresh_tabs (core, true);
 	} else {
 		bool tiny = !strcmp (panel->model->cmd, "agft");
@@ -409,16 +399,48 @@ static int context_graph_option_cb(void *user) {
 	return frame_refresh_cb (core);
 }
 
+static int context_graph_content_cb(void *user) {
+	RCore *core = user;
+	RPanelsMenu *menu = core->panels->panels_menu;
+	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+	const char *cmd = graph_content_options[parent->selectedIndex].cmd;
+	r_config_set_b (core->config, "graph.body", cmd != NULL);
+	if (cmd) {
+		r_config_set (core->config, "cmd.bbgraph", cmd);
+	}
+	r_panels_refresh_tabs (core, true);
+	r_panels_reset_scroll_pos (r_panels_get_cur_panel (core->panels));
+	return frame_refresh_cb (core);
+}
+
 static void r_panels_graph_menu_fill(RCore *core, RPanel *panel, RPanelsMenuItem *parent) {
 	bool tiny = !strcmp (panel->model->cmd, "agft");
 	size_t i, count = tiny? 2: R_ARRAY_SIZE (graph_menu_options);
 	for (i = 0; i < count; i++) {
 		const GraphMenuOption *option = &graph_menu_options[i];
+		if (!option->states[0]) {
+			RPanelsMenuItem *contents = r_panels_menu_item_add (parent, option->name, "Choose the text shown in each block", NULL, open_menu_cb);
+			if (!contents) {
+				break;
+			}
+			const char *cmd = r_config_get (core->config, option->key);
+			const bool visible = r_config_get_b (core->config, "graph.body");
+			size_t j;
+			for (j = 0; j < R_ARRAY_SIZE (graph_content_options); j++) {
+				const char *choice = graph_content_options[j].cmd;
+				bool active = choice? visible && (!strcmp (cmd, choice) || (!*choice && !strcmp (cmd, "pdb"))): !visible;
+				char *name = r_str_newf ("%s%s", active? "* ": "  ", graph_content_options[j].name);
+				RPanelsMenuItem *item = r_panels_menu_item_add (contents, name, NULL, NULL, context_graph_content_cb);
+				free (name);
+				if (!item) {
+					break;
+				}
+			}
+			continue;
+		}
 		int value = option->key? r_config_get_i (core->config, option->key): tiny;
 		int max = option->states[2]? 2: 1;
-		RConfigNode *node = option->key? r_config_node_get (core->config, option->key): NULL;
-		const char *state = node && r_config_node_is_str (node)? node->value: option->states[R_CLAMP (value, 0, max)];
-		char *name = r_str_newf ("%s (%s)", option->name, R_STR_ISEMPTY (state)? "disassembly": state);
+		char *name = r_str_newf ("%s (%s)", option->name, option->states[R_CLAMP (value, 0, max)]);
 		RPanelsMenuItem *item = r_panels_menu_item_add (parent, name, NULL, NULL, context_graph_option_cb);
 		free (name);
 		if (!item) {

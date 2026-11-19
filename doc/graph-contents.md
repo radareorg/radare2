@@ -15,8 +15,10 @@ suggested renderers; other commands are supported too.
 | No body | `e graph.body=false` |
 
 Use `e graph.body=true` to show bodies again. The visual graph's `W` key
-switches between normal disassembly and `pdcb`. Panels offer the same renderers
-under Graph options > Contents.
+switches between normal disassembly and `pdcb`. Right-click a graph panel and
+choose Graph options > Contents to select a renderer directly. The active
+choice is marked with `*`. Empty hides bodies; selecting another renderer shows
+them again.
 
 `pdcb` prints only the current block's decompiled lines. It selects the backend
 through `cmd.pdc`: for example, `e cmd.pdc=pdg` selects Ghidra and

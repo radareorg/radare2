@@ -77,7 +77,7 @@ typedef struct {
 typedef struct {
 	const char *name;
 	const char *key;
-	const char *states[8];
+	const char *states[3];
 } GraphMenuOption;
 
 typedef enum {
