@@ -59,3 +59,29 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=go runtime panic calls end the block
+FILE=bins/elf/dwarf_go_tree
+CMDS=<<EOF
+aa
+afb @ sym.runtime.goPanicSliceB
+afi @ sym.runtime.goPanicSliceB~^noreturn
+EOF
+EXPECT=<<EOF
+0x0042d030 0x0042d043 00:0000 19 j 0x0042d0d4 f 0x0042d043
+0x0042d043 0x0042d0d3 00:0000 144
+0x0042d0d4 0x0042d0de 00:0000 10
+noreturn: true
+EOF
+RUN
+
+NAME=go bounds check panic call ends the block
+FILE=bins/elf/go-cdetect
+CMDS=<<EOF
+aa
+afb @ sym.syscall.Getenv~^0x0047aa84
+EOF
+EXPECT=<<EOF
+0x0047aa84 0x0047aa89 00:0000 5
+EOF
+RUN

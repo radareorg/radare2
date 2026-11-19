@@ -1205,7 +1205,7 @@ NAME=arm64 linux kernel noreturn types end the block at the bl
 FILE=malloc://512
 ARGS=-a arm -b 64 -e asm.os=linux
 CMDS=<<EOF
-tn~panic,do_exit
+tn~panic,do_exit~!runtime
 wx 40000094 78563412 1f2003d5 c0035fd6 @ 0
 wx 40000094 78563412 1f2003d5 c0035fd6 @ 0x10
 wx 40000094 78563412 1f2003d5 c0035fd6 @ 0x20
