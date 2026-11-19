@@ -108,3 +108,16 @@ EXPECT=<<EOF
 arg int32_t arg_8h @ ebp+0x8
 EOF
 RUN
+
+NAME=afv sub reg,reg and or reg,-1 write their register without reading it
+FILE=bins/elf/upxtest
+CMDS=<<EOF
+aa
+afv @ 0x5854
+EOF
+EXPECT=<<EOF
+arg int64_t arg_0h @ rsp+0x28
+var int64_t var_10h @ rsp+0x20
+var int64_t var_bh @ rbp-0xb
+EOF
+RUN

@@ -1607,9 +1607,41 @@ static bool op_zeroes_reg(RAnalOp *op) {
 	return true;
 }
 
+// or reg, -1 sets every bit of reg whatever it held
+static bool op_fills_reg(RAnal *anal, RAnalOp *op) {
+	if ((op->type & R_ANAL_OP_TYPE_MASK) != R_ANAL_OP_TYPE_OR) {
+		return false;
+	}
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
+	if (!dst || !dst->reg || dst->memref) {
+		return false;
+	}
+	RRegItem *ri = r_reg_get (anal->reg, dst->reg, -1);
+	const int bits = ri? ri->size: 0;
+	r_unref (ri);
+	if (bits < 1) {
+		return false;
+	}
+	const ut64 mask = bits >= 64? UT64_MAX: (1ULL << bits) - 1;
+	bool fills = false;
+	RAnalValue *src;
+	R_VEC_FOREACH (&op->srcs, src) {
+		if (src->memref) {
+			return false;
+		}
+		if (src->type == R_ANAL_VAL_IMM || !src->reg) {
+			// x86 leaves the immediate operand typed as a register with no name
+			fills |= ((ut64)src->imm & mask) == mask;
+		} else if (src->reg && strcmp (src->reg, dst->reg)) {
+			return false;
+		}
+	}
+	return fills;
+}
+
 // in_src and in_dst are the only facts the branches below are built from, and
 // every caller already needs them, so they come in rather than being recomputed
-static bool is_used_like_arg(RAnalOp *op, bool op_dst_writeonly, bool in_src, bool in_dst) {
+static bool is_used_like_arg(RAnal *anal, RAnalOp *op, bool op_dst_writeonly, bool in_src, bool in_dst) {
 	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_POP:
@@ -1622,7 +1654,9 @@ static bool is_used_like_arg(RAnalOp *op, bool op_dst_writeonly, bool in_src, bo
 	case R_ANAL_OP_TYPE_LOAD:
 		return in_src;
 	case R_ANAL_OP_TYPE_XOR:
-		if (op_zeroes_reg (op)) {
+	case R_ANAL_OP_TYPE_SUB:
+	case R_ANAL_OP_TYPE_OR:
+		if (op_zeroes_reg (op) || op_fills_reg (anal, op)) {
 			return false;
 		}
 		//fallthrough
@@ -1880,7 +1914,7 @@ static void extract_dyncc_reguse(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, i
 		const int slot = R_ANAL_CC_DYNSLOT_BASE + dynslot;
 		const bool in_src = is_reg_in_src (loc, anal, srcregs);
 		const bool in_dst = opdreg && r_anal_cc_location_uses (anal, loc, opdreg);
-		const bool is_arg = is_used_like_arg (op, op_dst_writeonly, in_src, in_dst);
+		const bool is_arg = is_used_like_arg (anal, op, op_dst_writeonly, in_src, in_dst);
 		if (is_arg && reg_set[slot] != 2) {
 			const char *regname = reguse_regname_for_loc (anal, op, loc, opdreg);
 			reguse_append_hint (anal, op->addr, regname, name);
@@ -2147,7 +2181,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		}
 		const int regsize = reg && reg->size > 0? BITS2BYTES (reg->size): size;
 		bool is_arg = partial? is_used_small_reg_arg (anal, op, reg, &reg_set[slot], op_dst_writeonly)
-			: is_used_like_arg (op, op_dst_writeonly, in_src, in_dst);
+			: is_used_like_arg (anal, op, op_dst_writeonly, in_src, in_dst);
 		if (is_arg) {
 			delta = reg? reg->index: cc_loc_delta (anal, regname);
 		}
@@ -2228,7 +2262,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	if (selfreg && (roles & R_BIN_SWIFT_ROLE_SELF)) {
 		// an ignored spill leaves the state alone: the value is still incoming
 		const bool spill = (roles & R_BIN_SWIFT_ROLE_SELF_UNKNOWN) && !in_dst && is_stack_traffic (anal, op);
-		bool is_arg = !spill && is_used_like_arg (op, op_dst_writeonly, in_src, in_dst);
+		bool is_arg = !spill && is_used_like_arg (anal, op, op_dst_writeonly, in_src, in_dst);
 		if (is_arg && reg_set[i] != 2) {
 			int delta = cc_loc_delta (anal, selfreg);
 			RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, size, true, "self");
