@@ -125,6 +125,43 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=c exit functions do not return on any os
+FILE=malloc://1024
+ARGS=-a x86 -b 64 -e asm.os=freebsd
+CMDS=<<EOF
+wx e8fb010000c3 @ 0x0
+wx e8fb010000c3 @ 0x10
+wx e8fb010000c3 @ 0x20
+wx e8fb010000c3 @ 0x30
+f sym.imp.exit @ 0x200
+f sym.imp.abort @ 0x210
+f sym.imp._Exit @ 0x220
+f sym.imp.quick_exit @ 0x230
+af @ 0x0
+af @ 0x10
+af @ 0x20
+af @ 0x30
+?v $FS @@=0 0x10 0x20 0x30
+EOF
+EXPECT=<<EOF
+0x5
+0x5
+0x5
+0x5
+EOF
+RUN
+
+NAME=freebsd ls exit does not return
+FILE=bins/elf/freebsd-ls
+CMDS=<<EOF
+aa
+afi @ sym.imp.exit~^noreturn[1]
+EOF
+EXPECT=<<EOF
+true
+EOF
+RUN
+
 NAME=Noreturn propagation preserves a MIPS call delay slot
 ARGS=-a mips -b 32 -e cfg.bigendian=true
 FILE=-

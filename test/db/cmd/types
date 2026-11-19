@@ -2323,6 +2323,7 @@ cxa_bad_cast
 err
 errc
 ZSt9terminatev
+exit
 RtlRaiseException
 cxa_bad_typeid
 cxa_call_unexpected
@@ -2343,11 +2344,15 @@ cxa_end_cleanup
 8
 cxa_pure_virtual
 cxa_rethrow
+quick_exit
 0x8
+_Exit
+abort
 cxa_bad_cast
 err
 errc
 ZSt9terminatev
+exit
 RtlRaiseException
 cxa_bad_typeid
 cxa_call_unexpected
@@ -2367,6 +2372,9 @@ ExitThread
 cxa_end_cleanup
 cxa_pure_virtual
 cxa_rethrow
+quick_exit
+_Exit
+abort
 EOF
 RUN
 
