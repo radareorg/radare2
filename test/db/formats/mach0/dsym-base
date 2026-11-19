@@ -15,3 +15,25 @@ main_100003f64
 int dbg.main (int argc, char **argv, char **envp);
 EOF2
 RUN
+
+NAME=Mach-O dSYM data symbols from a symtab without LC_DYSYMTAB
+FILE=bins/mach0/TestRTTI-armv7-dSYM
+CMDS=<<EOF2
+is~?
+is~_OBJC_CLASS_$_AppDelegate[1-4]
+EOF2
+EXPECT=<<EOF2
+103
+0x00000c5c 0x0000cc5c GLOBAL OBJ
+EOF2
+RUN
+
+NAME=Mach-O dSYM data symbol GCC_except_table97
+FILE=bins/mach0/core.dwarf
+CMDS=<<EOF2
+is~GCC_except_table97[1-4]
+EOF2
+EXPECT=<<EOF2
+0x000c7268 0x100092268 LOCAL OBJ
+EOF2
+RUN
