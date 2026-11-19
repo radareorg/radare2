@@ -12,6 +12,7 @@ e pdc.inline=true
 pdc @ 0~inline child~?
 afia+ inline @ 0x40
 pdc @ 0
+pdcb @ 0~0x40,inline
 afia- inline @ 0x40
 pdc @ 0~inline child~?
 EOF
@@ -27,6 +28,7 @@ void caller (void) {
     return eax    // rsp
 }
 
+0x40 ()       // child
 0
 EOF
 RUN

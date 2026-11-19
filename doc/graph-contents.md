@@ -29,6 +29,10 @@ through `cmd.pdc`: for example, `e cmd.pdc=pdg` selects Ghidra and
 `e cmd.pdc=pdd` selects r2dec. The whole function is decompiled and its address
 annotations select each block's lines. Comments and source metadata are not
 imported or replaced. Blocks optimized away by the decompiler have empty bodies.
+The native backend uses `pdcjb` to emit the cached block statements before
+function-wide structuring. Conditions retain their jump targets; function,
+loop, exception, and inline wrappers are not added. Other backends use their
+annotated function output (`pdcj`, or `pddA` for r2dec).
 
 Graph commands decompile once per function per render when `cmd.bbgraph=pdcb`.
 The results are discarded after the render, so edits and backend changes take

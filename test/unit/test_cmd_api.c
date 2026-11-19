@@ -400,6 +400,8 @@ static bool test_r_core_plugin_context_callback(void) {
 	r_config_set (core->config, "cmd.pdc", "pdd");
 	r_core_call (core, "pdcj");
 	mu_assert_eq (core_plugin_state.legacy_calls, 2, "pdcj requests r2dec offset annotations");
+	r_core_call (core, "pdcjb");
+	mu_assert_eq (core_plugin_state.legacy_calls, 3, "block JSON also requests r2dec offset annotations");
 	mu_assert_true (r_core_plugin_remove (core->rcmd, &plugin), "remove contextual core plugin");
 	r_core_call (core, "ctxplug?");
 	mu_assert_eq (core_plugin_state.calls, 1, "removed plugin is no longer dispatched");

@@ -1072,14 +1072,15 @@ pdc?
 EOF
 EXPECT=<<EOF
 Usage: pd:c[acjlot*]  experimental, unreliable and hacky pseudo-decompiler
-| pd:c   pseudo decompile function in current offset
-| pd:c*  emit decompiled lines as CCu comment commands
-| pd:ca  side by side comparing assembly and pseudo
-| pd:cc  pseudo-decompile with C helpers around
-| pd:cl  linear pseudo-decompilation scrolling across functions
-| pd:co  show associated offset next to pseudecompiled output
-| pd:cj  in json format for codemeta annotations (used by frontends like iaito)
-| pd:ct  dump the structuring region AST (decompiler debug)
+| pd:c    pseudo decompile function in current offset
+| pd:c*   emit decompiled lines as CCu comment commands
+| pd:ca   side by side comparing assembly and pseudo
+| pd:cc   pseudo-decompile with C helpers around
+| pd:cl   linear pseudo-decompilation scrolling across functions
+| pd:co   show associated offset next to pseudecompiled output
+| pd:cj   in json format for codemeta annotations (used by frontends like iaito)
+| pd:cjb  annotated basic block statements without function-wide structuring
+| pd:ct   dump the structuring region AST (decompiler debug)
 EOF
 RUN
 
@@ -1089,9 +1090,11 @@ FILE=--
 CMDS=<<EOF
 e pdc.optimize=false
 pdcj?
+pdcjb?
 EOF
 EXPECT=<<EOF
 | pd:cj  in json format for codemeta annotations (used by frontends like iaito)
+| pd:cjb  annotated basic block statements without function-wide structuring
 EOF
 RUN
 
@@ -1265,7 +1268,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdcj annotation ranges cover the emitted code
+NAME=pdcj annotation ranges start on the emitted code
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
 e pdc.optimize=false
@@ -1274,8 +1277,8 @@ pdcj~{annotations[0]}
 pdcj~{annotations[1]}
 EOF
 EXPECT=<<EOF
-{"start":52,"end":112,"offset":134513504,"type":"offset"}
-{"start":112,"end":129,"offset":134513506,"type":"offset"}
+{"start":57,"end":112,"offset":134513504,"type":"offset"}
+{"start":117,"end":129,"offset":134513506,"type":"offset"}
 EOF
 RUN
 
@@ -1291,7 +1294,7 @@ pdcj~{annotations[11]}
 pdcj~{annotations[12]}
 EOF
 EXPECT=<<EOF
-{"start":505,"end":538,"offset":4294982284,"type":"offset"}
+{"start":514,"end":538,"offset":4294982284,"type":"offset"}
 {"start":538,"end":585,"offset":4294982252,"type":"offset"}
 {"start":585,"end":633,"offset":4294982264,"type":"offset"}
 EOF
@@ -2778,5 +2781,58 @@ EOF
 EXPECT_ERR=<<EOF
 ERROR: No basic block at 0x30
 ERROR: Decompiler did not produce annotated code
+EOF
+RUN
+
+NAME=pdcb renders block statements before function-wide structuring
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e pdc.optimize=false
+wx 83ff017507b801000000eb05b802000000c3
+af
+pdcb
+pdcb @ 5
+pdcb @ 12
+pdcb @ 17
+e cmd.bbgraph=pdcb
+agfj~{[0].blocks[0].body}
+pdc~} else {~?
+e pdc.structured=false
+pdcb
+EOF
+EXPECT=<<EOF
+v = edi - 1   // arg1
+if (v) goto loc_0xc // likely
+eax = 1
+goto loc_0x11
+eax = 2
+// CODE XREF from fcn.00000000 @ 0xa(x)
+return
+v = edi - 1   // arg1\nif (v) goto loc_0xc // likely\n
+1
+v = edi - 1   // arg1
+if (v) goto loc_0xc // likely
+EOF
+RUN
+
+NAME=pdcb keeps loop branches local instead of rendering empty scopes
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e pdc.optimize=false
+wx 83c70183ff057d0e83ff097407b801000000ebec c390b802000000c3
+af
+pdcb~while,break,}~?
+pdcb~if (
+pdcb @ 8
+pdc~break~?
+EOF
+EXPECT=<<EOF
+0
+if (v >= 0) goto loc_0x16 // unlikely
+v = edi - 9   // arg1
+if (!v) goto loc_0x14 // unlikely
+1
 EOF
 RUN

@@ -8,7 +8,7 @@ static void pdc_block_free(HtUPKv *kv) {
 }
 
 R_IPI HtUP *r_core_pdc_blocks(RCore *core, RAnalFunction *fcn) {
-	char *output = r_core_cmd_strf (core, "pdcj @e:cmd.bbgraph= @ 0x%"PFMT64x, fcn->addr);
+	char *output = r_core_cmd_strf (core, "pdcjb @e:cmd.bbgraph= @ 0x%"PFMT64x, fcn->addr);
 	RJson *json = output? r_json_parsedup (output): NULL;
 	free (output);
 	const char *text = json && json->type == R_JSON_OBJECT? r_json_get_str (json, "code"): NULL;
@@ -66,16 +66,15 @@ R_IPI HtUP *r_core_pdc_blocks(RCore *core, RAnalFunction *fcn) {
 	return bodies;
 }
 
-static inline bool pdc_names_pseudo(const char *decompiler) {
-	return !*decompiler || !strcmp (decompiler, "pdc") || !strcmp (decompiler, "pd:c");
-}
-
 static RCmdResult pdc_router_callback(RCmdContext *ctx) {
 	RCore *core = ctx->user;
 	const char *rest = ctx->subcmd.a;
 	const char *configured = r_str_trim_head_ro (r_config_get (core->config, "cmd.pdc"));
-	if (pdc_names_pseudo (configured)) {
+	if (R_STR_ISEMPTY (configured) || R_STR_CMP_ANY (configured, "pdc", "pd:c")) {
 		return (RCmdResult) { .status = r_core_cmdf (core, "pd:c%s", rest) != 0 };
+	}
+	if (!strcmp (rest, "jb")) {
+		rest = "j";
 	}
 	char *decompiler = strdup (configured);
 	RConfigHold *hc = r_config_hold_new (core->config);

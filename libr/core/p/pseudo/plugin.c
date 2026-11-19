@@ -13,6 +13,7 @@ static RCoreHelpMessage help_msg_pdc = {
 	"pd:cl", "", "linear pseudo-decompilation scrolling across functions",
 	"pd:co", "", "show associated offset next to pseudecompiled output",
 	"pd:cj", "", "in json format for codemeta annotations (used by frontends like iaito)",
+	"pd:cjb", "", "annotated basic block statements without function-wide structuring",
 	"pd:ct", "", "dump the structuring region AST (decompiler debug)",
 	NULL
 };
@@ -141,11 +142,13 @@ repeat:;
 	r_core_seek (core, initial_addr, true);
 }
 
-static RCmdResult pseudo_help(RCmdContext *ctx, char sub) {
-	if (sub) {
-		char subhelp[6] = "pd:c";
-		subhelp[4] = sub;
-		if (r_cons_cmd_help_match (ctx->cons, help_msg_pdc, subhelp, 0, true) > 0) {
+static RCmdResult pseudo_help(RCmdContext *ctx) {
+	const size_t length = r_strs_len (ctx->subcmd) - 1;
+	if (length && length < ST32_MAX) {
+		char *subhelp = r_str_newf ("pd:c%.*s", (int)length, ctx->subcmd.a);
+		const int matches = subhelp? r_cons_cmd_help_match (ctx->cons, help_msg_pdc, subhelp, 0, true): 0;
+		free (subhelp);
+		if (matches > 0) {
 			return (RCmdResult) { 0 };
 		}
 	}
@@ -156,8 +159,7 @@ static RCmdResult pseudo_help(RCmdContext *ctx, char sub) {
 static RCmdResult pseudo_callback(RCmdContext *ctx) {
 	RCore *core = ctx->user;
 	if (r_cmdctx_help (ctx)) {
-		const bool row = r_strs_len (ctx->subcmd) == 2;
-		return pseudo_help (ctx, row? r_cmdctx_mode (ctx, "acjlot*"): 0);
+		return pseudo_help (ctx);
 	}
 	const char *tail = ctx->subcmd.a;
 	if (r_strs_lastch (ctx->subcmd) == 'l') {

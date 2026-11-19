@@ -482,10 +482,10 @@ static void print_asm_only(PDCState *state, ut64 addr) {
 
 // synthetic lines get no asm column; an instruction line keeps its own
 static void print_line_at(PDCState *state, ut64 addr, int indent, bool synthetic, const char *fmt, ...) {
-	const size_t start = r_strbuf_length (state->codestr);
 	va_list ap;
 	va_start (ap, fmt);
 	print_newline (state, addr, indent, synthetic);
+	const size_t start = r_strbuf_length (state->codestr);
 	r_strbuf_vappendf (state_sb (state), fmt, ap);
 	va_end (ap);
 	annotate_offset (state, start, addr);
@@ -1331,7 +1331,7 @@ static void emit_code_lines(PDCState *state, char *code, ut64 start_addr, int in
 			continue;
 		}
 		// drop a tail goto into a loop header the while/do already owns
-		if (line_is_goto (t) && (strstr (t, "switch table")
+		if (line_is_goto (t) && ((state->switch_addrs && strstr (t, "switch table"))
 				|| line_is_known_loop_goto (state, t))) {
 			continue;
 		}
@@ -2387,6 +2387,7 @@ static bool pdc_structured_body(PDCState *state, int indent) {
 static bool pdc_decompile_function(RCore *core, const char *input, PDCState *parent, const char *inline_prefix, char **inline_output) {
 	RCons *cons = r_core_get_cons (core);
 	bool show_c_headers = *input == 'c';
+	const bool block_output = !strcmp (input, "jb");
 	if (*input == 't') {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
 		if (!fcn) {
@@ -2404,7 +2405,7 @@ static bool pdc_decompile_function(RCore *core, const char *input, PDCState *par
 	PDCState state = { 0 };
 	state.parent = parent;
 	state.inline_prefix = inline_prefix;
-	state.inline_calls = r_config_get_b (core->config, "pdc.inline");
+	state.inline_calls = !block_output && r_config_get_b (core->config, "pdc.inline");
 	RVecPdcTrycatch_init (&state.trys);
 	state.core = core;
 	state.out = r_strbuf_new ("");
@@ -2437,8 +2438,10 @@ static bool pdc_decompile_function(RCore *core, const char *input, PDCState *par
 		r_strbuf_free (state.codestr);
 		return false;
 	}
-	collect_switch_addrs (&state);
-	pdc_collect_trycatch (core, state.fcn, &state.trys);
+	if (!block_output) {
+		collect_switch_addrs (&state);
+		pdc_collect_trycatch (core, state.fcn, &state.trys);
+	}
 	state.attached = UT64_MAX;
 	r_config_hold (hc, "asm.pseudo", "asm.decode", "asm.lines", "asm.bytes", "asm.stackptr", NULL);
 	r_config_hold (hc, "asm.addr", "asm.flags", "asm.lines.fcn", "asm.comments", NULL);
@@ -2496,7 +2499,7 @@ static bool pdc_decompile_function(RCore *core, const char *input, PDCState *par
 	const char *a1 = cc_a1? pseudo_arg_name (state.core->anal, cc_a1): r_reg_alias_getname (state.core->anal->reg, R_REG_ALIAS_A1);
 	state.r0 = r_reg_alias_getname (state.core->anal->reg, R_REG_ALIAS_R0);
 	const char *r0 = state.r0;
-	if (!inline_output) {
+	if (!inline_output && !block_output) {
 		if (show_c_headers) {
 			PRINTF ("// global registers\n");
 			PRINTF ("int stack[1024];\n");
@@ -2543,13 +2546,21 @@ static bool pdc_decompile_function(RCore *core, const char *input, PDCState *par
 	indent++;
 	RList *visited = r_list_newf (NULL);
 	state.last_addr = state.fcn->addr;
-	const bool structured = r_config_get_b (core->config, "pdc.structured")
+	if (block_output) {
+		RAnalBlock **iter;
+		R_VEC_FOREACH (&state.fcn->bbs, iter) {
+			render_bb_body_lines (&state, *iter, 0);
+			r_bitset_set (state.marked, (*iter)->addr);
+		}
+		bb = NULL;
+	}
+	const bool structured = !block_output && r_config_get_b (core->config, "pdc.structured")
 		&& pdc_structured_body (&state, indent);
 	if (structured) {
 		bb = NULL;
 	}
 	// pre-pass: mark loop header bbs so emit_code_lines can strip stale gotos to them
-	{
+	if (bb) {
 		RAnalBlock **piter;
 		RAnalBlock *pbb;
 		R_VEC_FOREACH (&state.fcn->bbs, piter) {
@@ -2916,7 +2927,7 @@ static bool pdc_decompile_function(RCore *core, const char *input, PDCState *par
 		print_line (&state, state.last_addr, 1 + state.open_trys, "} // end try");
 	}
 	indent = 0;
-	if (!inline_output) {
+	if (!inline_output && !block_output) {
 		print_line (&state, state.last_addr, indent, "}");
 	}
 	PRINTF ("\n");
