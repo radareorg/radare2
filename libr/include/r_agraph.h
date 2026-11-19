@@ -54,7 +54,8 @@ typedef struct r_core_graph_hits_t {
 #define R_AGRAPH_MODE_TINY 3
 #define R_AGRAPH_MODE_SUMMARY 4
 #define R_AGRAPH_MODE_COMMENTS 5
-#define R_AGRAPH_MODE_MAX 6
+#define R_AGRAPH_MODE_PDC 6
+#define R_AGRAPH_MODE_MAX 7
 
 typedef void (*RANodeCallback)(RANode *n, void *user);
 typedef void (*RAEdgeCallback)(RANode *from, RANode *to, void *user);

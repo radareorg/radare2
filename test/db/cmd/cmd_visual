@@ -903,3 +903,28 @@ EXPECT=<<EOF
 5a42434445464748
 EOF
 RUN
+
+NAME=visual graph print cycle reaches pdcb in both directions
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 31c0c3
+af
+$backendj=base64:eyJjb2RlIjoiY3ljbGVfZGVjb21waWxlZCgpO1xuIiwiYW5ub3RhdGlvbnMiOlt7InR5cGUiOiJvZmZzZXQiLCJvZmZzZXQiOjAsInN0YXJ0IjowLCJlbmQiOjE5fV19
+e cmd.pdc=$backend
+e cmd.bbgraph=echo configured-renderer
+"$capture=agfv @e:scr.interactive=true > $frame"
+<Pq
+$capture > /dev/null
+$frame~cycle_decompiled~?
+<ppppppq
+$capture > /dev/null
+$frame~cycle_decompiled~?
+e cmd.bbgraph
+EOF
+EXPECT=<<EOF
+1
+1
+echo configured-renderer
+EOF
+RUN

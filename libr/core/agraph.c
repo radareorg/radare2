@@ -65,7 +65,7 @@ static RCoreHelpMessage help_msg_visual_graph = {
 	"n/N", "next/previous scr.nkey (function/flag..)",
 	"o([A-Za-z]*)", "follow jmp/call identified by shortcut (like ;[oa])",
 	"O", "toggle asm.pseudo and asm.esil",
-	"p/P", "rotate graph modes (normal, display offsets, minigraph, summary)",
+	"p/P", "rotate graph modes (normal, offsets, mini, tiny, summary, comments, decompiler)",
 	"q", "back to Visual mode",
 	"r", "toggle jmphints/leahints",
 	"R", "change color theme or randomize colors (scr.randpal)",
@@ -112,6 +112,7 @@ static RCoreHelpMessage help_msg_visual_graph = {
 #define BODY_OFFSETS 0x1
 #define BODY_SUMMARY 0x2
 #define BODY_COMMENTS 0x4
+#define BODY_PDC 0x8
 
 #define NORMALIZE_MOV(x) ((x) < 0? -1: ((x) > 0? 1: 0))
 
@@ -247,6 +248,9 @@ static int mode2opts(const RAGraph *g) {
 	}
 	if (is_summary (g)) {
 		opts |= BODY_SUMMARY;
+	}
+	if (g->mode == R_AGRAPH_MODE_PDC) {
+		opts |= BODY_PDC;
 	}
 	return opts;
 }
@@ -2301,7 +2305,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 		"asm.cmt.col", "asm.marks", "asm.addr", "asm.dwarf.file",
 		"asm.comments", "asm.cmt.right", "asm.lines.bb", NULL);
 	const int maxsize = r_config_get_i (core->config, "graph.bb.maxsize");
-	const bool truncated = maxsize > 0 && size > maxsize && R_STR_ISEMPTY (r_config_get (core->config, "cmd.bbgraph"));
+	const bool truncated = !(opts & BODY_PDC) && maxsize > 0 && size > maxsize && R_STR_ISEMPTY (r_config_get (core->config, "cmd.bbgraph"));
 	if (truncated) {
 		size = maxsize;
 	}
@@ -2333,7 +2337,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 		r_config_set_b (core->config, "asm.addr", (opts & (BODY_OFFSETS | BODY_SUMMARY)) || r_config_get_b (core->config, "graph.addr"));
 		r_config_set_b (core->config, "scr.html", false);
 		core->print->cur_enabled = false;
-		const char *cmd = r_config_get (core->config, "cmd.bbgraph");
+		const char *cmd = (opts & BODY_PDC)? "pdcb": r_config_get (core->config, "cmd.bbgraph");
 		if (R_STR_ISNOTEMPTY (cmd)) {
 			body = r_core_cmd_str_at (core, addr, cmd);
 		} else {
@@ -2357,7 +2361,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 }
 
 static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fcn, bool emu, ut64 saved_gp, ut8 *saved_arena, int saved_arena_size, HtUP *decompiled) {
-	if (r_str_eq (r_config_get (core->config, "cmd.bbgraph"), "pdcb")) {
+	if ((opts & BODY_PDC) || r_str_eq (r_config_get (core->config, "cmd.bbgraph"), "pdcb")) {
 		RStrBuf *body = decompiled? ht_up_find (decompiled, b->addr, NULL): NULL;
 		const char *text = body? r_strbuf_get (body): "";
 		int width = r_config_get_i (core->config, "graph.bb.maxwidth");
@@ -2533,7 +2537,9 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		r_cons_break_push (core->cons, NULL, NULL);
 	}
 	RAGraphPalette palette;
-	HtUP *decompiled = g->show_node_body && r_str_eq (r_config_get (core->config, "cmd.bbgraph"), "pdcb")? r_core_pdc_blocks (core, fcn): NULL;
+	const int opts = mode2opts (g);
+	HtUP *decompiled = g->show_node_body && ((opts & BODY_PDC)
+		|| r_str_eq (r_config_get (core->config, "cmd.bbgraph"), "pdcb"))? r_core_pdc_blocks (core, fcn): NULL;
 	graph_palette_begin (core, g, &palette);
 	R_VEC_FOREACH (&fcn->bbs, iter) {
 		bb = *iter;
@@ -2546,7 +2552,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		if (few && !isbbfew (curbb, bb)) {
 			continue;
 		}
-		char *body = g->show_node_body? get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena, saved_arena_size, decompiled): strdup ("");
+		char *body = g->show_node_body? get_bb_body (core, bb, opts, fcn, emu, saved_gp, saved_arena, saved_arena_size, decompiled): strdup ("");
 		char *title = get_title (bb->addr);
 		char *color = (bb->color.r || bb->color.g || bb->color.b)
 			? r_cons_rgb_str (core->cons, NULL, -1, &bb->color)

@@ -20,6 +20,10 @@ choose Graph options > Contents to select a renderer directly. The active
 choice is marked with `*`. Empty hides bodies; selecting another renderer shows
 them again.
 
+In `VV`, `p` and `P` cycle forward and backward through normal disassembly,
+offsets, mini, tiny, summary, comments, and `pdcb`. The decompiler cycle entry
+uses `cmd.pdc` without changing the configured `cmd.bbgraph` renderer.
+
 `pdcb` prints only the current block's decompiled lines. It selects the backend
 through `cmd.pdc`: for example, `e cmd.pdc=pdg` selects Ghidra and
 `e cmd.pdc=pdd` selects r2dec. The whole function is decompiled and its address
