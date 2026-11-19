@@ -4,3 +4,16 @@ CMDS=q!
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=PE: memshared.dll write-only section maps readable
+FILE=bins/pe/memshared.dll
+CMDS=<<EOF
+iS~sect_0
+pi 2 @ entry0
+EOF
+EXPECT=<<EOF
+0   0x00000200  0x200 0x01001000  0x1000 srw- 0x90000000 ---- sect_0
+inc eax
+ret 0xc
+EOF
+RUN

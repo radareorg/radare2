@@ -430,6 +430,7 @@ static bool sections_vec(RBinFile *bf) {
 		}
 		if (R_BIN_PE_SCN_IS_WRITABLE (section->perm)) {
 			sec->perm |= R_PERM_W;
+			sec->perm |= R_PERM_R; // implicit
 		}
 		if (R_BIN_PE_SCN_IS_READABLE (section->perm)) {
 			sec->perm |= R_PERM_R;
