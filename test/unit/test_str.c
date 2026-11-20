@@ -1700,6 +1700,24 @@ bool test_r_str_arg_escape(void) {
 	mu_end;
 }
 
+bool test_r_str_highlight(void) {
+	char line[] = "mov \x1b[36meax\x1b[0m, 1";
+	mu_assert_streq_free (r_str_highlight (line, "eax, 1", "\x1b[44m", "\x1b[0m"),
+		"mov \x1b[36m\x1b[44meax\x1b[0m, 1\x1b[0m", "color codes inside the word are kept");
+	// a long color code inside a word that starts near the end of the 1024 byte buffer
+	char *pad = r_str_pad (NULL, 0, 'a', 1000);
+	char *code = r_str_pad (NULL, 0, '1', 200);
+	char *str = r_str_newf ("%sX\x1b[%smY", pad, code);
+	char *s = r_str_highlight (str, "XY", "\x1b[44m", "\x1b[0m");
+	mu_assert_notnull (s, "highlighted string");
+	mu_assert_true (strlen (s) < 1024, "the color codes of the word fit in the buffer");
+	free (s);
+	free (str);
+	free (code);
+	free (pad);
+	mu_end;
+}
+
 bool test_r_str_trim_args_quote_parity(void) {
 	char odd_single[] = "'pa\\'tata'";
 	r_str_trim_args (odd_single);
@@ -1815,6 +1833,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_unquote);
 	mu_run_test (test_r_str_arg_escape);
 	mu_run_test (test_r_str_pseudo_transform);
+	mu_run_test (test_r_str_highlight);
 	return tests_passed != tests_run;
 }
 
