@@ -32,16 +32,22 @@ stripped false
 uncaps   false
 subsys   darwin
 va       true
-            0x00000458      ff430191       add sp, sp, 0x50
-            0x0000045c      c0035fd6       ret
-            ;-- _r_io_open:
-            0x00000460      ff8301d1       sub sp, sp, 0x60            ; io.c:71
-            0x00000464      fd7b05a9       stp x29, x30, [sp, 0x50]
-            0x00000468      fd430191       add x29, sp, 0x50
-            0x0000046c      a0031ff8       stur x0, [x29, -0x10]
-            0x00000470      a1831ef8       stur x1, [x29, -0x18]
-            0x00000474      a2431eb8       stur w2, [x29, -0x1c]
-            0x00000478      a3031eb8       stur w3, [x29, -0x20]
-        ,=< 0x0000047c      01000014       b 0x480                     ; io.c:72:2
+            ;-- section.0..__text:
+            ;-- segment.:
+            ;-- mach0_header:
+            ;-- ltmp0:
+            0x00000000      00000090       adrp x0, sym._r_io_version  ; io.c:7 ; [00] -rwx section size 10276 named 0..__text
+            0x00000004      00000091       add x0, x0, 0
+            0x00000008      c0035fd6       ret                         ; io.c:7:1
+            ;-- _r_io_new:
+            0x0000000c      ff8300d1       sub sp, sp, 0x20            ; io.c:9
+            0x00000010      fd7b01a9       stp x29, x30, [sp, 0x10]
+            0x00000014      fd430091       add x29, sp, 0x10
+            0x00000018      200080d2       mov x0, 1
+            0x0000001c      01b880d2       mov x1, 0x5c0
+            ;-- mach0_segment64_0:
+            ;-- mach0_cmd_0:
+            0x00000020      00000094       bl mach0_segment64_0        ; io.c:10:12
+            0x00000024      e00700f9       str x0, [sp, 8]             ; io.c:10:7
 EOF
 RUN

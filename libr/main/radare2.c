@@ -1929,11 +1929,9 @@ static int main_radare2(int argc, const char **argv, bool standalone) {
 					if (sections) {
 						R_VEC_FOREACH (sections, s) {
 							if (s->perm & R_PERM_X) {
-								ut64 addr = s->vaddr? s->vaddr: s->paddr;
-								if (addr) {
-									r_core_seek (r, addr, true);
-									break;
-								}
+								// in va mode a file offset is not an address
+								r_core_seek (r, r->io->va? s->vaddr: s->paddr, true);
+								break;
 							}
 						}
 					}
