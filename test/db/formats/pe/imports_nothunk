@@ -4,3 +4,18 @@ CMDS=q!
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=PE: corkami imports_nothunk.exe - imports after a descriptor with no thunks
+FILE=bins/pe/imports_nothunk.exe
+CMDS=<<EOF
+ii
+pd 1 @ 0x401005
+EOF
+EXPECT=<<EOF
+nth vaddr      bind type lib          name
+------------------------------------------
+1   0x004010d0 NONE FUNC kernel32.dll ExitProcess
+1   0x004010d8 NONE FUNC msvcrt.dll   printf
+            0x00401005      ff15d8104000   call dword [sym.imp.msvcrt.dll_printf] ; 0x4010d8 ; int printf(const char *format, ...)
+EOF
+RUN
