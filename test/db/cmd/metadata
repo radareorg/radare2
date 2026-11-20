@@ -28,12 +28,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Cr 10 px
+NAME=Cr 10 px after C* replay
 FILE=-
 ARGS=-a x86 -b32
 CMDS=<<EOF
 wx 90909090c3c3
 Cr 2 px 2 @ 2
+.C*
 b 32
 pd 5
 EOF
@@ -48,12 +49,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Cr 10 px2
+NAME=Cr 10 px after Cr* replay
 FILE=-
 ARGS=-a x86 -b32
 CMDS=<<EOF
 wx 90909090c3c3
 Cr 2 px 2 @ 2
+.Cr*
 pd 5
 EOF
 EXPECT=<<EOF
@@ -64,6 +66,128 @@ EXPECT=<<EOF
 0x00000002  9090                                     ..
             0x00000004      c3             ret
             0x00000005      c3             ret
+EOF
+RUN
+
+NAME=Cr commands survive repeated C* and Cr* replay
+FILE=-
+CMDS=<<EOF
+'@0x10'Cr 2 ?e "hello" \path
+Cr. @ 0x10
+.Cr*
+Cr. @ 0x10
+.Cr*
+Cr. @ 0x10
+.C*
+Cr. @ 0x10
+Cr*
+EOF
+EXPECT=<<EOF
+?e "hello" \path
+?e "hello" \path
+?e "hello" \path
+?e "hello" \path
+'@0x00000010'Cr 2 base64:P2UgImhlbGxvIiBccGF0aA==
+EOF
+RUN
+
+NAME=Cr replay preserves operators without substitutions
+FILE=-
+CMDS=<<EOF
+'@0x20'Cr 1 ?e @ # | $(f subst_ran=1) `f backtick_ran=1`
+.C*
+Cr. @ 0x20
+.Cr*
+Cr. @ 0x20
+f~_ran~?
+EOF
+EXPECT=<<EOF
+?e @ # | $(f subst_ran=1) `f backtick_ran=1`
+?e @ # | $(f subst_ran=1) `f backtick_ran=1`
+0
+EOF
+RUN
+
+NAME=Cr replay stores commands until disassembly
+FILE=-
+ARGS=-a x86 -b32
+CMDS=<<EOF
+wx 90 @ 0x10
+'@0x10'Cr 1 ?e ok;f replay_ran=1
+.C*
+f~replay_ran~?
+.Cr*
+f~replay_ran~?
+pd 1 @ 0x10
+f~replay_ran~?
+EOF
+EXPECT=<<EOF
+0
+0
+            0x00000010 ; (Cr 1 ?e ok;f replay_ran=1)
+ok
+1
+EOF
+RUN
+
+NAME=Cr replay keeps control bytes encoded
+FILE=-
+CMDS=<<EOF
+Cr 2 base64:P2UgY29udHJvbApmIG5ld2xpbmVfcmFuPTENCRs= @ 0x30
+Cr*
+.C*
+Cr*
+.Cr*
+Cr*
+f~newline_ran~?
+EOF
+EXPECT=<<EOF
+'@0x00000030'Cr 2 base64:P2UgY29udHJvbApmIG5ld2xpbmVfcmFuPTENCRs=
+'@0x00000030'Cr 2 base64:P2UgY29udHJvbApmIG5ld2xpbmVfcmFuPTENCRs=
+'@0x00000030'Cr 2 base64:P2UgY29udHJvbApmIG5ld2xpbmVfcmFuPTENCRs=
+0
+EOF
+RUN
+
+NAME=Cr replay preserves commands longer than the metadata name buffer
+FILE=-
+CMDS=<<EOF
+'@0x40'Cr 2 ?e 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+.C*
+Cr. @ 0x40
+.Cr*
+Cr. @ 0x40
+EOF
+EXPECT=<<EOF
+?e 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+?e 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+EOF
+RUN
+
+NAME=Cr rejects invalid base64, NUL and empty commands
+FILE=-
+CMDS=<<EOF
+Cr 2 ?e original @ 0x10
+'@0x10'Cr 2 base64:???
+Cr. @ 0x10
+'@0x10'Cr 2 base64:AA==
+Cr. @ 0x10
+'@0x10'Cr 2 base64:
+Cr. @ 0x10
+.C*
+.Cr*
+Cr*
+EOF
+EXPECT=<<EOF
+?e original
+?e original
+?e original
+'@0x00000010'Cr 2 base64:P2Ugb3JpZ2luYWw=
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid base64 command
+ERROR: Invalid base64 command
+ERROR: Invalid base64 command
 EOF
 RUN
 

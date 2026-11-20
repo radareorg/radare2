@@ -37,6 +37,7 @@ static RCoreHelpMessage help_msg_C = {
 	"Cf", "[?][-] [sz] [0|cnt][fmt] [a0 a1...] [@addr]", "format memory (see pf?)",
 	"Cb", "[?][-] [addr] [@addr]", "bind both addresses for reflines purposes",
 	"Cr", "[?][-] [sz] [r2cmd] [@addr]", "run the given command to replace SZ bytes in the disasm",
+	"Cr", " [sz] base64:[r2cmd] [@addr]", "set a base64-encoded disassembly command",
 	"Ch", "[-] [size] [@addr]", "hide data",
 	"Cm", "[-] [sz] [fmt..] [@addr]", "magic parse (see pm?)",
 	"Cs", "[?] [-] [size] [@addr]", "add string",
@@ -1427,6 +1428,20 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				subtype = R_STRING_ENC_GUESS;
 			}
 			r_meta_set_with_subtype (core->anal, type, subtype, addr, n, name);
+		} else if (type == 'r' && p) {
+			char *command = NULL;
+			if (r_str_startswith (p, "base64:")) {
+				int command_len;
+				command = (char *)r_base64_decode_dyn (p + 7, -1, &command_len, true);
+				if (!command || !command_len || memchr (command, 0, command_len)) {
+					R_LOG_ERROR ("Invalid base64 command");
+					free (command);
+					free (t);
+					return false;
+				}
+			}
+			r_meta_set (core->anal, type, addr, n, command? command: p);
+			free (command);
 		} else {
 			int repcnt;
 			for (repcnt = 0; repcnt < repeat; repcnt++, addr += n) {

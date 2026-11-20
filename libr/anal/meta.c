@@ -282,6 +282,8 @@ static void meta_print(RAnal *a, RStrBuf *sb, RAnalMetaItem *d, ut64 start, ut64
 			pstr = str;
 		} else if (d->type == 't') {
 			pstr = str;
+		} else if (d->type == 'r') {
+			pstr = str;
 		} else if (d->type != 'C') {
 			r_name_filter (str, 0);
 			pstr = str;
@@ -462,6 +464,17 @@ static void meta_print(RAnal *a, RStrBuf *sb, RAnalMetaItem *d, ut64 start, ut64
 					// TODO: d->size
 				}
 				break;
+			case R_META_TYPE_RUN:
+				if (rad) {
+					char *command = r_base64_encode_dyn ((const ut8 *)d->str, -1);
+					if (command) {
+						r_strbuf_appendf (sb, "'@0x%08" PFMT64x "'Cr %" PFMT64u " base64:%s\n",
+							start, size, command);
+					}
+					free (command);
+					break;
+				}
+				// fallthrough
 			default:
 				if (rad) {
 					r_strbuf_appendf (sb, "%s %" PFMT64u " 0x%08" PFMT64x " # %s\n",
