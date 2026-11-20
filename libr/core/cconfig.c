@@ -2555,12 +2555,6 @@ static bool cb_cmd_esil_trap(void *user, void *data) {
 	if (core) {
 		core_esil_set_cmd (&core->esil.cmds.trap, node->value);
 		core->esil.esil.cmd = r_core_esil_cmd;
-		core_esil_set_cmd (&core->esil.esil.cmd_trap, node->value);
-		REsil *esil = R_UNWRAP3 (core, anal, esil);
-		if (esil) {
-			esil->cmd = r_core_esil_cmd;
-			core_esil_set_cmd (&esil->cmd_trap, node->value);
-		}
 	}
 	return true;
 }

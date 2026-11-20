@@ -2933,8 +2933,6 @@ static inline REsil *esil_new_setup(RCore *core) {
 		bool nonull = r_config_get_b (core->config, "esil.nonull");
 		r_esil_setup (esil, core->anal, romem, stats, nonull);
 		esil->cmd = r_core_esil_cmd;
-		const char *et = r_config_get (core->config, "cmd.esil.trap");
-		esil->cmd_trap = R_STR_ISNOTEMPTY (et)? strdup (et): NULL;
 	}
 	return esil;
 }
@@ -10216,12 +10214,12 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		break;
 	case ' ':
 	case 'q': // "aeq"
-		r_esil_set_pc (esil, core->addr);
-		r_esil_parse (esil, r_str_trim_head_ro (input + 1));
+		r_esil_set_pc (&core->esil.esil, core->addr);
+		r_core_esil_run_expr_at (core, r_str_trim_head_ro (input + 1), core->addr);
 		if (verbose && *input != 'q') {
-			r_esil_dumpstack (esil);
+			r_esil_dumpstack (&core->esil.esil);
 		}
-		r_esil_stack_free (esil);
+		r_esil_stack_free (&core->esil.esil);
 		break;
 	case 0:
 		R_LOG_ERROR ("Expected argument or subcommand. See 'ae?' for details");
