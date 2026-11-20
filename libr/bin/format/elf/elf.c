@@ -5594,6 +5594,10 @@ static void fill_symbol(ELFOBJ *eo, RBinElfSymbol *symbol, RBinSymbol *sym) {
 				paddr = offset;
 			}
 		}
+	} else if (symbol->st_shndx != SHN_UNDEF && symbol->type && !strcmp (symbol->type, R_BIN_TYPE_TLS_STR) && !is_bin_etrel (eo)) {
+		// gABI: an STT_TLS value is an offset in the TLS block, so no file offset holds it
+		vaddr = symbol->st_value;
+		paddr = UT64_MAX;
 	} else if (symbol->is_vaddr) {
 		paddr = UT64_MAX;
 		vaddr = symbol->offset;
