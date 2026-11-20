@@ -214,7 +214,7 @@ static int drcov_parse(RAnal *anal, const char *path, DrcovBbCb cb, void *user) 
 	ut32 bb_count = (ut32)r_num_get (NULL, line + strlen ("BB Table:"));
 
 	size_t remaining = fsz > off? (fsz - off): 0;
-	if (remaining < (size_t)bb_count * 8) {
+	if (bb_count > remaining / 8) {
 		R_LOG_ERROR ("Unexpected EOF in BB table of '%s'", path);
 		drcov_free_modules (modules, module_count);
 		free (buf);
