@@ -4342,14 +4342,15 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, RVecElfOff *starts
 				continue;
 			}
 			RBuffer *section_bytes = r_buf_new_slice (eo->b, section->offset, ssize);
+			const bool is_alloc = section->flags & SHF_ALLOC;
 			ut64 j;
 			for (j = get_next_not_analysed_offset (eo, section->rva, 0);
 				section_bytes && has_entry (j, size, ssize) && pos < num_relocs;
 				j = get_next_not_analysed_offset (eo, section->rva, j + size)) {
 
 				RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
-				// an entry at an address no segment maps stays unread
-				if (Elf_(v2p) (eo, section->rva + j) == UT64_MAX || !read_reloc_at (eo, section_bytes, reloc, rel_mode, j)) {
+				// an allocated entry at an address no segment maps stays unread
+				if ((is_alloc && Elf_(v2p) (eo, section->rva + j) == UT64_MAX) || !read_reloc_at (eo, section_bytes, reloc, rel_mode, j)) {
 					RVecRBinElfReloc_pop_back (&eo->g_relocs);
 					break;
 				}
