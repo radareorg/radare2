@@ -2584,7 +2584,9 @@ bool Elf_(is_static)(ELFOBJ *eo) {
 		dynamic |= pt == PT_DYNAMIC;
 	}
 	// a static PIE keeps PT_DYNAMIC only to relocate itself
-	return !dynamic || ((eo->dyn_info.dt_flags_1 & DF_1_PIE) && RVecElfOff_empty (&eo->dyn_info.dt_needed));
+	const RBinElfDynamicInfo *di = &eo->dyn_info;
+	const bool pie = di->dt_flags_1 != R_BIN_ELF_XWORD_MAX && (di->dt_flags_1 & DF_1_PIE);
+	return !dynamic || (pie && RVecElfOff_empty (&di->dt_needed));
 }
 
 char* Elf_(get_data_encoding)(ELFOBJ *eo) {
