@@ -2256,6 +2256,11 @@ static bool sections_vec(RBinFile *bf) {
 	if (!bin->code_from || !bin->code_to) {
 		fast_code_size (bf);
 	}
+	// no code: constpool ends where data starts
+	if (!bin->code_to) {
+		bin->code_from = bin->header.data_offset;
+		bin->code_to = bin->header.data_offset;
+	}
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	/* initial section boundary assumptions */
@@ -2276,11 +2281,11 @@ static bool sections_vec(RBinFile *bf) {
 		char *s_pool_format = dwords? r_str_newf ("Cd 4[%" PFMT64u "]", dwords): NULL;
 		add_limited_section (bf, limit, baddr, "constpool", s_pool, R_PERM_R, s_pool_format);
 	}
-	if (validate_section ("code", &s_pool, &s_code, &s_data, &s_file)) {
+	if (s_code.size > 0 && validate_section ("code", &s_pool, &s_code, &s_data, &s_file)) {
 		add_limited_section (bf, limit, baddr, "code", s_code, R_PERM_RX, NULL);
 	}
 	if (validate_section ("data", &s_code, &s_data, NULL, &s_file)) {
-		add_limited_section (bf, limit, baddr, "data", s_data, R_PERM_RX, NULL);
+		add_limited_section (bf, limit, baddr, "data", s_data, R_PERM_R, NULL);
 	}
 	add_limited_section (bf, limit, baddr, "file", s_file, R_PERM_R, NULL);
 

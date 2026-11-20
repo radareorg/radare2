@@ -2273,3 +2273,37 @@ adler32  12-174c  00000000  mismatch
 {"sha1":{"hex":"e584a8de197385d697b0814424c2570b43339125","valid":true},"adler32":{"hex":"00000000","valid":false}}
 EOF
 RUN
+
+NAME=DEX with code
+FILE=bins/dex/Hello.dex
+CMDS=<<EOF
+iS
+EOF
+EXPECT=<<EOF
+nth paddr        size vaddr       vsize perm flags type name
+------------------------------------------------------------
+0   0x00000000   0x70 0x00000000   0x70 -r-- 0x0   ---- header
+1   0x00000070  0x134 0x00000070  0x134 -r-- 0x0   ---- constpool
+2   0x000001a4   0x7a 0x000001a4   0x7a -r-x 0x0   ---- code
+3   0x0000021e  0x1ca 0x0000021e  0x1ca -r-- 0x0   ---- data
+4   0x00000000  0x3e8 0x00000000  0x3e8 -r-- 0x0   ---- file
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=DEX without code
+FILE=bins/dex/Call.dex
+CMDS=<<EOF
+iS
+EOF
+EXPECT=<<EOF
+nth paddr        size vaddr       vsize perm flags type name
+------------------------------------------------------------
+0   0x00000000   0x70 0x00000000   0x70 -r-- 0x0   ---- header
+1   0x00000070   0xf0 0x00000070   0xf0 -r-- 0x0   ---- constpool
+2   0x00000160  0x2bc 0x00000160  0x2bc -r-- 0x0   ---- data
+3   0x00000000  0x41c 0x00000000  0x41c -r-- 0x0   ---- file
+EOF
+EXPECT_ERR=
+RUN
+
