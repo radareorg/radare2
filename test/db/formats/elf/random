@@ -26,6 +26,7 @@ EXPECT=<<EOF
 |           ; var int32_t var_ch @ sp+0xc
 |           ; var int64_t var_10h @ sp+0x10
 |           ; var int32_t var_18h @ sp+0x18
+|           ; var int32_t var_1ch @ sp+0x1c
 |           ; var int64_t var_20h @ sp+0x20
 |           ; var int64_t var_28h @ sp+0x28
 |           ; var int64_t var_sp_40h @ sp+0x40
@@ -94,6 +95,7 @@ EXPECT=<<EOF
 |           ; var int32_t var_ch @ sp+0xc
 |           ; var int64_t var_10h @ sp+0x10
 |           ; var int32_t var_18h @ sp+0x18
+|           ; var int32_t var_1ch @ sp+0x1c
 |           ; var int64_t var_20h @ sp+0x20
 |           ; var int64_t var_28h @ sp+0x28
 |           ; var int64_t var_sp_40h @ sp+0x40
