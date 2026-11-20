@@ -3702,24 +3702,24 @@ R_API const char *r_str_last(const char *str, const char *ch) {
 	return NULL;
 }
 
-// copies the WHOLE string but check n against non color code chars only.
-static int strncpy_with_color_codes(char *s1, char *s2, int n) {
-	int i = 0, j = 0;
+// bytes of s holding its first n non color code chars, color codes included
+static int color_codes_span(const char *s, int n) {
+	int i = 0;
 	int count = 0;
-	while (s2[j] && count < n) {
-		// detect (consecutive) color codes
-		while (s2[j] == 0x1b) {
-			// copy till 'm'
-			while (s2[j] && s2[j] != 'm') {
-				s1[i++] = s2[j++];
+	while (s[i] && count < n) {
+		// skip (consecutive) color codes
+		while (s[i] == 0x1b) {
+			// skip till 'm'
+			while (s[i] && s[i] != 'm') {
+				i++;
 			}
-			// copy 'm'
-			if (s2[j]) {
-				s1[i++] = s2[j++];
+			// skip 'm'
+			if (s[i]) {
+				i++;
 			}
 		}
-		if (s2[j]) {
-			s1[i++] = s2[j++];
+		if (s[i]) {
+			i++;
 			count++;
 		}
 	}
@@ -3798,7 +3798,6 @@ R_API char *r_str_highlight(char *str, const char *word, const char *color, cons
 	// XXX don't use static buffers
 	char o[1024] = { 0 };
 	while (start && (start < str + l_str)) {
-		int copied = 0;
 		// find first letter
 		start = strchr_ansi (str + i, *word);
 		if (start) {
@@ -3817,13 +3816,15 @@ R_API char *r_str_highlight(char *str, const char *word, const char *color, cons
 				}
 				strcpy (o + j, color);
 				j += l_color;
-				if (j + l_word >= sizeof (o)) {
+				// the color codes inside the word are copied too
+				const int span = color_codes_span (str + i, l_word);
+				if (j + span >= sizeof (o)) {
 					// XXX. no limits
 					break;
 				}
-				copied = strncpy_with_color_codes (o + j, str + i, l_word);
-				i += copied;
-				j += copied;
+				memcpy (o + j, str + i, span);
+				i += span;
+				j += span;
 				if (j + strlen (color_reset) >= sizeof (o)) {
 					// XXX. no limits
 					break;
