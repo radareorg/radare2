@@ -1268,7 +1268,7 @@ static bool var_type_inferred(RAnal *anal, const RAnalVar *var) {
 // Inferred variables inside the wider extent fold into it, so the result does not depend on access order.
 static void widen_inferred_var(RAnal *anal, RAnalVar *var, int access_size) {
 	const char *wide = int_type (access_size);
-	if (!wide || !var_type_inferred (anal, var) || r_anal_type_bitsize (anal, var->type) / 8 >= access_size) {
+	if (!wide || !strcmp (var->type, wide) || !var_type_inferred (anal, var) || r_anal_type_bitsize (anal, var->type) / 8 >= access_size) {
 		return;
 	}
 	RAnalFunction *fcn = var->fcn;
@@ -1523,10 +1523,12 @@ static void extract_arg_at(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const c
 		const st64 interior = frame_off != var->delta && aggregate_extent (anal, var)? frame_off - var->delta: 0;
 		r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr - interior);
 		// Revisit inferred arguments after a CC change without replacing user edits.
-		const char *deftype = int_type (inferred_var_size (access_size, var_size));
-		r_strf_var (autoname, 32, "arg_%" PFMT64x "h", R_ABS (anal->opt.varname_stack? frame_off: nameoff));
-		const bool revisit = isarg && var->isarg && var->delta == frame_off
-			&& deftype && !strcmp (var->type, deftype) && !strcmp (var->name, autoname);
+		bool revisit = isarg && var->isarg && var->delta == frame_off;
+		if (revisit) {
+			const char *deftype = int_type (inferred_var_size (access_size, var_size));
+			r_strf_var (autoname, 32, "arg_%" PFMT64x "h", R_ABS (anal->opt.varname_stack? frame_off: nameoff));
+			revisit = deftype && !strcmp (var->type, deftype) && !strcmp (var->name, autoname);
+		}
 		// an access wider than the word is a register pair (strd), two slots
 		if (var->delta == frame_off && !addr_taken && access_size <= var_size && !strcmp (anal->config->arch, "arm")) {
 			widen_inferred_var (anal, var, access_size);
