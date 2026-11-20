@@ -1227,31 +1227,35 @@ static bool var_is_written(const RAnalVar *var) {
 
 static RAnalVar *get_stack_var(RAnal *anal, RAnalFunction *fcn, int delta, int access_size, int var_size, bool fuzzy, bool addr_taken) {
 	RAnalVar **it;
+	RAnalVar *enclosing = NULL;
 	R_VEC_FOREACH (&fcn->vars, it) {
 		RAnalVar *var = *it;
 		bool is_stack = var->kind == R_ANAL_VAR_KIND_SPV || var->kind == R_ANAL_VAR_KIND_BPV;
 		if (is_stack && var->delta == delta) {
 			return var;
 		}
-		if (fuzzy && is_stack && access_size > 0 && access_size < var_size && delta > var->delta && delta < var->delta + var_size) {
+		if (enclosing || !is_stack || delta <= var->delta) {
+			continue;
+		}
+		// an exact match later in the list still wins over an enclosing variable
+		if (fuzzy && access_size > 0 && access_size < var_size && delta < var->delta + var_size) {
 			// a typed variable ends where its type does, not a word later
 			const int typed = R_STR_ISNOTEMPTY (var->type)? (int)(r_anal_type_bitsize (anal, var->type) / 8): 0;
 			const int extent = typed > 0? R_MIN (typed, var_size): var_size;
 			if (delta < var->delta + extent) {
-				return var;
+				enclosing = var;
 			}
 		}
 		// An address taken inside a variable the function stores to belongs to
 		// that variable: the store fixed the extent, and lea establishes none.
-		if (is_stack && addr_taken && delta > var->delta
-			&& R_STR_ISNOTEMPTY (var->type) && var_is_written (var)) {
+		if (!enclosing && addr_taken && R_STR_ISNOTEMPTY (var->type) && var_is_written (var)) {
 			const int extent = (int)(r_anal_type_bitsize (anal, var->type) / 8);
 			if (extent > 0 && delta < var->delta + extent) {
-				return var;
+				enclosing = var;
 			}
 		}
 	}
-	return NULL;
+	return enclosing;
 }
 
 // True on RISC-style ISAs (ARM/MIPS/PPC/...) whose return address lives in a
