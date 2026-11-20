@@ -301,6 +301,39 @@ ad "movz w10, 0, lsl 16" 0a00a052
 a "movz x17, 0x5fff, lsl 32" f1ffcbd2 # alias
 ad "movz x11, 0, lsl 32" 0b00c0d2
 ad "nop" 1f2003d5
+ad "yield" 3f2003d5
+ad "wfe" 5f2003d5
+ad "wfi" 7f2003d5
+ad "sev" 9f2003d5
+ad "sevl" bf2003d5
+ad "dgh" df2003d5
+ad "xpaclri" ff2003d5
+ad "pacia1716" 1f2103d5
+ad "pacib1716" 5f2103d5
+ad "autia1716" 9f2103d5
+ad "autib1716" df2103d5
+ad "esb" 1f2203d5
+ad "psb csync" 3f2203d5
+ad "tsb csync" 5f2203d5
+ad "gcsb dsync" 7f2203d5
+ad "csdb" 9f2203d5
+ad "clrbhb" df2203d5
+ad "paciaz" 1f2303d5
+ad "paciasp" 3f2303d5
+ad "pacibz" 5f2303d5
+ad "pacibsp" 7f2303d5
+ad "autiaz" 9f2303d5
+ad "autiasp" bf2303d5
+ad "autibz" df2303d5
+ad "autibsp" ff2303d5
+ad "pacm" ff2403d5
+ad "chkfeat x16" 1f2503d5
+ad "hint 0x9" 3f2103d5
+ad "hint 0x2b" 7f2503d5
+ad "hint 0x7f" ff2f03d5
+a "hint #0" 1f2003d5
+a "hint #43" 7f2503d5
+a "hint #127" ff2f03d5
 a "str w2, [x7, -10]" e2601fb8
 a "str w2, [x7, -133]" e2b017b8
 a "str w2, [x7, -256]" e20010b8
@@ -412,10 +445,10 @@ ad "stgm x0, [x1]" 2000a0d9
 d "stz2g sp, [sp], 0x50" ff57e0d9
 ad "ldgm x10, [x0]" 0a00e0d9
 d "stgp x1, x3, [x3], 0x70" 618c8368
-d "bti" 1f2403d5
-d "bti c" 5f2403d5
-d "bti j" 9f2403d5
-d "bti jc" df2403d5
+ad "bti" 1f2403d5
+ad "bti c" 5f2403d5
+ad "bti j" 9f2403d5
+ad "bti jc" df2403d5
 a "sbfm w0, w1, 31, 5" 20141f13 # alias
 a "sbfm x3, x2, 8, 63" 43fc4893
 a "ubfm w0, w1, 2, 31" 207c0253 # alias
