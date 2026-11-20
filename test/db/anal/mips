@@ -1928,3 +1928,15 @@ WRAP
 arg int32_t arg1 @ a0
 EOF
 RUN
+
+NAME=mips ao names the and sp stack alignment
+FILE=-
+ARGS=-a mips -b 32
+CMDS=<<EOF
+wx 24e8a103
+ao~stackop
+EOF
+EXPECT=<<EOF
+stackop: align
+EOF
+RUN
