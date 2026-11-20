@@ -1006,6 +1006,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# readelf -rW: .rela.text (sh_addr 0, unmapped) holds 0x401002 R_X86_64_PC32 and 0x401007 R_X86_64_PLT32
+NAME=ELF: emit-relocs .rela.text without a virtual mapping
+FILE=bins/elf/x86_64-emit-relocs
+CMDS=ir~ADD_32
+EXPECT=<<EOF
+0x00401002 0x00001002 ADD_32 2      - 0x00401006
+0x00401007 0x00001007 ADD_32 4      - 0x0040100b
+EOF
+RUN
+
+# x86_64-emit-relocs with .rela.text sh_flags (0x1228) 0x40 -> 0x42 (SHF_ALLOC at unmapped sh_addr 0)
+NAME=ELF: an allocated reloc section without a virtual mapping stays unread
+FILE=malloc://4960
+CMDS=<<EOF
+wff bins/elf/x86_64-emit-relocs
+wx 42 @ 0x1228
+oba 0
+ir~?ADD_32
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN
+
 NAME=ELF: ET_REL absolute symbols are not placed at the base
 FILE=bins/elf/x86_64-abs-sym.o
 ARGS=-e bin.relocs.apply=true
