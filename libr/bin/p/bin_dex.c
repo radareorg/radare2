@@ -2258,6 +2258,10 @@ static bool sections_vec(RBinFile *bf) {
 	}
 	// no code: constpool ends where data starts
 	if (!bin->code_to) {
+		if (bin->header.data_offset < sizeof (struct dex_header_t) || bin->header.data_offset > bs) {
+			R_LOG_WARN ("Invalid DEX data offset");
+			return false;
+		}
 		bin->code_from = bin->header.data_offset;
 		bin->code_to = bin->header.data_offset;
 	}
@@ -2275,7 +2279,7 @@ static bool sections_vec(RBinFile *bf) {
 	if (validate_section ("header", NULL, &s_head, NULL, &s_file)) {
 		add_limited_section (bf, limit, baddr, "header", s_head, R_PERM_R, NULL);
 	}
-	if (validate_section ("constpool", &s_head, &s_pool, &s_code, &s_file)) {
+	if (s_pool.size > 0 && validate_section ("constpool", &s_head, &s_pool, &s_code, &s_file)) {
 		// only the string_ids and type_ids tables are dword arrays, the rest are structs
 		const ut64 dwords = R_MIN ((ut64)bin->header.strings_size + bin->header.types_size, s_pool.size / 4);
 		char *s_pool_format = dwords? r_str_newf ("Cd 4[%" PFMT64u "]", dwords): NULL;
@@ -2284,7 +2288,7 @@ static bool sections_vec(RBinFile *bf) {
 	if (s_code.size > 0 && validate_section ("code", &s_pool, &s_code, &s_data, &s_file)) {
 		add_limited_section (bf, limit, baddr, "code", s_code, R_PERM_RX, NULL);
 	}
-	if (validate_section ("data", &s_code, &s_data, NULL, &s_file)) {
+	if (s_data.size > 0 && validate_section ("data", &s_code, &s_data, NULL, &s_file)) {
 		add_limited_section (bf, limit, baddr, "data", s_data, R_PERM_R, NULL);
 	}
 	add_limited_section (bf, limit, baddr, "file", s_file, R_PERM_R, NULL);

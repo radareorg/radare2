@@ -2307,3 +2307,77 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=DEX empty constpool and data sections are skipped
+FILE=hex://6465780a30333500be0b70d91d9c3f88730d0ed6caa377d4520465e7322d365a8c00000070000000785634120000000000000000700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001c0000007000000002000000000000000100000000000000001000000100000070000000
+ARGS=-w
+CMDS=<<EOF
+iSj
+wv4 0 @ 0x68
+wv4 0x8c @ 0x6c
+wx `ph sha1 $s-32 @32` @12
+wx `ph adler32 $s-12 @12` @8
+oba 0
+iSj
+EOF
+EXPECT=<<EOF
+[{"name":"header","size":112,"vsize":112,"perm":"-r--","flags":0,"paddr":0,"vaddr":0},{"name":"data","size":28,"vsize":28,"perm":"-r--","flags":0,"paddr":112,"vaddr":112},{"name":"file","size":140,"vsize":140,"perm":"-r--","flags":0,"paddr":0,"vaddr":0}]
+[{"name":"header","size":112,"vsize":112,"perm":"-r--","flags":0,"paddr":0,"vaddr":0},{"name":"constpool","size":28,"vsize":28,"perm":"-r--","flags":0,"paddr":112,"vaddr":112},{"name":"file","size":140,"vsize":140,"perm":"-r--","flags":0,"paddr":0,"vaddr":0}]
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=DEX without code rejects data offsets inside the header or past EOF
+FILE=hex://6465780a30333500be0b70d91d9c3f88730d0ed6caa377d4520465e7322d365a8c00000070000000785634120000000000000000700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001c0000007000000002000000000000000100000000000000001000000100000070000000
+ARGS=-w
+CMDS=<<EOF
+wv4 0 @ 0x6c
+wx `ph sha1 $s-32 @32` @12
+wx `ph adler32 $s-12 @12` @8
+oba 0
+iSj
+iSSj
+wv4 0x20 @ 0x6c
+wx `ph sha1 $s-32 @32` @12
+wx `ph adler32 $s-12 @12` @8
+oba 0
+iSj
+iSSj
+wv4 0x6f @ 0x6c
+wx `ph sha1 $s-32 @32` @12
+wx `ph adler32 $s-12 @12` @8
+oba 0
+iSj
+iSSj
+wv4 0x8d @ 0x6c
+wx `ph sha1 $s-32 @32` @12
+wx `ph adler32 $s-12 @12` @8
+oba 0
+iSj
+iSSj
+wv4 0xffffffff @ 0x6c
+wx `ph sha1 $s-32 @32` @12
+wx `ph adler32 $s-12 @12` @8
+oba 0
+iSj
+iSSj
+EOF
+EXPECT=<<EOF
+[]
+[]
+[]
+[]
+[]
+[]
+[]
+[]
+[]
+[]
+EOF
+EXPECT_ERR=<<EOF
+WARN: Invalid DEX data offset
+WARN: Invalid DEX data offset
+WARN: Invalid DEX data offset
+WARN: Invalid DEX data offset
+WARN: Invalid DEX data offset
+EOF
+RUN
