@@ -6202,6 +6202,16 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 			r_list_append (todo, n);
 		}
 	}
+	// a call through an import's slot (call [reloc.exit]) has no function to carry the attribute
+	RVecRBinReloc *relocs = r_bin_get_relocs (core->bin);
+	if (relocs) {
+		RBinReloc *reloc;
+		R_VEC_FOREACH (relocs, reloc) {
+			if ((reloc->import || reloc->symbol) && r_anal_noreturn_at (core->anal, reloc->vaddr)) {
+				r_list_append (todo, ut64_new (reloc->vaddr));
+			}
+		}
+	}
 
 	while (!r_list_empty (todo)) {
 		ut64 *paddr = (ut64*)r_list_pop (todo);
