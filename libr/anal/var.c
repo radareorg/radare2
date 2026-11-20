@@ -1258,6 +1258,47 @@ static RAnalVar *get_stack_var(RAnal *anal, RAnalFunction *fcn, int delta, int a
 	return enclosing;
 }
 
+// Recovery names a slot <pfx>_<off>h and types it intN_t after its first access; other spellings are user edits
+static bool var_type_inferred(RAnal *anal, const RAnalVar *var) {
+	const char *t = int_type ((int)(r_anal_type_bitsize (anal, var->type) / 8));
+	return t && !strcmp (var->type, t) && r_str_startswith (var->name, var->isarg? ARGPREFIX "_": VARPREFIX "_");
+}
+
+// A wider access at a variable's own offset outgrows the type its first access inferred.
+// Inferred variables inside the wider extent fold into it, so the result does not depend on access order.
+static void widen_inferred_var(RAnal *anal, RAnalVar *var, int access_size) {
+	const char *wide = int_type (access_size);
+	if (!wide || !var_type_inferred (anal, var) || r_anal_type_bitsize (anal, var->type) / 8 >= access_size) {
+		return;
+	}
+	RAnalFunction *fcn = var->fcn;
+	RAnalVar **it;
+	R_VEC_FOREACH (&fcn->vars, it) {
+		const RAnalVar *in = *it;
+		if (in != var && in->kind == var->kind && in->delta > var->delta && in->delta < var->delta + access_size
+			&& (in->isarg != var->isarg || !var_type_inferred (anal, in)
+			|| in->delta + (int)(r_anal_type_bitsize (anal, in->type) / 8) > var->delta + access_size)) {
+			return;
+		}
+	}
+	RVecAnalVarPtr *vars = anal_var_ptr_clone (&fcn->vars);
+	if (!vars) {
+		return;
+	}
+	R_VEC_FOREACH (vars, it) {
+		RAnalVar *in = *it;
+		if (in != var && in->kind == var->kind && in->delta > var->delta && in->delta < var->delta + access_size) {
+			RAnalVarAccess *acc;
+			R_VEC_FOREACH (&in->accesses, acc) {
+				r_anal_var_set_access (anal, var, acc->reg, fcn->addr + acc->offset, acc->type, acc->stackptr);
+			}
+			r_anal_var_delete (anal, in);
+		}
+	}
+	RVecAnalVarPtr_free (vars);
+	r_anal_var_set_type (anal, var, wide);
+}
+
 // True on RISC-style ISAs (ARM/MIPS/PPC/...) whose return address lives in a
 // link/return register. On those, sp+0 is a regular stack slot and "ADD dst,
 // sp, #imm" is encoded as plain reg+imm srcs. On x86 the return address is
@@ -1482,12 +1523,15 @@ static void extract_arg_at(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const c
 		const st64 interior = frame_off != var->delta && aggregate_extent (anal, var)? frame_off - var->delta: 0;
 		r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr - interior);
 		// Revisit inferred arguments after a CC change without replacing user edits.
-		if (!isarg || !var->isarg || var->delta != frame_off) {
-			return;
-		}
 		const char *deftype = int_type (inferred_var_size (access_size, var_size));
 		r_strf_var (autoname, 32, "arg_%" PFMT64x "h", R_ABS (anal->opt.varname_stack? frame_off: nameoff));
-		if (!deftype || strcmp (var->type, deftype) || strcmp (var->name, autoname)) {
+		const bool revisit = isarg && var->isarg && var->delta == frame_off
+			&& deftype && !strcmp (var->type, deftype) && !strcmp (var->name, autoname);
+		// an access wider than the word is a register pair (strd), two slots
+		if (var->delta == frame_off && !addr_taken && access_size <= var_size && !strcmp (anal->config->arch, "arm")) {
+			widen_inferred_var (anal, var, access_size);
+		}
+		if (!revisit) {
 			return;
 		}
 	}

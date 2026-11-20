@@ -1566,12 +1566,93 @@ afva
 afv
 ao 1 @ 0~stackop,stackptr
 ao 1 @ 4~stackop
+wx ff8300d1e10300f9e20740b9ff830091c0035fd6 @ 0x40
+wx ff8300d1e00300b9e10700b9ff830091c0035fd6 @ 0x80
+wx ff8300d1e00300b9e10300f9e20740b9ff830091c0035fd6 @ 0xc0
+wx ff8300d1e10300f9e00300b9e20740b9ff830091c0035fd6 @ 0x100
+wx ff8300d1e00300b9e20740b9e10300f9ff830091c0035fd6 @ 0x140
+wx ff8300d1e00300f9e14300f8e2134039ff830091c0035fd6 @ 0x180
+wx ff8300d1e00300b9e20740b91f2003d5ff830091c0035fd6 @ 0x1c0
+af @ 0x40
+af @ 0x80
+af @ 0xc0
+af @ 0x100
+af @ 0x140
+af @ 0x180
+af @ 0x1c0
+?e interior
+afv @ 0x40~var
+afvR @ 0x40~var
+afvW @ 0x40~var
+?e boundary
+afv @ 0x80~var
+afvW @ 0x80~var
+?e narrow first
+afv @ 0xc0~var
+afvR @ 0xc0~var
+afvW @ 0xc0~var
+?e wide first
+afv @ 0x100~var
+afvR @ 0x100~var
+afvW @ 0x100~var
+?e load before the wide store
+afv @ 0x140~var
+afvR @ 0x140~var
+afvW @ 0x140~var
+?e exact match first
+afv @ 0x180~var
+afvR @ 0x180~var
+afvW @ 0x180~var
+?e user type
+s 0x1c0
+afvt var_20h uint32_t
+afs void fcn.000001c0 (int64_t a, int64_t b)
+wx e10300f9 @ 0x1cc
+afva
+afv~var
+afvR~var
+afvW~var
 EOF
 EXPECT=<<EOF
 arg int64_t arg1 @ x0
 var int64_t var_20h @ sp+0x0
 stackop: inc
 stackptr: 32
+interior
+var int64_t var_20h @ sp+0x0
+   var_20h  0x48
+   var_20h  0x44
+boundary
+var int32_t var_20h @ sp+0x0
+var int32_t var_1ch @ sp+0x4
+   var_20h  0x84
+   var_1ch  0x88
+narrow first
+var int64_t var_20h @ sp+0x0
+   var_20h  0xcc
+   var_20h  0xc4,0xc8
+wide first
+var int64_t var_20h @ sp+0x0
+   var_20h  0x10c
+   var_20h  0x104,0x108
+load before the wide store
+var int64_t var_20h @ sp+0x0
+   var_20h  0x148
+   var_20h  0x144,0x14c
+exact match first
+var int64_t var_20h @ sp+0x0
+var int64_t var_1ch @ sp+0x4
+   var_20h
+   var_1ch  0x18c
+   var_20h  0x184
+   var_1ch  0x188
+user type
+var uint32_t var_20h @ sp+0x0
+var int32_t var_1ch @ sp+0x4
+   var_20h
+   var_1ch  0x1c8
+   var_20h  0x1c4,0x1cc
+   var_1ch
 EOF
 RUN
 
