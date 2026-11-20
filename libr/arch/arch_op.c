@@ -294,6 +294,8 @@ R_API const char *r_arch_stackop_tostring(int s) {
 		return "set";
 	case R_ANAL_STACK_RESET:
 		return "reset";
+	case R_ANAL_STACK_ALIGN:
+		return "align";
 	}
 	return "unk";
 }
