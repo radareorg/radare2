@@ -313,9 +313,6 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 				}
 			}
 		}
-		if (ro->_s) {
-			R_FREE (ro->_s->buf);
-		}
 	} else {
 		/* iterate over all algorithm bits */
 		if (ro->s.buf) {
@@ -916,6 +913,16 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 				free (str);
 			}
 			ret (_ret);
+		}
+	}
+	// only md5 and sha* are hashed incrementally
+	// the other algos would hash just the seed and drop the file contents
+	// TODO: drop once one-shot hashes can hash file+seed together
+	if (ro->direction == R_MUTA_OP_NONE && ro->_s) {
+		algobit = r_hash_name_to_bits (algo);
+		if (algobit & ~(R_HASH_MD5 | R_HASH_SHA1 | R_HASH_SHA256 | R_HASH_SHA384 | R_HASH_SHA512)) {
+			R_LOG_ERROR ("-S is not supported with %s when hashing files", algo);
+			ret (1);
 		}
 	}
 	if (opt.ind >= argc) {
