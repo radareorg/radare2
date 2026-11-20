@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2010-2024 - pancake */
 
 #include <r_arch.h>
+#include <r_anal.h>
 #include "opcode.h"
 
 #define GETWIDE "32,v%u,<<,v%u,|"
@@ -342,6 +343,8 @@ static void quick_access(RAnalOp *op, const ut8 *data, int len, RAnalOpMask mask
 		} else {
 			esil_load (op, address, value.size, value.sign, vA);
 		}
+		r_strbuf_prependf (&op->esil, "v%u,!,?{,v%u,%d,TRAP,BREAK,},",
+			vB, vB, store? R_ANAL_TRAP_WRITE_ERR: R_ANAL_TRAP_READ_ERR);
 		free (address);
 	}
 }

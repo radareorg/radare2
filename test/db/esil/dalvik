@@ -356,3 +356,87 @@ EXPECT=<<EOF
 0x80000000
 EOF
 RUN
+
+NAME=dalvik iget-quick on a null object traps and does not load
+FILE=malloc://16
+ARGS=-a dalvik
+CMDS=<<EOF
+wx f2100400
+aei
+aeim
+ar ip=0
+ar v0=0x1234
+ar v1=0
+aes
+ar v0
+EOF
+EXPECT=<<EOF
+0x00001234
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000000: read error (read-err at 0x00000000)
+EOF
+RUN
+
+NAME=dalvik iget-quick on a non-null object loads from obj+offset
+FILE=malloc://16
+ARGS=-a dalvik
+CMDS=<<EOF
+wx f2100400
+aei
+aeim
+ar ip=0
+ar v0=0x1234
+ar v1=8
+aes
+ar v0
+EOF
+EXPECT=<<EOF
+0x00000000
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=dalvik iput-quick on a null object traps and does not store
+FILE=malloc://16
+ARGS=-a dalvik
+CMDS=<<EOF
+wx f5100400
+aei
+aeim
+ar ip=0
+ar v0=0x41414141
+ar v1=0
+pxw 4 @ 4
+aes
+pxw 4 @ 4
+EOF
+EXPECT=<<EOF
+0x00000004  0x00000000                                   ....
+0x00000004  0x00000000                                   ....
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000000: write error (write-err at 0x00000000)
+EOF
+RUN
+
+NAME=dalvik iput-quick on a non-null object stores at obj+offset
+FILE=malloc://16
+ARGS=-a dalvik
+CMDS=<<EOF
+wx f5100400
+aei
+aeim
+ar ip=0
+ar v0=0x41414141
+ar v1=8
+pxw 4 @ 0xc
+aes
+pxw 4 @ 0xc
+EOF
+EXPECT=<<EOF
+0x0000000c  0x00000000                                   ....
+0x0000000c  0x41414141                                   AAAA
+EOF
+EXPECT_ERR=
+RUN
