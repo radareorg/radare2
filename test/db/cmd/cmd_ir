@@ -9,6 +9,7 @@ irj~{[0].name}
 EOF
 EXPECT=<<EOF
 0x10000007d
+0x100000b0f
 4294967421
 __fentry__
 EOF

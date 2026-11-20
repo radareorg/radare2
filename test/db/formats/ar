@@ -18,6 +18,7 @@ RUN
 
 NAME=ar file content
 FILE=ar://bins/ar/libgdbr.a//xml.o
+ARGS=-e bin.relocs.apply=false
 CMDS=px 64
 EXPECT=<<EOF
 - offset -  4041 4243 4445 4647 4849 4A4B 4C4D 4E4F  0123456789ABCDEF
@@ -30,6 +31,7 @@ RUN
 
 NAME=ar file content
 FILE=ar://bins/ar/libgdbr.a//core.o
+ARGS=-e bin.relocs.apply=false
 CMDS=px 64
 EXPECT=<<EOF
 - offset -  4041 4243 4445 4647 4849 4A4B 4C4D 4E4F  0123456789ABCDEF

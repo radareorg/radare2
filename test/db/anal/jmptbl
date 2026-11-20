@@ -374,6 +374,7 @@ RUN
 
 NAME=jump table for swift on arm64 again
 FILE=bins/mach0/MASTestApp
+ARGS=-e bin.relocs.apply=false
 CMDS=<<EOF
 e asm.bytes=false
 e asm.lines=false

@@ -1562,7 +1562,7 @@ pd 1
 ir~0x[4]
 EOF
 EXPECT=<<EOF
-            0x0003a4af      ff15f33a1800   call qword [reloc.free]     ; [0x1bdfa8:8]=0
+            0x0003a4af      ff15f33a1800   call qword [reloc.free]     ; [0x1bdfa8:8]=0x85f20 sym.cfree
 --
 0x001bf3c0
 _res

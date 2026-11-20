@@ -43,7 +43,7 @@ CMDS=pi 3@ sym.main
 EXPECT=<<EOF
 push rbp
 mov rbp, rsp
-call test
+call sym.test
 EOF
 RUN
 
@@ -54,6 +54,18 @@ CMDS=pi 3@sym.main
 EXPECT=<<EOF
 push rbp
 mov rbp, rsp
-call test
+call sym.test
+EOF
+RUN
+
+NAME=relocated ELF calls produce xrefs by default
+FILE=bins/elf/bfile_o
+CMDS=<<EOF
+aa
+axt @ sym.r_bin_file_find_by_name~CALL[1]
+EOF
+EXPECT=<<EOF
+0x80032a1
+0x8003559
 EOF
 RUN
