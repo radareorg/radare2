@@ -6374,7 +6374,7 @@ static void plt_stub_scan_section(RCore *core, RBinSection *sec) {
 			switch (type) {
 			case R_ANAL_OP_TYPE_LEA:
 			case R_ANAL_OP_TYPE_MOV:
-				if (op.ptr > 0) {
+				if (op.ptr > 0 && op.direction != R_ANAL_OP_DIR_WRITE) {
 					lea_ptr = (ut64)op.ptr;
 					lea_is_load = op.direction == R_ANAL_OP_DIR_READ;
 				}
