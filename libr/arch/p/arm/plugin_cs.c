@@ -3802,14 +3802,18 @@ static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf,
 	case ARM_INS_BX:
 	case ARM_INS_BXJ:
 	case ARM_INS_B:
+		// interworking: bit 0 of a register target sets the thumb flag
 		if (ISREG (0) && REGID (0) == ARM_REG_PC) {
-			r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",pc,:=",
+			r_strbuf_appendf (&op->esil, "0,tf,:=,0x%" PFMT64x ",pc,:=",
 				(ut64)((addr & ~3LL) + pcdelta));
 		} else {
 			if (ISIMM (0)) {
+				if (insn->id == ARM_INS_BLX) {
+					r_strbuf_appendf (&op->esil, "%d,tf,:=,", !thumb);
+				}
 				r_strbuf_appendf (&op->esil, "%s,pc,:=", ARG (0));
 			} else {
-				r_strbuf_appendf (&op->esil, "%d,%s,-,pc,:=", thumb, ARG (0));
+				r_strbuf_appendf (&op->esil, "1,%s,&,tf,:=,%d,%s,-,pc,:=", ARG (0), thumb, ARG (0));
 			}
 		}
 		break;

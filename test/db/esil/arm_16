@@ -1711,3 +1711,19 @@ EXPECT=<<EOF
 0x90000000
 EOF
 RUN
+
+NAME=thumb bx to an arm address clears tf
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+aer r0=0x2000
+aer cpsr=0x20
+wx 0047
+aes
+aer?tf
+EOF
+EXPECT=<<EOF
+0x00000000
+EOF
+RUN
