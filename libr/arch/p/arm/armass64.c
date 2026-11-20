@@ -2002,44 +2002,60 @@ static bool parseOpcode(const char *str, ArmOp *op) {
 	return parseOperands (space, op);
 }
 
-static bool handlePAC(ut32 *op, const char *str) {
-	if (!strcmp (str, "autiasp")) {
-		*op = 0xbf2303d5;
-		return true;
+static ut32 hint(const char *str) {
+	if (r_str_startswith (str, "hint ")) {
+		const char *arg = r_str_trim_head_ro (str + 5);
+		if (*arg == '#') {
+			arg = r_str_trim_head_ro (arg + 1);
+		}
+		char *end;
+		ut64 imm = strtoull (arg, &end, r_str_startswith (arg, "0x") || r_str_startswith (arg, "0X")? 16: 10);
+		if (arg == end || *arg == '-' || *r_str_trim_head_ro (end) || imm > 127) {
+			return UT32_MAX;
+		}
+		return r_swap_ut32 (0xd503201f | (imm << 5));
 	}
-	if (!strcmp (str, "autiaz")) {
-		*op = 0x9f2303d5;
-		return true;
+	static const char *const names[] = {
+		[0] = "nop",
+		[1] = "yield",
+		[2] = "wfe",
+		[3] = "wfi",
+		[4] = "sev",
+		[5] = "sevl",
+		[6] = "dgh",
+		[7] = "xpaclri",
+		[8] = "pacia1716",
+		[10] = "pacib1716",
+		[12] = "autia1716",
+		[14] = "autib1716",
+		[16] = "esb",
+		[17] = "psb csync",
+		[18] = "tsb csync",
+		[19] = "gcsb dsync",
+		[20] = "csdb",
+		[22] = "clrbhb",
+		[24] = "paciaz",
+		[25] = "paciasp",
+		[26] = "pacibz",
+		[27] = "pacibsp",
+		[28] = "autiaz",
+		[29] = "autiasp",
+		[30] = "autibz",
+		[31] = "autibsp",
+		[32] = "bti",
+		[34] = "bti c",
+		[36] = "bti j",
+		[38] = "bti jc",
+		[39] = "pacm",
+		[40] = "chkfeat x16",
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (names); i++) {
+		if (names[i] && !strcmp (str, names[i])) {
+			return r_swap_ut32 (0xd503201f | (i << 5));
+		}
 	}
-	if (!strcmp (str, "autibsp")) {
-		*op = 0xff2303d5;
-		return true;
-	}
-	if (!strcmp (str, "autibz")) {
-		*op = 0xdf2303d5;
-		return true;
-	}
-	if (!strcmp (str, "paciaz")) {
-		*op = 0x1f2303d5;
-		return true;
-	}
-	if (!strcmp (str, "pacibz")) {
-		*op = 0x5f2303d5;
-		return true;
-	}
-	if (!strcmp (str, "paciasp")) {
-		*op = 0x3f2303d5;
-		return true;
-	}
-	if (!strcmp (str, "pacibsp")) {
-		*op = 0x7f2303d5;
-		return true;
-	}
-	if (!strcmp (str, "retab")) {
-		*op = 0xff0f5fd6;
-		return true;
-	}
-	return false;
+	return UT32_MAX;
 }
 
 static bool is_valid_mte(ArmOp *op) {
@@ -2398,7 +2414,7 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = neg (&ops);
 	} else if (!strcmp (str, "isb")) {
 		*op = 0xdf3f03d5;
-	} else if (handlePAC (op, str)) { // PAC
+	} else if ((*op = hint (str)) != UT32_MAX) {
 		free (ops.mnemonic);
 		return true;
 	}
@@ -2430,8 +2446,8 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 		*op = ldgm (&ops);
 	} else if (r_str_startswith (str, "ldg")) {
 		*op = ldg (&ops);
-	} else if (!strcmp (str, "nop")) {
-		*op = 0x1f2003d5;
+	} else if (!strcmp (str, "retab")) {
+		*op = 0xff0f5fd6;
 	} else if (!strcmp (str, "ret")) {
 		*op = 0xc0035fd6;
 	} else if (r_str_startswith (str, "msr ")) {

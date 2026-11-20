@@ -1345,3 +1345,61 @@ ERROR: Please set R2_PPC_AS env to define a any assembler program
 ERROR: Cannot assemble 'nop' at line 1
 EOF
 RUN
+
+NAME=arm64 HINT operands are checked
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+pa hint
+pa hint -1
+pa hint 128
+pa hint 0x100000000
+pa hint 0x10000000000000000
+pa hint 1 junk
+pa hint 1 2
+pa hint garbage
+pa hint x0
+pa hint 1, 2
+pa hint 1, lsl 0
+pa hint 1, sy
+pa hint [1]
+pa hint 1!
+pa bti x0
+pa bti c, j
+pa bti cz
+pa wfi x0
+pa paciasp x0
+pa psb
+pa psb dsync
+pa gcsb csync
+pa chkfeat x0
+pa chkfeat w16
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'hint' at line 1
+ERROR: Cannot assemble 'hint -1' at line 1
+ERROR: Cannot assemble 'hint 128' at line 1
+ERROR: Cannot assemble 'hint 0x100000000' at line 1
+ERROR: Cannot assemble 'hint 0x10000000000000000' at line 1
+ERROR: Cannot assemble 'hint 1 junk' at line 1
+ERROR: Cannot assemble 'hint 1 2' at line 1
+ERROR: Cannot assemble 'hint garbage' at line 1
+ERROR: Cannot assemble 'hint x0' at line 1
+ERROR: Cannot assemble 'hint 1, 2' at line 1
+ERROR: Cannot assemble 'hint 1, lsl 0' at line 1
+ERROR: Cannot assemble 'hint 1, sy' at line 1
+ERROR: Cannot assemble 'hint [1]' at line 1
+ERROR: Cannot assemble 'hint 1!' at line 1
+ERROR: Cannot assemble 'bti x0' at line 1
+ERROR: Cannot assemble 'bti c, j' at line 1
+ERROR: Cannot assemble 'bti cz' at line 1
+ERROR: Cannot assemble 'wfi x0' at line 1
+ERROR: Cannot assemble 'paciasp x0' at line 1
+ERROR: Cannot assemble 'psb' at line 1
+ERROR: Cannot assemble 'psb dsync' at line 1
+ERROR: Cannot assemble 'gcsb csync' at line 1
+ERROR: Cannot assemble 'chkfeat x0' at line 1
+ERROR: Cannot assemble 'chkfeat w16' at line 1
+EOF
+RUN
