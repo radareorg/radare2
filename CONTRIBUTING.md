@@ -47,8 +47,7 @@ git checkout -b mybranch
 * Check for coding style issues with:
 
 ```sh
-git diff master..mybranch | sys/clang-format-diff.py -p1
-```
+sys/clang-format-radare2 -n $(git diff --name-only --diff-filter=d master..mybranch -- '*.c' '*.h')
 
   For more on the coding style, see [DEVELOPERS.md](DEVELOPERS.md).
 * Open a [pull request](https://github.com/radareorg/radare2/pulls) (PR) on
