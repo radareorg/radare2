@@ -4217,3 +4217,18 @@ EXPECT=<<EOF
 static   true
 EOF
 RUN
+
+NAME=i static true for a static PIE without DF_1_PIE
+FILE=malloc://0x6b9a8
+CMDS=<<EOF
+wff bins/elf/rust_nonnull_x86_64
+wx 00 @ 0x69c8b
+oba 0
+i~^static
+ij~{bin.static}
+EOF
+EXPECT=<<EOF
+static   true
+true
+EOF
+RUN

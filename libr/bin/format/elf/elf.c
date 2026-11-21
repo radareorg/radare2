@@ -567,6 +567,7 @@ static void set_default_value_dynamic_info(ELFOBJ *eo) {
 	di->dt_mips_symtabno = 0;
 	di->dt_ppc64_glink = R_BIN_ELF_ADDR_MAX;
 	di->dt_aarch64_pac_plt = false;
+	di->dt_soname = false;
 	di->dt_crel = R_BIN_ELF_ADDR_MAX;
 	di->dt_android_rel = R_BIN_ELF_ADDR_MAX;
 	di->dt_android_relsz = 0;
@@ -740,6 +741,9 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 		case DT_BIND_NOW:
 			di->dt_bind_now = true;
 			break;
+		case DT_SONAME:
+			di->dt_soname = true;
+			break;
 		case DT_FLAGS:
 			di->dt_flags = d.d_un.d_val;
 			break;
@@ -768,7 +772,6 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 		case DT_FINI_ARRAYSZ:
 		case DT_PREINIT_ARRAY:
 		case DT_PREINIT_ARRAYSZ:
-		case DT_SONAME:
 			// common dynamic entries in ELF, but we don't need to
 			// do anything with them.
 			break;
@@ -2570,6 +2573,44 @@ char *Elf_(intrp)(ELFOBJ *eo) {
 	return NULL;
 }
 
+static ut64 get_phdr_symtab_count(ELFOBJ *eo);
+static ut64 get_phdr_symtab_upper_bound(ELFOBJ *eo, ut64 addr_sym_table);
+
+// a defined global or weak dynamic symbol, which a dynamic linker can bind to
+static bool has_dynamic_exports(ELFOBJ *eo) {
+	const RBinElfDynamicInfo *di = &eo->dyn_info;
+	if (di->dt_symtab == R_BIN_ELF_ADDR_MAX) {
+		return false;
+	}
+	const ut64 start = Elf_(v2p) (eo, di->dt_symtab);
+	if (start == UT64_MAX || start >= eo->size) {
+		return false;
+	}
+	ut64 n = (get_phdr_symtab_upper_bound (eo, start) - start) / sizeof (Elf_(Sym));
+	const ut64 exact = get_phdr_symtab_count (eo);
+	if (exact && exact < n) {
+		n = exact;
+	}
+	ut64 i;
+	for (i = 1; i < n; i++) {
+		const ut64 at = start + i * sizeof (Elf_(Sym));
+#if R_BIN_ELF64
+		const ut8 info = r_buf_read8_at (eo->b, at + 4);
+		const ut16 shndx = r_buf_read_ble16_at (eo->b, at + 6, eo->endian);
+#else
+		const ut8 info = r_buf_read8_at (eo->b, at + 12);
+		const ut16 shndx = r_buf_read_ble16_at (eo->b, at + 14, eo->endian);
+#endif
+		const int bind = ELF_ST_BIND (info);
+		const int type = ELF_ST_TYPE (info);
+		const bool global = bind == STB_GLOBAL || bind == STB_WEAK || bind == STB_GNU_UNIQUE;
+		if (global && shndx != SHN_UNDEF && type != STT_SECTION && type != STT_FILE) {
+			return true;
+		}
+	}
+	return false;
+}
+
 bool Elf_(is_static)(ELFOBJ *eo) {
 	if (!eo->phdr) {
 		return false;
@@ -2583,10 +2624,16 @@ bool Elf_(is_static)(ELFOBJ *eo) {
 		}
 		dynamic |= pt == PT_DYNAMIC;
 	}
-	// a static PIE keeps PT_DYNAMIC only to relocate itself
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
+	if (!dynamic) {
+		return true;
+	}
+	if (!RVecElfOff_empty (&di->dt_needed)) {
+		return false;
+	}
+	// a static PIE keeps PT_DYNAMIC to relocate itself and may lack DF_1_PIE: then a soname or an export says shared
 	const bool pie = di->dt_flags_1 != R_BIN_ELF_XWORD_MAX && (di->dt_flags_1 & DF_1_PIE);
-	return !dynamic || (pie && RVecElfOff_empty (&di->dt_needed));
+	return pie || (!di->dt_soname && !has_dynamic_exports (eo));
 }
 
 char* Elf_(get_data_encoding)(ELFOBJ *eo) {
