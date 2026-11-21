@@ -5120,6 +5120,15 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_AND;
 		break;
 	case ARM64_INS_ORR:
+		// orr rd, zr, imm moves imm whether or not it prints as mov
+		if (OPCOUNT64 () == 3 && ISREG64 (1) && ISIMM64 (2) &&
+				((arm64_reg)REGID64 (1) == ARM64_REG_WZR || (arm64_reg)REGID64 (1) == ARM64_REG_XZR)) {
+			op->type = R_ANAL_OP_TYPE_MOV;
+			op->val = IMM64 (2);
+			break;
+		}
+		op->type = R_ANAL_OP_TYPE_OR;
+		break;
 	case ARM64_INS_ORN:
 		op->type = R_ANAL_OP_TYPE_OR;
 		break;

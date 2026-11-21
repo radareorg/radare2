@@ -1723,6 +1723,24 @@ type: load
 EOF
 RUN
 
+NAME=arm64 orr from the zero register keeps its value and data xref
+FILE=malloc://0x1000
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx e00375b2c0035fd6
+pi 1
+ao 1~type,val
+aar
+axt @ 0x800
+EOF
+EXPECT=<<EOF
+orr x0, xzr, 0x800
+val: 0x00000800
+type: mov
+(nofunc) 0x0 [DATA:r--] orr x0, xzr, 0x800
+EOF
+RUN
+
 NAME=arm64 structure register walks on SP keep the stack depth
 FILE=malloc://0x200
 ARGS=-a arm -b 64
