@@ -1136,6 +1136,54 @@ bool test_r_bin_pe_characteristics_offset(void) {
 	mu_end;
 }
 
+bool test_r_bin_pe_lfanew_checks(void) {
+	RBin *bin = r_bin_new ();
+	r_libstore_load (bin->libstore);
+	RBinPlugin *pe = r_libstore_find_name (bin->libstore, "pe");
+	RBinPlugin *pe64 = r_libstore_find_name (bin->libstore, "pe64");
+	RBinPlugin *mz = r_libstore_find_name (bin->libstore, "mz");
+	mu_assert_notnull (pe, "PE32 plugin");
+	mu_assert_notnull (pe64, "PE64 plugin");
+	mu_assert_notnull (mz, "MZ plugin");
+	ut8 dos[0x40] = {0};
+	memcpy (dos, "MZ", 2);
+	r_write_le16 (dos + 8, 4);
+	r_write_le16 (dos + 0x14, 0x10);
+	RBuffer *buf = r_buf_new_empty (0x10200);
+	mu_assert_notnull (buf, "Large DOS stub buffer");
+	RBinFile bf = { .buf = buf };
+	int i;
+	for (i = 0; i < 2; i++) {
+		ut8 header[26] = {0};
+		memcpy (header, "PE", 2);
+		r_write_le16 (header + 24, i? 0x20b: 0x10b);
+		r_write_le32 (dos + 0x3c, 0x10080);
+		r_buf_write_at (buf, 0, dos, sizeof (dos));
+		r_buf_write_at (buf, 0x10080, header, sizeof (header));
+		mu_assert_eq (pe->check (&bf, buf), !i, "PE32 uses the full offset and optional magic");
+		mu_assert_eq (pe64->check (&bf, buf), !!i, "PE64 uses the full offset and optional magic");
+		mu_assert_false (mz->check (&bf, buf), "Large-header PE is not plain DOS MZ");
+		r_buf_write_at (buf, 0x80, header, sizeof (header));
+		r_write_le32 (dos + 0x3c, 0x20080);
+		r_buf_write_at (buf, 0, dos, sizeof (dos));
+		mu_assert_false (pe->check (&bf, buf), "PE32 ignores low-16-bit decoy");
+		mu_assert_false (pe64->check (&bf, buf), "PE64 ignores low-16-bit decoy");
+		mu_assert_true (mz->check (&bf, buf), "DOS MZ survives unrelated low-offset PE bytes");
+	}
+	r_write_le32 (dos + 0x3c, UT32_MAX);
+	r_buf_write_at (buf, 0, dos, sizeof (dos));
+	mu_assert_false (pe->check (&bf, buf), "PE32 rejects maximal offset without wrapping");
+	mu_assert_false (pe64->check (&bf, buf), "PE64 rejects maximal offset without wrapping");
+	for (i = 0x3e; i < 0x40; i++) {
+		r_buf_resize (buf, i);
+		mu_assert_false (pe->check (&bf, buf), "PE32 rejects truncated e_lfanew");
+		mu_assert_false (pe64->check (&bf, buf), "PE64 rejects truncated e_lfanew");
+	}
+	r_unref (buf);
+	r_bin_free (bin);
+	mu_end;
+}
+
 bool test_r_bin_te_truncated(void) {
 	const ut8 te[] = { 'V', 'Z', 0x4c, 0x01, 0xff };
 	RBuffer *buf = r_buf_new_with_bytes (te, sizeof (te));
@@ -1181,6 +1229,7 @@ bool all_tests(void) {
 	mu_run_test(test_r_bin_te_bounds);
 	mu_run_test(test_r_bin_te_truncated);
 	mu_run_test (test_r_bin_pe_characteristics_offset);
+	mu_run_test (test_r_bin_pe_lfanew_checks);
 	mu_run_test(test_r_bin_mach0_full_segname);
 	return tests_passed != tests_run;
 }
