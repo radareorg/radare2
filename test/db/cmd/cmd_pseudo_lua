@@ -1,0 +1,99 @@
+NAME=Lua 5.3 pseudo data and RK operands
+FILE=hex://0000800041c00000820000002e000001c3000000c300800084000001050080000680c0000780800008808080090080000a80c0000bc000020cc040012c4000006e0100000200000000000000
+ARGS=-a lua -e asm.pseudo=true
+CMDS=pi 18
+EXPECT=<<EOF
+r0 = r1
+r1 = K[3]
+r2 = K[262144]
+r3 = false
+r3 = true
+r2, r3, r4 = nil
+r0 = upvalue[1]
+r0 = upvalue[1][K[2]]
+r0 = r1[r2]
+upvalue[0][K[1]] = r2
+upvalue[1] = r0
+r0[r1] = K[2]
+r0 = {}
+r1 = r2; r0 = r2[K[3]]
+r0 = closure(proto[1])
+extraarg Kst(5)
+loadkx 0
+r0 = r0
+EOF
+RUN
+
+NAME=Lua 5.3 pseudo arithmetic and Lua truthiness
+FILE=hex://0d80c0800e80c0000f808080108080001180800012808000138080001480800015808000168080001780800018808000190080001a0080001b0080001c0080001dc08000
+ARGS=-a lua -e asm.pseudo=true
+CMDS=pi 17
+EXPECT=<<EOF
+r0 = K[1] + K[2]
+r0 = r1 - K[2]
+r0 = K[1] * r2
+r0 = r1 % r2
+r0 = r1 ** r2
+r0 = r1 / r2
+r0 = floor_div(r1, r2)
+r0 = r1 & r2
+r0 = r1 | r2
+r0 = r1 ^ r2
+r0 = r1 << r2
+r0 = r1 >> r2
+r0 = -r1
+r0 = ~r1
+r0 = !truthy(r1)
+r0 = length(r1)
+r0 = concat(r1..r3)
+EOF
+RUN
+
+NAME=Lua 5.3 pseudo fixed and open calls, returns and varargs
+FILE=hex://244080002480800164c00001240000002500000125000000260080002600000166000002260000002d0080002d0000012d0080012d00000029800000
+ARGS=-a lua -e asm.pseudo=true
+CMDS=pi 15
+EXPECT=<<EOF
+r0()
+r0 = r0(r1, r2)
+r1, r2 = r1(r2)
+r0..top = r0(r1..top)
+return r0(r1)
+return r0(r1..top)
+return
+return r0
+return r1, r2, r3
+return r0..top
+nop
+r0 = ...
+r0, r1 = ...
+r0..top = ...
+r3, r4 = r0(r1, r2)
+EOF
+RUN
+
+NAME=Lua 5.3 pseudo branches preserve polarity and conditional assignments
+FILE=hex://1e4000809e40ff7f034080001f4040005f008080204000006140000022000000224000002300800023408000280000802740ff7f2a40ff7f
+ARGS=-a lua -e asm.pseudo=true
+CMDS=pi 14
+EXPECT=<<EOF
+goto 0x0000000c
+close_upvalues(r1)
+goto 0x00000000
+r0 = true
+goto 0x00000010
+if ((r0 == K[1])) goto 0x00000014
+if (!(K[1] == r0)) goto 0x00000018
+if ((r0 < r1)) goto 0x0000001c
+if (!(r0 <= r1)) goto 0x00000020
+if (truthy(r0)) goto 0x00000024
+if (!truthy(r0)) goto 0x00000028
+if ((truthy(r1) != false) || ((r0 = r1), false)) goto 0x0000002c
+if ((truthy(r1) != true) || ((r0 = r1), false)) goto 0x00000030
+r0 -= r2
+goto 0x00000034
+if (for_step(&r0, &r3, r1, r2)) goto 0x0000002c
+if (r1 != nil && ((r0 = r1), true)) goto 0x00000030
+EOF
+RUN
+
