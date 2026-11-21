@@ -160,3 +160,76 @@ type: load
 type: store
 EOF
 RUN
+
+NAME=Lua 5.4 control flow and bounded instruction pairs
+FILE=malloc://64
+ARGS=-a lua
+CMDS=<<EOF
+e asm.cpu=5.4
+wa jmp -2
+ao~size,type,jump,fail
+wa forprep 1 2
+ao~size,type,jump,fail
+wa forloop 1 2
+ao~size,type,jump,fail
+wa tforprep 1 2
+ao~size,type,jump,fail
+wa tforloop 1 2
+ao~size,type,jump,fail
+wa eqi 1 -2 0 1
+ao~size,type,jump,fail
+wa return0
+ao~type
+wa return1 2
+ao~type
+wa tailcall 1 2 0 0
+ao~type
+wa addi 0 1 -2
+wa mmbini 1 2 7 0 @ 4
+ao~size
+pi 1
+b 6
+ao~size
+b 8
+wa mmbini 2 2 7 0 @ 4
+ao~size
+wa newtable 0 0 0 0
+wa extraarg 0 @ 4
+ao~size
+pi 1
+EOF
+EXPECT=<<EOF
+size: 4
+type: jmp
+jump: 0xfffffffffffffffc
+size: 4
+type: cjmp
+jump: 0x00000010
+fail: 0x00000004
+size: 4
+type: cjmp
+jump: 0xfffffffffffffffc
+fail: 0x00000004
+size: 4
+type: jmp
+jump: 0x0000000c
+size: 4
+type: cjmp
+jump: 0xfffffffffffffffc
+fail: 0x00000004
+size: 4
+type: cjmp
+jump: 0x00000008
+fail: 0x00000004
+type: ret
+type: ret
+type: ret
+type2: 0x10000004
+size: 8
+addi 0 1 -2 ; mmbini 1 2 7 0
+size: 4
+size: 4
+size: 8
+newtable 0 0 0 0 ; extraarg 0
+EOF
+RUN

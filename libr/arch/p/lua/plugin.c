@@ -5,12 +5,20 @@
 
 // XXX should be dynlink
 #include "lua53.c"
+#include "lua_bc.h"
 
 static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	PluginData *pd = as->data;
 
 	pd->current_write_index = 0;
-	if (parseNextInstruction (pd, op->mnemonic) < 0) {
+	const LuaBCVersion *v = lua_bc_version (as->config->cpu);
+	if (v) {
+		int size;
+		if (!lua_bc_assemble (v, op->mnemonic, pd->instructions, &size)) {
+			return false;
+		}
+		pd->current_write_index = size / 4;
+	} else if (!lua_bc_is53 (as->config->cpu) || parseNextInstruction (pd, op->mnemonic) < 0) {
 		return false;
 	}
 	// one word, or two for LOADKX with its EXTRAARG
@@ -29,6 +37,60 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	return true;
 }
 
+static bool decode_bc(const LuaBCVersion *v, RAnalOp *op, RArchDecodeMask mask) {
+	const int len = op->size;
+	const ut32 word = getInstruction (op->bytes);
+	const int id = lua_bc_id (v, word);
+	op->size = 4;
+	if (id == LUA_OP_COUNT) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		if (mask & R_ARCH_OP_MASK_DISASM) {
+			op->mnemonic = strdup ("invalid");
+		}
+		return false;
+	}
+	const ut32 next = len >= 8? getInstruction (op->bytes + 4): 0;
+	const bool pair = len >= 8 && lua_bc_pair (v, word, next);
+	if (pair) {
+		op->size = 8;
+	}
+	if (mask & R_ARCH_OP_MASK_DISASM) {
+		char *first = lua_bc_disasm_word (v, word, next, pair);
+		if (pair && id != LUA_OP_LOADKX) {
+			char *second = lua_bc_disasm_word (v, next, 0, false);
+			op->mnemonic = r_str_newf ("%s ; %s", first, second);
+			free (first);
+			free (second);
+		} else {
+			op->mnemonic = first;
+		}
+	}
+	op->type = lua_bc_ops[id].type;
+	op->eob = false;
+	const ut64 pc = op->addr + 4;
+	if (id == LUA_OP_JMP) {
+		op->jump = pc + (st64)lua_bc_get (word, LUA_ARG_SJ) * 4;
+	} else if (id == LUA_OP_LFALSESKIP) {
+		op->jump = pc + 4;
+	} else if (id == LUA_OP_FORPREP || id == LUA_OP_TFORPREP) {
+		op->jump = pc + (ut64)(lua_bc_get (word, LUA_ARG_BX) + (id == LUA_OP_FORPREP)) * 4;
+	} else if (id == LUA_OP_FORLOOP || id == LUA_OP_TFORLOOP) {
+		op->jump = pc - (ut64)lua_bc_get (word, LUA_ARG_BX) * 4;
+	} else if (op->type == R_ANAL_OP_TYPE_CJMP) {
+		op->jump = pc + 4;
+	}
+	if (op->type == R_ANAL_OP_TYPE_CJMP) {
+		op->fail = pc;
+	}
+	if (op->type == R_ANAL_OP_TYPE_RET) {
+		op->eob = true;
+		if (id == LUA_OP_TAILCALL) {
+			op->type2 = R_ANAL_OP_TYPE_RCALL;
+		}
+	}
+	return true;
+}
+
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (!op) {
 		return 0;
@@ -43,6 +105,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		return false;
 	}
 
+	const LuaBCVersion *v = lua_bc_version (as->config->cpu);
+	if (v) {
+		return decode_bc (v, op, mask);
+	}
+	if (!lua_bc_is53 (as->config->cpu)) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		return false;
+	}
 	const ut32 instruction = getInstruction (data);
 	op->size = 4;
 	op->type = R_ANAL_OP_TYPE_UNK;
@@ -174,7 +244,7 @@ static bool fini(RArchSession *as) {
 const RArchPlugin r_arch_plugin_lua = {
 	.meta = {
 		.name = "lua",
-		.desc = "LUA Bytecode (5.3)",
+		.desc = "Lua bytecode (5.3, 5.4)",
 		.license = "MIT",
 		.author = "pancake",
 	},
@@ -187,7 +257,7 @@ const RArchPlugin r_arch_plugin_lua = {
 	.regs = regs,
 	.init = init,
 	.fini = fini,
-	.cpus = "5.3", // ,5.4"
+	.cpus = "5.3,5.4",
 	.endian = R_SYS_ENDIAN_LITTLE,
 };
 
