@@ -172,6 +172,7 @@ if get_option('plugins') == ''
     'kvx',
     'lh5801',
     'lm32',
+    'lua',
     'm680x_cs',
     'm68k_cs',
     'mcore',
@@ -260,6 +261,7 @@ if get_option('plugins') == ''
     'io',
     'java',
     'le',
+    'lua',
     'hunk',
     'mach0',
     'mach064',
@@ -453,6 +455,7 @@ io_plugins += [
   endif
 
   asm_plugins += [
+    'lua',
     '6502',
     '8051',
     'bf',

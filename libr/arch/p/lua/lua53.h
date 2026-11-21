@@ -232,4 +232,20 @@ static const char * const instruction_names[] = {
 	"test", "testset", "call", "tailcall", "return", "forloop", "forprep", "tforcall", "tforloop", "setlist", "closure", "vararg", "extraarg", 0
 };
 
+static inline bool lua53_rkb(OpCode op) {
+	return op == OP_SETTABUP || op == OP_SETTABLE || (op >= OP_ADD && op <= OP_SHR) || (op >= OP_EQ && op <= OP_LE);
+}
+
+static inline bool lua53_rkc(OpCode op) {
+	return lua53_rkb (op) || op == OP_GETTABUP || op == OP_GETTABLE || op == OP_SELF;
+}
+
+static inline int lua53_nargs(OpCode op) {
+	if (op == OP_EXTRAARG) {
+		return 1;
+	}
+	return lua53_rkc (op) || op == OP_LOADBOOL || op == OP_NEWTABLE || op == OP_CONCAT
+		|| op == OP_TESTSET || op == OP_CALL || op == OP_TAILCALL || op == OP_SETLIST? 3: 2;
+}
+
 #endif

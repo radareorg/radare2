@@ -1724,6 +1724,23 @@ bool test_r_str_trim_args_quote_parity(void) {
 	mu_end;
 }
 
+bool test_r_str_pseudo_transform(void) {
+	const char *rules[] = {
+		"addmore/3/wrong opcode", "add/2/wrong arity", "add", "add/3",
+		"ADD/3/$1 = $2 + $3", "call/1/call($1)", NULL
+	};
+	char *s = r_str_pseudo_transform (rules, "aDd dst, src, K[3]");
+	mu_assert_streq (s, "dst = src + K[3]", "match complete opcode and operand count");
+	free (s);
+	s = r_str_pseudo_transform (rules, "addmore2 dst, src, K[3]");
+	mu_assert_streq (s, "addmore2 dst, src, K[3]", "unknown opcode is preserved");
+	free (s);
+	s = r_str_pseudo_transform (rules, "call [r0, r1]");
+	mu_assert_streq (s, "call([r0, r1])", "commas in memory operands are preserved");
+	free (s);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_file);
 	mu_run_test (test_r_str_wrap);
@@ -1797,6 +1814,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_trim_args_quote_parity);
 	mu_run_test (test_r_str_unquote);
 	mu_run_test (test_r_str_arg_escape);
+	mu_run_test (test_r_str_pseudo_transform);
 	return tests_passed != tests_run;
 }
 

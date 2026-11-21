@@ -45,6 +45,8 @@ r_bin_sources = [
   'p/bin_ftab.c',
   'p/bin_gns1.c',
   'p/bin_java.c',
+  'p/bin_lua.c',
+  'format/lua/lua.c',
   'p/bin_ldr_linux.c',
   'p/bin_le.c',
   'p/bin_mach0.c',

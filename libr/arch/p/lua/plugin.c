@@ -50,100 +50,55 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (GET_OPCODE (instruction) > OP_EXTRAARG) {
 		return op->size;
 	}
-	if (mask & R_ARCH_OP_MASK_DISASM) {
-		PluginData *pd = as->data;
-		(void)lua53dissasm (pd, op, data, len);
-	}
 	if ((GET_OPCODE (instruction) == OP_LOADKX || (GET_OPCODE (instruction) == OP_SETLIST && !GETARG_C (instruction)))
 			&& len >= 8 && GET_OPCODE (getInstruction (data + 4)) == OP_EXTRAARG) {
 		op->size = 8;
 	}
-	switch (GET_OPCODE (instruction)) {
-	case OP_MOVE:	/*   A B     R(A) := R(B)              */
-		op->type = R_ANAL_OP_TYPE_MOV;
-		break;
-	case OP_LOADK:	/*   A Bx    R(A) := Kst(Bx)           */
-		op->type = R_ANAL_OP_TYPE_LOAD;
-		break;
-	case OP_LOADKX:	/*   A       R(A) := Kst(extra arg)    */
-		op->type = R_ANAL_OP_TYPE_LOAD;
-		break;
-	case OP_LOADBOOL:/*  A B C   R(A) := (Bool)B; if (C) pc++  */
-		op->type = R_ANAL_OP_TYPE_MOV;
+	if (mask & R_ARCH_OP_MASK_DISASM) {
+		op->mnemonic = lua53disasm (instruction, op->size == 8? getInstruction (data + 4): 0, op->size == 8);
+	}
+	static const ut32 types[OP_EXTRAARG + 1] = {
+		[OP_MOVE] = R_ANAL_OP_TYPE_MOV,
+		[OP_LOADK] = R_ANAL_OP_TYPE_LOAD,
+		[OP_LOADKX] = R_ANAL_OP_TYPE_LOAD,
+		[OP_LOADBOOL] = R_ANAL_OP_TYPE_MOV,
+		[OP_LOADNIL] = R_ANAL_OP_TYPE_MOV,
+		[OP_GETUPVAL] = R_ANAL_OP_TYPE_LOAD,
+		[OP_GETTABUP] = R_ANAL_OP_TYPE_LOAD,
+		[OP_GETTABLE] = R_ANAL_OP_TYPE_LOAD,
+		[OP_SETTABUP] = R_ANAL_OP_TYPE_STORE,
+		[OP_SETUPVAL] = R_ANAL_OP_TYPE_STORE,
+		[OP_SETTABLE] = R_ANAL_OP_TYPE_STORE,
+		[OP_NEWTABLE] = R_ANAL_OP_TYPE_NEW,
+		[OP_ADD] = R_ANAL_OP_TYPE_ADD,
+		[OP_SUB] = R_ANAL_OP_TYPE_SUB,
+		[OP_MUL] = R_ANAL_OP_TYPE_MUL,
+		[OP_MOD] = R_ANAL_OP_TYPE_MOD,
+		[OP_DIV] = R_ANAL_OP_TYPE_DIV,
+		[OP_IDIV] = R_ANAL_OP_TYPE_DIV,
+		[OP_BAND] = R_ANAL_OP_TYPE_AND,
+		[OP_BOR] = R_ANAL_OP_TYPE_OR,
+		[OP_BXOR] = R_ANAL_OP_TYPE_XOR,
+		[OP_SHL] = R_ANAL_OP_TYPE_SHL,
+		[OP_SHR] = R_ANAL_OP_TYPE_SHR,
+		[OP_BNOT] = R_ANAL_OP_TYPE_CPL,
+		[OP_NOT] = R_ANAL_OP_TYPE_NOT,
+		[OP_CALL] = R_ANAL_OP_TYPE_RCALL,
+		[OP_TFORCALL] = R_ANAL_OP_TYPE_RCALL,
+		[OP_SETLIST] = R_ANAL_OP_TYPE_STORE,
+	};
+	const OpCode opcode = GET_OPCODE (instruction);
+	op->type = types[opcode]? types[opcode]: R_ANAL_OP_TYPE_UNK;
+	switch (opcode) {
+	case OP_LOADBOOL:
 		op->val = !!GETARG_B (instruction);
 		if (GETARG_C (instruction)) {
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = op->addr + 8;
 		}
 		break;
-	case OP_LOADNIL:/*   A B     R(A), R(A+1), ..., R(A+B) := nil  */
-		break;
-	case OP_GETUPVAL:/*  A B     R(A) := UpValue[B]                */
-	case OP_GETTABUP:/*  A B C   R(A) := UpValue[B][RK(C)]         */
-		op->type = R_ANAL_OP_TYPE_LOAD;
-		break;
-	case OP_GETTABLE:/*  A B C   R(A) := R(B)[RK(C)]               */
-		break;
-
-	case OP_SETTABUP:/*  A B C   UpValue[A][RK(B)] := RK(C)        */
-	case OP_SETUPVAL:/*  A B     UpValue[B] := R(A)                */
-		op->type = R_ANAL_OP_TYPE_STORE;
-		break;
-	case OP_SETTABLE:/*  A B C   R(A)[RK(B)] := RK(C)              */
-		break;
-	case OP_NEWTABLE:/*  A B C   R(A) := {} (size = B,C)           */
-		op->type = R_ANAL_OP_TYPE_NEW;
-		break;
-	case OP_SELF:	/*      A B C   R(A+1) := R(B); R(A) := R(B)[RK(C)]             */
-		break;
-	case OP_ADD:	/*       A B C   R(A) := RK(B) + RK(C)     */
-		op->type = R_ANAL_OP_TYPE_ADD;
-		break;
-	case OP_SUB:	/*       A B C   R(A) := RK(B) - RK(C)     */
-		op->type = R_ANAL_OP_TYPE_SUB;
-		break;
-	case OP_MUL:	/*       A B C   R(A) := RK(B) * RK(C)     */
-		op->type = R_ANAL_OP_TYPE_MUL;
-		break;
-	case OP_MOD:	/*       A B C   R(A) := RK(B) % RK(C)     */
-		op->type = R_ANAL_OP_TYPE_MOD;
-		break;
-	case OP_POW:	/*       A B C   R(A) := RK(B) ^ RK(C)     */
-		break;
-	case OP_DIV:	/*       A B C   R(A) := RK(B) / RK(C)     */
-		op->type = R_ANAL_OP_TYPE_DIV;
-		break;
-	case OP_IDIV:	/*      A B C   R(A) := RK(B) // RK(C)     */
-		op->type = R_ANAL_OP_TYPE_DIV;
-		break;
-	case OP_BAND:	/*      A B C   R(A) := RK(B) & RK(C)      */
-		op->type = R_ANAL_OP_TYPE_AND;
-		break;
-	case OP_BOR:	/*       A B C   R(A) := RK(B) | RK(C)     */
-		op->type = R_ANAL_OP_TYPE_OR;
-		break;
-	case OP_BXOR:	/*      A B C   R(A) := RK(B) ~ RK(C)      */
-		op->type = R_ANAL_OP_TYPE_XOR;
-		break;
-	case OP_SHL:	/*       A B C   R(A) := RK(B) << RK(C)    */
-		op->type = R_ANAL_OP_TYPE_SHL;
-		break;
-	case OP_SHR:	/*       A B C   R(A) := RK(B) >> RK(C)    */
-		op->type = R_ANAL_OP_TYPE_SHR;
-		break;
-	case OP_UNM:	/*       A B     R(A) := -R(B)             */
-		break;
-	case OP_BNOT:	/*      A B     R(A) := ~R(B)              */
-		op->type = R_ANAL_OP_TYPE_CPL;
-		break;
-	case OP_NOT:	/*       A B     R(A) := not R(B)          */
-		op->type = R_ANAL_OP_TYPE_NOT;
-		break;
-	case OP_LEN:	/*       A B     R(A) := length of R(B)    */
-		break;
-	case OP_CONCAT:	/*    A B C   R(A) := R(B).. ... ..R(C)    */
-		break;
-	case OP_JMP:	/*       A sBx   pc+=sBx; if (A) close all upvalues >= R(A - 1)  */
+	case OP_JMP:
+	case OP_FORPREP:
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->jump = op->addr + 4 + 4 * GETARG_sBx (instruction);
 		break;
@@ -152,72 +107,23 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case OP_LE:
 	case OP_TEST:
 	case OP_TESTSET:
+	case OP_FORLOOP:
+	case OP_TFORLOOP:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = op->addr + 8;
+		op->jump = op->addr + (opcode == OP_FORLOOP || opcode == OP_TFORLOOP? 4 + 4 * GETARG_sBx (instruction): 8);
 		op->fail = op->addr + 4;
 		break;
-	case OP_CALL:	/*      A B C   R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1)) */
-		op->type = R_ANAL_OP_TYPE_RCALL;
-		break;
-	case OP_TAILCALL:/*  A B C   return R(A)(R(A+1), ... ,R(A+B-1))              */
-		op->type = R_ANAL_OP_TYPE_RET;
+	case OP_TAILCALL:
 		op->type2 = R_ANAL_OP_TYPE_RCALL;
-		op->eob = true;
-		break;
-	case OP_RETURN:	/*    A B     return R(A), ... ,R(A+B-2)      (see note)      */
+		// fall through
+	case OP_RETURN:
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->eob = true;
-		break;
-	case OP_FORLOOP:/*   A sBx   R(A)+=R(A+2);
-			                                if R(A) <?= R(A+1) then { pc+=sBx; R(A+3)=R(A) }*/
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = op->addr + 4 + 4 * (GETARG_sBx (instruction));
-		op->fail = op->addr + 4;
-		break;
-	case OP_FORPREP:/*   A sBx   R(A)-=R(A+2); pc+=sBx                           */
-		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = op->addr + 4 + 4 * (GETARG_sBx (instruction));
-		break;
-	case OP_TFORCALL:/*  A C     R(A+3), ... ,R(A+2+C) := R(A)(R(A+1), R(A+2));  */
-		op->type = R_ANAL_OP_TYPE_RCALL;
-		break;
-	case OP_TFORLOOP:/*  A sBx   if R(A+1) ~= nil then { R(A)=R(A+1); pc += sBx }*/
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = op->addr + 4 + 4 * (GETARG_sBx (instruction));
-		op->fail = op->addr + 4;
-		break;
-	case OP_SETLIST:/*   A B C   R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B        */
-		op->type = R_ANAL_OP_TYPE_STORE;
-		break;
-	case OP_CLOSURE:/*   A Bx    R(A) := closure(KPROTO[Bx])                     */
-	case OP_VARARG:	/*    A B     R(A), R(A+1), ..., R(A+B-2) = vararg            */
-	case OP_EXTRAARG:/*   Ax      extra (larger) argument for previous opcode     */
 		break;
 	}
+
 	return op->size;
 }
-
-#if 0
-static int lua53_anal_fcn(RAnal *a, RAnalFunction *fcn, ut64 addr, const ut8 *data, int len, int reftype){
-	Dprintf ("Analyze Function: 0x%"PFMT64x "\n", addr);
-	LuaFunction *function = lua53findLuaFunctionByCodeAddr (addr);
-	if (function) {
-		fcn->maxstack = function->maxStackSize;
-		fcn->nargs = function->numParams;
-	}
-	fcn->addr = addr;
-	return 0;
-}
-
-static int finit(void *user) {
-	if (lua53_data.functionList) {
-		r_list_free (lua53_data.functionList);
-		lua53_data.functionList = 0;
-	}
-	return 0;
-}
-
-#endif
 
 static int archinfo(RArchSession *cfg, ut32 q) {
 	switch (q) {

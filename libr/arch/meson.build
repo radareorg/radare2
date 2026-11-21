@@ -23,6 +23,7 @@ r_arch_sources = [
   'p/ppc_cs/plugin.c',
   'p/null/plugin.c',
   'p/lm32/plugin.c',
+  'p/lua/plugin.c',
   'p/s390/plugin.c',
   'p/mcs96/plugin.c',
   'p/sparc_cs/plugin.c',

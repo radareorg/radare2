@@ -3,20 +3,44 @@
 #include <r_asm.h>
 #include "lua53.h"
 
+static const char *pseudo_rules[] = {
+	"move/2/r$1 = r$2",
+	"loadk/2/r$1 = $2",
+	"loadkx/2/r$1 = $2",
+	"getupval/2/r$1 = upvalue[$2]",
+	"gettabup/3/r$1 = upvalue[$2][$3]",
+	"gettable/3/r$1 = r$2[$3]",
+	"settabup/3/upvalue[$1][$2] = $3",
+	"setupval/2/upvalue[$2] = r$1",
+	"settable/3/r$1[$2] = $3",
+	"newtable/3/r$1 = {}",
+	"add/3/r$1 = $2 + $3",
+	"sub/3/r$1 = $2 - $3",
+	"mul/3/r$1 = $2 * $3",
+	"mod/3/r$1 = $2 % $3",
+	"pow/3/r$1 = $2 ** $3",
+	"div/3/r$1 = $2 / $3",
+	"idiv/3/r$1 = floor_div($2, $3)",
+	"band/3/r$1 = $2 & $3",
+	"bor/3/r$1 = $2 | $3",
+	"bxor/3/r$1 = $2 ^ $3",
+	"shl/3/r$1 = $2 << $3",
+	"shr/3/r$1 = $2 >> $3",
+	"unm/2/r$1 = -r$2",
+	"bnot/2/r$1 = ~r$2",
+	"not/2/r$1 = !truthy(r$2)",
+	"len/2/r$1 = length(r$2)",
+	"concat/3/r$1 = concat(r$2..r$3)",
+	"closure/2/r$1 = closure($2)",
+	NULL
+};
+
 static bool operand(const char *s, int *value, char *expr, size_t size) {
 	const char *prefix = "r";
 	bool wrapped = false;
-	if (r_str_startswith (s, "K(")) {
-		s += 2;
-		prefix = "K[";
-		wrapped = true;
-	} else if (r_str_startswith (s, "Kst(")) {
-		s += 4;
-		prefix = "K[";
-		wrapped = true;
-	} else if (r_str_startswith (s, "KPROTO(")) {
-		s += 7;
-		prefix = "proto[";
+	if (r_str_startswith (s, "K(") || r_str_startswith (s, "Kst(") || r_str_startswith (s, "KPROTO(")) {
+		prefix = r_str_startswith (s, "KPROTO(")? "proto[": "K[";
+		s = strchr (s, '(') + 1;
 		wrapped = true;
 	}
 	char *end;
@@ -57,19 +81,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 	if (!instruction_names[op]) {
 		return NULL;
 	}
-	int expected = op == OP_SETLIST && argc == 4? 4: 3;
-	switch (op) {
-	case OP_MOVE: case OP_LOADK: case OP_LOADKX: case OP_LOADNIL:
-	case OP_GETUPVAL: case OP_SETUPVAL: case OP_UNM: case OP_BNOT:
-	case OP_NOT: case OP_LEN: case OP_JMP: case OP_TEST: case OP_RETURN:
-	case OP_FORLOOP: case OP_FORPREP: case OP_TFORCALL: case OP_TFORLOOP:
-	case OP_CLOSURE: case OP_VARARG:
-		expected = 2;
-		break;
-	case OP_EXTRAARG:
-		expected = 1;
-		break;
-	}
+	const int expected = op == OP_SETLIST && argc == 4? 4: lua53_nargs (op);
 	if (argc != expected) {
 		return NULL;
 	}
@@ -82,66 +94,26 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		}
 	}
 	const int a = values[0], b = values[1], c = values[2];
-	if (a < 0 || a > MAXARG_A || b < -MAXARG_sBx || b > (op == OP_LOADKX? MAXARG_Ax: MAXARG_Bx) || c < 0 || c > MAXARG_C) {
-		return NULL;
-	}
-	if (op != OP_JMP && op != OP_FORLOOP && op != OP_FORPREP && op != OP_TFORLOOP && b < 0) {
+	const bool relative = op == OP_JMP || op == OP_FORLOOP || op == OP_FORPREP || op == OP_TFORLOOP;
+	const int maxb = relative? MAXARG_sBx + 1: op == OP_LOADKX? MAXARG_Ax: op == OP_LOADK || op == OP_CLOSURE? MAXARG_Bx: MAXARG_B;
+	if (a < 0 || a > MAXARG_A || b < (relative? -MAXARG_sBx: 0) || b > maxb || c < 0 || c > MAXARG_C) {
 		return NULL;
 	}
 	const ut64 pc = aps->rasm->pc;
 	const ut64 target = pc + 4 + (st64)b * 4;
 	const char *rb = expr[1], *rc = expr[2];
 	switch (op) {
-	case OP_MOVE:
-		return r_str_newf ("r%d = r%d", a, b);
-	case OP_LOADK:
-	case OP_LOADKX:
-		return r_str_newf ("r%d = %s", a, rb);
 	case OP_LOADBOOL:
 		return c? r_str_newf ("r%d = %s\ngoto 0x%08"PFMT64x, a, b? "true": "false", pc + 8)
 			: r_str_newf ("r%d = %s", a, b? "true": "false");
 	case OP_LOADNIL: {
-		if (b > MAXARG_B) {
-			return NULL;
-		}
 		char *list = reglist (a, b + 1);
 		char *s = r_str_newf ("%s = nil", list);
 		free (list);
 		return s;
 	}
-	case OP_GETUPVAL:
-		return r_str_newf ("r%d = upvalue[%d]", a, b);
-	case OP_GETTABUP:
-		return r_str_newf ("r%d = upvalue[%d][%s]", a, b, rc);
-	case OP_GETTABLE:
-		return r_str_newf ("r%d = r%d[%s]", a, b, rc);
-	case OP_SETTABUP:
-		return r_str_newf ("upvalue[%d][%s] = %s", a, rb, rc);
-	case OP_SETUPVAL:
-		return r_str_newf ("upvalue[%d] = r%d", b, a);
-	case OP_SETTABLE:
-		return r_str_newf ("r%d[%s] = %s", a, rb, rc);
-	case OP_NEWTABLE:
-		return r_str_newf ("r%d = {}", a);
 	case OP_SELF:
 		return r_str_newf ("r%d = r%d; r%d = r%d[%s]", a + 1, b, a, b, rc);
-	case OP_ADD: case OP_SUB: case OP_MUL: case OP_MOD: case OP_POW:
-	case OP_DIV: case OP_IDIV: case OP_BAND: case OP_BOR: case OP_BXOR:
-	case OP_SHL: case OP_SHR: {
-		static const char * const operators[] = { "+", "-", "*", "%", "**", "/", "//", "&", "|", "^", "<<", ">>" };
-		return op == OP_IDIV? r_str_newf ("r%d = floor_div(%s, %s)", a, rb, rc)
-			: r_str_newf ("r%d = %s %s %s", a, rb, operators[op - OP_ADD], rc);
-	}
-	case OP_UNM:
-		return r_str_newf ("r%d = -r%d", a, b);
-	case OP_BNOT:
-		return r_str_newf ("r%d = ~r%d", a, b);
-	case OP_NOT:
-		return r_str_newf ("r%d = !truthy(r%d)", a, b);
-	case OP_LEN:
-		return r_str_newf ("r%d = length(r%d)", a, b);
-	case OP_CONCAT:
-		return r_str_newf ("r%d = concat(r%d..r%d)", a, b, c);
 	case OP_JMP:
 		return a? r_str_newf ("close_upvalues(r%d)\ngoto 0x%08"PFMT64x, a - 1, target)
 			: r_str_newf ("goto 0x%08"PFMT64x, target);
@@ -155,9 +127,6 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		return r_str_newf ("if ((truthy(r%d) != %s) || ((r%d = r%d), false)) goto 0x%08"PFMT64x, b, c? "true": "false", a, b, pc + 8);
 	case OP_CALL:
 	case OP_TAILCALL: {
-		if (b > MAXARG_B) {
-			return NULL;
-		}
 		char *args = reglist (a + 1, b? b - 1: -1);
 		char *results = reglist (a, c? c - 1: -1);
 		char *s = op == OP_TAILCALL? r_str_newf ("return r%d(%s)", a, args)
@@ -169,9 +138,6 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 	}
 	case OP_RETURN:
 	case OP_VARARG: {
-		if (b > MAXARG_B) {
-			return NULL;
-		}
 		char *list = reglist (a, b? b - 1: -1);
 		char *s = op == OP_RETURN? r_str_newf ("return%s%s", *list? " ": "", list)
 			: b == 1? strdup ("nop") : r_str_newf ("%s = ...", list);
@@ -183,11 +149,9 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 	case OP_FORLOOP:
 		return r_str_newf ("if (for_step(&r%d, &r%d, r%d, r%d)) goto 0x%08"PFMT64x, a, a + 3, a + 1, a + 2, target);
 	case OP_TFORCALL: {
-		if (b > MAXARG_C) {
-			return NULL;
-		}
 		char *list = reglist (a + 3, b);
-		char *s = r_str_newf ("%s = r%d(r%d, r%d)", list, a, a + 1, a + 2);
+		char *s = b? r_str_newf ("%s = r%d(r%d, r%d)", list, a, a + 1, a + 2)
+			: r_str_newf ("r%d(r%d, r%d)", a, a + 1, a + 2);
 		free (list);
 		return s;
 	}
@@ -195,7 +159,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		return r_str_newf ("if (r%d != nil && ((r%d = r%d), true)) goto 0x%08"PFMT64x, a + 1, a, a + 1, target);
 	case OP_SETLIST: {
 		const int block = c? c: values[3];
-		if (b > MAXARG_B || block < 1 || (argc == 4 && c)) {
+		if (block < 1 || (argc == 4 && c)) {
 			return NULL;
 		}
 		char *list = reglist (a + 1, b? b: -1);
@@ -203,10 +167,17 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 		free (list);
 		return s;
 	}
-	case OP_CLOSURE:
-		return r_str_newf ("r%d = closure(%s)", a, rb);
+	case OP_EXTRAARG:
+		return NULL;
 	}
-	return NULL;
+	RStrBuf *input = r_strbuf_new (name);
+	for (i = 0; i < argc; i++) {
+		bool rk = (i == 1 && lua53_rkb (op)) || (i == 2 && lua53_rkc (op));
+		r_strbuf_appendf (input, "%s%s", i? ", ": " ", rk || args[i][0] == 'K'? expr[i]: args[i]);
+	}
+	char *result = r_str_pseudo_transform (pseudo_rules, r_strbuf_get (input));
+	r_strbuf_free (input);
+	return result;
 }
 
 RAsmPlugin r_asm_plugin_lua = {
