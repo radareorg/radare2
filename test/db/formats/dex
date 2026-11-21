@@ -2381,3 +2381,35 @@ WARN: Invalid DEX data offset
 WARN: Invalid DEX data offset
 EOF
 RUN
+
+NAME=dex inside an APK: try/catch regions follow the DEX base
+FILE=apk://bins/dex/14d9.apk
+CMDS=<<EOF
+f~try.0.16914
+pi 1 @ try.0.16914.catch
+EOF
+EXPECT=<<EOF
+0x00016924 1 try.0.16914.from
+0x00016950 1 try.0.16914.to
+0x0001695e 1 try.0.16914.catch
+move-exception v2
+EOF
+RUN
+
+NAME=dex rebased with -B: try/catch regions follow the DEX base
+FILE=bins/java/Main.dex
+ARGS=-B 0x10000000 -e cfg.json.num=hex
+CMDS=<<EOF
+i~baddr
+?v entry0
+iwj
+af @ entry0
+afij~{0.trycatch}
+EOF
+EXPECT=<<EOF
+baddr    0x10000000
+0x1000023c
+[{"index":"0x0","source":"0x1000023c","from":"0x1000024e","to":"0x1000029e","handler":"0x100002a0","filter":"0x0","kind":"catch","typeFilter":5,"type":"Ljava/lang/Exception;"},{"index":"0x1","source":"0x1000023c","from":"0x100002c4","to":"0x100002ca","handler":"0x100002a0","filter":"0x0","kind":"catch","typeFilter":5,"type":"Ljava/lang/Exception;"}]
+[{"index":"0x0","source":"0x1000023c","from":"0x1000024e","to":"0x1000029e","handler":"0x100002a0","filter":"0x0","kind":"catch","typeFilter":5,"type":"Ljava/lang/Exception;"},{"index":"0x1","source":"0x1000023c","from":"0x100002c4","to":"0x100002ca","handler":"0x100002a0","filter":"0x0","kind":"catch","typeFilter":5,"type":"Ljava/lang/Exception;"}]
+EOF
+RUN
