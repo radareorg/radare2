@@ -461,6 +461,7 @@ typedef struct r_bin_reloc_t {
 	ut8 additive;
 	bool is_ifunc;
 	bool to_slot; // a patched site whose name belongs to the slot's own row
+	bool unwritten; // patch_relocs left this site's bytes as in the file
 	ut32 visibility;
 	ut64 ntype; // type number coming from the bin file
 	RBinSymbol *symbol;
@@ -523,7 +524,7 @@ typedef struct r_bin_object_t {
 	RVecRBinSymbol *import_symbols;
 	void *filters; // symbol/section filter tables (HtPP/HtSU) owned by object
 	void *bin_obj; // internal pointer used by formats... TODO: RENAME TO internal object or sthg
-	bool is_reloc_patched; // used to indicate whether relocations were patched or not
+	bool is_reloc_patched; // patch_relocs ran; rows it left alone have RBinReloc.unwritten set
 	bool resources_loaded;
 	void *trycatch; // private exception metadata store
 } RBinObject;
@@ -818,7 +819,7 @@ typedef struct r_bin_plugin_t {
 	R_UNOWNED RVecRBinTrycatch *(*trycatch)(RBinFile *bf);
 	RList/*<RBinClass>*/* (*classes)(RBinFile *bf);
 	RList/*<RBinMem>*/* (*mem)(RBinFile *bf);
-	RVecRBinReloc *(*patch_relocs)(RBinFile *bf); // NULL keeps the current relocs
+	RVecRBinReloc *(*patch_relocs)(RBinFile *bf); // replaces bo->relocs in full, skipped rows included and marked unwritten; NULL keeps the current relocs
 	RList/*<RBinMap>*/* (*maps)(RBinFile *bf); // this should be segments!
 	RList/*<RBinFileHash>*/* (*hashes)(RBinFile *bf);
 	char* (*header)(RBinFile *bf, int mode);
