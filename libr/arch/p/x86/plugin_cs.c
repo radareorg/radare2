@@ -3223,11 +3223,20 @@ static void set_access_info(RArchSession *as, RAnalOp *op, csh handle, cs_insn *
 	op->access = ret;
 }
 
+// emplace_back leaves the slot uninitialized, and an absent operand writes nothing
+static RAnalValue *new_value(RVecRArchValue *vec) {
+	RAnalValue *val = RVecRArchValue_emplace_back (vec);
+	if (val) {
+		memset (val, 0, sizeof (*val));
+	}
+	return val;
+}
+
 #define CREATE_SRC_DST(op) \
-	src0 = RVecRArchValue_emplace_back (&(op)->srcs); \
-	src1 = RVecRArchValue_emplace_back (&(op)->srcs); \
-	src2 = RVecRArchValue_emplace_back (&(op)->srcs); \
-	dst = RVecRArchValue_emplace_back (&(op)->dsts);
+	src0 = new_value (&(op)->srcs); \
+	src1 = new_value (&(op)->srcs); \
+	src2 = new_value (&(op)->srcs); \
+	dst = new_value (&(op)->dsts);
 
 static void set_src_dst(RArchSession *as, RAnalValue *val, csh handle, cs_insn *insn, int x) {
 	if (!val) {
@@ -3246,6 +3255,7 @@ static void set_src_dst(RArchSession *as, RAnalValue *val, csh handle, cs_insn *
 		val->reg = cs_reg_name (handle, INSOP (x).reg);
 		break;
 	case X86_OP_IMM:
+		val->type = R_ANAL_VAL_IMM;
 		val->imm = INSOP (x).imm;
 		break;
 	default:
