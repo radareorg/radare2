@@ -1563,7 +1563,15 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			r_write_ble32 (buf, insn, ie);
 			break;
 		}
-		default:
+		case R_ARM_ABS8:
+		case R_ARM_ABS16:
+		case R_ARM_ABS32_NOI:
+		case R_ARM_COPY:
+		case R_ARM_IRELATIVE:
+		case R_ARM_TLS_DESC:
+		case R_ARM_TLS_DTPMOD32:
+		case R_ARM_TLS_DTPOFF32:
+		case R_ARM_TLS_TPOFF32:
 			if (!rel->sym && rel->mode == DT_REL) {
 				r_write_ble32 (buf, word, bo->endian);
 			} else {
@@ -1571,6 +1579,9 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 				r_write_ble32 (buf, V, bo->endian);
 			}
 			break;
+		default:
+			// the site of an unmodeled type may be an instruction
+			return;
 		}
 		iob->overlay_write_at (iob->io, P, buf, 4);
 		}
