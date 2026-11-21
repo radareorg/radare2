@@ -244,7 +244,7 @@ static bool fini(RArchSession *as) {
 const RArchPlugin r_arch_plugin_lua = {
 	.meta = {
 		.name = "lua",
-		.desc = "Lua bytecode (5.3, 5.4)",
+		.desc = "Lua bytecode (5.3, 5.4, 5.5)",
 		.license = "MIT",
 		.author = "pancake",
 	},
@@ -257,7 +257,7 @@ const RArchPlugin r_arch_plugin_lua = {
 	.regs = regs,
 	.init = init,
 	.fini = fini,
-	.cpus = "5.3,5.4",
+	.cpus = "5.3,5.4,5.5",
 	.endian = R_SYS_ENDIAN_LITTLE,
 };
 
