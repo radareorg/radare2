@@ -307,6 +307,7 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 	if (!secs) {
 		return;
 	}
+	const bool be = Elf_(is_big_endian) (bf->bo->bin_obj);
 	RBinSection *sec;
 	R_VEC_FOREACH (secs, sec) {
 		if (sec->size > ALLOC_SIZE_LIMIT) {
@@ -345,7 +346,7 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 		const ut64 ptrmax = ptrsize == 4? UT32_MAX: UT64_MAX;
 		ut64 i;
 		for (i = 0; i + ptrsize <= len; i += ptrsize) {
-			ut64 addr = ptrsize == 4? r_read_le32 (buf + i): r_read_le64 (buf + i);
+			ut64 addr = ptrsize == 4? r_read_ble32 (buf + i, be): r_read_ble64 (buf + i, be);
 			if (addr && addr != ptrmax) {
 				r_list_append (ret, newEntry (bf, sec->paddr + i, sec->vaddr + i, addr, type, bits));
 			}
