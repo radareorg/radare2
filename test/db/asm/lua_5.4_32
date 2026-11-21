@@ -1,0 +1,83 @@
+ad "move 1 2" 80000200
+ad "loadi 1 -4" 8180fd7f
+ad "loadf 1 -4" 8280fd7f
+ad "loadk 1 Kst(7)" 83800300
+ad "loadkx 1 Kst(9)" 84000000d2040000
+ad "loadfalse 1" 85000000
+ad "lfalseskip 1" 86000000
+ad "loadtrue 1" 87000000
+ad "loadnil 1 2" 88000200
+ad "getupval 1 2" 89000200
+ad "setupval 1 2" 8a000200
+ad "gettabup 1 2 K(3)" 8b000203
+ad "gettable 1 2 3" 8c000203
+ad "geti 1 2 3" 8d000203
+ad "getfield 1 2 K(3)" 8e000203
+ad "settabup 1 K(2) K(3)" 8f800203
+ad "settable 1 2 K(3)" 90800203
+ad "seti 1 2 K(3)" 91800203
+ad "setfield 1 K(2) K(3)" 92800203
+ad "newtable 1 2 3 1" 93800203
+ad "self 1 2 K(3)" 94800203
+ad "addi 1 2 -3" 9500027c
+ad "addk 1 2 K(3)" 96000203
+ad "subk 1 2 K(3)" 97000203
+ad "mulk 1 2 K(3)" 98000203
+ad "modk 1 2 K(3)" 99000203
+ad "powk 1 2 K(3)" 9a000203
+ad "divk 1 2 K(3)" 9b000203
+ad "idivk 1 2 K(3)" 9c000203
+ad "bandk 1 2 K(3)" 9d000203
+ad "bork 1 2 K(3)" 9e000203
+ad "bxork 1 2 K(3)" 9f000203
+ad "shri 1 2 -3" a000027c
+ad "shli 1 2 -3" a100027c
+ad "add 1 2 3" a2000203
+ad "sub 1 2 3" a3000203
+ad "mul 1 2 3" a4000203
+ad "mod 1 2 3" a5000203
+ad "pow 1 2 3" a6000203
+ad "div 1 2 3" a7000203
+ad "idiv 1 2 3" a8000203
+ad "band 1 2 3" a9000203
+ad "bor 1 2 3" aa000203
+ad "bxor 1 2 3" ab000203
+ad "shl 1 2 3" ac000203
+ad "shr 1 2 3" ad000203
+ad "mmbin 1 2 3" ae000203
+ad "mmbini 1 -2 3 1" af807d03
+ad "mmbink 1 K(2) 3 1" b0800203
+ad "unm 1 2" b1000200
+ad "bnot 1 2" b2000200
+ad "not 1 2" b3000200
+ad "len 1 2" b4000200
+ad "concat 1 2" b5000200
+ad "close 1" b6000000
+ad "tbc 1" b7000000
+ad "jmp -3" 38feff7f
+ad "eq 1 2 1" b9800200
+ad "lt 1 2 1" ba800200
+ad "le 1 2 1" bb800200
+ad "eqk 1 K(2) 1" bc800200
+ad "eqi 1 -2 3 1" bd807d03
+ad "lti 1 -2 3 1" be807d03
+ad "lei 1 -2 3 1" bf807d03
+ad "gti 1 -2 3 1" c0807d03
+ad "gei 1 -2 3 1" c1807d03
+ad "test 1 1" c2800000
+ad "testset 1 2 1" c3800200
+ad "call 1 2 3" c4000203
+ad "tailcall 1 2 3 1" c5800203
+ad "return 1 2 3 1" c6800203
+ad "return0" 47000000
+ad "return1 1" c8000000
+ad "forloop 1 7" c9800300
+ad "forprep 1 7" ca800300
+ad "tforprep 1 7" cb800300
+ad "tforcall 1 3" cc000003
+ad "tforloop 1 7" cd800300
+ad "setlist 1 2 3 1" ce800203
+ad "closure 1 KPROTO(7)" cf800300
+ad "vararg 1 3" d0000003
+ad "varargprep 1" d1000000
+ad "extraarg 9" d2040000
