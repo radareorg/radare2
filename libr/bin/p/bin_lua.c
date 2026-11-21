@@ -90,7 +90,7 @@ static bool sections_vec(RBinFile *bf) {
 	RLuaHeader *lh = get_lua_header (bf, NULL, 0);
 	if (lh) {
 		addSection (lh, bf, "lua-header", 0, lh->headerSize, false);
-		lua53parseFunction (lh, bytes, lh->headerSize, sz, 0, &parseStruct);
+		r_lua_parse_function (lh, bytes, lh->headerSize, sz, 0, &parseStruct);
 	}
 	free (bytes);
 #endif
@@ -133,9 +133,9 @@ static void handleFuncSymbol(RLuaHeader *lh, LuaFunction *func, ParseStruct *par
 	}
 	char sb[R_BIN_SIZEOF_STRINGS + 1];
 	snprintf (sb, sizeof (sb), "lineDefined.%s", string);
-	addSymbol (parseStruct->data, sb, func->code_offset - 3 - 2 * lh->intSize, lh->intSize, "NUM");
+	addSymbol (parseStruct->data, sb, func->line_offset, func->lastline_offset - func->line_offset, "NUM");
 	snprintf (sb, sizeof (sb), "lastLineDefined.%s", string);
-	addSymbol (parseStruct->data, sb, func->code_offset - 3 - lh->intSize, lh->intSize, "NUM");
+	addSymbol (parseStruct->data, sb, func->lastline_offset, func->code_offset - 3 - func->lastline_offset, "NUM");
 	snprintf (sb, sizeof (sb), "numParams.%s", string);
 	addSymbol (parseStruct->data, sb, func->code_offset - 3, 1, "NUM");
 	snprintf (sb, sizeof (sb), "isVarArg.%s", string);
@@ -144,19 +144,19 @@ static void handleFuncSymbol(RLuaHeader *lh, LuaFunction *func, ParseStruct *par
 	addSymbol (parseStruct->data, sb, func->code_offset - 1, 1, "BOOL");
 
 	snprintf (sb, sizeof (sb), "codesize.%s", string);
-	addSymbol (parseStruct->data, sb, func->code_offset, lh->intSize, "NUM");
+	addSymbol (parseStruct->data, sb, func->code_offset, func->code_count_size, "NUM");
 
 	snprintf (sb, sizeof (sb), "func.%s", string);
-	addSymbol (parseStruct->data, sb, func->code_offset + lh->intSize, lh->instructionSize * func->code_size, "FUNC");
+	addSymbol (parseStruct->data, sb, func->code_offset + func->code_count_size, lh->instructionSize * func->code_size, "FUNC");
 
 	snprintf (sb, sizeof (sb), "constsize.%s", string);
-	addSymbol (parseStruct->data, sb, func->const_offset, lh->intSize, "NUM");
+	addSymbol (parseStruct->data, sb, func->const_offset, func->const_count_size, "NUM");
 
 	snprintf (sb, sizeof (sb), "upvaluesize.%s", string);
-	addSymbol (parseStruct->data, sb, func->upvalue_offset, lh->intSize, "NUM");
+	addSymbol (parseStruct->data, sb, func->upvalue_offset, func->upvalue_count_size, "NUM");
 
 	snprintf (sb, sizeof (sb), "prototypesize.%s", string);
-	addSymbol (parseStruct->data, sb, func->protos_offset, lh->intSize, "NUM");
+	addSymbol (parseStruct->data, sb, func->protos_offset, func->protos_count_size, "NUM");
 
 	free (string);
 }
@@ -178,7 +178,7 @@ static RVecRBinString *strings(RBinFile *bf) {
 	}
 	RLuaHeader *lh = get_lua_header (bf, NULL, 0);
 	if (lh) {
-		lua53parseFunction (lh, bytes, lh->headerSize, bf->size, 0, &parseStruct);
+		r_lua_parse_function (lh, bytes, lh->headerSize, bf->size, 0, &parseStruct);
 	}
 
 	free (bytes);
@@ -210,7 +210,7 @@ static bool symbols_vec(RBinFile *bf) {
 	if (bytes) {
 		st64 sz = r_buf_read_at (bf->buf, 0, bytes, bf->size);
 		if (sz > 0) {
-			lua53parseFunction (lh, bytes, lh->headerSize, sz, 0, &parseStruct);
+			r_lua_parse_function (lh, bytes, lh->headerSize, sz, 0, &parseStruct);
 		}
 		free (bytes);
 	}
@@ -223,9 +223,11 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("lua");
 	ret->os = strdup ("any");
-	ret->machine = strdup ("LUA 5.3 VM");
+
 	ret->arch = strdup ("lua");
 	RLuaHeader *lh = get_lua_header (bf, NULL, 0);
+	ret->cpu = strdup (lh && lh->ver == 0x54? "5.4": "5.3");
+	ret->machine = r_str_newf ("LUA %s VM", ret->cpu);
 	ret->bits = lh? lh->instructionSize * 8: 32;
 	if (ret->bits < 1) {
 		ret->bits = 32;
@@ -240,7 +242,7 @@ static RBinInfo *info(RBinFile *bf) {
 static void addEntry(RLuaHeader *lh, LuaFunction *func, ParseStruct *parseStruct) {
 	if (!func->parent_func) {
 		RBinAddr *ptr = R_NEW0 (RBinAddr);
-		ptr->paddr = ptr->vaddr = func->code_offset + lh->intSize;
+		ptr->paddr = ptr->vaddr = func->code_offset + func->code_count_size;
 		r_list_append (parseStruct->data, ptr);
 	}
 }
@@ -265,7 +267,7 @@ static RList *entries(RBinFile *bf) {
 	parseStruct.data = r_list_new ();
 	RLuaHeader *lh = get_lua_header (bf, NULL, 0);
 	if (parseStruct.data && lh) {
-		lua53parseFunction (lh, buf, lh->headerSize, bf->size, 0, &parseStruct);
+		r_lua_parse_function (lh, buf, lh->headerSize, bf->size, 0, &parseStruct);
 	}
 	free (buf);
 	return parseStruct.data;
@@ -279,7 +281,7 @@ static void destroy(RBinFile *bf) {
 RBinPlugin r_bin_plugin_lua = {
 	.meta = {
 		.name = "lua",
-		.desc = "Compiled LUA (lua 5.3)",
+		.desc = "Compiled Lua 5.3 and 5.4",
 		.license = "MIT",
 		.author = "pancake",
 	},

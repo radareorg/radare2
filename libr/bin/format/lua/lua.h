@@ -16,10 +16,10 @@ typedef struct lua_function {
 
 	struct lua_function *parent_func; // if != NULL, should always be valid
 
-	ut64 const_size;
 	ut64 code_size;
-	ut64 upvalue_size;
-	ut64 protos_size;
+	ut64 line_offset;
+	ut64 lastline_offset;
+	ut8 code_count_size, const_count_size, upvalue_count_size, protos_count_size;
 
 	ut64 const_offset;
 	ut64 code_offset;
@@ -60,4 +60,4 @@ typedef struct lua_parse_struct {
 bool check_header(RBuffer *b);
 void lua_header_free(RLuaHeader *lhead);
 RLuaHeader *r_lua_load_header(RBuffer *b);
-ut64 lua53parseFunction(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64 size, LuaFunction *parent_func, ParseStruct *parseStruct);
+ut64 r_lua_parse_function(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64 size, LuaFunction *parent_func, ParseStruct *parseStruct);
