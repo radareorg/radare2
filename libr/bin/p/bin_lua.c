@@ -147,7 +147,7 @@ static void handleFuncSymbol(RLuaHeader *lh, LuaFunction *func, ParseStruct *par
 	addSymbol (parseStruct->data, sb, func->code_offset, func->code_count_size, "NUM");
 
 	snprintf (sb, sizeof (sb), "func.%s", string);
-	addSymbol (parseStruct->data, sb, func->code_offset + func->code_count_size, lh->instructionSize * func->code_size, "FUNC");
+	addSymbol (parseStruct->data, sb, func->code_start, lh->instructionSize * func->code_size, "FUNC");
 
 	snprintf (sb, sizeof (sb), "constsize.%s", string);
 	addSymbol (parseStruct->data, sb, func->const_offset, func->const_count_size, "NUM");
@@ -226,7 +226,7 @@ static RBinInfo *info(RBinFile *bf) {
 
 	ret->arch = strdup ("lua");
 	RLuaHeader *lh = get_lua_header (bf, NULL, 0);
-	ret->cpu = strdup (lh && lh->ver == 0x54? "5.4": "5.3");
+	ret->cpu = strdup (lh && lh->ver == 0x55? "5.5": lh && lh->ver == 0x54? "5.4": "5.3");
 	ret->machine = r_str_newf ("LUA %s VM", ret->cpu);
 	ret->bits = lh? lh->instructionSize * 8: 32;
 	if (ret->bits < 1) {
@@ -242,7 +242,7 @@ static RBinInfo *info(RBinFile *bf) {
 static void addEntry(RLuaHeader *lh, LuaFunction *func, ParseStruct *parseStruct) {
 	if (!func->parent_func) {
 		RBinAddr *ptr = R_NEW0 (RBinAddr);
-		ptr->paddr = ptr->vaddr = func->code_offset + func->code_count_size;
+		ptr->paddr = ptr->vaddr = func->code_start;
 		r_list_append (parseStruct->data, ptr);
 	}
 }
@@ -281,7 +281,7 @@ static void destroy(RBinFile *bf) {
 RBinPlugin r_bin_plugin_lua = {
 	.meta = {
 		.name = "lua",
-		.desc = "Compiled Lua 5.3 and 5.4",
+		.desc = "Compiled Lua 5.3, 5.4 and 5.5",
 		.license = "MIT",
 		.author = "pancake",
 	},
