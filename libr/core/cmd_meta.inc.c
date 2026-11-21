@@ -523,6 +523,7 @@ retry:
 			ut8 *o = sdb_decode (sp + 7, &len);
 			if (!o) {
 				R_LOG_ERROR ("Invalid base64");
+				free (myp);
 				return 0;
 			}
 			sp = pheap = (char *)o;
