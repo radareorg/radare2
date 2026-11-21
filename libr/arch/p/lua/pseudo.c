@@ -94,6 +94,7 @@ static char *parse_bc(RAsmPluginSession *aps, const LuaBCVersion *v, const char 
 	}
 	const ut32 word = words[0], next = words[1];
 	const int op = lua_bc_id (v, word);
+	const bool lua55 = v == &lua_bc_55;
 	const int a = lua_bc_get (word, LUA_ARG_A), b = lua_bc_get (word, LUA_ARG_B), c = lua_bc_get (word, LUA_ARG_C);
 	const int k = lua_bc_get (word, LUA_ARG_K), bx = lua_bc_get (word, LUA_ARG_BX);
 	const ut64 pc = aps->rasm->pc, forward = pc + 4 + (ut64)bx * 4, backward = pc + 4 - (ut64)bx * 4;
@@ -167,29 +168,54 @@ static char *parse_bc(RAsmPluginSession *aps, const LuaBCVersion *v, const char 
 		result = values_expr (a, op == LUA_OP_RETURN0? 0: op == LUA_OP_RETURN1? 1: b? b - 1: -1, true);
 		break;
 	case LUA_OP_VARARG:
+		if (lua55 && k) {
+			char *list = reglist (a, c? c - 1: -1);
+			result = c == 1? strdup ("nop"): r_str_newf ("%s = unpack_varargs(r%d)", list, b);
+			free (list);
+			return result;
+		}
 		return values_expr (a, c? c - 1: -1, false);
+	case LUA_OP_GETVARG:
+		return r_str_newf ("r%d = varargs[r%d]", a, c);
+	case LUA_OP_ERRNNIL:
+		return bx? r_str_newf ("if (r%d != nil) error_already_defined(K[%d])", a, bx - 1)
+			: r_str_newf ("if (r%d != nil) error_already_defined()", a);
 	case LUA_OP_VARARGPREP:
-		return r_str_newf ("prepare_varargs(%d)", a);
+		return lua55? strdup ("prepare_varargs()"): r_str_newf ("prepare_varargs(%d)", a);
 	case LUA_OP_FORPREP:
+		if (lua55) {
+			return r_str_newf ("if (for_prepare(&r%d, &r%d, &r%d)) goto 0x%08"PFMT64x, a, a + 1, a + 2, forward + 4);
+		}
 		return r_str_newf ("if (for_prepare(&r%d, &r%d, &r%d, &r%d)) goto 0x%08"PFMT64x, a, a + 1, a + 2, a + 3, forward + 4);
 	case LUA_OP_FORLOOP:
+		if (lua55) {
+			return r_str_newf ("if (for_next(&r%d, r%d, &r%d)) goto 0x%08"PFMT64x, a, a + 1, a + 2, backward);
+		}
 		return r_str_newf ("if (for_next(&r%d, &r%d, r%d, &r%d)) goto 0x%08"PFMT64x, a, a + 1, a + 2, a + 3, backward);
 	case LUA_OP_TFORPREP:
+		if (lua55) {
+			return r_str_newf ("swap(r%d, r%d); to_be_closed(r%d)\ngoto 0x%08"PFMT64x, a + 2, a + 3, a + 2, forward);
+		}
 		return r_str_newf ("to_be_closed(r%d)\ngoto 0x%08"PFMT64x, a + 3, forward);
 	case LUA_OP_TFORCALL: {
-		char *list = reglist (a + 4, c);
-		result = r_str_newf ("%s%s r%d(r%d, r%d)", list, c? " =": "", a, a + 1, a + 2);
+		char *list = reglist (a + (lua55? 3: 4), c);
+		result = r_str_newf ("%s%s r%d(r%d, r%d)", list, c? " =": "", a, a + 1, a + (lua55? 3: 2));
 		free (list);
 		return result;
 	}
 	case LUA_OP_TFORLOOP:
+		if (lua55) {
+			return r_str_newf ("if (r%d != nil) goto 0x%08"PFMT64x, a + 3, backward);
+		}
 		return r_str_newf ("if (r%d != nil && ((r%d = r%d), true)) goto 0x%08"PFMT64x, a + 4, a + 2, a + 4, backward);
 	case LUA_OP_SETLIST: {
 		if (k && !pair) {
 			return NULL;
 		}
-		char *list = reglist (a + 1, b? b: -1);
-		result = r_str_newf ("setlist(r%d, %"PFMT64u", %s)", a, (ut64)c + (k? (ut64)lua_bc_get (next, LUA_ARG_AX) * 256: 0) + 1, list);
+		const int count = lua55? lua_bc_get (word, LUA_ARG_VB): b;
+		const int base = lua55? lua_bc_get (word, LUA_ARG_VC): c;
+		char *list = reglist (a + 1, count? count: -1);
+		result = r_str_newf ("setlist(r%d, %"PFMT64u", %s)", a, (ut64)base + (k? (ut64)lua_bc_get (next, LUA_ARG_AX) * (lua55? 1024: 256): 0) + 1, list);
 		free (list);
 		return result;
 	}
@@ -339,7 +365,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 RAsmPlugin r_asm_plugin_lua = {
 	.meta = {
 		.name = "lua",
-		.desc = "Lua 5.3 and 5.4 pseudo syntax",
+		.desc = "Lua 5.3, 5.4 and 5.5 pseudo syntax",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},
