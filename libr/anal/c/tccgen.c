@@ -1428,6 +1428,7 @@ static void post_type(TCCState *s1, CType *type, AttributeDef *ad) {
 				if (l != FUNC_OLD) {
 					if (!parse_btype (s1, &pt, &ad1)) {
 						if (l) {
+							free (symname);
 							TCC_ERR ("invalid type");
 						} else {
 							l = FUNC_OLD;
@@ -1440,6 +1441,7 @@ static void post_type(TCCState *s1, CType *type, AttributeDef *ad) {
 					}
 					type_decl (s1, &pt, &ad1, &n, TYPE_DIRECT | TYPE_ABSTRACT);
 					if ((pt.t & VT_BTYPE) == VT_VOID) {
+						free (symname);
 						TCC_ERR ("parameter declared as void");
 					}
 					arg_size += (type_size (s1, &pt, &align) + PTR_SIZE - 1) / PTR_SIZE;
@@ -1455,6 +1457,7 @@ old_proto:
 				convert_parameter_type (s1, &pt);
 				s = sym_push (s1, n | SYM_FIELD, &pt, 0, 0);
 				if (!s) {
+					free (symname);
 					return;
 				} else {
 					char kind[1024];
@@ -1477,6 +1480,7 @@ old_proto:
 			}
 		}
 		tcc_appendf (s1, "func.%s.args=%d\n", symname, narg);
+		R_FREE (symname);
 		/* if no parameters, then old type prototype */
 		if (l == 0) {
 			l = FUNC_OLD;
@@ -1500,7 +1504,6 @@ old_proto:
 		s->next = first;
 		type->t = VT_FUNC;
 		type->ref = s;
-		R_FREE (symname);
 	} else if (s1->tok == '[') {
 		/* array definition */
 		next (s1);

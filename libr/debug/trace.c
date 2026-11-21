@@ -175,6 +175,7 @@ R_API bool r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 	int res = dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
 	if (res < 1 || r_anal_op (dbg->anal, &op, pc, buf, res, R_ARCH_OP_MASK_ESIL) < 1) {
 		R_LOG_ERROR ("trace_pc: cannot get opcode size at 0x%"PFMT64x, pc);
+		r_anal_op_fini (&op);
 		return false;
 	}
 	r_debug_trace_op (dbg, &op);
