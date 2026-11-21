@@ -7886,6 +7886,7 @@ toro:
 		ds->at = address + i;
 		ds->vat = r_core_pava (core, ds->at);
 		r_core_seek_arch_bits (core, ds->at);
+		r_asm_set_pc (core->rasm, ds->at);
 		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}

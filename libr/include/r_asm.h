@@ -185,6 +185,7 @@ extern RAsmPlugin r_asm_plugin_gb;
 extern RAsmPlugin r_asm_plugin_h8300;
 extern RAsmPlugin r_asm_plugin_hppa;
 extern RAsmPlugin r_asm_plugin_java;
+extern RAsmPlugin r_asm_plugin_lua;
 extern RAsmPlugin r_asm_plugin_m68k;
 extern RAsmPlugin r_asm_plugin_mips;
 extern RAsmPlugin r_asm_plugin_msp430;

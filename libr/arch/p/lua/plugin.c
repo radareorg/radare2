@@ -241,21 +241,14 @@ static int archinfo(RArchSession *cfg, ut32 q) {
 }
 
 static char *regs(RArchSession *s) {
-	static const char * const p =
-		"=PC    pc\n"
-		"=SP    sp\n"
-		"=A0    a\n"
-		"=A1    b\n"
-		"=A2    c\n"
-		"=R0    a\n"
-		"=R1    b\n"
-		"gpr	pc	.32	0	0\n"
-		"gpr	sp	.32	4	0\n"
-		"gpr	a	.32	8	0\n"
-		"gpr	b	.32	12	0\n"
-		"gpr	c	.32	16	0\n"
-	;
-	return strdup (p);
+	RStrBuf *p = r_strbuf_new (
+		"=PC pc\n=SP sp\n=A0 r0\n=A1 r1\n=A2 r2\n=R0 r0\n=R1 r1\n"
+		"gpr pc .32 0 0\ngpr sp .32 4 0\n");
+	int i;
+	for (i = 0; i <= MAXARG_A; i++) {
+		r_strbuf_appendf (p, "gpr r%d .64 %d 0\n", i, 8 + i * 8);
+	}
+	return r_strbuf_drain (p);
 }
 
 static bool init(RArchSession *as) {

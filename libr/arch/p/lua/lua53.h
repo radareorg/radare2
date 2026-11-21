@@ -110,8 +110,6 @@ enum OpMode {
 /* creates a mask with 'n' 0 bits at position 'p' */
 #define MASK0(n, p)      (~MASK1(n, p))
 
-static ut32 getInstruction(const ut8 *data);
-static void setInstruction(ut32 opcode, ut8 *data);
 
 
 /*
@@ -227,5 +225,11 @@ name            args    description
 
 	OP_EXTRAARG	/*   Ax      extra (larger) argument for previous opcode     */
 } OpCode;
+
+static const char * const instruction_names[] = {
+	"move", "loadk", "loadkx", "loadbool", "loadnil", "getupval", "gettabup", "gettable", "settabup", "setupval", "settable", "newtable", "self", "add", "sub", "mul", "mod",
+	"pow", "div", "idiv", "band", "bor", "bxor", "shl", "shr", "unm", "bnot", "not", "len", "concat", "jmp", "eq", "lt", "le",
+	"test", "testset", "call", "tailcall", "return", "forloop", "forprep", "tforcall", "tforloop", "setlist", "closure", "vararg", "extraarg", 0
+};
 
 #endif

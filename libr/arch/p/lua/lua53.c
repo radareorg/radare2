@@ -51,11 +51,7 @@ static int parseParameter(PluginData *state, const char *str, Parameter paramete
 static int parseNextInstruction(PluginData *state, const char *str);
 static int parseWhitespaces(PluginData *state, const char *str);
 
-const char *instruction_names[] = {
-	"move", "loadk", "loadkx", "loadbool", "loadnil", "getupval", "gettabup", "gettable", "settabup", "setupval", "settable", "newtable", "self", "add", "sub", "mul", "mod",
-	"pow", "div", "idiv", "band", "bor", "bxor", "shl", "shr", "unm", "bnot", "not", "len", "concat", "jmp", "eq", "lt", "le",
-	"test", "testset", "call", "tailcall", "return", "forloop", "forprep", "tforcall", "tforloop", "setlist", "closure", "vararg", "extraarg", 0
-};
+
 
 static ut32 getInstruction(const ut8 *data){
 	ut32 instruction = 0;
