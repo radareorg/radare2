@@ -257,6 +257,11 @@ static void esil_store(RAnalOp *op, const char *address, int size, ut32 src) {
 	}
 }
 
+static void esil_null_check(RAnalOp *op, ut32 object, bool store) {
+	r_strbuf_prependf (&op->esil, "v%u,!,?{,v%u,%d,TRAP,BREAK,},",
+		object, object, store? R_ANAL_TRAP_WRITE_ERR: R_ANAL_TRAP_READ_ERR);
+}
+
 static void array_access(RAnalOp *op, const ut8 *data, int len, RAnalOpMask mask, bool store) {
 	ut32 vA = 0;
 	ut32 vB = 0;
@@ -276,6 +281,7 @@ static void array_access(RAnalOp *op, const ut8 *data, int len, RAnalOpMask mask
 		} else {
 			esil_load (op, address, value.size, value.sign, vA);
 		}
+		esil_null_check (op, vB, store);
 		free (address);
 	}
 }
@@ -299,6 +305,7 @@ static void field_access(RArch *a, RAnalOp *op, const ut8 *data, int len, RAnalO
 		} else {
 			esil_load (op, address, value.size, value.sign, vA);
 		}
+		esil_null_check (op, vB, store);
 		free (address);
 	}
 }
@@ -343,8 +350,7 @@ static void quick_access(RAnalOp *op, const ut8 *data, int len, RAnalOpMask mask
 		} else {
 			esil_load (op, address, value.size, value.sign, vA);
 		}
-		r_strbuf_prependf (&op->esil, "v%u,!,?{,v%u,%d,TRAP,BREAK,},",
-			vB, vB, store? R_ANAL_TRAP_WRITE_ERR: R_ANAL_TRAP_READ_ERR);
+		esil_null_check (op, vB, store);
 		free (address);
 	}
 }
@@ -1235,6 +1241,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format12x(len, data, &vA, &vB);
 			esilprintf (op, "v%u,[4],v%u,=", vB, vA);
+			esil_null_check (op, vB, false);
 		}
 		break;
 	case 0x22: // new-instance

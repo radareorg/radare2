@@ -440,3 +440,303 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=dalvik null instance field loads preserve destination registers
+FILE=malloc://0x80
+ARGS=-a dalvik
+CMDS=<<EOF
+wx 78563412efcdab89 @ 4
+aei
+aeim
+ar v0=0xdeadbeef
+ar v1=0x12345678
+ar v2=0
+wx 52200400 @ 0x10; ar ip=0x10; aes; ar v0
+wx 53200400 @ 0x10; ar ip=0x10; aes; ar v0
+ar v1
+wx 54200400 @ 0x10; ar ip=0x10; aes; ar v0
+wx 55200400 @ 0x10; ar ip=0x10; aes; ar v0
+wx 56200400 @ 0x10; ar ip=0x10; aes; ar v0
+wx 57200400 @ 0x10; ar ip=0x10; aes; ar v0
+wx 58200400 @ 0x10; ar ip=0x10; aes; ar v0
+wx e3200400 @ 0x10; ar ip=0x10; aes; ar v0
+wx e7200400 @ 0x10; ar ip=0x10; aes; ar v0
+wx e8200400 @ 0x10; ar ip=0x10; aes; ar v0
+ar v1
+EOF
+EXPECT=<<EOF
+0xdeadbeef
+0xdeadbeef
+0x12345678
+0xdeadbeef
+0xdeadbeef
+0xdeadbeef
+0xdeadbeef
+0xdeadbeef
+0xdeadbeef
+0xdeadbeef
+0xdeadbeef
+0x12345678
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00000000)
+EOF
+RUN
+
+NAME=dalvik null instance field stores preserve mapped memory
+FILE=malloc://0x80
+ARGS=-a dalvik
+CMDS=<<EOF
+wx 78563412efcdab89 @ 4
+aei
+aeim
+ar v0=0xdeadbeef
+ar v1=0x12345678
+ar v2=0
+wx 59200400 @ 0x10; ar ip=0x10; aes; p8 8 @ 4
+wx 5a200400 @ 0x10; ar ip=0x10; aes; p8 8 @ 4
+wx 5b200400 @ 0x10; ar ip=0x10; aes; p8 8 @ 4
+wx 5c200400 @ 0x10; ar ip=0x10; aes; p8 8 @ 4
+wx 5d200400 @ 0x10; ar ip=0x10; aes; p8 8 @ 4
+wx 5e200400 @ 0x10; ar ip=0x10; aes; p8 8 @ 4
+wx 5f200400 @ 0x10; ar ip=0x10; aes; p8 8 @ 4
+wx e4200400 @ 0x10; ar ip=0x10; aes; p8 8 @ 4
+wx e9200400 @ 0x10; ar ip=0x10; aes; p8 8 @ 4
+EOF
+EXPECT=<<EOF
+78563412efcdab89
+78563412efcdab89
+78563412efcdab89
+78563412efcdab89
+78563412efcdab89
+78563412efcdab89
+78563412efcdab89
+78563412efcdab89
+78563412efcdab89
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000010: write error (write-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: write error (write-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: write error (write-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: write error (write-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: write error (write-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: write error (write-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: write error (write-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: write error (write-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: write error (write-err at 0x00000000)
+EOF
+RUN
+
+NAME=dalvik null array loads preserve destination registers
+FILE=malloc://0x80
+ARGS=-a dalvik
+CMDS=<<EOF
+wx 78563412efcdab89 @ 4
+aei
+aeim
+ar v0=0xdeadbeef
+ar v1=0x12345678
+ar v2=0
+ar v3=0
+wx 44000203 @ 0x10; ar ip=0x10; aes; ar v0
+wx 45000203 @ 0x10; ar ip=0x10; aes; ar v0
+ar v1
+wx 46000203 @ 0x10; ar ip=0x10; aes; ar v0
+wx 47000203 @ 0x10; ar ip=0x10; aes; ar v0
+wx 48000203 @ 0x10; ar ip=0x10; aes; ar v0
+wx 49000203 @ 0x10; ar ip=0x10; aes; ar v0
+wx 4a000203 @ 0x10; ar ip=0x10; aes; ar v0
+EOF
+EXPECT=<<EOF
+0xdeadbeef
+0xdeadbeef
+0x12345678
+0xdeadbeef
+0xdeadbeef
+0xdeadbeef
+0xdeadbeef
+0xdeadbeef
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00000000)
+EOF
+RUN
+
+NAME=dalvik null array stores preserve mapped memory
+FILE=malloc://0x80
+ARGS=-a dalvik
+CMDS=<<EOF
+wx 78563412efcdab89 @ 4
+aei
+aeim
+ar v0=0xdeadbeef
+ar v1=0x12345678
+ar v2=0
+ar v3=0
+wx 4b000203 @ 0x10; ar ip=0x10; aes; p8 8 @ 4
+wx 4c000203 @ 0x10; ar ip=0x10; aes; p8 8 @ 4
+wx 4d000203 @ 0x10; ar ip=0x10; aes; p8 8 @ 4
+wx 4e000203 @ 0x10; ar ip=0x10; aes; p8 8 @ 4
+wx 4f000203 @ 0x10; ar ip=0x10; aes; p8 8 @ 4
+wx 50000203 @ 0x10; ar ip=0x10; aes; p8 8 @ 4
+wx 51000203 @ 0x10; ar ip=0x10; aes; p8 8 @ 4
+EOF
+EXPECT=<<EOF
+78563412efcdab89
+78563412efcdab89
+78563412efcdab89
+78563412efcdab89
+78563412efcdab89
+78563412efcdab89
+78563412efcdab89
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000010: write error (write-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: write error (write-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: write error (write-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: write error (write-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: write error (write-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: write error (write-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: write error (write-err at 0x00000000)
+EOF
+RUN
+
+NAME=dalvik array-length checks the array before reading or overwriting it
+FILE=malloc://0x80
+ARGS=-a dalvik
+CMDS=<<EOF
+wx 2120 @ 0x10
+wv4 3 @ 0x40
+aei
+aeim
+ar v0=0xdeadbeef
+ar v2=0
+ar ip=0x10
+aes
+ar v0
+ar v2=0x40; ar ip=0x10; aes; ar v0
+wx 2100 @ 0x10; ar v0=0; ar ip=0x10; aes; ar v0
+ar v0=0x40; ar ip=0x10; aes; ar v0
+EOF
+EXPECT=<<EOF
+0xdeadbeef
+0x00000003
+0x00000000
+0x00000003
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00000000)
+ERROR: ESIL stopped at 0x00000010: read error (read-err at 0x00000000)
+EOF
+RUN
+
+NAME=dalvik non-null field and array loads use the object before overwriting destinations
+FILE=malloc://0x80
+ARGS=-a dalvik
+CMDS=<<EOF
+wx 78563412efcdab89 @ 0x44
+aei
+aeim
+ar v2=0x40
+ar v3=0
+wx 52200400 @ 0x10; ar ip=0x10; aes; ar v0
+wx 53200400 @ 0x10; ar ip=0x10; aes; ar v0
+ar v1
+wx 54200400 @ 0x10; ar ip=0x10; aes; ar v0
+wx e3200400 @ 0x10; ar ip=0x10; aes; ar v0
+wx e7200400 @ 0x10; ar ip=0x10; aes; ar v0
+wx e8200400 @ 0x10; ar ip=0x10; aes; ar v0
+ar v1
+wx 44000203 @ 0x10; ar ip=0x10; aes; ar v0
+wx 45000203 @ 0x10; ar ip=0x10; aes; ar v0
+ar v1
+wx 46000203 @ 0x10; ar ip=0x10; aes; ar v0
+wx 52000400 @ 0x10; ar v0=0x40; ar ip=0x10; aes; ar v0
+wx 44000003 @ 0x10; ar v0=0x40; ar ip=0x10; aes; ar v0
+EOF
+EXPECT=<<EOF
+0x12345678
+0x12345678
+0x89abcdef
+0x12345678
+0x12345678
+0x12345678
+0x12345678
+0x89abcdef
+0x12345678
+0x12345678
+0x89abcdef
+0x12345678
+0x12345678
+0x12345678
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=dalvik non-null field and indexed array stores write the right address and width
+FILE=malloc://0x80
+ARGS=-a dalvik
+CMDS=<<EOF
+aei
+aeim
+ar v2=0x40
+ar v3=1
+ar v0=0x12345678
+ar v1=0x89abcdef
+wx 59200400 @ 0x10; wx 0000000000000000 @ 68; ar ip=0x10; aes; p8 8 @ 68
+wx 5a200400 @ 0x10; wx 0000000000000000 @ 68; ar ip=0x10; aes; p8 8 @ 68
+wx 5b200400 @ 0x10; wx 0000000000000000 @ 68; ar ip=0x10; aes; p8 8 @ 68
+wx e4200400 @ 0x10; wx 0000000000000000 @ 68; ar ip=0x10; aes; p8 8 @ 68
+wx e9200400 @ 0x10; wx 0000000000000000 @ 68; ar ip=0x10; aes; p8 8 @ 68
+wx 4b000203 @ 0x10; wx 0000000000000000 @ 72; ar ip=0x10; aes; p8 8 @ 72
+wx 4c000203 @ 0x10; wx 0000000000000000 @ 76; ar ip=0x10; aes; p8 8 @ 76
+wx 4d000203 @ 0x10; wx 0000000000000000 @ 72; ar ip=0x10; aes; p8 8 @ 72
+EOF
+EXPECT=<<EOF
+7856341200000000
+78563412efcdab89
+7856341200000000
+7856341200000000
+78563412efcdab89
+7856341200000000
+78563412efcdab89
+7856341200000000
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=dalvik static fields do not treat the value register as an object
+FILE=malloc://0x80
+ARGS=-a dalvik
+CMDS=<<EOF
+wx 60000400 @ 0x10
+wx 78563412 @ 4
+aei
+aeim
+ar v0=0
+ar ip=0x10
+aes
+ar v0
+wx 67000400 @ 0x10; ar v0=0; ar ip=0x10; aes; p8 4 @ 4
+EOF
+EXPECT=<<EOF
+0x12345678
+00000000
+EOF
+EXPECT_ERR=
+RUN
