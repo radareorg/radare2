@@ -112,3 +112,33 @@ EXPECT=<<EOF
 vararg 0 2
 EOF
 RUN
+
+NAME=lua: setlist consumes only a complete EXTRAARG when C is zero
+FILE=malloc://16
+ARGS=-a lua
+CMDS=<<EOF
+wx 2b0000016e800000
+b 6
+ao~size
+pi 1
+b 8
+ao~size
+pi 1
+wx 2b4000016e800000
+ao~size
+pi 1
+wx 2b00000100000000
+ao~size
+pi 1
+EOF
+EXPECT=<<EOF
+size: 4
+setlist 0 2 0
+size: 8
+setlist 0 2 0 513
+size: 4
+setlist 0 2 1
+size: 4
+setlist 0 2 0
+EOF
+RUN

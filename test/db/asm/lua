@@ -12,3 +12,7 @@ ad "closure 0 KPROTO(3)" 2cc00000
 ad "jmp 0 -2" 1e40ff7f
 ad "call 1 2 3" 64c00001
 ad "extraarg Kst(5)" 6e010000
+ad "setlist 0 2 1" 2b400001
+ad "setlist 0 2 0" 2b000001
+ad "setlist 0 2 0 513" 2b0000016e800000
+ad "setlist 255 0 0 67108863" eb3f0000eeffffff
