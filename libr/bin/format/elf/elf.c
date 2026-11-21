@@ -4790,6 +4790,10 @@ static const char *elf_section_type_tostring(int shtype) {
 	case SHT_NUM: return "NUM";
 	case SHT_INIT_ARRAY: return "INIT_ARRAY";
 	case SHT_FINI_ARRAY: return "FINI_ARRAY";
+	case SHT_RELR: return "RELR";
+	case SHT_ANDROID_REL: return "ANDROID_REL";
+	case SHT_ANDROID_RELA: return "ANDROID_RELA";
+	case SHT_ANDROID_RELR: return "ANDROID_RELR";
 	}
 	return "";
 }
