@@ -120,6 +120,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->eob = true;
 		break;
+	default:
+		break;
 	}
 
 	return op->size;
