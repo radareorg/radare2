@@ -43,9 +43,9 @@ static char *reglist(int first, int count) {
 }
 
 static char *parse(RAsmPluginSession *aps, const char *data) {
-	char name[32], args[3][32], extra;
-	int argc = sscanf (data, "%31s %31s %31s %31s %c", name, args[0], args[1], args[2], &extra) - 1;
-	if (argc < 1 || argc > 3) {
+	char name[32], args[4][32], extra;
+	int argc = sscanf (data, "%31s %31s %31s %31s %31s %c", name, args[0], args[1], args[2], args[3], &extra) - 1;
+	if (argc < 1 || argc > 4) {
 		return NULL;
 	}
 	int op;
@@ -57,7 +57,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 	if (!instruction_names[op]) {
 		return NULL;
 	}
-	int expected = 3;
+	int expected = op == OP_SETLIST && argc == 4? 4: 3;
 	switch (op) {
 	case OP_MOVE: case OP_LOADK: case OP_LOADKX: case OP_LOADNIL:
 	case OP_GETUPVAL: case OP_SETUPVAL: case OP_UNM: case OP_BNOT:
@@ -73,8 +73,8 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 	if (argc != expected) {
 		return NULL;
 	}
-	int values[3] = {0};
-	char expr[3][32];
+	int values[4] = {0};
+	char expr[4][32];
 	int i;
 	for (i = 0; i < argc; i++) {
 		if (!operand (args[i], &values[i], expr[i], sizeof (expr[i]))) {
@@ -193,8 +193,16 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 	}
 	case OP_TFORLOOP:
 		return r_str_newf ("if (r%d != nil && ((r%d = r%d), true)) goto 0x%08"PFMT64x, a + 1, a, a + 1, target);
-	case OP_SETLIST:
-		return r_str_newf ("setlist(r%d, %d, %d)", a, b, c);
+	case OP_SETLIST: {
+		const int block = c? c: values[3];
+		if (b > MAXARG_B || block < 1 || (argc == 4 && c)) {
+			return NULL;
+		}
+		char *list = reglist (a + 1, b? b: -1);
+		char *s = r_str_newf ("setlist(r%d, %"PFMT64u", %s)", a, (ut64)(block - 1) * 50 + 1, list);
+		free (list);
+		return s;
+	}
 	case OP_CLOSURE:
 		return r_str_newf ("r%d = closure(%s)", a, rb);
 	}

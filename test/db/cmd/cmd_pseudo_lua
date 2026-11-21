@@ -97,3 +97,18 @@ if (r1 != nil && ((r0 = r1), true)) goto 0x00000030
 EOF
 RUN
 
+NAME=Lua 5.3 pseudo table list blocks and open values
+FILE=hex://2b4000016b8080002b8000006b0000016e8000002b000000eeffffff2b00000100000000
+ARGS=-a lua -e asm.pseudo=true
+CMDS=pi 7
+EXPECT=<<EOF
+setlist(r0, 1, r1, r2)
+setlist(r1, 51, r2)
+setlist(r0, 51, r1..top)
+setlist(r1, 25601, r2, r3)
+setlist(r0, 3355443101, r1..top)
+setlist 0 2 0
+r0 = r0
+EOF
+RUN
+

@@ -44,7 +44,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	}
 
 	const ut32 instruction = getInstruction (data);
-	ut32 extraArg = 0;
 	op->size = 4;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->eob = false;
@@ -54,8 +53,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		PluginData *pd = as->data;
 		(void)lua53dissasm (pd, op, data, len);
-	} else {
-		op->mnemonic = strdup (instruction_names[GET_OPCODE (instruction)]);
+	}
+	if ((GET_OPCODE (instruction) == OP_LOADKX || (GET_OPCODE (instruction) == OP_SETLIST && !GETARG_C (instruction)))
+			&& len >= 8 && GET_OPCODE (getInstruction (data + 4)) == OP_EXTRAARG) {
+		op->size = 8;
 	}
 	switch (GET_OPCODE (instruction)) {
 	case OP_MOVE:	/*   A B     R(A) := R(B)              */
@@ -66,12 +67,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case OP_LOADKX:	/*   A       R(A) := Kst(extra arg)    */
 		op->type = R_ANAL_OP_TYPE_LOAD;
-		if (len >= 8) {
-			extraArg = getInstruction (data + 4);
-			if (GET_OPCODE (extraArg) == OP_EXTRAARG) {
-				op->size = 8;
-			}
-		}
 		break;
 	case OP_LOADBOOL:/*  A B C   R(A) := (Bool)B; if (C) pc++  */
 		op->type = R_ANAL_OP_TYPE_MOV;

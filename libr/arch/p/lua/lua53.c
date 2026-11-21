@@ -53,13 +53,8 @@ static int parseWhitespaces(PluginData *state, const char *str);
 
 
 
-static ut32 getInstruction(const ut8 *data){
-	ut32 instruction = 0;
-	instruction |= data[3] << 24;
-	instruction |= data[2] << 16;
-	instruction |= data[1] << 8;
-	instruction |= data[0] << 0;
-	return instruction;
+static ut32 getInstruction(const ut8 *data) {
+	return r_read_le32 (data);
 }
 
 static void setInstruction(ut32 opcode, ut8 *data) {
@@ -193,10 +188,19 @@ static int parseParameters(PluginData *state, const char *str, OpCode opCode) {
 	case OP_TESTSET:	/*  A B C   if (R(B) <=> C) then R(A) := R(B) else pc++     */
 	case OP_CALL:		/*  A B C   R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1)) */
 	case OP_TAILCALL:	/*  A B C   return R(A)(R(A+1), ... ,R(A+B-1))              */
-	case OP_SETLIST:	/*  A B C   R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B        */
 		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_A);
 		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_B);
 		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_C);
+		break;
+	case OP_SETLIST:
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_A);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_B);
+		doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_C);
+		if (!GETARG_C (state->instructions[state->current_write_index]) && hasParameter (str + chars_skipped)) {
+			state->current_write_index++;
+			state->instructions[state->current_write_index] = OP_EXTRAARG;
+			doParse1 (state, chars_skipped, parseParameter, str, PARAMETER_Ax);
+		}
 		break;
 	case OP_GETTABUP:	/*  A B C   R(A) := UpValue[B][RK(C)]                       */
 	case OP_GETTABLE:	/*  A B C   R(A) := R(B)[RK(C)]                             */
@@ -426,9 +430,16 @@ int lua53dissasm(PluginData *state, RAnalOp *op, const ut8 *buf, int len) {
 	case OP_TESTSET:	/*  A B C   if (R(B) <=> C) then R(A) := R(B) else pc++     */
 	case OP_CALL:		/*  A B C   R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1)) */
 	case OP_TAILCALL:	/*  A B C   return R(A)(R(A+1), ... ,R(A+B-1))              */
-	case OP_SETLIST:	/*  A B C   R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B        */
 		free (op->mnemonic);
 		op->mnemonic = r_str_newf ("%s %i %i %i", instruction_names[GET_OPCODE (instruction)], GETARG_A (instruction), GETARG_B (instruction), GETARG_C (instruction));
+		break;
+	case OP_SETLIST:
+		free (op->mnemonic);
+		if (!GETARG_C (instruction) && len >= 8 && GET_OPCODE (getInstruction (buf + 4)) == OP_EXTRAARG) {
+			op->mnemonic = r_str_newf ("setlist %d %d 0 %d", GETARG_A (instruction), GETARG_B (instruction), GETARG_Ax (getInstruction (buf + 4)));
+		} else {
+			op->mnemonic = r_str_newf ("setlist %d %d %d", GETARG_A (instruction), GETARG_B (instruction), GETARG_C (instruction));
+		}
 		break;
 	case OP_SELF:		/*  A B C   R(A+1) := R(B); R(A) := R(B)[RK(C)]   */
 	case OP_GETTABUP:	/*  A B C   R(A) := UpValue[B][RK(C)]             */
