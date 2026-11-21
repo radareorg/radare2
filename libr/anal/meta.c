@@ -282,6 +282,8 @@ static void meta_print(RAnal *a, RStrBuf *sb, RAnalMetaItem *d, ut64 start, ut64
 			pstr = str;
 		} else if (d->type == 't') {
 			pstr = str;
+		} else if (d->type == 'r') {
+			pstr = str;
 		} else if (d->type != 'C') {
 			r_name_filter (str, 0);
 			pstr = str;
@@ -450,6 +452,15 @@ static void meta_print(RAnal *a, RStrBuf *sb, RAnalMetaItem *d, ut64 start, ut64
 					}
 				} else {
 					r_strbuf_appendf (sb, "0x%08" PFMT64x " %s\n", start, pstr);
+				}
+				break;
+			case R_META_TYPE_RUN:
+				if (rad) {
+					r_strbuf_appendf (sb, "'@0x%08" PFMT64x "'%s %" PFMT64u " %s\n",
+						start, r_meta_type_tostring (d->type), size, pstr);
+				} else {
+					r_strbuf_appendf (sb, "0x%08" PFMT64x " array[%" PFMT64u "] %s %s\n",
+						start, size, r_meta_type_tostring (d->type), pstr);
 				}
 				break;
 			case R_META_TYPE_HIGHLIGHT:
