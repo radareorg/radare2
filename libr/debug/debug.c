@@ -712,6 +712,7 @@ R_API const char *r_debug_reason_tostring(int type) {
 	switch (type) {
 	case R_DEBUG_REASON_ABORT: return "abort";
 	case R_DEBUG_REASON_BREAKPOINT: return "breakpoint";
+	case R_DEBUG_REASON_COND: return "cond-breakpoint";
 	case R_DEBUG_REASON_DEAD: return "dead";
 	case R_DEBUG_REASON_DIVBYZERO: return "div-by-zero";
 	case R_DEBUG_REASON_ERROR: return "error";
