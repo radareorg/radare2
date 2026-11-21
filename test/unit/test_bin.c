@@ -1102,6 +1102,40 @@ bool test_r_bin_mach0_full_segname(void) {
 	mu_end;
 }
 
+bool test_r_bin_pe_characteristics_offset(void) {
+	const char *plugins[] = { "pe", "pe64" };
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (plugins); i++) {
+		RBin *bin = r_bin_new ();
+		RIO *io = r_io_new ();
+		r_io_bind (io, &bin->iob);
+		RBinArchOptions arch = { .arch = "x86", .bits = i? 64: 32 };
+		RBuffer *buf = r_bin_create (bin, plugins[i], NULL, 0, NULL, 0, &arch);
+		mu_assert_notnull (buf, "PE header buffer");
+		const ut8 flags[] = { 0x40, 0x01 };
+		r_buf_write_at (buf, 0xde, flags, sizeof (flags));
+		RBinFileOptions opt = {0};
+		opt.filename = "characteristics.exe";
+		mu_assert_true (r_bin_open_buf (bin, buf, &opt), "Open PE header");
+		RBinInfo *info = r_bin_get_info (bin);
+		mu_assert_notnull (info, "PE info");
+		mu_assert_true (info->has_nx && info->has_pi, "Read NX and ASLR from optional header");
+		RBinFile *bf = r_bin_cur (bin);
+		RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
+		const ut8 offset[] = { 0xc0, 0xff, 0xff, 0xff };
+		r_buf_write_at (bf->buf, 0x3c, offset, sizeof (offset));
+		r_buf_write_at (bf->buf, 0x1e, flags, sizeof (flags));
+		info = plugin->info (bf);
+		mu_assert_notnull (info, "Refresh PE info after editing e_lfanew");
+		mu_assert_false (info->has_nx || info->has_pi, "Wrapped offset must not read DOS header flags");
+		r_bin_info_free (info);
+		r_bin_free (bin);
+		r_io_free (io);
+		r_unref (buf);
+	}
+	mu_end;
+}
+
 bool test_r_bin_te_truncated(void) {
 	const ut8 te[] = { 'V', 'Z', 0x4c, 0x01, 0xff };
 	RBuffer *buf = r_buf_new_with_bytes (te, sizeof (te));
@@ -1146,6 +1180,7 @@ bool all_tests(void) {
 	mu_run_test(test_r_bin_elf_pn_xnum_phdr);
 	mu_run_test(test_r_bin_te_bounds);
 	mu_run_test(test_r_bin_te_truncated);
+	mu_run_test (test_r_bin_pe_characteristics_offset);
 	mu_run_test(test_r_bin_mach0_full_segname);
 	return tests_passed != tests_run;
 }

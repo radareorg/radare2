@@ -1279,7 +1279,7 @@ static bool haschr(const RBinFile* bf, ut16 dllCharacteristic) {
 	if (!buf || sz < 0x40) {
 		return false;
 	}
-	ut32 idx = r_read_le32 (buf + 0x3c);
+	ut64 idx = r_read_le32 (buf + 0x3c);
 	ut64 off = idx + 0x5e;
 	if (off > sz || off + sizeof (ut16) > sz) {
 		return false;
