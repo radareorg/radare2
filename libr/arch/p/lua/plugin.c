@@ -3,43 +3,27 @@
 #include <r_arch.h>
 #include <r_lib.h>
 
-// XXX should be dynlink
-#include "lua53.c"
+#include "lua53.h"
 #include "lua_bc.h"
 
 static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
-	PluginData *pd = as->data;
-
-	pd->current_write_index = 0;
+	ut32 words[2];
+	int size;
 	const LuaBCVersion *v = lua_bc_version (as->config->cpu);
-	if (v) {
-		int size;
-		if (!lua_bc_assemble (v, op->mnemonic, pd->instructions, &size)) {
-			return false;
-		}
-		pd->current_write_index = size / 4;
-	} else if (!lua_bc_is53 (as->config->cpu) || parseNextInstruction (pd, op->mnemonic) < 0) {
+	if (!v || !lua_bc_assemble (v, op->mnemonic, words, &size)) {
 		return false;
 	}
-	// one word, or two for LOADKX with its EXTRAARG
-	const int size = pd->current_write_index * 4;
-	ut8 *bytes = malloc (size);
-	if (!bytes) {
-		return false;
+	ut8 bytes[8];
+	r_write_le32 (bytes, words[0]);
+	if (size == 8) {
+		r_write_le32 (bytes + 4, words[1]);
 	}
-	ut32 i;
-	for (i = 0; i < pd->current_write_index; i++) {
-		setInstruction (pd->instructions[i], bytes + i * 4);
-	}
-	free (op->bytes);
-	op->bytes = bytes;
-	op->size = size;
-	return true;
+	return r_anal_op_set_bytes (op, op->addr, bytes, size);
 }
 
 static bool decode_bc(const LuaBCVersion *v, RAnalOp *op, RArchDecodeMask mask) {
 	const int len = op->size;
-	const ut32 word = getInstruction (op->bytes);
+	const ut32 word = r_read_le32 (op->bytes);
 	const int id = lua_bc_id (v, word);
 	op->size = 4;
 	if (id == LUA_OP_COUNT) {
@@ -49,7 +33,7 @@ static bool decode_bc(const LuaBCVersion *v, RAnalOp *op, RArchDecodeMask mask) 
 		}
 		return false;
 	}
-	const ut32 next = len >= 8? getInstruction (op->bytes + 4): 0;
+	const ut32 next = len >= 8? r_read_le32 (op->bytes + 4): 0;
 	const bool pair = len >= 8 && lua_bc_pair (v, word, next);
 	if (pair) {
 		op->size = 8;
@@ -69,13 +53,13 @@ static bool decode_bc(const LuaBCVersion *v, RAnalOp *op, RArchDecodeMask mask) 
 	op->eob = false;
 	const ut64 pc = op->addr + 4;
 	if (id == LUA_OP_JMP) {
-		op->jump = pc + (st64)lua_bc_get (word, LUA_ARG_SJ) * 4;
+		op->jump = pc + (st64)lua_bc_get (v, word, LUA_ARG_SJ) * 4;
 	} else if (id == LUA_OP_LFALSESKIP) {
 		op->jump = pc + 4;
 	} else if (id == LUA_OP_FORPREP || id == LUA_OP_TFORPREP) {
-		op->jump = pc + (ut64)(lua_bc_get (word, LUA_ARG_BX) + (id == LUA_OP_FORPREP)) * 4;
+		op->jump = pc + (ut64)(lua_bc_get (v, word, LUA_ARG_BX) + (id == LUA_OP_FORPREP)) * 4;
 	} else if (id == LUA_OP_FORLOOP || id == LUA_OP_TFORLOOP) {
-		op->jump = pc - (ut64)lua_bc_get (word, LUA_ARG_BX) * 4;
+		op->jump = pc - (ut64)lua_bc_get (v, word, LUA_ARG_BX) * 4;
 	} else if (op->type == R_ANAL_OP_TYPE_CJMP) {
 		op->jump = pc + 4;
 	}
@@ -106,14 +90,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	}
 
 	const LuaBCVersion *v = lua_bc_version (as->config->cpu);
-	if (v) {
+	if (v && v != &lua_bc_53) {
 		return decode_bc (v, op, mask);
 	}
-	if (!lua_bc_is53 (as->config->cpu)) {
+	if (!v) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		return false;
 	}
-	const ut32 instruction = getInstruction (data);
+	const ut32 instruction = r_read_le32 (data);
 	op->size = 4;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->eob = false;
@@ -121,44 +105,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		return op->size;
 	}
 	if ((GET_OPCODE (instruction) == OP_LOADKX || (GET_OPCODE (instruction) == OP_SETLIST && !GETARG_C (instruction)))
-			&& len >= 8 && GET_OPCODE (getInstruction (data + 4)) == OP_EXTRAARG) {
+			&& len >= 8 && GET_OPCODE (r_read_le32 (data + 4)) == OP_EXTRAARG) {
 		op->size = 8;
 	}
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		op->mnemonic = lua53disasm (instruction, op->size == 8? getInstruction (data + 4): 0, op->size == 8);
+		op->mnemonic = lua_bc_disasm_word (v, instruction, op->size == 8? r_read_le32 (data + 4): 0, op->size == 8);
 	}
-	static const ut32 types[OP_EXTRAARG + 1] = {
-		[OP_MOVE] = R_ANAL_OP_TYPE_MOV,
-		[OP_LOADK] = R_ANAL_OP_TYPE_LOAD,
-		[OP_LOADKX] = R_ANAL_OP_TYPE_LOAD,
-		[OP_LOADBOOL] = R_ANAL_OP_TYPE_MOV,
-		[OP_LOADNIL] = R_ANAL_OP_TYPE_MOV,
-		[OP_GETUPVAL] = R_ANAL_OP_TYPE_LOAD,
-		[OP_GETTABUP] = R_ANAL_OP_TYPE_LOAD,
-		[OP_GETTABLE] = R_ANAL_OP_TYPE_LOAD,
-		[OP_SETTABUP] = R_ANAL_OP_TYPE_STORE,
-		[OP_SETUPVAL] = R_ANAL_OP_TYPE_STORE,
-		[OP_SETTABLE] = R_ANAL_OP_TYPE_STORE,
-		[OP_NEWTABLE] = R_ANAL_OP_TYPE_NEW,
-		[OP_ADD] = R_ANAL_OP_TYPE_ADD,
-		[OP_SUB] = R_ANAL_OP_TYPE_SUB,
-		[OP_MUL] = R_ANAL_OP_TYPE_MUL,
-		[OP_MOD] = R_ANAL_OP_TYPE_MOD,
-		[OP_DIV] = R_ANAL_OP_TYPE_DIV,
-		[OP_IDIV] = R_ANAL_OP_TYPE_DIV,
-		[OP_BAND] = R_ANAL_OP_TYPE_AND,
-		[OP_BOR] = R_ANAL_OP_TYPE_OR,
-		[OP_BXOR] = R_ANAL_OP_TYPE_XOR,
-		[OP_SHL] = R_ANAL_OP_TYPE_SHL,
-		[OP_SHR] = R_ANAL_OP_TYPE_SHR,
-		[OP_BNOT] = R_ANAL_OP_TYPE_CPL,
-		[OP_NOT] = R_ANAL_OP_TYPE_NOT,
-		[OP_CALL] = R_ANAL_OP_TYPE_RCALL,
-		[OP_TFORCALL] = R_ANAL_OP_TYPE_RCALL,
-		[OP_SETLIST] = R_ANAL_OP_TYPE_STORE,
-	};
 	const OpCode opcode = GET_OPCODE (instruction);
-	op->type = types[opcode]? types[opcode]: R_ANAL_OP_TYPE_UNK;
+	op->type = lua_bc_ops[lua_bc_id (v, instruction)].type;
 	switch (opcode) {
 	case OP_LOADBOOL:
 		op->val = !!GETARG_B (instruction);
@@ -224,23 +178,6 @@ static char *regs(RArchSession *s) {
 	return r_strbuf_drain (p);
 }
 
-static bool init(RArchSession *as) {
-	R_RETURN_VAL_IF_FAIL (as, false);
-	if (as->data) {
-		R_LOG_WARN ("Already initialized");
-		return false;
-	}
-
-	as->data = R_NEW0 (PluginData);
-	return !!as->data;
-}
-
-static bool fini(RArchSession *as) {
-	R_RETURN_VAL_IF_FAIL (as, false);
-	R_FREE (as->data);
-	return true;
-}
-
 const RArchPlugin r_arch_plugin_lua = {
 	.meta = {
 		.name = "lua",
@@ -255,8 +192,6 @@ const RArchPlugin r_arch_plugin_lua = {
 	.encode = encode,
 	.decode = decode,
 	.regs = regs,
-	.init = init,
-	.fini = fini,
 	.cpus = "5.3,5.4,5.5",
 	.endian = R_SYS_ENDIAN_LITTLE,
 };

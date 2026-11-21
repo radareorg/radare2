@@ -26,136 +26,20 @@
 * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ******************************************************************************/
 
-#ifndef lopcodes_h
-#define lopcodes_h
+#ifndef R_LUA53_H
+#define R_LUA53_H
 
-
-#include <limits.h>
-#include <stddef.h>
-
-/*===========================================================================
-  We assume that instructions are unsigned numbers.
-  All instructions have an opcode in the first 6 bits.
-  Instructions can have the following fields:
-        'A' : 8 bits
-        'B' : 9 bits
-        'C' : 9 bits
-        'Ax' : 26 bits ('A', 'B', and 'C' together)
-        'Bx' : 18 bits ('B' and 'C' together)
-        'sBx' : signed Bx
-
-  A signed argument is represented in excess K; that is, the number
-  value is the unsigned value minus K. K is exactly the maximum value
-  for that argument (so that -max is represented by 0, and +max is
-  represented by 2*max), which is half the maximum for the corresponding
-  unsigned argument.
-===========================================================================*/
-
-
-enum OpMode {
-	iABC, iABx, iAsBx, iAx
-};					/* basic instruction format */
-
-#define cast(x, y)               ((x)(y))
-
-/*
-** size and position of opcode arguments.
-*/
-#define SIZE_C          9
-#define SIZE_B          9
-#define SIZE_Bx         (SIZE_C + SIZE_B)
-#define SIZE_A          8
-#define SIZE_Ax         (SIZE_C + SIZE_B + SIZE_A)
-
-#define SIZE_OP         6
-
-#define POS_OP          0
-#define POS_A           (POS_OP + SIZE_OP)
-#define POS_C           (POS_A + SIZE_A)
-#define POS_B           (POS_C + SIZE_C)
-#define POS_Bx          POS_C
-#define POS_Ax          POS_A
-
-#define MAX_INT         INT_MAX	/* maximum value of an int */
-
-#define LUAI_BITSINT 32
-
-/*
-** limits for opcode arguments.
-** we use (signed) int to manipulate most arguments,
-** so they must fit in LUAI_BITSINT-1 bits (-1 for sign)
-*/
-#if SIZE_Bx < LUAI_BITSINT - 1
-#define MAXARG_Bx        ((1 << SIZE_Bx) - 1)
-#define MAXARG_sBx        (MAXARG_Bx >> 1)		/* 'sBx' is signed */
-#else
-#define MAXARG_Bx        MAX_INT
-#define MAXARG_sBx        MAX_INT
-#endif
-
-#if SIZE_Ax < LUAI_BITSINT - 1
-#define MAXARG_Ax       ((1 << SIZE_Ax) - 1)
-#else
-#define MAXARG_Ax       MAX_INT
-#endif
-
-
-#define MAXARG_A        ((1 << SIZE_A) - 1)
-#define MAXARG_B        ((1 << SIZE_B) - 1)
-#define MAXARG_C        ((1 << SIZE_C) - 1)
-
-/* creates a mask with 'n' 1 bits at position 'p' */
-#define MASK1(n, p)      ((~((~(ut32)0) << (ut32)(n))) << (ut32)(p))
-
-/* creates a mask with 'n' 0 bits at position 'p' */
-#define MASK0(n, p)      (~MASK1(n, p))
-
-
-
-/*
-** the following macros help to manipulate instructions
-*/
-
-#define GET_OPCODE(i)   (cast (OpCode, ((i) >> POS_OP) & MASK1 (SIZE_OP, 0)))
-#define SET_OPCODE(i, o) ((i) = (((i) & MASK0 (SIZE_OP, POS_OP)) |\
-				 ((cast (ut32, o) << POS_OP) & MASK1 (SIZE_OP, POS_OP))))
-
-#define getarg(i, pos, size)      (cast (int, ((i) >> pos) & MASK1 (size, 0)))
-#define setarg(i, v, pos, size)    ((i) = (((i) & MASK0 (size, pos)) |\
-					   ((cast (ut32, v) << pos) & MASK1 (size, pos))))
-
-#define GETARG_A(i)     getarg (i, POS_A, SIZE_A)
-#define SETARG_A(i, v)   setarg (i, v, POS_A, SIZE_A)
-
-#define GETARG_B(i)     getarg (i, POS_B, SIZE_B)
-#define SETARG_B(i, v)   setarg (i, v, POS_B, SIZE_B)
-
-#define GETARG_C(i)     getarg (i, POS_C, SIZE_C)
-#define SETARG_C(i, v)   setarg (i, v, POS_C, SIZE_C)
-
-#define GETARG_Bx(i)    getarg (i, POS_Bx, SIZE_Bx)
-#define SETARG_Bx(i, v)  setarg (i, v, POS_Bx, SIZE_Bx)
-
-#define GETARG_Ax(i)    getarg (i, POS_Ax, SIZE_Ax)
-#define SETARG_Ax(i, v)  setarg (i, v, POS_Ax, SIZE_Ax)
-
-#define GETARG_sBx(i)   (GETARG_Bx (i) - MAXARG_sBx)
-#define SETARG_sBx(i, b) SETARG_Bx ((i), cast (unsigned int, (b) + MAXARG_sBx))
-
-
-#define CREATE_ABC(o, a, b, c)     ((cast (ut32, o) << POS_OP)	\
-				    | (cast (ut32, a) << POS_A)	\
-				    | (cast (ut32, b) << POS_B)	\
-				    | (cast (ut32, c) << POS_C))
-
-#define CREATE_ABx(o, a, bc)      ((cast (ut32, o) << POS_OP)\
-				   | (cast (ut32, a) << POS_A)\
-				   | (cast (ut32, bc) << POS_Bx))
-
-#define CREATE_Ax(o, a)          ((cast (ut32) << POS_OP)\
-				  | (cast (ut32, a) << POS_Ax))
-
-
+#define MAXARG_A 255
+#define MAXARG_B 511
+#define MAXARG_C 511
+#define MAXARG_Bx 262143
+#define MAXARG_sBx 131071
+#define MAXARG_Ax 67108863
+#define GET_OPCODE(i) ((OpCode)((i) & 63))
+#define GETARG_A(i) (((i) >> 6) & 255)
+#define GETARG_B(i) (((i) >> 23) & 511)
+#define GETARG_C(i) (((i) >> 14) & 511)
+#define GETARG_sBx(i) ((int)((i) >> 14) - MAXARG_sBx)
 
 typedef enum {
 /*----------------------------------------------------------------------
