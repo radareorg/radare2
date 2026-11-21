@@ -16,3 +16,50 @@ ad "setlist 0 2 1" 2b400001
 ad "setlist 0 2 0" 2b000001
 ad "setlist 0 2 0 513" 2b0000016e800000
 ad "setlist 255 0 0 67108863" eb3f0000eeffffff
+
+ad "move 1 2" 40000001
+ad "loadk 1 Kst(7)" 41c00100
+ad "loadkx 1" 42000000
+ad "loadbool 1 2 3" 43c00001
+ad "loadnil 1 2" 44000001
+ad "getupval 1 2" 45000001
+ad "gettabup 1 2 K(3)" 46c04001
+ad "gettable 1 2 K(3)" 47c04001
+ad "settabup 1 K(2) K(3)" 48c04081
+ad "setupval 1 2" 49000001
+ad "settable 1 K(2) K(3)" 4ac04081
+ad "newtable 1 2 3" 4bc00001
+ad "self 1 2 K(3)" 4cc04001
+ad "add 1 K(2) K(3)" 4dc04081
+ad "sub 1 K(2) K(3)" 4ec04081
+ad "mul 1 K(2) K(3)" 4fc04081
+ad "mod 1 K(2) K(3)" 50c04081
+ad "pow 1 K(2) K(3)" 51c04081
+ad "div 1 K(2) K(3)" 52c04081
+ad "idiv 1 K(2) K(3)" 53c04081
+ad "band 1 K(2) K(3)" 54c04081
+ad "bor 1 K(2) K(3)" 55c04081
+ad "bxor 1 K(2) K(3)" 56c04081
+ad "shl 1 K(2) K(3)" 57c04081
+ad "shr 1 K(2) K(3)" 58c04081
+ad "unm 1 2" 59000001
+ad "bnot 1 2" 5a000001
+ad "not 1 2" 5b000001
+ad "len 1 2" 5c000001
+ad "concat 1 2 3" 5dc00001
+ad "jmp 1 -3" 5e00ff7f
+ad "eq 1 K(2) K(3)" 5fc04081
+ad "lt 1 K(2) K(3)" 60c04081
+ad "le 1 K(2) K(3)" 61c04081
+ad "test 1 3" 62c00000
+ad "testset 1 2 3" 63c00001
+ad "tailcall 1 2 3" 65c00001
+ad "return 1 2" 66000001
+ad "forloop 1 -3" 6700ff7f
+ad "forprep 1 -3" 6800ff7f
+ad "tforcall 1 3" 69c00000
+ad "tforloop 1 -3" 6a00ff7f
+ad "setlist 1 2 3" 6bc00001
+ad "closure 1 KPROTO(7)" 6cc00100
+ad "vararg 1 2" 6d000001
+ad "extraarg Kst(9)" 6e020000
