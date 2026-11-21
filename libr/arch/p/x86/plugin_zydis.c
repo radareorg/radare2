@@ -949,6 +949,12 @@ static void op_fillval(RArchSession *as, RAnalOp *op, const ZydisDecodedInstruct
 			add_src_dst (op, insn, zop, op->addr, true);
 		}
 	}
+	if (insn->mnemonic == ZYDIS_MNEMONIC_DEC) {
+		// dec is sub reg, 1: the implicit 1 keeps it apart from a sub reg, reg
+		RAnalValue *one = RVecRArchValue_emplace_back (&op->srcs);
+		one->type = R_ANAL_VAL_IMM;
+		one->imm = 1;
+	}
 	if ((insn->mnemonic == ZYDIS_MNEMONIC_IMUL || insn->mnemonic == ZYDIS_MNEMONIC_MUL)
 			&& insn->operand_count_visible == 1) {
 		const ZydisDecodedOperand *op0 = visible_op (insn, ops, 0);

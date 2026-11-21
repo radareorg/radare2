@@ -3229,8 +3229,13 @@ static void set_access_info(RArchSession *as, RAnalOp *op, csh handle, cs_insn *
 	src2 = RVecRArchValue_emplace_back (&(op)->srcs); \
 	dst = RVecRArchValue_emplace_back (&(op)->dsts);
 
+// defines every field of the emplaced val, also for an absent operand
 static void set_src_dst(RArchSession *as, RAnalValue *val, csh handle, cs_insn *insn, int x) {
 	if (!val) {
+		return;
+	}
+	*val = (RAnalValue){0};
+	if (x >= INSOPS) {
 		return;
 	}
 	switch (INSOP (x).type) {
@@ -3246,6 +3251,7 @@ static void set_src_dst(RArchSession *as, RAnalValue *val, csh handle, cs_insn *
 		val->reg = cs_reg_name (handle, INSOP (x).reg);
 		break;
 	case X86_OP_IMM:
+		val->type = R_ANAL_VAL_IMM;
 		val->imm = INSOP (x).imm;
 		break;
 	default:
@@ -3323,32 +3329,28 @@ static void op_fillval(RArchSession *a, RAnalOp *op, csh handle, cs_insn *insn, 
 		// when the memref is stack-relative — otherwise we'd manufacture
 		// spurious var accesses for arbitrary addresses.
 		if (is_stackrel_memref (insn, 0)) {
-			CREATE_SRC_DST (op);
-			set_src_dst (a, src0, handle, insn, 0);
+			set_src_dst (a, RVecRArchValue_emplace_back (&op->srcs), handle, insn, 0);
 		}
 		// Two-operand version, now INSOP (1) is the source.
 		else if (is_stackrel_memref (insn, 1)) {
-			CREATE_SRC_DST (op);
-			set_src_dst (a, src0, handle, insn, 1);
+			set_src_dst (a, RVecRArchValue_emplace_back (&op->srcs), handle, insn, 1);
 		}
 		// VEX three-operand version, INSOP (2) is the source.
 		else if (INSOPS > 2 && is_stackrel_memref (insn, 2)) {
-			CREATE_SRC_DST (op);
-			set_src_dst (a, src0, handle, insn, 2);
+			set_src_dst (a, RVecRArchValue_emplace_back (&op->srcs), handle, insn, 2);
 		}
 		break;
 	case R_ANAL_OP_TYPE_UPUSH:
 		if (op->type & R_ANAL_OP_TYPE_REG || is_stackrel_memref (insn, 0)) {
-			CREATE_SRC_DST (op);
-			set_src_dst (a, src0, handle, insn, 0);
+			set_src_dst (a, RVecRArchValue_emplace_back (&op->srcs), handle, insn, 0);
 		}
 		break;
 	case R_ANAL_OP_TYPE_LOAD:
 	case R_ANAL_OP_TYPE_STORE:
 		// x87 loads and stores take the memory operand alone
 		if (is_stackrel_memref (insn, 0)) {
-			CREATE_SRC_DST (op);
-			set_src_dst (a, load_store_writes_mem (insn)? dst: src0, handle, insn, 0);
+			RVecRArchValue *side = load_store_writes_mem (insn)? &op->dsts: &op->srcs;
+			set_src_dst (a, RVecRArchValue_emplace_back (side), handle, insn, 0);
 		}
 		break;
 	default:

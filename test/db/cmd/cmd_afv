@@ -108,3 +108,143 @@ EXPECT=<<EOF
 arg int32_t arg_8h @ ebp+0x8
 EOF
 RUN
+
+NAME=afv sub reg,reg and or reg,-1 write their register without reading it
+FILE=bins/elf/upxtest
+CMDS=<<EOF
+aa
+afv @ 0x5854
+EOF
+EXPECT=<<EOF
+arg int64_t arg_0h @ rsp+0x28
+var int64_t var_10h @ rsp+0x20
+var int64_t var_bh @ rbp-0xb
+EOF
+RUN
+
+NAME=afv full-width sub reg,reg and or reg,-1 write the argument without reading it
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 4829ff4889f8c3 @ 0x00
+wx 4883cfff4889f8c3 @ 0x10
+wx 29ff4889f8c3 @ 0x20
+wx 83cfff4889f8c3 @ 0x30
+af @ 0x00
+af @ 0x10
+af @ 0x20
+af @ 0x30
+afv @ 0x00
+afv @ 0x10
+afv @ 0x20
+afv @ 0x30
+?e none
+EOF
+EXPECT=<<EOF
+none
+EOF
+RUN
+
+NAME=afv partial-width, fp, sbb and partial-mask sub and or still read the argument
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 4028ff4889f8c3 @ 0x00
+wx 4080cfff4889f8c3 @ 0x10
+wx 6683cfff4889f8c3 @ 0x20
+wx 81cfffff00004889f8c3 @ 0x30
+wx f20f5cc0c3 @ 0x40
+wx 4819ff4889f8c3 @ 0x50
+af @ 0x00
+af @ 0x10
+af @ 0x20
+af @ 0x30
+af @ 0x40
+af @ 0x50
+?e sub dil, dil
+afv @ 0x00
+?e or dil, 0xff
+afv @ 0x10
+?e or di, 0xffff
+afv @ 0x20
+?e or edi, 0xffff
+afv @ 0x30
+?e subsd xmm0, xmm0
+afv @ 0x40
+?e sbb rdi, rdi
+afv @ 0x50
+EOF
+EXPECT=<<EOF
+sub dil, dil
+arg int64_t arg1 @ rdi
+or dil, 0xff
+arg int64_t arg1 @ rdi
+or di, 0xffff
+arg int64_t arg1 @ rdi
+or edi, 0xffff
+arg int64_t arg1 @ rdi
+subsd xmm0, xmm0
+arg double arg1 @ xmm0
+sbb rdi, rdi
+arg int64_t arg1 @ rdi
+EOF
+RUN
+
+NAME=afv x86.zydis dec reads the argument
+FILE=malloc://64
+ARGS=-a x86.zydis -b 64
+CMDS=<<EOF
+wx 48ffcf4889f8c3
+af
+afv
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+EOF
+RUN
+
+NAME=afv arm64 shifted sub, msub, ngc and fsub read the argument
+FILE=malloc://256
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 000400cbc0035fd6 @ 0x00
+wx 0080009bc0035fd6 @ 0x10
+wx e00300dac0035fd6 @ 0x20
+wx 0038601ec0035fd6 @ 0x30
+af @ 0x00
+af @ 0x10
+af @ 0x20
+af @ 0x30
+?e sub x0, x0, x0, lsl 1
+afv @ 0x00
+?e msub x0, x0, x0, x0
+afv @ 0x10
+?e ngc x0, x0
+afv @ 0x20
+?e fsub d0, d0, d0
+afv @ 0x30
+EOF
+EXPECT=<<EOF
+sub x0, x0, x0, lsl 1
+arg int64_t arg1 @ x0
+msub x0, x0, x0, x0
+arg int64_t arg1 @ x0
+ngc x0, x0
+arg int64_t arg1 @ x0
+fsub d0, d0, d0
+arg double arg1 @ d0
+EOF
+RUN
+
+NAME=afv a predicated arm32 sub does not overwrite the argument
+FILE=malloc://64
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 000040000010a0e11eff2fe1
+af
+afv
+EOF
+EXPECT=<<EOF
+arg int32_t arg1 @ r0
+EOF
+RUN

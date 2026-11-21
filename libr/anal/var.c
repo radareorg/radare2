@@ -1607,9 +1607,86 @@ static bool op_zeroes_reg(RAnalOp *op) {
 	return true;
 }
 
+// The unconditional integer write to dst defines every bit of its full
+// register; a 32-bit write on a 64-bit target zero-extends.
+static int op_whole_reg_bits(RAnal *anal, RAnalOp *op, RAnalValue *dst) {
+	if (op->cond != R_ANAL_CONDTYPE_AL || op->family != R_ANAL_OP_FAMILY_CPU
+			|| !dst || !dst->reg || dst->memref) {
+		return 0;
+	}
+	RRegItem *ri = r_reg_get (anal->reg, dst->reg, R_REG_TYPE_GPR);
+	const int bits = ri? ri->size: 0;
+	r_unref (ri);
+	const int full = anal->config->bits;
+	return (bits == full || (full == 64 && bits == 32))? bits: 0;
+}
+
+// Only the two-operand sub reg,reg is proven: a three-operand source may be
+// shifted or extended, which RAnalValue does not record.
+static bool op_subs_self(RAnal *anal, RAnalOp *op, bool dst_writeonly) {
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
+	if (dst_writeonly || !op_whole_reg_bits (anal, op, dst)) {
+		return false;
+	}
+	int n = 0;
+	RAnalValue *src;
+	R_VEC_FOREACH (&op->srcs, src) {
+		if (src->memref || src->type == R_ANAL_VAL_IMM || (src->reg && strcmp (src->reg, dst->reg))) {
+			return false;
+		}
+		n += src->reg != NULL;
+	}
+	if (n != 1 || !op->access) {
+		return false;
+	}
+	// any other register read, such as the carry flag of sbb, feeds the result
+	RListIter *iter;
+	r_list_foreach (op->access, iter, src) {
+		if ((src->access & R_PERM_R) && src->type == R_ANAL_VAL_REG && src->reg && strcmp (src->reg, dst->reg)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+// or reg, -1 sets every bit of reg whatever it held
+static bool op_fills_reg(RAnal *anal, RAnalOp *op) {
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
+	const int bits = op_whole_reg_bits (anal, op, dst);
+	if (!bits) {
+		return false;
+	}
+	const ut64 mask = bits >= 64? UT64_MAX: (1ULL << bits) - 1;
+	bool fills = false;
+	RAnalValue *src;
+	R_VEC_FOREACH (&op->srcs, src) {
+		if (src->memref || (src->reg && strcmp (src->reg, dst->reg))) {
+			return false;
+		}
+		if (src->type == R_ANAL_VAL_IMM) {
+			fills |= ((ut64)src->imm & mask) == mask;
+		}
+	}
+	return fills;
+}
+
+// xor reg,reg, sub reg,reg and or reg,-1 write reg without reading it
+static bool op_sets_reg(RAnal *anal, RAnalOp *op, bool dst_writeonly) {
+	switch (op->type & R_ANAL_OP_TYPE_MASK) {
+	case R_ANAL_OP_TYPE_XOR:
+		return op_zeroes_reg (op);
+	case R_ANAL_OP_TYPE_SUB:
+		return op_subs_self (anal, op, dst_writeonly);
+	case R_ANAL_OP_TYPE_OR:
+		return op_fills_reg (anal, op);
+	default:
+		return false;
+	}
+}
+
 // in_src and in_dst are the only facts the branches below are built from, and
 // every caller already needs them, so they come in rather than being recomputed
-static bool is_used_like_arg(RAnalOp *op, bool op_dst_writeonly, bool in_src, bool in_dst) {
+static bool is_used_like_arg(RAnal *anal, RAnalOp *op, bool op_dst_writeonly, bool in_src, bool in_dst) {
 	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_POP:
@@ -1622,7 +1699,9 @@ static bool is_used_like_arg(RAnalOp *op, bool op_dst_writeonly, bool in_src, bo
 	case R_ANAL_OP_TYPE_LOAD:
 		return in_src;
 	case R_ANAL_OP_TYPE_XOR:
-		if (op_zeroes_reg (op)) {
+	case R_ANAL_OP_TYPE_SUB:
+	case R_ANAL_OP_TYPE_OR:
+		if (op_sets_reg (anal, op, op_dst_writeonly)) {
 			return false;
 		}
 		//fallthrough
@@ -1880,7 +1959,7 @@ static void extract_dyncc_reguse(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, i
 		const int slot = R_ANAL_CC_DYNSLOT_BASE + dynslot;
 		const bool in_src = is_reg_in_src (loc, anal, srcregs);
 		const bool in_dst = opdreg && r_anal_cc_location_uses (anal, loc, opdreg);
-		const bool is_arg = is_used_like_arg (op, op_dst_writeonly, in_src, in_dst);
+		const bool is_arg = is_used_like_arg (anal, op, op_dst_writeonly, in_src, in_dst);
 		if (is_arg && reg_set[slot] != 2) {
 			const char *regname = reguse_regname_for_loc (anal, op, loc, opdreg);
 			reguse_append_hint (anal, op->addr, regname, name);
@@ -2147,7 +2226,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		}
 		const int regsize = reg && reg->size > 0? BITS2BYTES (reg->size): size;
 		bool is_arg = partial? is_used_small_reg_arg (anal, op, reg, &reg_set[slot], op_dst_writeonly)
-			: is_used_like_arg (op, op_dst_writeonly, in_src, in_dst);
+			: is_used_like_arg (anal, op, op_dst_writeonly, in_src, in_dst);
 		if (is_arg) {
 			delta = reg? reg->index: cc_loc_delta (anal, regname);
 		}
@@ -2228,7 +2307,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	if (selfreg && (roles & R_BIN_SWIFT_ROLE_SELF)) {
 		// an ignored spill leaves the state alone: the value is still incoming
 		const bool spill = (roles & R_BIN_SWIFT_ROLE_SELF_UNKNOWN) && !in_dst && is_stack_traffic (anal, op);
-		bool is_arg = !spill && is_used_like_arg (op, op_dst_writeonly, in_src, in_dst);
+		bool is_arg = !spill && is_used_like_arg (anal, op, op_dst_writeonly, in_src, in_dst);
 		if (is_arg && reg_set[i] != 2) {
 			int delta = cc_loc_delta (anal, selfreg);
 			RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, size, true, "self");
