@@ -74,10 +74,12 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		}
 		break;
 	case OP_LOADBOOL:/*  A B C   R(A) := (Bool)B; if (C) pc++  */
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ANAL_OP_TYPE_MOV;
 		op->val = !!GETARG_B (instruction);
-		op->jump = op->addr + 8;
-		op->fail = op->addr + 4;
+		if (GETARG_C (instruction)) {
+			op->type = R_ANAL_OP_TYPE_JMP;
+			op->jump = op->addr + 8;
+		}
 		break;
 	case OP_LOADNIL:/*   A B     R(A), R(A+1), ..., R(A+B) := nil  */
 		break;
@@ -147,32 +149,15 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case OP_CONCAT:	/*    A B C   R(A) := R(B).. ... ..R(C)    */
 		break;
 	case OP_JMP:	/*       A sBx   pc+=sBx; if (A) close all upvalues >= R(A - 1)  */
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = op->addr + 4 * (GETARG_sBx (instruction));
-		op->fail = op->addr + 4;
+		op->type = R_ANAL_OP_TYPE_JMP;
+		op->jump = op->addr + 4 + 4 * GETARG_sBx (instruction);
 		break;
-	case OP_EQ:	/*        A B C   if ((RK(B) == RK(C)) ~= A) then pc++            */
+	case OP_EQ:
+	case OP_LT:
+	case OP_LE:
+	case OP_TEST:
+	case OP_TESTSET:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = op->addr + 8;
-		op->fail = op->addr + 4;
-		break;
-	case OP_LT:	/*        A B C   if ((RK(B) <  RK(C)) ~= A) then pc++            */
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = op->addr + 8;
-		op->fail = op->addr + 4;
-		break;
-	case OP_LE:	/*        A B C   if ((RK(B) <= RK(C)) ~= A) then pc++            */
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = op->addr + 8;
-		op->fail = op->addr + 4;
-		break;
-	case OP_TEST:	/*      A C     if not (R(A) <=> C) then pc++                   */
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = op->addr + 8;
-		op->fail = op->addr + 4;
-		break;
-	case OP_TESTSET:/*   A B C   if (R(B) <=> C) then R(A) := R(B) else pc++     */
-		op->type = R_ANAL_OP_TYPE_CMOV;
 		op->jump = op->addr + 8;
 		op->fail = op->addr + 4;
 		break;
@@ -180,17 +165,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_RCALL;
 		break;
 	case OP_TAILCALL:/*  A B C   return R(A)(R(A+1), ... ,R(A+B-1))              */
-		op->type = R_ANAL_OP_TYPE_RCALL;
-		op->type2 = R_ANAL_OP_TYPE_RET;
+		op->type = R_ANAL_OP_TYPE_RET;
+		op->type2 = R_ANAL_OP_TYPE_RCALL;
 		op->eob = true;
-		op->stackop = R_ANAL_STACK_INC;
-		op->stackptr = -4;
 		break;
 	case OP_RETURN:	/*    A B     return R(A), ... ,R(A+B-2)      (see note)      */
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->eob = true;
-		op->stackop = R_ANAL_STACK_INC;
-		op->stackptr = -4;
 		break;
 	case OP_FORLOOP:/*   A sBx   R(A)+=R(A+2);
 			                                if R(A) <?= R(A+1) then { pc+=sBx; R(A+3)=R(A) }*/
@@ -201,7 +182,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case OP_FORPREP:/*   A sBx   R(A)-=R(A+2); pc+=sBx                           */
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->jump = op->addr + 4 + 4 * (GETARG_sBx (instruction));
-		op->fail = op->addr + 4;
 		break;
 	case OP_TFORCALL:/*  A C     R(A+3), ... ,R(A+2+C) := R(A)(R(A+1), R(A+2));  */
 		op->type = R_ANAL_OP_TYPE_RCALL;
@@ -245,10 +225,19 @@ static int finit(void *user) {
 #endif
 
 static int archinfo(RArchSession *cfg, ut32 q) {
-	if (q == R_ARCH_INFO_ISVM) {
+	switch (q) {
+	case R_ARCH_INFO_ISVM:
 		return true;
+	case R_ARCH_INFO_CODE_ALIGN:
+	case R_ARCH_INFO_FUNC_ALIGN:
+		return 1;
+	case R_ARCH_INFO_MAXOP_SIZE:
+		return 8;
+	case R_ARCH_INFO_MINOP_SIZE:
+	case R_ARCH_INFO_INVOP_SIZE:
+		return 4;
 	}
-	return 4;
+	return 0;
 }
 
 static char *regs(RArchSession *s) {
