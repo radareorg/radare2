@@ -1151,7 +1151,9 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 		} else {
 			RIOBank *bank = r_io_bank_new (arg);
 			if (bank) {
-				r_io_bank_add (core->io, bank);
+				if (!r_io_bank_add (core->io, bank)) {
+					r_io_bank_free (bank);
+				}
 			} else {
 				R_LOG_ERROR ("Cannot create map from %s", arg);
 			}

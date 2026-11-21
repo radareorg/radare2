@@ -2178,6 +2178,8 @@ static void visual_comma(RCore *core) {
 	}
 beach:
 	free (comment);
+	free (cmtfile);
+	free (cwd);
 	r_cons_enable_mouse (core->cons, mouse_state && r_config_get_i (core->config, "scr.wheel"));
 }
 

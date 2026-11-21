@@ -72,8 +72,6 @@ static bool r_core_project_zip_import(RCore *core, const char *inzip) {
 
 // export project
 static void r_core_project_zip_export(RCore *core, const char *prjname, const char *outzip) {
-	char *prj_dir = r_file_abspath (r_config_get (core->config, "dir.projects"));
-	char *cwd = r_sys_getdir ();
 	const char *prj_name = prjname? prjname: r_config_get (core->config, "prj.name");
 	if (R_STR_ISEMPTY (prj_name)) {
 		R_LOG_ERROR ("No project to export");
@@ -83,6 +81,8 @@ static void r_core_project_zip_export(RCore *core, const char *prjname, const ch
 		R_LOG_ERROR ("Project zips must use the .zrp extension");
 		return;
 	}
+	char *prj_dir = r_file_abspath (r_config_get (core->config, "dir.projects"));
+	char *cwd = r_sys_getdir ();
 	if (r_sys_chdir (prj_dir)) {
 		if (!strchr (prj_name, '\'')) {
 			char *zipfile = r_str_newf ("%s/%s.zrp", cwd, prj_name);
@@ -105,6 +105,7 @@ static void r_core_project_zip_export(RCore *core, const char *prjname, const ch
 	}
 	r_sys_chdir (cwd);
 	free (cwd);
+	free (prj_dir);
 }
 
 static void cmd_Pz(RCore *core, const char *cmd) {

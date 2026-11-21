@@ -3888,6 +3888,8 @@ static void cmd_print_op(RCore *core, const char *input) {
 			char *cmd = strdup (input);
 			RList *args = r_str_split_list (cmd, " ", 0);
 			char *algo = NULL;
+			ut8 *binkey = NULL;
+			RMutaSession *cj = NULL;
 			if (args) {
 				algo = r_list_get_n (args, 1);
 			}
@@ -3896,24 +3898,26 @@ static void cmd_print_op(RCore *core, const char *input) {
 				r_cons_print (core->cons, s);
 				free (s);
 				r_cons_cmd_help_match (core->cons, help_msg_po, "poS", 0, true);
-				break;
+				goto beach;
 			}
 			if (!r_muta_algo_supports (core->muta, algo, R_MUTA_TYPE_SIGN)) {
 				R_LOG_ERROR ("Unsupported signature algorithm: %s", algo);
-				break;
+				goto beach;
 			}
-			RMutaSession *cj = r_muta_use (core->muta, algo);
 			char *key = r_list_get_n (args, 2);
-			ut8 *binkey = (ut8 *)strdup (key);
+			if (!key) {
+				R_LOG_ERROR ("Private key not defined");
+				goto beach;
+			}
+			cj = r_muta_use (core->muta, algo);
+			binkey = (ut8 *)strdup (key);
 			int keylen = r_hex_str2bin (key, binkey);
 			if (!keylen) {
 				R_LOG_ERROR ("Invalid key");
-				r_muta_session_free (cj);
-				break;
+				goto beach;
 			}
 			if (!r_muta_session_set_key (cj, binkey, keylen, 0, R_MUTA_OP_ENCRYPT)) {
-				r_muta_session_free (cj);
-				break;
+				goto beach;
 			}
 			r_muta_session_update (cj, (const ut8 *)core->block, core->blocksize);
 
@@ -3923,7 +3927,11 @@ static void cmd_print_op(RCore *core, const char *input) {
 				print_bytes (core, result, result_size, "%02x", 0);
 				free (result);
 			}
+beach:
 			r_muta_session_free (cj);
+			free (binkey);
+			r_list_free (args);
+			free (cmd);
 			break;
 		}
 	case 'D': // "poD"
@@ -3941,16 +3949,22 @@ static void cmd_print_op(RCore *core, const char *input) {
 				r_cons_print (core->cons, s);
 				free (s);
 				r_cons_cmd_help_match (core->cons, help_msg_po, "po", input[1], true);
+				r_list_free (args);
+				free (cmd);
 				break;
 			}
 			char *key = r_list_get_n (args, 2);
 			if (!key) {
 				const char *mode = (direction == R_MUTA_OP_ENCRYPT)? "Encryption": "Decryption";
 				R_LOG_ERROR ("%s key not defined", mode);
-				return;
+				r_list_free (args);
+				free (cmd);
+				break;
 			}
 			char *iv = r_list_get_n (args, 3);
 			print_encrypted_block (core, algo, key, direction, iv);
+			r_list_free (args);
+			free (cmd);
 			break;
 		}
 	case '\0':

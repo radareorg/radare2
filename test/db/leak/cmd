@@ -1,0 +1,69 @@
+NAME=leak CL with invalid base64
+FILE=-
+CMDS=<<EOF
+e log.level=0
+CL 0x100 base64:
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+EOF
+RUN
+
+NAME=leak omb+ with an existing bank name
+FILE=-
+CMDS=<<EOF
+e log.level=0
+omb+ foo
+omb+ foo
+omb
+EOF
+EXPECT=<<EOF
+* 0 default [ 1 ]
+- 1 foo [ ]
+EOF
+RUN
+
+NAME=leak poS errors
+FILE=malloc://16
+CMDS=<<EOF
+e log.level=0
+poS nosuchalgo 00
+poS ed25519
+poS ed25519 zz
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+EOF
+RUN
+
+NAME=leak poE and poD
+FILE=malloc://16
+CMDS=<<EOF
+e log.level=0
+b 16
+poE aes-ecb
+poE aes-ecb 000102030405060708090a0b0c0d0e0f
+poD aes-ecb 000102030405060708090a0b0c0d0e0f
+EOF
+EXPECT=<<EOF
+c6a13b37878f5b826f4f8162a1c8d879
+7b1d29a16cf8ccab84f0b8a598e42fa6
+EOF
+RUN
+
+NAME=leak Pze errors
+FILE=-
+CMDS=<<EOF
+e log.level=0
+Pze
+e dir.projects=/nonexistent
+e prj.name=foo
+Pze
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+EOF
+RUN
