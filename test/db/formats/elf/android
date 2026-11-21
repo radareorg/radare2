@@ -154,3 +154,12 @@ EXPECT=<<EOF
 11
 EOF
 RUN
+
+NAME=ELF RELR and Android packed relocation section types
+FILE=bins/elf/ls-toybox
+CMDS=iS~.rela.dyn,.relr.dyn
+EXPECT=<<EOF
+10  0x00003708    0x1b4 0x00003708    0x1b4 -r-- 0x2   ANDROID_RELA  .rela.dyn
+11  0x000038c0    0x190 0x000038c0    0x190 -r-- 0x2   RELR          .relr.dyn
+EOF
+RUN

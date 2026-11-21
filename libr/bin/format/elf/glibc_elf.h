@@ -453,6 +453,7 @@ typedef struct {
 #define SHT_LOOS	  0x60000000	/* Start OS-specific.  */
 #define SHT_ANDROID_REL   0x60000001
 #define SHT_ANDROID_RELA  0x60000002
+#define SHT_ANDROID_RELR  0x6fffff00
 #define SHT_GNU_ATTRIBUTES 0x6ffffff5	/* Object attributes.  */
 #define SHT_GNU_HASH	  0x6ffffff6	/* GNU-style hash table.  */
 #define SHT_GNU_LIBLIST	  0x6ffffff7	/* Prelink library list */
