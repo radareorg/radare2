@@ -3,7 +3,6 @@
 #include <r_arch.h>
 #include <r_lib.h>
 
-#include "lua53.h"
 #include "lua_bc.h"
 
 static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
@@ -21,7 +20,7 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 	return r_anal_op_set_bytes (op, op->addr, bytes, size);
 }
 
-static bool decode_bc(const LuaBCVersion *v, RAnalOp *op, RArchDecodeMask mask) {
+static bool decode_word(const LuaBCVersion *v, RAnalOp *op, RArchDecodeMask mask) {
 	const int len = op->size;
 	const ut32 word = r_read_le32 (op->bytes);
 	const int id = lua_bc_id (v, word);
@@ -40,7 +39,7 @@ static bool decode_bc(const LuaBCVersion *v, RAnalOp *op, RArchDecodeMask mask) 
 	}
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		char *first = lua_bc_disasm_word (v, word, next, pair);
-		if (pair && id != LUA_OP_LOADKX) {
+		if (pair && id != LUA_OP_LOADKX && !(v == &lua_bc_53 && id == LUA_OP_SETLIST)) {
 			char *second = lua_bc_disasm_word (v, next, 0, false);
 			op->mnemonic = r_str_newf ("%s ; %s", first, second);
 			free (first);
@@ -51,15 +50,24 @@ static bool decode_bc(const LuaBCVersion *v, RAnalOp *op, RArchDecodeMask mask) 
 	}
 	op->type = lua_bc_ops[id].type;
 	op->eob = false;
+	const bool lua53 = v == &lua_bc_53;
 	const ut64 pc = op->addr + 4;
-	if (id == LUA_OP_JMP) {
-		op->jump = pc + (st64)lua_bc_get (v, word, LUA_ARG_SJ) * 4;
+	const int bx = lua_bc_get (v, word, lua53? LUA_ARG_SBX: LUA_ARG_BX);
+	if (id == LUA_OP_LOADBOOL) {
+		op->val = !!lua_bc_get (v, word, LUA_ARG_B);
+		if (lua_bc_get (v, word, LUA_ARG_C)) {
+			op->type = R_ANAL_OP_TYPE_JMP;
+			op->jump = pc + 4;
+		}
+	} else if (id == LUA_OP_JMP || (lua53 && id == LUA_OP_FORPREP)) {
+		op->type = R_ANAL_OP_TYPE_JMP;
+		op->jump = pc + (st64)(lua53? bx: lua_bc_get (v, word, LUA_ARG_SJ)) * 4;
 	} else if (id == LUA_OP_LFALSESKIP) {
 		op->jump = pc + 4;
 	} else if (id == LUA_OP_FORPREP || id == LUA_OP_TFORPREP) {
-		op->jump = pc + (ut64)(lua_bc_get (v, word, LUA_ARG_BX) + (id == LUA_OP_FORPREP)) * 4;
+		op->jump = pc + (ut64)(bx + (id == LUA_OP_FORPREP)) * 4;
 	} else if (id == LUA_OP_FORLOOP || id == LUA_OP_TFORLOOP) {
-		op->jump = pc - (ut64)lua_bc_get (v, word, LUA_ARG_BX) * 4;
+		op->jump = pc + (st64)(lua53? bx: -bx) * 4;
 	} else if (op->type == R_ANAL_OP_TYPE_CJMP) {
 		op->jump = pc + 4;
 	}
@@ -79,7 +87,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (!op) {
 		return 0;
 	}
-	const ut8 *data = op->bytes;
 	const int len = op->size;
 	if (len < 4) {
 		op->type = R_ANAL_OP_TYPE_ILL;
@@ -90,65 +97,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	}
 
 	const LuaBCVersion *v = lua_bc_version (as->config->cpu);
-	if (v && v != &lua_bc_53) {
-		return decode_bc (v, op, mask);
-	}
 	if (!v) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		return false;
 	}
-	const ut32 instruction = r_read_le32 (data);
-	op->size = 4;
-	op->type = R_ANAL_OP_TYPE_UNK;
-	op->eob = false;
-	if (GET_OPCODE (instruction) > OP_EXTRAARG) {
-		return op->size;
-	}
-	if ((GET_OPCODE (instruction) == OP_LOADKX || (GET_OPCODE (instruction) == OP_SETLIST && !GETARG_C (instruction)))
-			&& len >= 8 && GET_OPCODE (r_read_le32 (data + 4)) == OP_EXTRAARG) {
-		op->size = 8;
-	}
-	if (mask & R_ARCH_OP_MASK_DISASM) {
-		op->mnemonic = lua_bc_disasm_word (v, instruction, op->size == 8? r_read_le32 (data + 4): 0, op->size == 8);
-	}
-	const OpCode opcode = GET_OPCODE (instruction);
-	op->type = lua_bc_ops[lua_bc_id (v, instruction)].type;
-	switch (opcode) {
-	case OP_LOADBOOL:
-		op->val = !!GETARG_B (instruction);
-		if (GETARG_C (instruction)) {
-			op->type = R_ANAL_OP_TYPE_JMP;
-			op->jump = op->addr + 8;
-		}
-		break;
-	case OP_JMP:
-	case OP_FORPREP:
-		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = op->addr + 4 + 4 * GETARG_sBx (instruction);
-		break;
-	case OP_EQ:
-	case OP_LT:
-	case OP_LE:
-	case OP_TEST:
-	case OP_TESTSET:
-	case OP_FORLOOP:
-	case OP_TFORLOOP:
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = op->addr + (opcode == OP_FORLOOP || opcode == OP_TFORLOOP? 4 + 4 * GETARG_sBx (instruction): 8);
-		op->fail = op->addr + 4;
-		break;
-	case OP_TAILCALL:
-		op->type2 = R_ANAL_OP_TYPE_RCALL;
-		// fall through
-	case OP_RETURN:
-		op->type = R_ANAL_OP_TYPE_RET;
-		op->eob = true;
-		break;
-	default:
-		break;
-	}
-
-	return op->size;
+	return decode_word (v, op, mask);
 }
 
 static int archinfo(RArchSession *cfg, ut32 q) {
@@ -172,7 +125,7 @@ static char *regs(RArchSession *s) {
 		"=PC pc\n=SP sp\n=A0 r0\n=A1 r1\n=A2 r2\n=R0 r0\n=R1 r1\n"
 		"gpr pc .32 0 0\ngpr sp .32 4 0\n");
 	int i;
-	for (i = 0; i <= MAXARG_A; i++) {
+	for (i = 0; i < 256; i++) {
 		r_strbuf_appendf (p, "gpr r%d .64 %d 0\n", i, 8 + i * 8);
 	}
 	return r_strbuf_drain (p);

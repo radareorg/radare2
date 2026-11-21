@@ -291,19 +291,11 @@ static const LuaBCField lua_bc_53_fields[LUA_ARG_COUNT] = {
 };
 
 static const LuaBCArgset lua_bc_53_args[LUA_OP_COUNT] = {
-	[LUA_OP_MOVE] = { true, { LUA_ARG_A, LUA_ARG_B } },
-	[LUA_OP_LOADK] = { true, { LUA_ARG_A, LUA_ARG_KBX } },
-	[LUA_OP_LOADKX] = { true, { LUA_ARG_A, LUA_ARG_KAX } },
-	[LUA_OP_LOADBOOL] = { true, { LUA_ARG_A, LUA_ARG_B, LUA_ARG_C } },
-	[LUA_OP_LOADNIL] = { true, { LUA_ARG_A, LUA_ARG_B } },
-	[LUA_OP_GETUPVAL] = { true, { LUA_ARG_A, LUA_ARG_B } },
 	[LUA_OP_GETTABUP] = { true, { LUA_ARG_A, LUA_ARG_B, LUA_ARG_RKC } },
 	[LUA_OP_GETTABLE] = { true, { LUA_ARG_A, LUA_ARG_B, LUA_ARG_RKC } },
 	[LUA_OP_SETTABUP] = { true, { LUA_ARG_A, LUA_ARG_RKB, LUA_ARG_RKC } },
-	[LUA_OP_SETUPVAL] = { true, { LUA_ARG_A, LUA_ARG_B } },
 	[LUA_OP_SETTABLE] = { true, { LUA_ARG_A, LUA_ARG_RKB, LUA_ARG_RKC } },
 	[LUA_OP_NEWTABLE] = { true, { LUA_ARG_A, LUA_ARG_B, LUA_ARG_C } },
-	[LUA_OP_SELF] = { true, { LUA_ARG_A, LUA_ARG_B, LUA_ARG_RKC } },
 	[LUA_OP_ADD] = { true, { LUA_ARG_A, LUA_ARG_RKB, LUA_ARG_RKC } },
 	[LUA_OP_SUB] = { true, { LUA_ARG_A, LUA_ARG_RKB, LUA_ARG_RKC } },
 	[LUA_OP_MUL] = { true, { LUA_ARG_A, LUA_ARG_RKB, LUA_ARG_RKC } },
@@ -316,10 +308,6 @@ static const LuaBCArgset lua_bc_53_args[LUA_OP_COUNT] = {
 	[LUA_OP_BXOR] = { true, { LUA_ARG_A, LUA_ARG_RKB, LUA_ARG_RKC } },
 	[LUA_OP_SHL] = { true, { LUA_ARG_A, LUA_ARG_RKB, LUA_ARG_RKC } },
 	[LUA_OP_SHR] = { true, { LUA_ARG_A, LUA_ARG_RKB, LUA_ARG_RKC } },
-	[LUA_OP_UNM] = { true, { LUA_ARG_A, LUA_ARG_B } },
-	[LUA_OP_BNOT] = { true, { LUA_ARG_A, LUA_ARG_B } },
-	[LUA_OP_NOT] = { true, { LUA_ARG_A, LUA_ARG_B } },
-	[LUA_OP_LEN] = { true, { LUA_ARG_A, LUA_ARG_B } },
 	[LUA_OP_CONCAT] = { true, { LUA_ARG_A, LUA_ARG_B, LUA_ARG_C } },
 	[LUA_OP_JMP] = { true, { LUA_ARG_A, LUA_ARG_SBX } },
 	[LUA_OP_EQ] = { true, { LUA_ARG_A, LUA_ARG_RKB, LUA_ARG_RKC } },
@@ -327,15 +315,12 @@ static const LuaBCArgset lua_bc_53_args[LUA_OP_COUNT] = {
 	[LUA_OP_LE] = { true, { LUA_ARG_A, LUA_ARG_RKB, LUA_ARG_RKC } },
 	[LUA_OP_TEST] = { true, { LUA_ARG_A, LUA_ARG_C } },
 	[LUA_OP_TESTSET] = { true, { LUA_ARG_A, LUA_ARG_B, LUA_ARG_C } },
-	[LUA_OP_CALL] = { true, { LUA_ARG_A, LUA_ARG_B, LUA_ARG_C } },
 	[LUA_OP_TAILCALL] = { true, { LUA_ARG_A, LUA_ARG_B, LUA_ARG_C } },
 	[LUA_OP_RETURN] = { true, { LUA_ARG_A, LUA_ARG_B } },
 	[LUA_OP_FORLOOP] = { true, { LUA_ARG_A, LUA_ARG_SBX } },
 	[LUA_OP_FORPREP] = { true, { LUA_ARG_A, LUA_ARG_SBX } },
-	[LUA_OP_TFORCALL] = { true, { LUA_ARG_A, LUA_ARG_C } },
 	[LUA_OP_TFORLOOP] = { true, { LUA_ARG_A, LUA_ARG_SBX } },
 	[LUA_OP_SETLIST] = { true, { LUA_ARG_A, LUA_ARG_B, LUA_ARG_C, LUA_ARG_EXTRAX } },
-	[LUA_OP_CLOSURE] = { true, { LUA_ARG_A, LUA_ARG_PBX } },
 	[LUA_OP_VARARG] = { true, { LUA_ARG_A, LUA_ARG_B } },
 	[LUA_OP_EXTRAARG] = { true, { LUA_ARG_KAX } },
 };
@@ -516,8 +501,12 @@ static inline char *lua_bc_disasm_word(const LuaBCVersion *v, ut32 word, ut32 ex
 
 static inline bool lua_bc_pair(const LuaBCVersion *v, ut32 word, ut32 next) {
 	const int id = lua_bc_id (v, word), mm = lua_bc_id (v, next);
-	if (id == LUA_OP_LOADKX || id == LUA_OP_NEWTABLE || (id == LUA_OP_SETLIST && lua_bc_get (v, word, LUA_ARG_K))) {
+	if (id == LUA_OP_LOADKX || (id == LUA_OP_NEWTABLE && v != &lua_bc_53)
+			|| (id == LUA_OP_SETLIST && (v == &lua_bc_53? !lua_bc_get (v, word, LUA_ARG_C): lua_bc_get (v, word, LUA_ARG_K)))) {
 		return mm == LUA_OP_EXTRAARG;
+	}
+	if (v == &lua_bc_53) {
+		return false;
 	}
 	if (lua_bc_get (v, word, LUA_ARG_B) != lua_bc_get (v, next, LUA_ARG_A)) {
 		return false;
