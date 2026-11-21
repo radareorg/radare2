@@ -123,66 +123,48 @@ R_API char *r_str_pseudo_transform(const char **rules, const char *asm_str) {
 	}
 	// Look for a matching rule
 	char *result = NULL;
+	const size_t opcode_len = strlen (opcode);
 	const char **rule;
 	for (rule = rules; *rule; rule++) {
-		char *rule_copy = strdup (*rule);
-		if (!rule_copy) {
+		const char *slash1 = strchr (*rule, '/');
+		if (!slash1 || slash1 - *rule != opcode_len || r_str_ncasecmp (*rule, opcode, slash1 - *rule)) {
 			continue;
 		}
-		// Parse rule: op/nargs/template
-		char *slash1 = strchr (rule_copy, '/');
-		if (!slash1) {
-			free (rule_copy);
+		const char *slash2 = strchr (slash1 + 1, '/');
+		if (!slash2 || atoi (slash1 + 1) != noperands) {
 			continue;
 		}
-		*slash1 = '\0';
-		char *rule_op = rule_copy;
-		char *slash2 = strchr (slash1 + 1, '/');
-		if (!slash2) {
-			free (rule_copy);
-			continue;
-		}
-		*slash2 = '\0';
-		char *rule_nargs_str = slash1 + 1;
-		char *rule_template = slash2 + 1;
-		int rule_nargs = atoi (rule_nargs_str);
-		// Check if rule applies (matching opcode and number of operands)
-		if (r_str_casecmp (rule_op, opcode) == 0 && rule_nargs == noperands) {
-			// Rule matches, apply transformation
-			RStrBuf *buf = r_strbuf_new ("");
-			char *template_ptr = rule_template;
-			int paren_count = 0; // Track open parentheses
-			while (*template_ptr) {
-				// Count parentheses
-				if (*template_ptr == '(') {
-					paren_count++;
-				} else if (*template_ptr == ')') {
-					paren_count--;
-				}
-				// Look for placeholder $N where N is 1-9 for operand substitution
-				if (*template_ptr == '$' && *(template_ptr + 1) >= '1' && *(template_ptr + 1) <= '9') {
-					int arg_idx = *(template_ptr + 1) - '1';
-					if (arg_idx < noperands) {
-						r_strbuf_append (buf, operands[arg_idx]);
-					} else {
-						// Placeholder refers to non-existent operand
-						r_strbuf_append_n (buf, template_ptr, 2); // Just copy $N literally
-					}
-					template_ptr += 2;
+		RStrBuf *buf = r_strbuf_new ("");
+		const char *template_ptr = slash2 + 1;
+		int paren_count = 0; // Track open parentheses
+		while (*template_ptr) {
+			// Count parentheses
+			if (*template_ptr == '(') {
+				paren_count++;
+			} else if (*template_ptr == ')') {
+				paren_count--;
+			}
+			// Look for placeholder $N where N is 1-9 for operand substitution
+			if (*template_ptr == '$' && *(template_ptr + 1) >= '1' && *(template_ptr + 1) <= '9') {
+				int arg_idx = *(template_ptr + 1) - '1';
+				if (arg_idx < noperands) {
+					r_strbuf_append (buf, operands[arg_idx]);
 				} else {
-					// Regular character, just copy it
-					r_strbuf_append_n (buf, template_ptr, 1);
-					template_ptr++;
+					// Placeholder refers to non-existent operand
+					r_strbuf_append_n (buf, template_ptr, 2); // Just copy $N literally
 				}
+				template_ptr += 2;
+			} else {
+				// Regular character, just copy it
+				r_strbuf_append_n (buf, template_ptr, 1);
+				template_ptr++;
 			}
-			if (paren_count != 0) {
-				R_LOG_WARN ("Unbalanced parenthesis in strpseudo expression");
-			}
-			result = r_strbuf_drain (buf);
-			free (rule_copy);
-			break;
 		}
-		free (rule_copy);
+		if (paren_count != 0) {
+			R_LOG_WARN ("Unbalanced parenthesis in strpseudo expression");
+		}
+		result = r_strbuf_drain (buf);
+		break;
 	}
 	// If no rule matched, default to original assembly
 	if (!result) {
