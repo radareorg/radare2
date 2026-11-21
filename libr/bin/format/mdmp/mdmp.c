@@ -1051,40 +1051,18 @@ static bool r_bin_mdmp_patch_pe_headers(RBuffer *pe_buf) {
 	return true;
 }
 
-static int check_pe32_buf(RBuffer *buf, ut64 length) {
-	unsigned int idx;
-	if (!buf || length <= 0x3d) {
+static bool check_pe_buf(RBuffer *buf, ut64 length, ut16 magic) {
+	if (!buf || length < 0x40) {
 		return false;
 	}
-	idx = (r_buf_read8_at (buf, 0x3c) | (r_buf_read8_at (buf, 0x3d)<<8));
-	if (length > idx + 0x18 + 2) {
-		ut8 tmp1[2], tmp2[2], tmp3[2];
-		r_buf_read_at (buf, 0, tmp1, 2);
-		r_buf_read_at (buf, idx, tmp2, 2);
-		r_buf_read_at (buf, idx + 0x18, tmp3, 2);
-		if (!memcmp (tmp1, "MZ", 2) && !memcmp (tmp2, "PE", 2) && !memcmp (tmp3, "\x0b\x01", 2)) {
-			return true;
-		}
-	}
-	return false;
-}
-
-static int check_pe64_buf(RBuffer *buf, ut64 length) {
-	int idx, ret = false;
-	if (!buf || length <= 0x3d) {
+	ut64 idx = r_buf_read_le32_at (buf, 0x3c);
+	if (idx + 0x18 + 2 > length) {
 		return false;
 	}
-	idx = r_buf_read8_at (buf, 0x3c) | (r_buf_read8_at (buf, 0x3d)<<8);
-	if (length >= idx + 0x20) {
-		ut8 tmp1[2], tmp2[2], tmp3[2];
-		r_buf_read_at (buf, 0, tmp1, 2);
-		r_buf_read_at (buf, idx, tmp2, 2);
-		r_buf_read_at (buf, idx + 0x18, tmp3, 2);
-		if (!memcmp (tmp1, "MZ", 2) && !memcmp (tmp2, "PE", 2) && !memcmp (tmp3, "\x0b\x02", 2)) {
-			ret = true;
-		}
-	}
-	return ret;
+	ut8 signature[2];
+	return r_buf_read_at (buf, 0, signature, 2) == 2 && !memcmp (signature, "MZ", 2)
+		&& r_buf_read_at (buf, idx, signature, 2) == 2 && !memcmp (signature, "PE", 2)
+		&& r_buf_read_le16_at (buf, idx + 0x18) == magic;
 }
 
 static bool r_bin_mdmp_has_pe_bin(struct r_bin_mdmp_obj *obj, ut64 vaddr) {
@@ -1134,7 +1112,7 @@ static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj, const char *sdbd
 		if (!buf) {
 			continue;
 		}
-		if (check_pe32_buf (buf, size)) {
+		if (check_pe_buf (buf, size, 0x10b)) {
 			pe32_bin = R_NEW0 (struct Pe32_r_bin_mdmp_pe_bin);
 			r_bin_mdmp_patch_pe_headers (buf);
 			pe32_bin->vaddr = module->base_of_image;
@@ -1147,7 +1125,7 @@ static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj, const char *sdbd
 			} else {
 				free (pe32_bin);
 			}
-		} else if (check_pe64_buf (buf, size)) {
+		} else if (check_pe_buf (buf, size, 0x20b)) {
 			pe64_bin = R_NEW0 (struct Pe64_r_bin_mdmp_pe_bin);
 			r_bin_mdmp_patch_pe_headers (buf);
 			pe64_bin->vaddr = module->base_of_image;
