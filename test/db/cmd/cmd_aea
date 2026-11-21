@@ -229,3 +229,20 @@ EXPECT=<<EOF
 @R: 0x00000000 0x00000004 0x00000008
 EOF
 RUN
+
+NAME=aea arm push reads its source registers
+FILE=malloc://16
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 30402de9
+aea 1
+EOF
+EXPECT=<<EOF
+ I: sp r4 r5 lr
+ A: sp r4 r5 lr
+ R: sp r4 r5 lr
+ W: sp
+ V: -12
+ N: r4 r5 lr
+EOF
+RUN

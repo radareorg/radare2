@@ -1125,7 +1125,7 @@ static bool esil_peek16(REsil *esil) {
 
 static bool esil_peek_some(REsil *esil) {
 	int i;
-	ut64 ptr, regs, tmp;
+	ut64 ptr, regs;
 	// pop ptr
 	const RStrs dst = r_esil_pop (esil);
 	if (!r_strs_empty (dst)) {
@@ -1142,9 +1142,8 @@ static bool esil_peek_some(REsil *esil) {
 						R_LOG_DEBUG ("Cannot pop in peek");
 						return false;
 					}
-					// the destination is written, read only its size
-					ut32 regsize = 0;
-					r_esil_reg_read_silent (esil, foo.a, &tmp, &regsize);
+					// the destination is written, look up only its size
+					const ut32 regsize = esil_internal_sizeof_reg (esil, foo.a);
 					const int size_bytes = regsize / 8;
 					if (size_bytes < 1 || size_bytes > (int)sizeof (a)) {
 						R_LOG_DEBUG ("Invalid register size in peek");
