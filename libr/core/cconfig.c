@@ -4840,7 +4840,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("http.upload", "false", "enable file uploads to /up/<filename>");
 	SETS ("http.uri", "", "address of HTTP proxy");
 	SETB ("http.auth", "false", "enable/disable HTTP Authentification");
-	SETS ("http.authtok", "r2admin:r2admin", "http authentification user:password token");
+	SETS ("http.authtok", "", "user:password accepted by http.auth when http.authfile is not set");
 	SETS ("http.authfile", "", "http authentification user file");
 	tmpdir = r_file_tmpdir ();
 	r_config_set (cfg, "http.uproot", tmpdir);

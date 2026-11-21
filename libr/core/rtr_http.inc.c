@@ -204,19 +204,22 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 	so.httpauth = r_config_get_i (core->config, "http.auth");
 
 	if (so.httpauth) {
-		if (!httpauthfile) {
-			r_socket_free (s);
-			R_LOG_ERROR ("No user list set for HTTP Authentication");
-			return HTTP_RUN_ERROR;
-		}
-		pfile = r_file_slurp (httpauthfile, NULL);
-		if (pfile) {
-			so.authtokens = r_str_split_list (pfile, "\n", 0);
+		const char *authtok = r_config_get (core->config, "http.authtok");
+		if (R_STR_ISNOTEMPTY (httpauthfile)) {
+			pfile = r_file_slurp (httpauthfile, NULL);
+			if (!pfile) {
+				r_socket_free (s);
+				R_LOG_ERROR ("Empty list of HTTP users");
+				return HTTP_RUN_ERROR;
+			}
+		} else if (R_STR_ISNOTEMPTY (authtok)) {
+			pfile = strdup (authtok);
 		} else {
 			r_socket_free (s);
-			R_LOG_ERROR ("Empty list of HTTP users");
+			R_LOG_ERROR ("No user list set for HTTP Authentication, set http.authfile or http.authtok");
 			return HTTP_RUN_ERROR;
 		}
+		so.authtokens = r_str_split_list (pfile, "\n", 0);
 		so.accept_timeout = 1;
 	}
 	so.timeout = r_config_get_i (core->config, "http.timeout");

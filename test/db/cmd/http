@@ -107,3 +107,13 @@ EXPECT=<<EOF
 EOF
 REGEXP_ERR=Starting http server
 RUN
+
+NAME=http.auth without http.authfile or http.authtok refuses to start
+FILE=-
+ARGS=-e http.port=0 -e http.auth=true
+CMDS==h
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: No user list set for HTTP Authentication, set http.authfile or http.authtok
+EOF
+RUN
