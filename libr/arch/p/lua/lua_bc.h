@@ -89,6 +89,8 @@ typedef enum {
 	LUA_OP_VARARG,
 	LUA_OP_VARARGPREP,
 	LUA_OP_EXTRAARG,
+	LUA_OP_GETVARG,
+	LUA_OP_ERRNNIL,
 	LUA_OP_COUNT
 } LuaBCOpcode;
 
@@ -112,6 +114,8 @@ typedef enum {
 	LUA_ARG_PBX,
 	LUA_ARG_RB,
 	LUA_ARG_RC,
+	LUA_ARG_VB,
+	LUA_ARG_VC,
 } LuaBCArg;
 
 typedef struct {
@@ -141,6 +145,8 @@ static const LuaBCField lua_bc_fields[] = {
 	{ 15, 17, 0, "KPROTO(", false },
 	{ 16, 8, 0, NULL, true },
 	{ 24, 8, 0, NULL, true },
+	{ 16, 6, 0, NULL, false },
+	{ 22, 10, 0, NULL, false },
 };
 
 typedef struct {
@@ -234,6 +240,8 @@ static const LuaBCOp lua_bc_ops[] = {
 	{ "vararg", R_ANAL_OP_TYPE_MOV, NULL, { LUA_ARG_A, LUA_ARG_C } },
 	{ "varargprep", R_ANAL_OP_TYPE_UNK, NULL, { LUA_ARG_A } },
 	{ "extraarg", R_ANAL_OP_TYPE_UNK, NULL, { LUA_ARG_AX } },
+	{ "getvarg", R_ANAL_OP_TYPE_LOAD, NULL, { LUA_ARG_A, LUA_ARG_B, LUA_ARG_RC } },
+	{ "errnnil", R_ANAL_OP_TYPE_UNK, NULL, { LUA_ARG_A, LUA_ARG_BX } },
 };
 
 typedef struct {
@@ -249,10 +257,40 @@ typedef struct {
 	const LuaBCArgset *args;
 } LuaBCVersion;
 
+static const ut8 lua_bc_55_opcodes[] = {
+	LUA_OP_MOVE, LUA_OP_LOADI, LUA_OP_LOADF, LUA_OP_LOADK, LUA_OP_LOADKX,
+	LUA_OP_LOADFALSE, LUA_OP_LFALSESKIP, LUA_OP_LOADTRUE, LUA_OP_LOADNIL, LUA_OP_GETUPVAL,
+	LUA_OP_SETUPVAL, LUA_OP_GETTABUP, LUA_OP_GETTABLE, LUA_OP_GETI, LUA_OP_GETFIELD,
+	LUA_OP_SETTABUP, LUA_OP_SETTABLE, LUA_OP_SETI, LUA_OP_SETFIELD, LUA_OP_NEWTABLE,
+	LUA_OP_SELF, LUA_OP_ADDI, LUA_OP_ADDK, LUA_OP_SUBK, LUA_OP_MULK,
+	LUA_OP_MODK, LUA_OP_POWK, LUA_OP_DIVK, LUA_OP_IDIVK, LUA_OP_BANDK,
+	LUA_OP_BORK, LUA_OP_BXORK, LUA_OP_SHLI, LUA_OP_SHRI, LUA_OP_ADD,
+	LUA_OP_SUB, LUA_OP_MUL, LUA_OP_MOD, LUA_OP_POW, LUA_OP_DIV,
+	LUA_OP_IDIV, LUA_OP_BAND, LUA_OP_BOR, LUA_OP_BXOR, LUA_OP_SHL,
+	LUA_OP_SHR, LUA_OP_MMBIN, LUA_OP_MMBINI, LUA_OP_MMBINK, LUA_OP_UNM,
+	LUA_OP_BNOT, LUA_OP_NOT, LUA_OP_LEN, LUA_OP_CONCAT, LUA_OP_CLOSE,
+	LUA_OP_TBC, LUA_OP_JMP, LUA_OP_EQ, LUA_OP_LT, LUA_OP_LE,
+	LUA_OP_EQK, LUA_OP_EQI, LUA_OP_LTI, LUA_OP_LEI, LUA_OP_GTI,
+	LUA_OP_GEI, LUA_OP_TEST, LUA_OP_TESTSET, LUA_OP_CALL, LUA_OP_TAILCALL,
+	LUA_OP_RETURN, LUA_OP_RETURN0, LUA_OP_RETURN1, LUA_OP_FORLOOP, LUA_OP_FORPREP,
+	LUA_OP_TFORPREP, LUA_OP_TFORCALL, LUA_OP_TFORLOOP, LUA_OP_SETLIST, LUA_OP_CLOSURE,
+	LUA_OP_VARARG, LUA_OP_GETVARG, LUA_OP_ERRNNIL, LUA_OP_VARARGPREP, LUA_OP_EXTRAARG,
+};
+
+static const LuaBCArgset lua_bc_55_args[LUA_OP_COUNT] = {
+	[LUA_OP_NEWTABLE] = { true, { LUA_ARG_A, LUA_ARG_VB, LUA_ARG_VC, LUA_ARG_K } },
+	[LUA_OP_SETLIST] = { true, { LUA_ARG_A, LUA_ARG_VB, LUA_ARG_VC, LUA_ARG_K } },
+	[LUA_OP_SELF] = { true, { LUA_ARG_A, LUA_ARG_B, LUA_ARG_KC } },
+	[LUA_OP_VARARG] = { true, { LUA_ARG_A, LUA_ARG_B, LUA_ARG_C, LUA_ARG_K } },
+	[LUA_OP_VARARGPREP] = { true, { 0 } },
+};
+
 static const LuaBCVersion lua_bc_54 = { "5.4", NULL, LUA_OP_EXTRAARG + 1, LUA_OP_EXTRAARG, NULL };
 
+static const LuaBCVersion lua_bc_55 = { "5.5", lua_bc_55_opcodes, R_ARRAY_SIZE (lua_bc_55_opcodes), 84, lua_bc_55_args };
+
 static inline const LuaBCVersion *lua_bc_version(const char *cpu) {
-	return cpu && !strcmp (cpu, "5.4")? &lua_bc_54: NULL;
+	return cpu && !strcmp (cpu, "5.5")? &lua_bc_55: cpu && !strcmp (cpu, "5.4")? &lua_bc_54: NULL;
 }
 
 static inline bool lua_bc_is53(const char *cpu) {
