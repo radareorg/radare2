@@ -131,3 +131,21 @@ EXPECT=<<EOF
 hw
 EOF
 RUN
+
+NAME=di reports a stop on a conditional breakpoint
+FILE=bins/elf/analysis/tiny-crackme-vm-x86_64
+ARGS=-d
+CMDS=<<EOF
+e scr.color=0
+e cmd.hitinfo=0
+db 0x4000ce
+dbC 0x4000ce ?vi 0
+dc
+di~stopreason
+dk 9
+EOF
+EXPECT=<<EOF
+0
+stopreason=cond-breakpoint
+EOF
+RUN
