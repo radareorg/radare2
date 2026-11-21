@@ -6328,6 +6328,9 @@ static void ds_comment_call(RDisasmState *ds) {
 	if (pcv == UT64_MAX) {
 		pcv = ds->analop.ptr; // call [reloc-addr] // windows style
 		if (pcv == UT64_MAX || !pcv) {
+			if (R_STR_ISEMPTY (r_strbuf_get (&ds->analop.esil))) {
+				return;
+			}
 			r_esil_reg_read (esil, "$jt", &pcv, NULL);
 			if (pcv == UT64_MAX || !pcv) {
 				pcv = r_reg_getv (core->anal->reg, "PC");

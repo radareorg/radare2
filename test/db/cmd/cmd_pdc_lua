@@ -1,0 +1,163 @@
+# Lua 5.3 source: local x = ...; if x < 4 then return x + 1 else return x - 1 end
+NAME=Lua 5.3 pdc if else
+FILE=hex://1b4c7561530019930d0a1a0a040804080878560000000000000000000000287740010c4073616d706c652e6c75610000000000000000000102090000002d000001200040001e8000804d404000660000011e4000804e4040006600000126008000020000001304000000000000001301000000000000000100000001000000000009000000010000000100000001000000010000000100000001000000010000000100000001000000010000000278010000000900000001000000055f454e56
+CMDS=<<EOF
+af @ entry0
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r0 reg (r0, r1, r2);
+void entry0 (void) {
+    r0 = ...
+    if (!((r0 < K[0]))) {
+        // CODE XREF from entry0 @ 0x45(x)
+        r1 = r0 - K[1]
+        return r1
+    } else {
+        r1 = r0 + K[1]
+        return r1
+    }
+}
+
+EOF
+RUN
+
+# Lua 5.3 source: local total = 0; for i = 1, 5 do total = total + i end; return total
+NAME=Lua 5.3 pdc stripped numeric loop
+FILE=hex://1b4c7561530019930d0a1a0a0408040808785600000000000000000000002877400100000000000000000000010509000000010000004140000081800000c1400000680000800d0001006740ff7f26000001260080000300000013000000000000000013010000000000000013050000000000000001000000010000000000000000000000000000000000
+CMDS=<<EOF
+af @ entry0
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r0 reg (r0, r1, r2);
+void entry0 (void) {
+    r0 = K[0]
+    r1 = K[1]
+    r2 = K[2]
+    r3 = K[1]
+    r1 -= r3
+    while (true) {
+        // CODE XREF from entry0 @ 0x42(x)
+        if (!(for_step(&r1, &r4, r2, r3))) {
+            break;
+        }
+        r0 += r4
+    }
+    return r0
+}
+
+EOF
+RUN
+
+# Lua 5.3 source: local f = ...; local a,b = f(1,2); f(); return f(a,b)
+NAME=Lua 5.3 pdc stripped calls keep their real argument and result counts
+FILE=hex://1b4c7561530019930d0a1a0a040804080878560000000000000000000000287740010000000000000000000001060d0000002d0000014000000081000000c140000064c08001c0000000e4408000c00000000001800040010001e5008001e6000000260080000200000013010000000000000013020000000000000001000000010000000000000000000000000000000000
+CMDS=<<EOF
+af @ entry0
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r0 reg (r0, r1, r2);
+void entry0 (void) {
+    r0 = ...
+    r1 = r0
+    r2 = K[0]
+    r3 = K[1]
+    r1, r2 = r1(r2, r3)
+    r3 = r0
+    r3()
+    r3 = r0
+    r4 = r1
+    r5 = r2
+    return r3(r4, r5)
+}
+
+EOF
+RUN
+
+# Lua 5.3 source: local a,b = ...; return a and b or 3
+NAME=Lua 5.3 pdc stripped short circuit assignments
+FILE=hex://1b4c7561530019930d0a1a0a04080408087856000000000000000000000028774001000000000000000000000103080000002d008001220000001e400080a34080001e00008081000000a6000001260080000100000013030000000000000001000000010000000000000000000000000000000000
+CMDS=<<EOF
+af @ entry0
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r0 reg (r0, r1, r2);
+void entry0 (void) {
+    r0, r1 = ...
+    if (!(truthy(r0))) {
+        goto loc_0x00000046;
+    } else {
+        if (!((truthy(r1) != true) || ((r2 = r1), false))) {
+        } else {
+            loc_0x00000046:
+            // CODE XREF from entry0 @ 0x3a(x)
+            r2 = K[0]
+        }
+    }
+    // CODE XREF from entry0 @ 0x42(x)
+    return r2
+}
+
+EOF
+RUN
+
+# Lua 5.3 source: local iter = ...; for k,v in iter() do print(k,v) end
+NAME=Lua 5.3 pdc stripped iterator loop
+FILE=hex://1b4c7561530019930d0a1a0a040804080878560000000000000000000000287740010000000000000000000001090b0000002d00000140000000640081001ec0008086014000c001000200028002a441800169800000ea40fe7f260080000100000004067072696e7401000000010000000000000000000000000000000000
+CMDS=<<EOF
+af @ entry0
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r0 reg (r0, r1, r2);
+void entry0 (void) {
+    r0 = ...
+    r1 = r0
+    r1, r2, r3 = r1()
+    while (true) {
+        // CODE XREF from entry0 @ 0x3e(x)
+        r4, r5 = r1(r2, r3)
+        if (!(r4 != nil && ((r3 = r4), true))) {
+            break;
+        }
+        r6 = upvalue[0][K[0]]
+        r7 = r4
+        r8 = r5
+        r6(r7, r8)
+    }
+    return
+}
+
+EOF
+RUN
+
+# Lua 5.3 source: local function f(...) local a,b = ...; return a,b,... end; return f(...)
+NAME=Lua 5.3 pdc nested closures and open varargs
+FILE=hex://1b4c7561530019930d0a1a0a04080408087856000000000000000000000028774001000000000000000000000103060000002c00000040000000ad0000006500000066000000260080000000000001000000010001000000000100000001000000000105060000002d00800180000000c00080002d010000a600000026008000000000000000000000000000000000000000000000000000000000000000000000000000
+CMDS=<<EOF
+aa
+pdc @@f
+EOF
+EXPECT=<<EOF
+// callconv: r0 reg (r0, r1, r2);
+void entry0 (void) {
+    r0 = closure(proto[0])
+    r1 = r0
+    r2..top = ...
+    return r1(r2..top)
+}
+
+// callconv: r0 reg (r0, r1, r2);
+void sym.func.0x58 (void) {
+    r0, r1 = ...
+    r2 = r0
+    r3 = r1
+    r4..top = ...
+    return r2..top
+}
+
+EOF
+RUN
