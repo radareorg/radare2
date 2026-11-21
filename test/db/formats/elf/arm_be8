@@ -47,6 +47,24 @@ abi      eabi5 be8
 EOF
 RUN
 
+NAME=ELF: ARM BE8 init and fini array entries are read big-endian
+FILE=bins/elf/armeb_hello_static
+CMDS=<<EOF
+pxw 12 @ 0x7b680
+?e --
+iee
+EOF
+EXPECT=<<EOF
+0x0007b680  0x000108f9 0x000108c9 0x00010815             ............
+--
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x000008f9 0x000108f8 0x0005b680 0x0007b680 init
+0x000008c9 0x000108c8 0x0005b684 0x0007b684 fini
+0x00000815 0x00010814 0x0005b688 0x0007b688 fini
+EOF
+RUN
+
 NAME=arm raw: be8 in asm.abi flips only the code endian (capstone)
 FILE=malloc://64
 CMDS=<<EOF

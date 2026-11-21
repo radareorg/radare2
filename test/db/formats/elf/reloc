@@ -2728,7 +2728,7 @@ EXPECT=<<EOF
 0x00127028 __cxa_finalize
 0
 8
-346
+344
 EOF
 RUN
 
