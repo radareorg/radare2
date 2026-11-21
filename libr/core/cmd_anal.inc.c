@@ -406,6 +406,8 @@ static RCoreHelpMessage help_detail_ae = {
 	"*", "", "multiply",
 	"*=", "", "multiply and assign a *= b",
 	"L*", "", "long multiply",
+	"L/", "", "128/64 divide, lo,hi,div,L/ pushes the remainder, then the quotient on top",
+	"~L/", "", "signed L/, same operand and result order",
 	"+", "", "a=a+b => b,a,+,a,=",
 	"++", "", "increment, 2,a,++ == 3 (see rsi,--=[1], ... )",
 	"--", "", "decrement, 2,a,-- == 1",

@@ -273,6 +273,19 @@ void type_trace_fini(TypeTrace *trace, REsil *esil) {
 	*trace = (const TypeTrace){ 0 };
 }
 
+// inputs are unknown here, so a zero divisor says nothing: its results must not keep a value from before the op
+static void trace_zero_assigned(REsil *esil, const char *expr) {
+	RList *words = r_str_split_duplist (expr, ",", false);
+	RListIter *iter;
+	const char *word;
+	r_list_foreach (words, iter, word) {
+		if (iter->n && !strcmp (iter->n->data, "=")) {
+			r_esil_reg_write (esil, word, 0);
+		}
+	}
+	r_list_free (words);
+}
+
 bool type_trace_op(TypeTrace *trace, REsil *esil, RAnalOp *op) {
 	R_RETURN_VAL_IF_FAIL (trace && esil && op, false);
 	const char *expr = r_strbuf_get (&op->esil);
@@ -289,7 +302,11 @@ bool type_trace_op(TypeTrace *trace, REsil *esil, RAnalOp *op) {
 	to->start = vec_idx;
 	to->end = vec_idx;
 	to->addr = op->addr;
-	const bool ret = r_esil_parse (esil, expr);
+	bool ret = r_esil_parse (esil, expr);
+	if (!ret && esil->trap == R_ANAL_TRAP_DIVBYZERO) {
+		trace_zero_assigned (esil, expr);
+		ret = true;
+	}
 	r_esil_stack_free (esil);
 	trace->idx++;
 	return ret;
