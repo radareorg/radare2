@@ -4395,7 +4395,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("asm.cmt.flgrefs", "true", "show comment flags associated to branch reference");
 	SETB ("asm.cmt.fold", "false", "fold comments, toggle with Vz");
 	SETB ("asm.cmt.off", "nodup", "show offset comment in disasm (true, false, nodup)");
-	SETB ("asm.cmt.patch", "false", "show patch comments in disasm");
 	SETB ("asm.cmt.pseudo", "false", "show pseudo disasm as comments (see asm.pseudo)");
 	SETB ("asm.cmt.refs", "false", "show flag and comments from refs in disasm");
 	SETB ("asm.cmt.reguse", "false", "show register-use comments in disassembly");
@@ -4462,7 +4461,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("prj.files", "false", "save the target binary inside the project directory");
 	SETB ("prj.vc", "true", "use your version control system of choice (rvc, git) to manage projects");
 	SETB ("prj.zip", "false", "use ZIP format for project files");
-	SETB ("prj.gpg", "false", "TODO: encrypt project with GnuPGv2");
 	SETB ("prj.history", "false", "per-project command history");
 	SETB ("prj.sandbox", "false", "sandbox r2 while loading project files");
 	SETB ("prj.abspath", "true", "use absolute file paths when saving projects");
@@ -4508,7 +4506,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "use little (false) or big (true) endianness");
 	SETCB ("cfg.float", "ieee754", &cb_cfg_float, "FPU profile for floating point operations (use -e cfg.float=? for list)");
-	SETI ("cfg.cpuaffinity", 0, "run on cpuid");
 	// TODO: This is an experimental feature because it conflicts with the way RFlags are handled, that would work for 'get' but not for 'set' and may confuse some logic out there.. also slow downs some codepaths
 	SETCB ("cfg.regnums", "false", &cb_cfg_regnums, "Query register values before flags in RNum calls (EXPERIMENTAL)");
 
@@ -4557,7 +4554,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("diff.from", 0, "set source diffing address for px (uses cc command)");
 	SETI ("diff.to", 0, "set destination diffing address for px (uses cc command)");
 	SETB ("diff.bare", "false", "never show function names in diff output");
-	SETB ("diff.levenstein", "false", "use faster (and buggy) levenstein algorithm for buffer distance diffing");
 
 	/* dir */
 	SETI ("dir.depth", 10, "maximum depth when searching recursively for files");
