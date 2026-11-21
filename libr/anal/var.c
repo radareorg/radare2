@@ -1607,36 +1607,71 @@ static bool op_zeroes_reg(RAnalOp *op) {
 	return true;
 }
 
-// or reg, -1 sets every bit of reg whatever it held
-static bool op_fills_reg(RAnal *anal, RAnalOp *op) {
-	if ((op->type & R_ANAL_OP_TYPE_MASK) != R_ANAL_OP_TYPE_OR) {
-		return false;
+// The unconditional integer write to dst defines every bit of its full
+// register; a 32-bit write on a 64-bit target zero-extends.
+static int op_whole_reg_bits(RAnal *anal, RAnalOp *op, RAnalValue *dst) {
+	if (op->cond != R_ANAL_CONDTYPE_AL || op->family != R_ANAL_OP_FAMILY_CPU
+			|| !dst || !dst->reg || dst->memref) {
+		return 0;
 	}
-	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
-	if (!dst || !dst->reg || dst->memref) {
-		return false;
-	}
-	RRegItem *ri = r_reg_get (anal->reg, dst->reg, -1);
+	RRegItem *ri = r_reg_get (anal->reg, dst->reg, R_REG_TYPE_GPR);
 	const int bits = ri? ri->size: 0;
 	r_unref (ri);
-	if (bits < 1) {
+	const int full = anal->config->bits;
+	return (bits == full || (full == 64 && bits == 32))? bits: 0;
+}
+
+// Only the two-operand sub reg,reg is proven: a three-operand source may be
+// shifted or extended, which RAnalValue does not record.
+static bool op_subs_self(RAnal *anal, RAnalOp *op, bool dst_writeonly) {
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
+	if (dst_writeonly || !op_whole_reg_bits (anal, op, dst)) {
+		return false;
+	}
+	int n = 0;
+	RAnalValue *src;
+	R_VEC_FOREACH (&op->srcs, src) {
+		if (src->memref || src->type == R_ANAL_VAL_IMM || (src->reg && strcmp (src->reg, dst->reg))) {
+			return false;
+		}
+		n += src->reg != NULL;
+	}
+	return n == 1;
+}
+
+// or reg, -1 sets every bit of reg whatever it held
+static bool op_fills_reg(RAnal *anal, RAnalOp *op) {
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
+	const int bits = op_whole_reg_bits (anal, op, dst);
+	if (!bits) {
 		return false;
 	}
 	const ut64 mask = bits >= 64? UT64_MAX: (1ULL << bits) - 1;
 	bool fills = false;
 	RAnalValue *src;
 	R_VEC_FOREACH (&op->srcs, src) {
-		if (src->memref) {
+		if (src->memref || (src->reg && strcmp (src->reg, dst->reg))) {
 			return false;
 		}
-		if (src->type == R_ANAL_VAL_IMM || !src->reg) {
-			// x86 leaves the immediate operand typed as a register with no name
+		if (src->type == R_ANAL_VAL_IMM) {
 			fills |= ((ut64)src->imm & mask) == mask;
-		} else if (src->reg && strcmp (src->reg, dst->reg)) {
-			return false;
 		}
 	}
 	return fills;
+}
+
+// xor reg,reg, sub reg,reg and or reg,-1 write reg without reading it
+static bool op_sets_reg(RAnal *anal, RAnalOp *op, bool dst_writeonly) {
+	switch (op->type & R_ANAL_OP_TYPE_MASK) {
+	case R_ANAL_OP_TYPE_XOR:
+		return op_zeroes_reg (op);
+	case R_ANAL_OP_TYPE_SUB:
+		return op_subs_self (anal, op, dst_writeonly);
+	case R_ANAL_OP_TYPE_OR:
+		return op_fills_reg (anal, op);
+	default:
+		return false;
+	}
 }
 
 // in_src and in_dst are the only facts the branches below are built from, and
@@ -1656,7 +1691,7 @@ static bool is_used_like_arg(RAnal *anal, RAnalOp *op, bool op_dst_writeonly, bo
 	case R_ANAL_OP_TYPE_XOR:
 	case R_ANAL_OP_TYPE_SUB:
 	case R_ANAL_OP_TYPE_OR:
-		if (op_zeroes_reg (op) || op_fills_reg (anal, op)) {
+		if (op_sets_reg (anal, op, op_dst_writeonly)) {
 			return false;
 		}
 		//fallthrough

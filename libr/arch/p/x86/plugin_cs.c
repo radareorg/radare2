@@ -3246,6 +3246,7 @@ static void set_src_dst(RArchSession *as, RAnalValue *val, csh handle, cs_insn *
 		val->reg = cs_reg_name (handle, INSOP (x).reg);
 		break;
 	case X86_OP_IMM:
+		val->type = R_ANAL_VAL_IMM;
 		val->imm = INSOP (x).imm;
 		break;
 	default:
