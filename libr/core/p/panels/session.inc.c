@@ -437,10 +437,13 @@ virtualmouse:
 	case 'G':
 		{
 			const char *hl = r_config_get (core->config, "scr.highlight");
-			if (hl) {
-				ut64 addr = r_num_math (core->num, hl);
-				r_panels_set_panel_addr (core, cur, addr);
-				// r_io_sundo_push (core->io, addr, false); // doesnt seems to work
+			if (R_STR_ISNOTEMPTY (hl)) {
+				const char *err = NULL;
+				ut64 addr = r_num_math_err (core->num, hl, &err);
+				if (!err) {
+					r_panels_set_panel_addr (core, cur, addr);
+					// r_io_sundo_push (core->io, addr, false); // doesnt seems to work
+				}
 			}
 		}
 		break;
