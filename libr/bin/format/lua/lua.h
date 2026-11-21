@@ -23,6 +23,8 @@ typedef struct lua_function {
 
 	ut64 const_offset;
 	ut64 code_offset;
+	ut64 code_start;
+	ut64 source_offset;
 	ut64 upvalue_offset;
 	ut64 protos_offset;
 	ut64 debug_offset;
