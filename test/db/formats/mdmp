@@ -607,3 +607,53 @@ EXPECT=<<EOF
 0x000101c0 0x00410000 0x00000228 ---------- program
 EOF
 RUN
+
+NAME=mdmp PE32 and PE64 e_lfanew past 64 KiB and low-offset decoys
+FILE=malloc://66560
+ARGS=-e bin.strings=false
+CMDS=<<EOF
+wx 4d444d5093a700000200000020000000 @ 0
+wx 0400000070000000400000000900000020000000c0000000 @ 0x20
+wv4 1 @ 0x40
+wv8 0x400000 @ 0x44
+wv4 0x10200 @ 0x4c
+wv8 1 @ 0xc0
+wv8 0x200 @ 0xc8
+wv8 0x400000 @ 0xd0
+wv8 0x10200 @ 0xd8
+wx 4d5a @ 0x200
+wv4 0x10080 @ 0x23c
+wx 504500004c010000000000000000000000000000e00002010b01 @ 0x10280
+wv4 0x1000 @ 0x102a8
+wv4 0x400000 @ 0x102b4
+oba 0
+ie~program[1]
+wx 6486 @ 0x10284
+wx f000 @ 0x10294
+wx 0b02 @ 0x10298
+wv4 0x2000 @ 0x102a8
+wv8 0x400000 @ 0x102b0
+oba 0
+ie~program[1]
+y 0x108 @ 0x10280
+yy @ 0x280
+wv4 0x20080 @ 0x23c
+oba 0
+ie~program~?
+wx 4c01 @ 0x284
+wx e000 @ 0x294
+wx 0b01 @ 0x298
+oba 0
+ie~program~?
+wv4 0xffffffff @ 0x23c
+oba 0
+ie~program~?
+EOF
+EXPECT=<<EOF
+0x00401000
+0x00402000
+0
+0
+0
+EOF
+RUN
