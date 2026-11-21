@@ -1,0 +1,88 @@
+NAME=leak any.as with an empty assembler override
+FILE=-
+CMDS=<<EOF
+e log.level=0
+%R2_PPC_AS=
+e asm.arch=any.as
+e asm.cpu=ppc
+e asm.bits=32
+pa nop
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+EOF
+RUN
+
+NAME=leak dalvik invoke-polymorphic
+FILE=malloc://252
+ARGS=-wn
+CMDS=<<EOF
+wx 6465780a303335003c224b3c6be00a4805dc932078ebf894a68d8c10b081209dfc00000070000000785634120000000000000000ec0000000300000070000000020000007c000000010000008400000000000000000000000100000090000000010000009800000044000000b8000000b8000000bf000000c2000000000000000100000001000000010000000000000000000000020000000000000001000000ffffffff00000000ffffffff00000000c800000000000000054c666f6f3b00015600036261720000000001000009d00002000000010000000000000005000000fa100000000000000e000000010000000010000001000000ec000000
+obf
+e asm.arch=dalvik
+e scr.color=0
+pd 2 @ 0xe0
+e io.cache=true
+wx fb01 @ 0xe0
+pd 2 @ 0xe0
+EOF
+EXPECT=<<EOF
+            0x000000e0      fa10000000..   invoke-polymorphic {v0}, Lfoo.bar()V, ()V
+            0x000000e8      0e00           return-void
+            0x000000e0      fb01000000..   invoke-polymorphic/range {v0..v0}, Lfoo.bar()V, ()V
+            0x000000e8      0e00           return-void
+EOF
+RUN
+
+NAME=leak lua disassembly
+FILE=-
+CMDS=<<EOF
+e asm.arch=lua
+pad 03000000
+EOF
+EXPECT=<<EOF
+loadbool
+EOF
+RUN
+
+NAME=leak ppc.gnu disassembler private data
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc.gnu
+e asm.bits=32
+pad a602087c
+EOF
+EXPECT=<<EOF
+mflr r0
+EOF
+RUN
+
+NAME=leak dis decode of an invalid opcode
+FILE=-
+ARGS=-n
+CMDS=<<EOF
+e asm.arch=dis
+pad ff
+pad 0000
+EOF
+EXPECT=<<EOF
+invalid
+invalid
+invalid
+EOF
+RUN
+
+NAME=leak x86.nz memory operand with a bad number
+FILE=-
+CMDS=<<EOF
+e log.level=0
+e asm.arch=x86.nz
+e asm.bits=32
+pa mov eax, [eax+0x12g*2]
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+EOF
+RUN
