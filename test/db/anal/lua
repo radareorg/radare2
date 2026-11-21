@@ -233,3 +233,48 @@ size: 8
 newtable 0 0 0 0 ; extraarg 0
 EOF
 RUN
+
+NAME=Lua CPU switching and operand bounds use independent version layouts
+FILE=malloc://64
+ARGS=-a lua
+CMDS=<<EOF
+e asm.cpu=5.3
+pa move 1 2
+pa getvarg 1 2 3
+pa loadk 256 0
+pa add 0 K(256) 0
+pa jmp 0 -131072
+pa jmp 0 131073
+pa move 1 2 garbage
+pa move 1 9223372036854775807
+e asm.cpu=5.4
+pa move 1 2
+pa shri 1 2 3
+pa getvarg 1 2 3
+pa newtable 0 256 0 0
+pa addi 0 1 -128
+pa jmp 9223372036854775807
+e asm.cpu=5.5
+pa move 1 2
+pa shri 1 2 3
+pa getvarg 1 2 3
+pa newtable 0 63 1023 1
+pa newtable 0 64 0 0
+pa newtable 0 0 1024 0
+pa loadkx 1 Kst(33554432)
+e asm.cpu=5.3
+pa move 1 2
+pa extraarg Kst(67108863)
+EOF
+EXPECT=<<EOF
+40000001
+80000200
+a0000282
+80000200
+a1000282
+d1000203
+1380ffff
+40000001
+eeffffff
+EOF
+RUN
