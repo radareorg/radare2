@@ -1795,6 +1795,18 @@ static RVecRBinTrycatch *trycatch(RBinFile *bf) {
 	if (!bin->trycatch_loaded) {
 		dex_loadcode (bf);
 	}
+	// symbols follow the address the DEX is loaded at
+	// so the regions must too
+	const ut64 base = bf->bo->baddr;
+	if (base) {
+		RBinTrycatch *tc;
+		R_VEC_FOREACH (&bin->trycatch, tc) {
+			tc->source += base;
+			tc->from += base;
+			tc->to += base;
+			tc->handler += base;
+		}
+	}
 	RVecRBinTrycatch_shrink_to_fit (&bin->trycatch);
 	return &bin->trycatch;
 }
