@@ -403,6 +403,8 @@ static char *lua53disasm(ut32 instruction, ut32 extra, bool has_extra) {
 			return r_str_newf ("%s %d %d 0 %d", name, a, b, GETARG_Ax (extra));
 		}
 		break;
+	default:
+		break;
 	}
 	if (lua53_nargs (op) == 2) {
 		return r_str_newf ("%s %d %d", name, a, b);
