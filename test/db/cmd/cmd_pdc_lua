@@ -161,3 +161,133 @@ void sym.func.0x58 (void) {
 
 EOF
 RUN
+
+# Source: local x = ...; if x < 4 then return x + 1 else return x - 1 end
+NAME=Lua 5.4 pdc branch
+FILE=hex://1b4c7561540019930d0a1a0a04080878560000000000000000000000287740018080800001028c51000000500000023e008300b8010080950000802f008006c6000201380100809500007e2f008007c6000201c600010180810100008080808080
+CMDS=<<EOF
+af @ entry0
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r0 reg (r0, r1, r2);
+void entry0 (void) {
+    prepare_varargs(0)
+    r0 = ...
+    if (!((r0 < 4))) {
+        // CODE XREF from entry0 @ 0x33(x)
+        r1 = r0 - 1
+        return r1
+    } else {
+        r1 = r0 + 1
+        return r1
+    }
+}
+
+EOF
+RUN
+
+# Source: local total = 0; for i = 1, 5 do total = total + i end; return total
+NAME=Lua 5.4 pdc loop
+FILE=hex://1b4c7561540019930d0a1a0a04080878560000000000000000000000287740018080800001058b510000000180ff7f810000800101028081010080ca000100220000042e000406c980010046000201c600010180810100008080808080
+CMDS=<<EOF
+af @ entry0
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r0 reg (r0, r1, r2);
+void entry0 (void) {
+    prepare_varargs(0)
+    r0 = 0
+    r1 = 1
+    r2 = 5
+    r3 = 1
+    if (!(for_prepare(&r1, &r2, &r3, &r4))) {
+        do {
+            r0 += r4
+        } while (for_next(&r1, &r2, r3, &r4));
+    }
+    return r0
+}
+
+EOF
+RUN
+
+# Source: local total = 0; for k,v in pairs(...) do total = total + v end; return total
+NAME=Lua 5.4 pdc iterator
+FILE=hex://1b4c7561540019930d0a1a0a04080878560000000000000000000000287740018080800001088d510000000180ff7f8b00000050010000c4000005cb000100220000062e000606cc000002cd000200b600000046800201c68001018104867061697273810100008080808080
+CMDS=<<EOF
+af @ entry0
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r0 reg (r0, r1, r2);
+void entry0 (void) {
+    prepare_varargs(0)
+    r0 = 0
+    r1 = upvalue[0][K[0]]
+    r2..top = ...
+    r1, r2, r3, r4 = r1(r2..top)
+    to_be_closed(r4)
+    while (true) {
+        // CODE XREF from entry0 @ 0x3b(x)
+        r5, r6 = r1(r2, r3)
+        if (!(r5 != nil && ((r3 = r5), true))) {
+            break;
+        }
+        r0 += r6
+    }
+    close_upvalues(r1)
+    close_upvalues(r0)
+    return r0
+}
+
+EOF
+RUN
+
+# Source: local x,y = ...; return x-2, x<<2, 3<<x, 3+x, 1.5*x, x[y], x.name
+NAME=Lua 5.4 pdc operands
+FILE=hex://1b4c7561540019930d0a1a0a04080878560000000000000000000000287740018080800001099051000000500000031501007d2f008107a001007d2f008110210200822f808210950200822f80820618030000308000088c0300010e04000146010801460101018213000000000000f83f04856e616d65810100008080808080
+CMDS=<<EOF
+af @ entry0
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r0 reg (r0, r1, r2);
+void entry0 (void) {
+    prepare_varargs(0)
+    r0, r1 = ...
+    r2 = r0 - 2
+    r3 = r0 << 2
+    r4 = 3 << r0
+    r5 = 3 + r0
+    r6 = K[0] * r0
+    r7 = r0[r1]
+    r8 = r0[K[1]]
+    return r2, r3, r4, r5, r6, r7, r8
+}
+
+EOF
+RUN
+
+# Source: local x <close> = ...; return x()
+NAME=Lua 5.4 pdc close
+FILE=hex://1b4c7561540019930d0a1a0a04080878560000000000000000000000287740018080800001028751000000500000023700000080000000c4000100c6800001c680010180810100008080808080
+CMDS=<<EOF
+af @ entry0
+pdc
+EOF
+EXPECT=<<EOF
+// callconv: r0 reg (r0, r1, r2);
+void entry0 (void) {
+    prepare_varargs(0)
+    r0 = ...
+    to_be_closed(r0)
+    r1 = r0
+    r1..top = r1()
+    close_upvalues(r0)
+    return r1..top
+}
+
+EOF
+RUN

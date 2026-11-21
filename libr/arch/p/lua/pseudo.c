@@ -2,6 +2,7 @@
 
 #include <r_asm.h>
 #include "lua53.h"
+#include "lua_bc.h"
 
 static const char *pseudo_rules[] = {
 	"move/2/r$1 = r$2",
@@ -66,7 +67,175 @@ static char *reglist(int first, int count) {
 	return r_strbuf_drain (s);
 }
 
+static char *call_expr(int a, int b, int c, bool tail) {
+	char *args = reglist (a + 1, b? b - 1: -1);
+	char *results = reglist (a, c? c - 1: -1);
+	char *s = tail? r_str_newf ("return r%d(%s)", a, args)
+		: c == 1? r_str_newf ("r%d(%s)", a, args)
+		: r_str_newf ("%s = r%d(%s)", results, a, args);
+	free (args);
+	free (results);
+	return s;
+}
+
+static char *values_expr(int a, int count, bool ret) {
+	char *list = reglist (a, count);
+	char *s = ret? r_str_newf ("return%s%s", *list? " ": "", list)
+		: !count? strdup ("nop"): r_str_newf ("%s = ...", list);
+	free (list);
+	return s;
+}
+
+static char *parse_bc(RAsmPluginSession *aps, const LuaBCVersion *v, const char *data) {
+	ut32 words[2] = {0};
+	int size;
+	if (!lua_bc_assemble (v, data, words, &size)) {
+		return NULL;
+	}
+	const ut32 word = words[0], next = words[1];
+	const int op = lua_bc_id (v, word);
+	const int a = lua_bc_get (word, LUA_ARG_A), b = lua_bc_get (word, LUA_ARG_B), c = lua_bc_get (word, LUA_ARG_C);
+	const int k = lua_bc_get (word, LUA_ARG_K), bx = lua_bc_get (word, LUA_ARG_BX);
+	const ut64 pc = aps->rasm->pc, forward = pc + 4 + (ut64)bx * 4, backward = pc + 4 - (ut64)bx * 4;
+	const bool pair = size == 8 && lua_bc_pair (v, word, next);
+	char expr[4][32] = {{0}};
+	const ut8 *args = lua_bc_args (v, op);
+	int i;
+	for (i = 0; i < 4 && args[i]; i++) {
+		const int kind = args[i], n = lua_bc_get (kind == LUA_ARG_KAX? next: word, kind);
+		const LuaBCField *f = &lua_bc_fields[kind];
+		const bool constant = f->wrap && (kind != LUA_ARG_RKC || k);
+		snprintf (expr[i], sizeof (expr[i]), constant? (kind == LUA_ARG_PBX? "proto[%d]": "K[%d]"): f->reg? "r%d": "%d", n);
+	}
+	const char *alias = lua_bc_ops[op].alias;
+	if (pair && op >= LUA_OP_ADDI && op <= LUA_OP_SHR) {
+		const int mm = lua_bc_id (v, next), event = lua_bc_get (next, LUA_ARG_C);
+		alias = lua_bc_ops[LUA_OP_ADD + event - 6].alias;
+		snprintf (expr[1], sizeof (expr[1]), "r%d", lua_bc_get (next, LUA_ARG_A));
+		snprintf (expr[2], sizeof (expr[2]), mm == LUA_OP_MMBIN? "r%d": mm == LUA_OP_MMBINK? "K[%d]": "%d",
+			lua_bc_get (next, mm == LUA_OP_MMBINI? LUA_ARG_SB: LUA_ARG_B));
+		if (mm != LUA_OP_MMBIN && lua_bc_get (next, LUA_ARG_K)) {
+			char temp[32];
+			memcpy (temp, expr[1], sizeof (temp));
+			memcpy (expr[1], expr[2], sizeof (temp));
+			memcpy (expr[2], temp, sizeof (temp));
+		}
+		i = 3;
+	}
+	char *result = NULL;
+	switch (op) {
+	case LUA_OP_LOADI: case LUA_OP_LOADF:
+		return r_str_newf ("r%d = %d%s", a, lua_bc_get (word, LUA_ARG_SBX), op == LUA_OP_LOADF? ".0": "");
+	case LUA_OP_LOADFALSE: case LUA_OP_LOADTRUE:
+		return r_str_newf ("r%d = %s", a, op == LUA_OP_LOADTRUE? "true": "false");
+	case LUA_OP_LFALSESKIP:
+		return r_str_newf ("r%d = false\ngoto 0x%08"PFMT64x, a, pc + 8);
+	case LUA_OP_LOADNIL: {
+		char *list = reglist (a, b + 1);
+		result = r_str_newf ("%s = nil", list);
+		free (list);
+		return result;
+	}
+	case LUA_OP_SELF:
+		return r_str_newf ("r%d = r%d; r%d = r%d[%s]", a + 1, b, a, b, expr[2]);
+	case LUA_OP_SHLI:
+		if (!pair) {
+			return r_str_newf ("r%d = %d << r%d", a, lua_bc_get (word, LUA_ARG_SC), b);
+		}
+		break;
+	case LUA_OP_CONCAT:
+		return r_str_newf ("r%d = concat(r%d..r%d)", a, a, a + b - 1);
+	case LUA_OP_CLOSE: case LUA_OP_TBC:
+		return r_str_newf ("%s(r%d)", op == LUA_OP_CLOSE? "close_upvalues": "to_be_closed", a);
+	case LUA_OP_JMP:
+		return r_str_newf ("goto 0x%08"PFMT64x, pc + 4 + (st64)lua_bc_get (word, LUA_ARG_SJ) * 4);
+	case LUA_OP_EQ: case LUA_OP_LT: case LUA_OP_LE:
+	case LUA_OP_EQK: case LUA_OP_EQI: case LUA_OP_LTI: case LUA_OP_LEI: case LUA_OP_GTI: case LUA_OP_GEI: {
+		const char *cmp = op == LUA_OP_LT || op == LUA_OP_LTI? "<": op == LUA_OP_LE || op == LUA_OP_LEI? "<=": op == LUA_OP_GTI? ">": op == LUA_OP_GEI? ">=": "==";
+		char rhs[32];
+		snprintf (rhs, sizeof (rhs), op <= LUA_OP_LE? "r%d": op == LUA_OP_EQK? "K[%d]": c? "%d.0": "%d", op <= LUA_OP_EQK? b: lua_bc_get (word, LUA_ARG_SB));
+		return r_str_newf ("if (%s(r%d %s %s)) goto 0x%08"PFMT64x, k? "!": "", a, cmp, rhs, pc + 8);
+	}
+	case LUA_OP_TEST:
+		return r_str_newf ("if (%struthy(r%d)) goto 0x%08"PFMT64x, k? "!": "", a, pc + 8);
+	case LUA_OP_TESTSET:
+		return r_str_newf ("if ((truthy(r%d) != %s) || ((r%d = r%d), false)) goto 0x%08"PFMT64x, b, k? "true": "false", a, b, pc + 8);
+	case LUA_OP_CALL: case LUA_OP_TAILCALL:
+		result = call_expr (a, b, c, op == LUA_OP_TAILCALL);
+		break;
+	case LUA_OP_RETURN: case LUA_OP_RETURN0: case LUA_OP_RETURN1:
+		result = values_expr (a, op == LUA_OP_RETURN0? 0: op == LUA_OP_RETURN1? 1: b? b - 1: -1, true);
+		break;
+	case LUA_OP_VARARG:
+		return values_expr (a, c? c - 1: -1, false);
+	case LUA_OP_VARARGPREP:
+		return r_str_newf ("prepare_varargs(%d)", a);
+	case LUA_OP_FORPREP:
+		return r_str_newf ("if (for_prepare(&r%d, &r%d, &r%d, &r%d)) goto 0x%08"PFMT64x, a, a + 1, a + 2, a + 3, forward + 4);
+	case LUA_OP_FORLOOP:
+		return r_str_newf ("if (for_next(&r%d, &r%d, r%d, &r%d)) goto 0x%08"PFMT64x, a, a + 1, a + 2, a + 3, backward);
+	case LUA_OP_TFORPREP:
+		return r_str_newf ("to_be_closed(r%d)\ngoto 0x%08"PFMT64x, a + 3, forward);
+	case LUA_OP_TFORCALL: {
+		char *list = reglist (a + 4, c);
+		result = r_str_newf ("%s%s r%d(r%d, r%d)", list, c? " =": "", a, a + 1, a + 2);
+		free (list);
+		return result;
+	}
+	case LUA_OP_TFORLOOP:
+		return r_str_newf ("if (r%d != nil && ((r%d = r%d), true)) goto 0x%08"PFMT64x, a + 4, a + 2, a + 4, backward);
+	case LUA_OP_SETLIST: {
+		if (k && !pair) {
+			return NULL;
+		}
+		char *list = reglist (a + 1, b? b: -1);
+		result = r_str_newf ("setlist(r%d, %"PFMT64u", %s)", a, (ut64)c + (k? (ut64)lua_bc_get (next, LUA_ARG_AX) * 256: 0) + 1, list);
+		free (list);
+		return result;
+	}
+	case LUA_OP_NEWTABLE:
+		return r_str_newf ("r%d = {}", a);
+	case LUA_OP_LOADKX:
+		if (!pair) {
+			return NULL;
+		}
+		break;
+	case LUA_OP_MMBIN: case LUA_OP_MMBINI: case LUA_OP_MMBINK:
+		return r_str_newf ("metamethod(%d, r%d, %s%d%s, %d)", c, a, op == LUA_OP_MMBIN? "r": op == LUA_OP_MMBINK? "K[": "", op == LUA_OP_MMBINI? lua_bc_get (word, LUA_ARG_SB): b, op == LUA_OP_MMBINK? "]": "", k);
+	case LUA_OP_EXTRAARG:
+		return NULL;
+	default:
+		break;
+	}
+	if (result) {
+		if (k && (op == LUA_OP_RETURN || op == LUA_OP_TAILCALL)) {
+			char *closed = r_str_newf ("close_upvalues(r0)\n%s", result);
+			free (result);
+			return closed;
+		}
+		return result;
+	}
+	if (!alias) {
+		return NULL;
+	}
+	RStrBuf *input = r_strbuf_new (alias);
+	int n;
+	for (n = 0; n < i; n++) {
+		r_strbuf_appendf (input, "%s%s", n? ", ": " ", expr[n]);
+	}
+	result = r_str_pseudo_transform (pseudo_rules, r_strbuf_get (input));
+	r_strbuf_free (input);
+	return result;
+}
+
 static char *parse(RAsmPluginSession *aps, const char *data) {
+	const LuaBCVersion *v = lua_bc_version (aps->rasm->config->cpu);
+	if (v) {
+		return parse_bc (aps, v, data);
+	}
+	if (!lua_bc_is53 (aps->rasm->config->cpu)) {
+		return NULL;
+	}
 	char name[32], args[4][32], extra;
 	int argc = sscanf (data, "%31s %31s %31s %31s %31s %c", name, args[0], args[1], args[2], args[3], &extra) - 1;
 	if (argc < 1 || argc > 4) {
@@ -126,24 +295,11 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 	case OP_TESTSET:
 		return r_str_newf ("if ((truthy(r%d) != %s) || ((r%d = r%d), false)) goto 0x%08"PFMT64x, b, c? "true": "false", a, b, pc + 8);
 	case OP_CALL:
-	case OP_TAILCALL: {
-		char *args = reglist (a + 1, b? b - 1: -1);
-		char *results = reglist (a, c? c - 1: -1);
-		char *s = op == OP_TAILCALL? r_str_newf ("return r%d(%s)", a, args)
-			: c == 1? r_str_newf ("r%d(%s)", a, args)
-			: r_str_newf ("%s = r%d(%s)", results, a, args);
-		free (args);
-		free (results);
-		return s;
-	}
+	case OP_TAILCALL:
+		return call_expr (a, b, c, op == OP_TAILCALL);
 	case OP_RETURN:
-	case OP_VARARG: {
-		char *list = reglist (a, b? b - 1: -1);
-		char *s = op == OP_RETURN? r_str_newf ("return%s%s", *list? " ": "", list)
-			: b == 1? strdup ("nop") : r_str_newf ("%s = ...", list);
-		free (list);
-		return s;
-	}
+	case OP_VARARG:
+		return values_expr (a, b? b - 1: -1, op == OP_RETURN);
 	case OP_FORPREP:
 		return r_str_newf ("r%d -= r%d\ngoto 0x%08"PFMT64x, a, a + 2, target);
 	case OP_FORLOOP:
@@ -183,7 +339,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 RAsmPlugin r_asm_plugin_lua = {
 	.meta = {
 		.name = "lua",
-		.desc = "Lua 5.3 pseudo syntax",
+		.desc = "Lua 5.3 and 5.4 pseudo syntax",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},
