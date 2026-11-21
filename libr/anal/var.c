@@ -1636,7 +1636,17 @@ static bool op_subs_self(RAnal *anal, RAnalOp *op, bool dst_writeonly) {
 		}
 		n += src->reg != NULL;
 	}
-	return n == 1;
+	if (n != 1 || !op->access) {
+		return false;
+	}
+	// any other register read, such as the carry flag of sbb, feeds the result
+	RListIter *iter;
+	r_list_foreach (op->access, iter, src) {
+		if ((src->access & R_PERM_R) && src->type == R_ANAL_VAL_REG && src->reg && strcmp (src->reg, dst->reg)) {
+			return false;
+		}
+	}
+	return true;
 }
 
 // or reg, -1 sets every bit of reg whatever it held

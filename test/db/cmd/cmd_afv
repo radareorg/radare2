@@ -145,7 +145,7 @@ none
 EOF
 RUN
 
-NAME=afv partial-width, fp and partial-mask sub and or still read the argument
+NAME=afv partial-width, fp, sbb and partial-mask sub and or still read the argument
 FILE=malloc://256
 ARGS=-a x86 -b 64
 CMDS=<<EOF
@@ -154,11 +154,13 @@ wx 4080cfff4889f8c3 @ 0x10
 wx 6683cfff4889f8c3 @ 0x20
 wx 81cfffff00004889f8c3 @ 0x30
 wx f20f5cc0c3 @ 0x40
+wx 4819ff4889f8c3 @ 0x50
 af @ 0x00
 af @ 0x10
 af @ 0x20
 af @ 0x30
 af @ 0x40
+af @ 0x50
 ?e sub dil, dil
 afv @ 0x00
 ?e or dil, 0xff
@@ -169,6 +171,8 @@ afv @ 0x20
 afv @ 0x30
 ?e subsd xmm0, xmm0
 afv @ 0x40
+?e sbb rdi, rdi
+afv @ 0x50
 EOF
 EXPECT=<<EOF
 sub dil, dil
@@ -181,6 +185,21 @@ or edi, 0xffff
 arg int64_t arg1 @ rdi
 subsd xmm0, xmm0
 arg double arg1 @ xmm0
+sbb rdi, rdi
+arg int64_t arg1 @ rdi
+EOF
+RUN
+
+NAME=afv x86.zydis dec reads the argument
+FILE=malloc://64
+ARGS=-a x86.zydis -b 64
+CMDS=<<EOF
+wx 48ffcf4889f8c3
+af
+afv
+EOF
+EXPECT=<<EOF
+arg int64_t arg1 @ rdi
 EOF
 RUN
 
