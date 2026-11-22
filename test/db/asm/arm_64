@@ -66,6 +66,9 @@ a "orr x2, x3, 0x3" 620440b2
 a "orr x2, x3, 0x7" 620840b2
 a "orr x2, x3, x20" 620014aa
 a "orr x22, x3, 0x2" 76007fb2
+d "orr w0, wzr, 1" e0030032
+d "orr x0, xzr, 0x100000000" e00360b2
+d "mov w0, 0x55555555" e0f30032
 a "orn w0, w13, w20" a001342a
 a "orn x0, x13, x20" a00134aa
 a "orn x0, x13, x20, ror 15" a03df4aa
