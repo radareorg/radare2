@@ -2360,53 +2360,28 @@ static char *dex_header(RBinFile *bf, int mode) {
 }
 
 static ut64 size(RBinFile *bf) {
-	ut8 u32s[sizeof (ut32)] = {0};
-
-	int ret = r_buf_read_at (bf->buf, 108, u32s, 4);
-	if (ret != 4) {
-		return 0;
-	}
-	ut32 off = r_read_le32 (u32s);
-	ret = r_buf_read_at (bf->buf, 104, u32s, 4);
-	if (ret != 4) {
-		return 0;
-	}
-	return off + r_read_le32 (u32s);
+	const RBinDexObj *dex = bf->bo->bin_obj;
+	return (ut64)dex->raw_header.data_offset + dex->raw_header.data_size;
 }
 
 // iH*
 static RList *dex_fields(RBinFile *bf) {
-	RList *ret = r_list_new ();
+	const RBinDexObj *dex = bf->bo->bin_obj;
+	const DexHeader *hdr = &dex->raw_header;
+	RList *ret = r_list_newf (r_bin_field_free);
 	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
-	ut64 addr = 0;
-
-#define ROW(nam,siz,val,fmt) \
-	r_list_append (ret, r_bin_field_new (addr, addr, val, siz, nam, NULL, fmt, false)); \
-	addr += siz;
-
-	r_buf_seek (bf->buf, 0, R_BUF_SET);
-	ut64 magic = r_buf_read_le64 (bf->buf);
-	ROW ("dex_magic", 8, magic, "[8]c");
-	ut32 checksum = r_buf_read_le32 (bf->buf);
-	ROW ("dex_checksum", 4, checksum, "x");
-	ROW ("dex_signature", 20, 0, "[20]c");
-	r_buf_seek (bf->buf, addr, R_BUF_SET);
-	ut32 size = r_buf_read_le32 (bf->buf);
-	ROW ("dex_size", 4, size, "x");
-	ut32 header_size = r_buf_read_le32 (bf->buf);
-	ROW ("dex_header_size", 4, header_size, "x");
-	ut32 endian = r_buf_read_le32 (bf->buf);
-	ROW ("dex_endian", 4, endian, "x");
-/*
-	ROW ("hdr.cputype", 4, mh->cputype, "x");
-	ROW ("hdr.cpusubtype", 4, mh->cpusubtype, "x");
-	ROW ("hdr.filetype", 4, mh->filetype, "x");
-	ROW ("hdr.nbcmds", 4, mh->ncmds, "x");
-	ROW ("hdr.sizeofcmds", 4, mh->sizeofcmds, "x");
-*/
+#define DEX_FIELD(member, name, value, fmt) \
+	r_list_append (ret, r_bin_field_new (offsetof (DexHeader, member), offsetof (DexHeader, member), \
+		value, sizeof (hdr->member), "dex_" #name, NULL, fmt, false))
+	DEX_FIELD (magic, magic, r_read_le64 (hdr->magic), "[8]c");
+	DEX_FIELD (checksum, checksum, hdr->checksum, "x");
+	DEX_FIELD (signature, signature, 0, "[20]c");
+#define DEX_WORD_FIELD(member, name) DEX_FIELD (member, name, hdr->member, "x");
+	DEX_HEADER_WORDS (DEX_WORD_FIELD)
+#undef DEX_WORD_FIELD
+#undef DEX_FIELD
 	return ret;
 }
 

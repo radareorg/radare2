@@ -286,31 +286,13 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 	struct dex_header_t *dexhdr = &dex->header;
 
 	r_buf_seek (dex->b, 0, R_BUF_SET);
-	r_buf_read (dex->b, (ut8 *)&dexhdr->magic, 8);
+	r_buf_read (dex->b, dexhdr->magic, sizeof (dexhdr->magic));
 	dexhdr->checksum = r_buf_read_le32 (dex->b);
-	r_buf_read (dex->b, (ut8 *)&dexhdr->signature, 20);
-	dexhdr->size = r_buf_read_le32 (dex->b);
-	dexhdr->header_size = r_buf_read_le32 (dex->b);
-	dexhdr->endian = r_buf_read_le32 (dex->b);
-	// TODO: this offsets and size will be used for checking,
-	// so they should be checked. Check overlap, < 0, > bin.size
-	dexhdr->linksection_size = r_buf_read_le32 (dex->b);
-	dexhdr->linksection_offset = r_buf_read_le32 (dex->b);
-	dexhdr->map_offset = r_buf_read_le32 (dex->b);
-	dexhdr->strings_size = r_buf_read_le32 (dex->b);
-	dexhdr->strings_offset = r_buf_read_le32 (dex->b);
-	dexhdr->types_size = r_buf_read_le32 (dex->b);
-	dexhdr->types_offset = r_buf_read_le32 (dex->b);
-	dexhdr->prototypes_size = r_buf_read_le32 (dex->b);
-	dexhdr->prototypes_offset = r_buf_read_le32 (dex->b);
-	dexhdr->fields_size = r_buf_read_le32 (dex->b);
-	dexhdr->fields_offset = r_buf_read_le32 (dex->b);
-	dexhdr->method_size = r_buf_read_le32 (dex->b);
-	dexhdr->method_offset = r_buf_read_le32 (dex->b);
-	dexhdr->class_size = r_buf_read_le32 (dex->b);
-	dexhdr->class_offset = r_buf_read_le32 (dex->b);
-	dexhdr->data_size = r_buf_read_le32 (dex->b);
-	dexhdr->data_offset = r_buf_read_le32 (dex->b);
+	r_buf_read (dex->b, dexhdr->signature, sizeof (dexhdr->signature));
+#define DEX_READ_WORD(member, name) dexhdr->member = r_buf_read_le32 (dex->b);
+	DEX_HEADER_WORDS (DEX_READ_WORD)
+#undef DEX_READ_WORD
+	dex->raw_header = *dexhdr;
 	if (dexhdr->header_size < sizeof (DexHeader) || dexhdr->size < dexhdr->header_size) {
 		goto fail;
 	}

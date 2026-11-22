@@ -57,32 +57,36 @@
 #define R_DEX_VISIBILITY_RUNTIME 1
 #define R_DEX_VISIBILITY_SYSTEM 2
 
+#define DEX_HEADER_WORDS(X) \
+	X (size, size) \
+	X (header_size, header_size) \
+	X (endian, endian) \
+	X (linksection_size, link_size) \
+	X (linksection_offset, link_off) \
+	X (map_offset, map_off) \
+	X (strings_size, string_ids_size) \
+	X (strings_offset, string_ids_off) \
+	X (types_size, type_ids_size) \
+	X (types_offset, type_ids_off) \
+	X (prototypes_size, proto_ids_size) \
+	X (prototypes_offset, proto_ids_off) \
+	X (fields_size, field_ids_size) \
+	X (fields_offset, field_ids_off) \
+	X (method_size, method_ids_size) \
+	X (method_offset, method_ids_off) \
+	X (class_size, class_defs_size) \
+	X (class_offset, class_defs_off) \
+	X (data_size, data_size) \
+	X (data_offset, data_off)
+#define DEX_DECLARE_WORD(member, name) ut32 member;
 R_PACKED(
 typedef struct dex_header_t {
 	ut8 magic[8];
 	ut32 checksum;
 	ut8 signature[20];
-	ut32 size;
-	ut32 header_size;
-	ut32 endian;
-	ut32 linksection_size;
-	ut32 linksection_offset;
-	ut32 map_offset;
-	ut32 strings_size;
-	ut32 strings_offset;
-	ut32 types_size;
-	ut32 types_offset;
-	ut32 prototypes_size;
-	ut32 prototypes_offset;
-	ut32 fields_size;
-	ut32 fields_offset;
-	ut32 method_size;
-	ut32 method_offset;
-	ut32 class_size;
-	ut32 class_offset;
-	ut32 data_size;
-	ut32 data_offset;
+	DEX_HEADER_WORDS (DEX_DECLARE_WORD)
 }) DexHeader;
+#undef DEX_DECLARE_WORD
 
 R_PACKED(
 typedef struct dex_proto_t {
@@ -139,6 +143,7 @@ typedef struct r_bin_dex_obj_t {
 	const char *file;
 	RBuffer *b;
 	struct dex_header_t header;
+	struct dex_header_t raw_header;
 	ut32 *strings;
 	struct dex_type_t *types;
 	struct dex_proto_t *protos;
