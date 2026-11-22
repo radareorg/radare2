@@ -2393,13 +2393,25 @@ static RList *dex_fields(RBinFile *bf) {
 	ut32 checksum = r_buf_read_le32 (bf->buf);
 	ROW ("dex_checksum", 4, checksum, "x");
 	ROW ("dex_signature", 20, 0, "[20]c");
-	r_buf_seek (bf->buf, addr, R_BUF_SET);
-	ut32 size = r_buf_read_le32 (bf->buf);
-	ROW ("dex_size", 4, size, "x");
-	ut32 header_size = r_buf_read_le32 (bf->buf);
-	ROW ("dex_header_size", 4, header_size, "x");
-	ut32 endian = r_buf_read_le32 (bf->buf);
-	ROW ("dex_endian", 4, endian, "x");
+	static const char *const names[] = {
+		"dex_size", "dex_header_size", "dex_endian",
+		"dex_link_size", "dex_link_off", "dex_map_off",
+		"dex_string_ids_size", "dex_string_ids_off",
+		"dex_type_ids_size", "dex_type_ids_off",
+		"dex_proto_ids_size", "dex_proto_ids_off",
+		"dex_field_ids_size", "dex_field_ids_off",
+		"dex_method_ids_size", "dex_method_ids_off",
+		"dex_class_defs_size", "dex_class_defs_off",
+		"dex_data_size", "dex_data_off",
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (names); i++) {
+		ut8 v[4];
+		if (r_buf_read_at (bf->buf, addr, v, sizeof (v)) != sizeof (v)) {
+			break;
+		}
+		ROW (names[i], 4, r_read_le32 (v), "x");
+	}
 /*
 	ROW ("hdr.cputype", 4, mh->cputype, "x");
 	ROW ("hdr.cpusubtype", 4, mh->cpusubtype, "x");
