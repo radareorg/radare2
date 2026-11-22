@@ -6872,8 +6872,11 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 #endif
 	RBinReloc *rel = NULL;
 	RBinObject *bo = r_bin_cur_object (ds->core->bin);
-	if (bo && !bo->is_reloc_patched) {
+	if (bo) {
 		rel = r_core_getreloc (ds->core, ds->analop.addr, ds->analop.size);
+		if (rel && bo->is_reloc_patched && !rel->unwritten) {
+			rel = NULL;
+		}
 	}
 	if (!rel) {
 		rel = r_core_getreloc (ds->core, addr, ds->analop.size);

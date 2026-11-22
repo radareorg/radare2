@@ -1235,6 +1235,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# the mov at 0x08000040 rewritten to nop; nop; call over the same patched arr+4 field
+NAME=ELF: a patched call site with an addend is not named after its symbol
+FILE=bins/elf/x86_64-common-array.o
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+e io.cache=true
+wx 9090e8 @ 0x08000040
+pd 1 @ 0x08000042
+EOF
+EXPECT=<<EOF
+            0x08000042      e8c9000000     call 0x8000110              ; RELOC 32 arr @ 0x08000108 - 0x800003f
+EOF
+RUN
+
 NAME=ELF: unsupported common sizes and alignments stay unpatched
 FILE=bins/elf/x86_64-common-oversize.o
 ARGS=-e bin.relocs.apply=true
