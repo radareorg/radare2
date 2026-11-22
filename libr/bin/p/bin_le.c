@@ -138,6 +138,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	R_VEC_FOREACH (all_relocs, r) {
 		// imports have nothing to patch, but must stay in the table
 		if (r->import || r->symbol) {
+			r->unwritten = true;
 			continue;
 		}
 		int size = 0, offset = 0;
@@ -165,11 +166,11 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 				R_LOG_WARN ("Unsupported reloc type %d", r->type);
 				break;
 		}
-		if (size) {
-			if (!b->iob.overlay_write_at (b->iob.io, r->vaddr, buf + offset, size)) {
-				R_LOG_ERROR ("write error at 0x%"PFMT64x, r->vaddr);
-			}
+		bool written = size && b->iob.overlay_write_at (b->iob.io, r->vaddr, buf + offset, size);
+		if (size && !written) {
+			R_LOG_ERROR ("write error at 0x%"PFMT64x, r->vaddr);
 		}
+		r->unwritten = !written;
 	}
 	return all_relocs;
 }

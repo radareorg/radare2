@@ -439,7 +439,33 @@ vaddr      paddr      type   ntype name
 0x0001d3d9 0x0000e3d9 SET_32 8     doscalls.281
 0x0001d3f4 0x0000e3f4 SET_32 8     doscalls.257
 ec2dfeff89c283c4
-            0x0001d20f      e8ec2dfeff     call 0                      ; RELOC 32 doscalls.273
+            0x0001d20f      e8ec2dfeff     call doscalls.273           ; RELOC 32 doscalls.273
+EOF
+RUN
+
+NAME=LE GCC.EXE import call sites keep their names with relocs.apply
+FILE=bins/le/GCC.EXE
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+pd 1 @ 0x10005
+pd 1 @ 0x1d20f
+EOF
+EXPECT=<<EOF
+            0x00010005      e8da9e0000     call emx.1                  ; RELOC 32 emx.1
+            0x0001d20f      e8ec2dfeff     call doscalls.273           ; RELOC 32 doscalls.273
+EOF
+RUN
+
+NAME=LE GCC.EXE import call sites are named the same without relocs.apply
+FILE=bins/le/GCC.EXE
+ARGS=-e bin.relocs.apply=false
+CMDS=<<EOF
+pd 1 @ 0x1d20f
+pd 1 @ 0x10005
+EOF
+EXPECT=<<EOF
+            0x0001d20f      e8ec2dfeff     call doscalls.273           ; RELOC 32 doscalls.273
+            0x00010005      e8da9e0000     call emx.1                  ; RELOC 32 emx.1
 EOF
 RUN
 
@@ -466,11 +492,45 @@ CMDS=<<EOF
 ir~?
 f~reloc.?
 p8 8 @ 0x10010
+e asm.lines=false
+pd 1 @ 0x10111~RELOC[0-7]
+pd 1 @ 0x10102~RELOC[0-11]
 EOF
 EXPECT=<<EOF
 5237
 410
 5500010018010100
+0x00010111 b938280500 mov ecx 0x52838 RELOC 32
+0x00010102 8b82303c0100 mov eax dword [edx + 0x13c30] [0x13c30:4] 0xfffffffb RELOC 32
+EOF
+RUN
+
+NAME=LE cdogs.exe fixups whose write fails keep their rows and file bytes
+FILE=bins/le/cdogs.exe
+ARGS=-e io.cache.write=false -e bin.cache=true
+CMDS=<<EOF
+ir~?
+p8 8 @ 0x10010
+e asm.lines=false
+pd 1 @ 0x10111~RELOC[0-7]
+EOF
+EXPECT=<<EOF
+5237
+5500000018010000
+0x00010111 b938280100 mov ecx 0x12838 RELOC 32
+EOF
+RUN
+
+NAME=LE WSSFILL.EXE a site whose write fails disassembles as without relocs.apply
+FILE=bins/le/WSSFILL.EXE
+ARGS=-e io.cache.write=false -e bin.cache=true
+CMDS=<<EOF
+ir~?
+pi 1 @ 0x146df
+EOF
+EXPECT=<<EOF
+3533
+ja 0x14728
 EOF
 RUN
 
