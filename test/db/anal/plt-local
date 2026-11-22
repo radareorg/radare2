@@ -338,3 +338,145 @@ EXPECT=<<EOF
 0x00001050    1     10 sym.plt.add2
 EOF
 RUN
+
+# Insert a store to 0x35e0 after the r11 slot load, moving the call and following
+# jump forward by 7 bytes. The shared thunk at 0x14a0 still returns through r11.
+# Only 0x35c8/0x35d0/0x35d8 have relocations; the spill has none.
+NAME=x86_64 retpoline: a spill preserves the loaded slot and caller name without applying relocs
+FILE=bins/elf/pltrel/x86_64-retpoline.so
+ARGS=-e bin.relocs.apply=false -e io.cache=true
+CMDS=<<EOF
+wx 48890522210000e8ddffffffe9caffffff @ 0x14b7
+ao 2 @ 0x14b0~opcode,ptr,direction
+iR~add2,mul2,sub2
+aa
+f~sym.plt.
+pi 1 @ 0x144b
+EOF
+EXPECT=<<EOF
+opcode: mov r11, qword [rip + 0x2111]
+ptr: 0x000035c8
+refptr: 8
+direction: read
+opcode: mov qword [rip + 0x2122], rax
+ptr: 0x000035e0
+refptr: 8
+direction: write
+0x000035c8 0x000005c8 SET_64 7     add2
+0x000035d0 0x000005d0 SET_64 7     mul2
+0x000035d8 0x000005d8 SET_64 7     sub2
+0x000014b0 24 sym.plt.add2
+0x000014d0 17 sym.plt.mul2
+0x000014f0 17 sym.plt.sub2
+call sym.plt.add2
+EOF
+RUN
+
+NAME=x86_64 retpoline: the same spill preserves the caller name with applied relocs
+FILE=bins/elf/pltrel/x86_64-retpoline.so
+ARGS=-e bin.relocs.apply=true -e io.cache=true
+CMDS=<<EOF
+wx 48890522210000e8ddffffffe9caffffff @ 0x14b7
+aa
+f~sym.plt.
+pi 1 @ 0x144b
+EOF
+EXPECT=<<EOF
+0x000014b0 24 sym.plt.add2
+0x000014d0 17 sym.plt.mul2
+0x000014f0 17 sym.plt.sub2
+call sym.plt.add2
+EOF
+RUN
+
+# A relocation on the store destination must not replace the loaded add2 slot.
+NAME=x86_64 retpoline: a store to the mul2 slot still identifies the loaded add2 target
+FILE=bins/elf/pltrel/x86_64-retpoline.so
+ARGS=-e io.cache=true
+CMDS=<<EOF
+wx 48890512210000e8ddffffffe9caffffff @ 0x14b7
+ao 1 @ 0x14b7~opcode,ptr,direction
+iR~add2,mul2
+aa
+f~sym.plt.
+pi 1 @ 0x144b
+EOF
+EXPECT=<<EOF
+opcode: mov qword [rip + 0x2112], rax
+ptr: 0x000035d0
+refptr: 8
+direction: write
+0x000035c8 0x000005c8 SET_64 7     add2
+0x000035d0 0x000005d0 SET_64 7     mul2
+0x000014b0 24 sym.plt.add2
+0x000014d0 17 sym.plt.mul2
+0x000014f0 17 sym.plt.sub2
+call sym.plt.add2
+EOF
+RUN
+
+# Keep the instruction length and thunk call, changing only the memory direction.
+NAME=x86_64 retpoline: storing to a relocated slot alone does not identify a callee
+FILE=bins/elf/pltrel/x86_64-retpoline.so
+ARGS=-e io.cache=true
+CMDS=<<EOF
+wx 4c891d @ 0x14b0
+ao 1 @ 0x14b0~opcode,ptr,direction
+aa
+f~sym.plt.
+pi 1 @ 0x144b
+EOF
+EXPECT=<<EOF
+opcode: mov qword [rip + 0x2111], r11
+ptr: 0x000035c8
+refptr: 8
+direction: write
+0x000014d0 17 sym.plt.mul2
+0x000014f0 17 sym.plt.sub2
+call fcn.000014b0
+EOF
+RUN
+
+# LEA computes the slot address; it does not load the relocated function pointer.
+NAME=x86_64 retpoline: lea of a relocated slot alone does not identify a callee
+FILE=bins/elf/pltrel/x86_64-retpoline.so
+ARGS=-e io.cache=true
+CMDS=<<EOF
+wx 4c8d1d @ 0x14b0
+ao 1 @ 0x14b0~opcode,ptr,direction
+aa
+f~sym.plt.
+pi 1 @ 0x144b
+EOF
+EXPECT=<<EOF
+opcode: lea r11, [rip + 0x2111]
+ptr: 0x000035c8
+refptr: 8
+direction: ref
+0x000014d0 17 sym.plt.mul2
+0x000014f0 17 sym.plt.sub2
+call fcn.000014b0
+EOF
+RUN
+
+# Move the load to unrelocated 0x35e0 while leaving the thunk call intact.
+NAME=x86_64 retpoline: a load without a slot relocation cannot supply a callee name
+FILE=bins/elf/pltrel/x86_64-retpoline.so
+ARGS=-e io.cache=true
+CMDS=<<EOF
+wx 29210000 @ 0x14b3
+ao 1 @ 0x14b0~opcode,ptr,direction
+aa
+f~sym.plt.
+pi 1 @ 0x144b
+EOF
+EXPECT=<<EOF
+opcode: mov r11, qword [rip + 0x2129]
+ptr: 0x000035e0
+refptr: 8
+direction: read
+0x000014d0 17 sym.plt.mul2
+0x000014f0 17 sym.plt.sub2
+call fcn.000014b0
+EOF
+RUN
