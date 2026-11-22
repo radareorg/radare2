@@ -1238,7 +1238,7 @@ static void set_op_type(RArchSession *as, RAnalOp *op, const ZydisDecodedInstruc
 				&& op1->type == ZYDIS_OPERAND_TYPE_IMMEDIATE
 				&& is_sp_reg (op0->reg.value)) {
 			op->stackop = R_ANAL_STACK_INC;
-			op->stackptr = (st64)zydis_imm_value (insn, op1, op->addr);
+			op->stackptr = -(st64)zydis_imm_value (insn, op1, op->addr);
 		}
 		break;
 	case ZYDIS_MNEMONIC_SUB:
@@ -1252,7 +1252,7 @@ static void set_op_type(RArchSession *as, RAnalOp *op, const ZydisDecodedInstruc
 				&& op1->type == ZYDIS_OPERAND_TYPE_IMMEDIATE
 				&& is_sp_reg (op0->reg.value)) {
 			op->stackop = R_ANAL_STACK_INC;
-			op->stackptr = -(st64)zydis_imm_value (insn, op1, op->addr);
+			op->stackptr = (st64)zydis_imm_value (insn, op1, op->addr);
 		}
 		break;
 	case ZYDIS_MNEMONIC_MUL:
