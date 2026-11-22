@@ -1378,7 +1378,31 @@ static ArmCpuAttrs arm_cpu_attrs(ELFOBJ *eo) {
 	return attrs;
 }
 
-static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 P, ut64 S, ut64 bias, ut64 L, ut64 toc, ut64 arm_arch) {
+typedef struct {
+	ut32 count[256];
+	ut64 first[256];
+} ArmSkips;
+
+static void arm_skips_add(ArmSkips *skips, RBinElfReloc *rel) {
+	const ut8 type = rel->type & 0xff;
+	if (!skips->count[type] || rel->rva < skips->first[type]) {
+		skips->first[type] = rel->rva;
+	}
+	skips->count[type]++;
+}
+
+static void arm_skips_warn(ArmSkips *skips) {
+	int type;
+	for (type = 0; type < 256; type++) {
+		const ut32 n = skips->count[type];
+		if (n) {
+			R_LOG_WARN ("Unsupported ARM relocation type %d left unpatched at %u site%s, the first at 0x%"PFMT64x,
+				type, n, n > 1? "s": "", skips->first[type]);
+		}
+	}
+}
+
+static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 P, ut64 S, ut64 bias, ut64 L, ut64 toc, ut64 arm_arch, ArmSkips *arm_skips) {
 	ut64 V = 0;
 	ut64 A = rel->addend;
 	ut8 buf[8] = {0};
@@ -1560,7 +1584,15 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 			r_write_ble32 (buf, insn, ie);
 			break;
 		}
-		default:
+		case R_ARM_ABS8:
+		case R_ARM_ABS16:
+		case R_ARM_ABS32_NOI:
+		case R_ARM_COPY:
+		case R_ARM_IRELATIVE:
+		case R_ARM_TLS_DESC:
+		case R_ARM_TLS_DTPMOD32:
+		case R_ARM_TLS_DTPOFF32:
+		case R_ARM_TLS_TPOFF32:
 			if (!rel->sym && rel->mode == DT_REL) {
 				r_write_ble32 (buf, word, bo->endian);
 			} else {
@@ -1568,6 +1600,13 @@ static void _patch_reloc(RBinFile *bf, ELFOBJ *bo, ut16 e_machine, RIOBind *iob,
 				r_write_ble32 (buf, V, bo->endian);
 			}
 			break;
+		case R_ARM_NONE:
+		case R_ARM_V4BX:
+			return;
+		default:
+			arm_skips_add (arm_skips, rel);
+			R_LOG_DEBUG ("Unsupported ARM relocation type %d at 0x%"PFMT64x" left unpatched", rel->type, rel->rva);
+			return;
 		}
 		iob->overlay_write_at (iob->io, P, buf, 4);
 		}
@@ -2360,6 +2399,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 	ut64 vaddr = n_vaddr;
 	ut64 toc_base = UT64_MAX;
 	const ut64 arm_arch = (eo->ehdr.e_machine == EM_ARM)? arm_cpu_attrs (eo).arch: 0;
+	ArmSkips arm_skips = {{0}};
 	if (eo->ehdr.e_machine == EM_PPC64) {
 		ut64 t = Elf_(get_section_addr) (eo, ".toc");
 		if (t == UT64_MAX) {
@@ -2469,7 +2509,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 		const ut64 raddr = common_got? got_entry: resolved? sym_addr: addressable? slot: 0;
 		if (!skip) {
 			_patch_reloc (bf, eo, eo->ehdr.e_machine, &b->iob, reloc,
-				elf_io_addr (bf, eo, reloc->rva), raddr, bias, common_got? got_entry: plt_entry_addr, toc_base, arm_arch);
+				elf_io_addr (bf, eo, reloc->rva), raddr, bias, common_got? got_entry: plt_entry_addr, toc_base, arm_arch, &arm_skips);
 		}
 		RBinSymbol *csym = (takes_slot && common)? reloc_symbol (eo, reloc): NULL;
 		if (csym) {
@@ -2505,6 +2545,7 @@ static RVecRBinReloc *patch_relocs(RBinFile *bf) {
 			row->laddr = 0;
 		}
 	}
+	arm_skips_warn (&arm_skips);
 	ht_uu_free (listed_slots);
 	ht_uu_free (lead_by_sym);
 	ht_uu_free (tail_by_sym);
