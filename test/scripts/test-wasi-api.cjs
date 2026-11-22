@@ -36,6 +36,9 @@ async function main() {
 		command('o malloc://16');
 		command('wx 01020304');
 		assert.equal(command('p8 4'), '01020304');
+		command('wx 000102030405060708090a0b0c0d0e0f');
+		const entropy = JSON.parse(command('p=ej 1 @e:zoom.in=raw,io.va=false'));
+		assert.equal(entropy.entropy[0].value, 255, 'WASI must include the entropy plugin');
 	} finally {
 		api.r_core_free(core);
 	}
