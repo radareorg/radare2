@@ -2305,6 +2305,45 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=zydis sub sp grows and add sp shrinks the stack at every width
+FILE=malloc://0x40
+ARGS=-a x86 -e anal.arch=x86.zydis
+CMDS=<<EOF
+e asm.bits=64
+wx 4881ec00200000; ao 1~^stackptr
+wx 4881c410320000; ao 1~^stackptr
+wx 4883dc30; ao 1~^stackptr
+wx 4883d420; ao 1~^stackptr
+wx 4883ecf0; ao 1~^stackptr
+wx 4883c4f0; ao 1~^stackptr
+wx 4883ec00; ao 1~^stackptr
+wx 4883c400; ao 1~^stackptr
+wx 4883e810; ao 1~^stackptr
+wx 4883c010; ao 1~^stackptr
+e asm.bits=32
+wx 81ec00200000; ao 1~^stackptr
+wx 81c410320000; ao 1~^stackptr
+e asm.bits=16
+wx 81ec0020; ao 1~^stackptr
+wx 81c41032; ao 1~^stackptr
+e asm.bits=64
+wx 4883ec1048897c2408488b4424084883c410c3; af; afi~stackframe
+EOF
+EXPECT=<<EOF
+stackptr: 8192
+stackptr: 18446744073709538800
+stackptr: 48
+stackptr: 18446744073709551584
+stackptr: 18446744073709551600
+stackptr: 16
+stackptr: 8192
+stackptr: 18446744073709538800
+stackptr: 8192
+stackptr: 18446744073709538800
+stackframe: 16
+EOF
+RUN
+
 NAME=cmpxchg equal sets zf and stores src into dst
 FILE=malloc://0x200
 ARGS=-a x86 -b 64
