@@ -1,0 +1,145 @@
+NAME=Native FAT12 directory and VFAT Unicode names
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+m
+mn /root~Filesystem Type
+mc /root/live.txt
+mc /root/subdir/nested.txt
+mc "/root/A long 🐼 name.txt"
+mc /root/empty.txt
+EOF
+EXPECT=<<EOF
+fat	0x0	/root
+Filesystem Type: FAT12
+FAT12 live
+
+nested
+
+unicode
+
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Native FAT16 detection without a filesystem type string
+FILE=gzip://bins/fs/fat/fat16.img.gz
+CMDS=<<EOF
+m
+mn /root~Filesystem Type
+mn /root~Bytes per Sector
+mc /root/live.txt
+mc "/root/A long 🐼 name.txt"
+EOF
+EXPECT=<<EOF
+fat	0x0	/root
+Filesystem Type: FAT16
+Bytes per Sector: 1024
+FAT16 live
+
+unicode
+
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Native FAT12 reads fragmented file data
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+mo /root/frag.txt
+p8 16 @ 504
+EOF
+EXPECT=<<EOF
+41414141454e440a4242424242424242
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Native FAT16 reads fragmented data with 1024-byte sectors
+FILE=gzip://bins/fs/fat/fat16.img.gz
+CMDS=<<EOF
+mo /root/frag.txt
+p8 16 @ 1016
+EOF
+EXPECT=<<EOF
+41414141454e440a4242424242424242
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Native FAT32 uses its active FAT and masks reserved entry bits
+FILE=gzip://bins/fs/fat/fat32.img.gz
+CMDS=<<EOF
+mn /root~Filesystem Type
+mc /root/live.txt
+mo /root/frag.txt
+p8 16 @ 504
+EOF
+EXPECT=<<EOF
+Filesystem Type: FAT32
+FAT32 live
+
+41414141454e440a4242424242424242
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Native FAT12 decodes a FAT entry spanning two sectors
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+mo /root/cross.txt
+p8 15 @ 504
+EOF
+EXPECT=<<EOF
+585858585858585863726f7373210a
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Native FAT file locations include the mount offset
+FILE=gzip://bins/fs/fat/fat12-offset.img.gz
+ARGS=-n
+CMDS=<<EOF
+m /mnt fat 0x1000
+mi /mnt/live.txt
+mis /mnt/live.txt
+p8 11
+EOF
+EXPECT=<<EOF
+'f file 11 0x00004800
+'f file 11 0x00004800
+4641543132206c6976650a
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Native FAT rejects invalid sector and cluster sizes
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+e log.level=0
+e io.cache=true
+wx 00 @ 13
+m /bad fat 0 || echo invalid-cluster
+wx 01 @ 13
+wx 0003 @ 11
+m /bad fat 0 || echo invalid-sector
+EOF
+EXPECT=<<EOF
+invalid-cluster
+invalid-sector
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Native FAT32 rejects an active FAT index equal to the number of FATs
+FILE=gzip://bins/fs/fat/fat32.img.gz
+CMDS=<<EOF
+e log.level=0
+e io.cache=true
+wx 8200 @ 40
+m /bad fat 0 || echo invalid-fat
+EOF
+EXPECT=<<EOF
+invalid-fat
+EOF
+EXPECT_ERR=
+RUN

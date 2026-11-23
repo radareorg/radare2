@@ -2,10 +2,15 @@
 
 #include <r_bin.h>
 #include <r_fs.h>
+#include "../../fs/p/fs_fat.h"
 
 static char *fsname(RBuffer *b) {
 	ut8 buf[1024];
 	int i, j;
+	FatGeometry geometry;
+	if (r_buf_read_at (b, 0, buf, 512) == 512 && fat_geometry (buf, &geometry)) {
+		return strdup ("fat");
+	}
 
 	for (i = 0; ; i++) {
 		const RFSType *f = r_fs_type_index (i);

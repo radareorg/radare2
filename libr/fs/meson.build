@@ -13,6 +13,7 @@ r_fs_sources = [
   'p/fs_fossil.c',
   'p/fs_sep64.c',
   'p/fs_apfs.c',
+  'p/fs_fat.c',
 ]
 
 if get_option('use_zip')
@@ -31,7 +32,6 @@ if not user_plugins.contains('nogrub') and not get_option('nogpl')
   r_fs_sources += [
     'p/fs_cpio.c',
     'p/fs_ext2.c',
-    'p/fs_fat.c',
     'p/fs_fb.c',
     'p/fs_hfs.c',
     'p/fs_hfsplus.c',
@@ -50,7 +50,6 @@ if not user_plugins.contains('nogrub') and not get_option('nogpl')
     # grub sources (now integrated directly)
     'p/grub/fs/cpio.c',
     'p/grub/fs/ext2.c',
-    'p/grub/fs/fat.c',
     'p/grub/fs/fb.c',
     'p/grub/fs/fshelp.c',
     'p/grub/fs/hfs.c',
