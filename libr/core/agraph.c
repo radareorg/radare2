@@ -4050,7 +4050,7 @@ static void agraph_set_need_reload_nodes(struct agraph_refresh_data *grd) {
 }
 
 static void agraph_toggle_speed(RAGraph *g, RCore *core) {
-	const int alt = r_config_get_b (core->config, "graph.scroll");
+	const int alt = r_config_get_i (core->config, "graph.scroll");
 	g->movspeed = g->movspeed == DEFAULT_SPEED? alt: DEFAULT_SPEED;
 }
 
