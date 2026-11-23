@@ -179,7 +179,8 @@ static bool fat_long_name(FatEntry *entry, const ut8 *lfn, int units) {
 	while (length < units && r_read_le16 (lfn + length * 2)) {
 		length++;
 	}
-	if (!length || length > 255) {
+	if (!length || length > 255 || (length <= 2 && r_read_le16 (lfn) == '.'
+			&& (length == 1 || r_read_le16 (lfn + 2) == '.'))) {
 		return false;
 	}
 	int i;
@@ -428,7 +429,7 @@ static int fat_read(RFSFile *file, ut64 off, int len) {
 		return 0;
 	}
 	ut64 readable = entry->size;
-	if (entry->flags & R_FS_FILE_DELETED) {
+	if ((entry->flags & R_FS_FILE_DELETED) || entry->size > fat->g.cluster_size) {
 		fat_plan (file);
 		readable = entry->readable;
 	}

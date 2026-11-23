@@ -826,3 +826,33 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=FAT ordinary reads reject a chain that would repeat clusters
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+e io.cache=true
+wx 00060000 @ 0x1a3c
+wx 3f00 @ 0x20a
+e log.level=0
+mo /root/frag.txt || echo cyclic-chain
+EOF
+EXPECT=<<EOF
+cyclic-chain
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Invalid VFAT dot aliases cannot hide live ownership
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+e io.cache=true
+wx 412e000000ffffffffffff0f0027ffffffffffffffffffffffff0000ffffffff @ 0x1aa0
+mdq /root~panda
+mfuj /root orphan
+EOF
+EXPECT=<<EOF
+panda~1.txt
+{"ranges":[{"logical":15872,"physical":15872,"size":512,"flags":6},{"logical":16896,"physical":16896,"size":512,"flags":6},{"logical":25088,"physical":25088,"size":1024,"flags":6}],"status":"complete"}
+EOF
+EXPECT_ERR=
+RUN
