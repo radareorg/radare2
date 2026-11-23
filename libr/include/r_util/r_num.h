@@ -52,7 +52,6 @@ typedef struct r_num_t {
 	R_REF_TYPE;
 	ut64 (*callback)(struct r_num_t *userptr, const char *str, bool *ok);
 	const char *(*cb_from_value)(struct r_num_t *userptr, ut64 value, bool *ok);
-//	RNumCallback callback;
 	ut64 value;
 	double fvalue;
 	void *userptr;
@@ -96,6 +95,7 @@ R_API const char *r_num_math_index(RNum *num, const char *p);
 R_API int r_num_to_bits(char *out, ut64 num);
 R_API int r_num_to_ternary(char *out, ut64 num);
 R_API int r_num_rand(int max);
+R_API bool r_num_randbuf(R_OUT ut8 * R_NULLABLE buffer, size_t length);
 R_API ut64 r_num_genmask(int max);
 R_API void r_num_irand(void);
 R_API int r_num_between(RNum *num, const char *input_value);

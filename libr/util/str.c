@@ -5,6 +5,27 @@
 #include <r_userconf.h>
 
 /* stable code */
+R_API char *r_str_random(size_t length) {
+	size_t size;
+	if (r_add_overflow (length, (size_t)1, &size)) {
+		return NULL;
+	}
+	char *token = malloc (size);
+	if (!token) {
+		return NULL;
+	}
+	if (!r_num_randbuf ((ut8 *)token, length)) {
+		free (token);
+		return NULL;
+	}
+	size_t i;
+	for (i = 0; i < length; i++) {
+		token[i] = "0123456789abcdef"[(ut8)token[i] & 0xf];
+	}
+	token[length] = 0;
+	return token;
+}
+
 static const char *const rwxstr[] = {
 	[0] = "---",
 	[1] = "--x",

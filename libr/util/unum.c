@@ -41,6 +41,15 @@ R_API int r_num_rand(int max) {
 	return r_rand (max);
 }
 
+R_API bool r_num_randbuf(ut8 *buffer, size_t length) {
+	R_RETURN_VAL_IF_FAIL (buffer || !length, false);
+	size_t i;
+	for (i = 0; i < length; i++) {
+		buffer[i] = r_num_rand (256);
+	}
+	return true;
+}
+
 R_API void r_num_minmax_swap(ut64 *a, ut64 *b) {
 	if (*a > *b) {
 		ut64 tmp = *a;

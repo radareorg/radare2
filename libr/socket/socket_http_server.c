@@ -9,6 +9,46 @@
 
 static R_TH_LOCAL bool *breaked = NULL;
 
+static bool http_auth_equal(const char *value, const char *expected) {
+	size_t length = strlen (value);
+	if (strlen (expected) != length) {
+		return false;
+	}
+	volatile ut8 difference = 0;
+	size_t i;
+	for (i = 0; i < length; i++) {
+		difference |= (ut8)value[i] ^ (ut8)expected[i];
+	}
+	return !difference;
+}
+
+static bool http_auth_match(RSocketHTTPOptions *so, const char *value) {
+	if (!r_str_ncasecmp (value, "Bearer ", 7)) {
+		return R_STR_ISNOTEMPTY (so->bearer)
+			&& http_auth_equal (r_str_trim_head_ro (value + 7), so->bearer);
+	}
+	if (r_str_ncasecmp (value, "Basic ", 6)) {
+		return false;
+	}
+	int length;
+	char *decoded = (char *)r_base64_decode_dyn (value + 6, -1, &length, false);
+	if (R_STR_ISEMPTY (decoded) || !strchr (decoded, ':') || strlen (decoded) != length) {
+		free (decoded);
+		return false;
+	}
+	RListIter *iter;
+	const char *token;
+	bool matched = false;
+	r_list_foreach (so->authtokens, iter, token) {
+		if (http_auth_equal (decoded, token)) {
+			matched = true;
+			break;
+		}
+	}
+	free (decoded);
+	return matched;
+}
+
 R_API void r_socket_http_server_set_breaked(bool *b) {
 	breaked = b;
 }
@@ -53,6 +93,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 	ut64 content_length = 0;
 	int xx, yy;
 	int pxx = 1, first = 0;
+	bool authorization_seen = false;
 	char buf[1500], *p, *q;
 	RSocketHTTPRequest *hr = R_NEW0 (RSocketHTTPRequest);
 	if (so->accept_timeout) {
@@ -134,21 +175,10 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 				hr->host = strdup (buf + 6);
 			} else if (r_str_ncasecmp (buf, "Content-Length: ", 16) == 0) {
 				content_length = strtoull (buf + 16, NULL, 10);
-			} else if (so->httpauth && r_str_startswith (buf, "Authorization: Basic ")) {
-				int declen;
-				char *dec = (char *)r_base64_decode_dyn (buf + 21, -1, &declen, false);
-				/* only non-empty user:password credentials can match */
-				if (R_STR_ISNOTEMPTY (dec) && strchr (dec, ':')) {
-					RListIter *iter;
-					char *tok;
-					r_list_foreach (so->authtokens, iter, tok) {
-						if (!strcmp (dec, tok)) {
-							hr->auth = true;
-							break;
-						}
-					}
-				}
-				free (dec);
+			} else if (so->httpauth && !r_str_ncasecmp (buf, "Authorization:", 14)) {
+				r_str_trim (buf + 14);
+				hr->auth = !authorization_seen && http_auth_match (so, buf + 14);
+				authorization_seen = true;
 				if (!hr->auth) {
 					R_LOG_ERROR ("Failed login attempt from '%s'", hr->host);
 				}
@@ -227,7 +257,7 @@ R_API void r_socket_http_response(RSocketHTTPRequest *rs, int code, const char *
 		len = out? strlen (out): 0;
 	}
 	if (!headers) {
-		headers = code == 401? "WWW-Authenticate: Basic realm=\"R2 Web UI Access\"\n": "";
+		headers = code == 401? "WWW-Authenticate: Basic realm=\"radare2\"\n": "";
 	}
 	r_socket_printf (rs->s, "HTTP/1.0 %d %s\r\n%s"
 			"Connection: close\r\nContent-Length: %d\r\n\r\n",

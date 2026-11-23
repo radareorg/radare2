@@ -131,6 +131,46 @@ Same as -e bin.usextr=false, do not use extract plugins, useful for dyldcache
 .Sh SHELL
 Type '?' for help
 .Pp
+.Sh HTTP AUTHENTICATION
+Set authentication credentials before starting the HTTP server
+with '=h' or '=h&'.
+The 'http.auth' setting enables authentication and defaults to false.
+When enabled, at least one credential must be configured:
+.Bl -tag -width http.auth.bearer
+.It Cm http.auth.bearer
+Bearer token accepted through the 'Authorization: Bearer <token>' header.
+Set to 'true' to generate a new 256-bit random token.
+Query
+.Sq e http.auth.bearer
+to read it.
+A supplied token may also be used.
+An empty value disables bearer authentication.
+Set to 'true' again to rotate it before starting or restarting the server.
+.It Cm http.auth.lp
+One login:password pair for HTTP Basic authentication.
+Browsers prompt for the username and password.
+Defaults to empty.
+.It Cm http.auth.file
+HTTP Basic authentication file with one plaintext login:password pair per line.
+Blank lines are ignored.
+Defaults to empty.
+.El
+.Pp
+Credentials from these settings are accepted as alternatives and are loaded when
+the server starts.
+For example:
+.Bd -literal -offset indent
+e http.auth.bearer=true
+e http.auth.bearer
+e http.auth=true
+=h
+.Ed
+.Pp
+The 'http.auth.file' and 'http.auth.lp' settings replace
+.Sq http.authfile
+and
+.Sq http.authtok ,
+respectively.
 .Sh VISUAL
 To enter visual mode use the 'V' command. Then press '?' for help
 .Sh DEBUGGER

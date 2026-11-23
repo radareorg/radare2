@@ -24,6 +24,21 @@ static bool boolify_var_cb(void *user, void *data) {
 	return true;
 }
 
+static bool cb_http_auth_bearer(void *user, void *data) {
+	RConfigNode *node = data;
+	if (!strcmp (node->value, "true")) {
+		char *token = r_str_random (64);
+		if (!token) {
+			R_LOG_ERROR ("Cannot generate HTTP bearer token");
+			return false;
+		}
+		free (node->value);
+		node->value = token;
+		node->i_value = 0;
+	}
+	return true;
+}
+
 static bool cb_cmd_onsyscall(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -4835,9 +4850,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("http.upget", "false", "/up/ answers GET requests, in addition to POST");
 	SETB ("http.upload", "false", "enable file uploads to /up/<filename>");
 	SETS ("http.uri", "", "address of HTTP proxy");
-	SETB ("http.auth", "false", "enable/disable HTTP Authentification");
-	SETS ("http.authtok", "r2admin:r2admin", "http authentification user:password token");
-	SETS ("http.authfile", "", "http authentification user file");
+	SETB ("http.auth", "false", "enable HTTP authentication (configure http.auth.bearer, http.auth.lp or http.auth.file)");
+	SETCB ("http.auth.bearer", "", &cb_http_auth_bearer, "HTTP bearer token (true generates a new token, empty disables bearer authentication)");
+	SETS ("http.auth.lp", "", "HTTP Basic authentication login:password pair");
+	SETS ("http.auth.file", "", "HTTP Basic authentication file with one login:password pair per line");
 	tmpdir = r_file_tmpdir ();
 	r_config_set (cfg, "http.uproot", tmpdir);
 	free (tmpdir);

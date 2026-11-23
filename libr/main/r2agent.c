@@ -223,7 +223,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 				char *authargs = NULL;
 				if (so.httpauth) {
 					char *ea = r_str_escape_sh (httpauthfile);
-					authargs = r_str_newf ("-e http.auth=true -e \"http.authfile=%s\" ", ea);
+						authargs = r_str_newf ("-e http.auth=true -e \"http.auth.file=%s\" ", ea);
 					free (ea);
 				}
 				char *cmd = r_str_newf ("r2 -q %s%s-e http.port=%d -c=h \"%s\"",

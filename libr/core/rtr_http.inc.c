@@ -120,6 +120,44 @@ static bool http_referer_ok(RCore *core, const char *port, const char *referer) 
 	return ok;
 }
 
+static bool http_auth_setup(RConfig *config, RSocketHTTPOptions *options) {
+	options->httpauth = r_config_get_b (config, "http.auth");
+	options->timeout = r_config_get_i (config, "http.timeout");
+	if (!options->httpauth) {
+		return true;
+	}
+	const char *authfile = r_config_get (config, "http.auth.file");
+	const char *login = r_config_get (config, "http.auth.lp");
+	const char *bearer = r_config_get (config, "http.auth.bearer");
+	char *contents = R_STR_ISNOTEMPTY (authfile)? r_file_slurp (authfile, NULL): NULL;
+	if (R_STR_ISNOTEMPTY (authfile) && !contents) {
+		R_LOG_ERROR ("Cannot read http.auth.file");
+		return false;
+	}
+	if (contents) {
+		r_str_trim (contents);
+	}
+	options->authtokens = R_STR_ISNOTEMPTY (contents)
+		? r_str_split_duplist (contents, "\n", true): r_list_newf (free);
+	free (contents);
+	if (R_STR_ISNOTEMPTY (login)) {
+		char *pair = strdup (login);
+		if (!pair) {
+			return false;
+		}
+		r_list_append (options->authtokens, pair);
+	}
+	options->bearer = R_STR_ISNOTEMPTY (bearer)? strdup (bearer): NULL;
+	if (R_STR_ISNOTEMPTY (bearer) && !options->bearer) {
+		return false;
+	}
+	if (r_list_empty (options->authtokens) && !options->bearer) {
+		R_LOG_ERROR ("Configure http.auth.bearer, http.auth.lp or http.auth.file");
+		return false;
+	}
+	return true;
+}
+
 static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, const char *path, const HttpSandboxPolicy *policy) {
 	if (!path) {
 		return HTTP_RUN_ERROR;
@@ -132,7 +170,7 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 	char buf[32];
 	HttpRunResult ret = HTTP_RUN_SUCCESS;
 	RSocket *s;
-	RSocketHTTPOptions so;
+	RSocketHTTPOptions so = { .accept_timeout = true };
 	char *dir;
 	int iport;
 	const char *host = r_config_get (core->config, "http.bind");
@@ -143,9 +181,7 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 	const char *allow = r_config_get (core->config, "http.allow");
 	const char *basepath = r_config_get (core->config, "http.basepath");
 	const char *httpui = r_config_get (core->config, "http.ui");
-	const char *httpauthfile = r_config_get (core->config, "http.authfile");
 	const bool sandbox = policy->enabled;
-	char *pfile = NULL;
 
 	if (!r_file_is_directory (root)) {
 		if (!r_file_is_directory (homeroot)) {
@@ -184,8 +220,6 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 			s->local = false;
 		}
 	}
-	memset (&so, 0, sizeof (so));
-	so.accept_timeout = 1;
 	if (!r_socket_listen (s, port, NULL)) {
 		r_socket_free (s);
 		R_LOG_ERROR ("Cannot listen on http.port");
@@ -201,25 +235,19 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 		free (url);
 	}
 
-	so.httpauth = r_config_get_i (core->config, "http.auth");
-
-	if (so.httpauth) {
-		if (!httpauthfile) {
-			r_socket_free (s);
-			R_LOG_ERROR ("No user list set for HTTP Authentication");
-			return HTTP_RUN_ERROR;
-		}
-		pfile = r_file_slurp (httpauthfile, NULL);
-		if (pfile) {
-			so.authtokens = r_str_split_list (pfile, "\n", 0);
-		} else {
-			r_socket_free (s);
-			R_LOG_ERROR ("Empty list of HTTP users");
-			return HTTP_RUN_ERROR;
-		}
-		so.accept_timeout = 1;
+	if (!http_auth_setup (core->config, &so)) {
+		r_list_free (so.authtokens);
+		free (so.bearer);
+		r_socket_free (s);
+		return HTTP_RUN_ERROR;
 	}
-	so.timeout = r_config_get_i (core->config, "http.timeout");
+	const char *authchallenge = NULL;
+	if (so.bearer) {
+		authchallenge = r_list_empty (so.authtokens)
+			? "WWW-Authenticate: Bearer realm=\"radare2\"\r\n"
+			: "WWW-Authenticate: Basic realm=\"radare2\"\r\n"
+			  "WWW-Authenticate: Bearer realm=\"radare2\"\r\n";
+	}
 
 	origcfg = core->config;
 	newcfg = r_config_clone (core->config);
@@ -251,7 +279,7 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 	if (!newblk) {
 		r_socket_free (s);
 		r_list_free (so.authtokens);
-		free (pfile);
+		free (so.bearer);
 		return HTTP_RUN_ERROR;
 	}
 	memcpy (newblk, core->block, core->blocksize + 1);
@@ -366,7 +394,7 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 		dir = NULL;
 
 		if (!rs->auth) {
-			r_socket_http_response (rs, 401, "", 0, NULL);
+			r_socket_http_response (rs, 401, "", 0, authchallenge);
 			rtr_http_request_free (rs);
 			continue;
 		}
@@ -666,7 +694,7 @@ the_end:
 	core->http_up = false;
 	priv->listenport = NULL;
 	r_list_free (so.authtokens);
-	free (pfile);
+	free (so.bearer);
 	r_socket_free (s);
 	// Config callbacks may borrow strings owned by the HTTP session.
 #define HTTP_REBIND_CONFIG(field, key) do { \

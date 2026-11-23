@@ -89,10 +89,11 @@ typedef struct r_socket_t {
 } RSocket;
 
 typedef struct r_socket_http_options {
-	RList *authtokens;
+	RList *authtokens; // HTTP Basic login:password pairs
 	bool accept_timeout;
 	bool httpauth;
 	int timeout;
+	R_OWNED char *bearer;
 } RSocketHTTPOptions;
 
 #define R_SOCKET_PROTO_TCP     IPPROTO_TCP
