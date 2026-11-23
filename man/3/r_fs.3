@@ -165,6 +165,11 @@ selects directory metadata in the filesystem mounted above that path.
 .Pp
 Enumerate logical file offsets and their physical backing-image locations.
 Ranges exclude file slack; contiguous logical and physical runs are coalesced.
+R_FS_RANGE_SPARSE marks a hole that reads as zero and has no physical backing;
+its physical offset is UT64_MAX. R_FS_RANGE_UNWRITTEN marks allocated storage
+that reads as zero; its physical offset identifies the allocated disk range.
+Unwritten ranges also carry R_FS_RANGE_ALLOCATED. These flags describe logical
+file contents and do not establish that the physical bytes contain zeros.
 For FAT, allocation flags describe the current FAT state of the mapped clusters.
 A damaged or cleared chain can yield a known prefix followed by WALK_ERROR;
 this is not a complete recovery.
