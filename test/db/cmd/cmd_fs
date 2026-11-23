@@ -958,10 +958,10 @@ FILE=bins/fs/fat_deleted/fat_deleted.img
 ARGS=-n
 CMDS=<<EOF
 m /mnt fat 0
-mdx /mnt~eadme.md
+mdx /mnt~README.md$
 EOF
 EXPECT=<<EOF
-x 0x700 _eadme.md
+x 0x700 README.md
 EOF
 RUN
 
@@ -993,7 +993,7 @@ m /mnt fat 0
 mix 0x2ae00~mnt
 EOF
 EXPECT=<<EOF
-/mnt/_eadme.md
+/mnt/README.md
 EOF
 RUN
 
