@@ -60,8 +60,9 @@ EOF2
 EXPECT=<<EOF2
 | mc [file]  cat: Show the contents of the given file
 0x0
-| mg /foo [offset [size]]  dump file to disk; size 0 reads to EOF (supports base64:)
-| mg /directory            recursively dump a directory into the current directory
+| mg /foo [offset [size]]                    dump file to disk; size 0 reads to EOF (supports base64:)
+| mg /directory                              recursively dump a directory into the current directory
+| mgx /mount id output|- [chain|contiguous]  recover an entry; retain and report readable partial output
 0x0
 EOF2
 EXPECT_ERR=

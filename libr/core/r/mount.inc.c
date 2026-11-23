@@ -22,8 +22,9 @@ static RCoreHelpMessage help_msg_m = {
 	"mf", "[?] [o|n]", "search files for given filename or for offset",
 	"mg", " /foo [offset [size]]", "dump file to disk; size 0 reads to EOF (supports base64:)",
 	"mg", " /directory", "recursively dump a directory into the current directory",
+	"mgx", " /mount id output|- [chain|contiguous]", "recover an entry; retain and report readable partial output",
 	"mi", "[j] /foo/bar [entry-id]", "show file metadata by path or mounted entry ID",
-	"mie", "[j] /foo/bar [entry-id]", "file extents: logical, physical, size, flags",
+	"mie", "[j] /foo/bar [entry-id [chain|contiguous]]", "file extents: logical, physical, size, flags",
 	"mfu", "[j] /mount [state]", "list free or other allocation ranges (mf?)",
 	"mi", " 0x1234", "find filename by offset in current fs",
 	"mix", " 0x1234", "find deleted filename by offset (FAT)",
@@ -421,6 +422,84 @@ static bool mount_cat(RCmdContext *ctx) {
 	return true;
 }
 
+static ut64 mount_dump_file(RCmdContext *ctx, RFSFile *file, const char *output, ut64 offset, ut64 size) {
+	RCore *core = ctx->user;
+	bool standard_output = !strcmp (output, "-");
+	if (!standard_output && !r_file_dump (output, NULL, 0, false)) {
+		return UT64_MAX;
+	}
+	ut64 written = 0;
+	const int chunk = R_CLAMP (ctx->blocksize, 1, INT_MAX);
+	const bool cached = file->data != NULL;
+	while (written < size && !r_cons_is_breaked (ctx->cons)) {
+		int len = R_MIN (size - written, chunk);
+		int nread = cached? len: r_fs_read (core->fs, file, offset + written, len);
+		if (nread < 1 || nread > len || !file->data) {
+			break;
+		}
+		const ut8 *data = file->data + (cached? offset + written: 0);
+		if (standard_output) {
+			r_cons_write (ctx->cons, (const char *)data, nread);
+		} else if (!r_file_dump (output, data, nread, true)) {
+			break;
+		}
+		written += nread;
+	}
+	return written;
+}
+
+static bool mount_recovery_mode(const char *mode, ut32 *flags) {
+	if (!mode || !strcmp (mode, "chain")) {
+		*flags = R_FS_OPEN_CHAIN;
+		return true;
+	}
+	if (!strcmp (mode, "contiguous")) {
+		*flags = R_FS_OPEN_CONTIGUOUS;
+		return true;
+	}
+	R_LOG_ERROR ("Recovery mode must be chain or contiguous");
+	return false;
+}
+
+static bool mount_recovery_size(const RFSRange *range, void *user) {
+	ut64 *size = user;
+	return !r_add_overflow_ut64 (*size, range->size, size);
+}
+
+static bool mount_recover(RCmdContext *ctx) {
+	RCore *core = ctx->user;
+	ut64 id;
+	ut32 flags;
+	if (!r_cmdctx_num (ctx, 1, core->num, &id) || !mount_recovery_mode (r_cmdctx_arg (ctx, 3).a, &flags)) {
+		return false;
+	}
+	RFSFile *file = r_fs_open_id (core->fs, r_cmdctx_arg (ctx, 0).a, id, flags);
+	if (!file || (file->type != 'f' && file->type != R_FS_FILE_TYPE_REGULAR)) {
+		if (file) {
+			r_fs_close (core->fs, file);
+			r_fs_file_free (file);
+		}
+		R_LOG_ERROR ("Cannot open a recoverable file entry");
+		return false;
+	}
+	ut64 available = 0;
+	r_cons_break_push (core->cons, NULL, NULL);
+	int status = r_fs_extents (file, mount_recovery_size, &available);
+	ut64 written = UT64_MAX;
+	if (available || (status == R_FS_WALK_COMPLETE && !file->size)) {
+		written = mount_dump_file (ctx, file, r_cmdctx_arg (ctx, 2).a, 0, available);
+	}
+	r_cons_break_pop (core->cons);
+	bool ok = status == R_FS_WALK_COMPLETE && written == file->size;
+	if (!ok) {
+		R_LOG_WARN ("Partial recovery: %"PFMT64u" of %u bytes, flags 0x%x",
+			written == UT64_MAX? 0: written, file->size, file->flags);
+	}
+	r_fs_close (core->fs, file);
+	r_fs_file_free (file);
+	return ok;
+}
+
 static bool mount_get(RCmdContext *ctx) {
 	RCore *core = ctx->user;
 	ut64 offset = 0, size = 0;
@@ -441,20 +520,9 @@ static bool mount_get(RCmdContext *ctx) {
 	} else if (offset <= file->size) {
 		const char *localfile = r_file_basename (filename);
 		size = R_MIN (size? size: file->size, file->size - offset);
-		const int chunk = R_CLAMP (ctx->blocksize, 1, INT_MAX);
-		const bool cached = file->data != NULL;
-		ok = r_file_dump (localfile, NULL, 0, false);
-		while (ok && size > 0) {
-			int len = R_MIN (size, chunk);
-			int nread = cached? len: r_fs_read (core->fs, file, offset, len);
-			ok = nread > 0 && nread <= len && file->data;
-			if (ok) {
-				const ut8 *data = file->data + (cached? offset: 0);
-				ok = r_file_dump (localfile, data, nread, true);
-				offset += nread;
-				size -= nread;
-			}
-		}
+		r_cons_break_push (core->cons, NULL, NULL);
+		ok = mount_dump_file (ctx, file, localfile, offset, size) == size;
+		r_cons_break_pop (core->cons);
 	}
 	if (file) {
 		r_fs_close (core->fs, file);
@@ -730,7 +798,8 @@ static bool mount_ranges(RCmdContext *ctx) {
 	const char *path = r_cmdctx_arg (ctx, 0).a;
 	const char *state = r_cmdctx_arg (ctx, 1).a;
 	if (extents) {
-		if (state && !r_cmdctx_num (ctx, 1, core->num, &id)) {
+		if ((state && !r_cmdctx_num (ctx, 1, core->num, &id))
+				|| !mount_recovery_mode (r_cmdctx_arg (ctx, 2).a, &flags)) {
 			pj_free (output.pj);
 			return false;
 		}
@@ -749,7 +818,7 @@ static bool mount_ranges(RCmdContext *ctx) {
 	}
 	RFSFile *file = NULL;
 	if (extents) {
-		file = state? r_fs_open_id (core->fs, path, id, R_FS_OPEN_CHAIN): r_fs_open (core->fs, path, false);
+		file = state? r_fs_open_id (core->fs, path, id, flags): r_fs_open (core->fs, path, false);
 		if (!file) {
 			R_LOG_ERROR ("Cannot open file");
 			pj_free (output.pj);
@@ -1012,9 +1081,10 @@ static bool r_core_cmd_mount_init(RCmd *cmd) {
 		{ "mfu", mount_ranges, " /mount [free|allocated|orphan|bad|unknown|all]", NULL, 1, 2 },
 		{ "mfuj", mount_ranges, " /mount [free|allocated|orphan|bad|unknown|all]", NULL, 1, 2 },
 		{ "mg", mount_get, " [filename] [offset [size]]", NULL, 1, 3 },
+		{ "mgx", mount_recover, " /mount id output|- [chain|contiguous]", NULL, 3, 4 },
 		{ "mi", mount_info, " [path|offset] [entry-id]", NULL, 1, 2 },
-		{ "mie", mount_ranges, " [path] [entry-id]", NULL, 1, 2 },
-		{ "miej", mount_ranges, " [path] [entry-id]", NULL, 1, 2 },
+		{ "mie", mount_ranges, " [path] [entry-id [chain|contiguous]]", NULL, 1, 3 },
+		{ "miej", mount_ranges, " [path] [entry-id [chain|contiguous]]", NULL, 1, 3 },
 		{ "mij", mount_info, " [path] [entry-id]", NULL, 1, 2 },
 		{ "mis", mount_info, " [path]", NULL, 1, 1 },
 		{ "mix", mount_info, " [mountpoint] offset", NULL, 1, 2 },

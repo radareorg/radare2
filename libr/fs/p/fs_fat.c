@@ -26,6 +26,9 @@ typedef struct {
 	ut32 index;
 	ut32 checkpoint;
 	ut32 power;
+	ut64 readable;
+	int plan_status;
+	bool contiguous;
 } FatEntry;
 
 typedef bool (*FatEntryCb)(FatFS *fat, FatEntry *entry, void *user);
@@ -85,6 +88,10 @@ static ut32 fat_state(FatFS *fat, ut32 value) {
 }
 
 static bool fat_cluster_at(FatFS *fat, FatEntry *entry, ut32 index, ut32 *cluster) {
+	if (entry->contiguous) {
+		*cluster = entry->cluster + index;
+		return fat_valid_cluster (fat, *cluster);
+	}
 	if (!entry->power || index < entry->index) {
 		entry->current = entry->checkpoint = entry->cluster;
 		entry->index = 0;
@@ -396,19 +403,45 @@ static RFSFile *fat_open(RFSRoot *root, const char *path, bool create) {
 static RFSFile *fat_open_id(RFSRoot *root, ut64 id, ut32 flags) {
 	FatFS *fat = root->ptr;
 	FatEntry entry;
-	return flags == R_FS_OPEN_CHAIN && fat_entry_id (fat, id, &entry)
-		? fat_file (fat, entry.name, &entry): NULL;
+	if (flags > R_FS_OPEN_CONTIGUOUS || !fat_entry_id (fat, id, &entry)) {
+		return NULL;
+	}
+	if (flags == R_FS_OPEN_CONTIGUOUS) {
+		if (!(entry.flags & R_FS_FILE_DELETED) || (entry.attr & 0x10)) {
+			return NULL;
+		}
+		entry.contiguous = true;
+		entry.flags |= R_FS_FILE_HEURISTIC;
+	}
+	return fat_file (fat, entry.name, &entry);
 }
+
+static int fat_plan(RFSFile *file);
 
 static int fat_read(RFSFile *file, ut64 off, int len) {
 	FatFS *fat = file->root->ptr;
 	FatEntry *entry = file->ptr;
-	fat->cache_size = 0;
+	if (entry->attr & 0x10) {
+		return -1;
+	}
 	if (off >= entry->size) {
 		return 0;
 	}
-	len = R_MIN ((ut64)len, entry->size - off);
-	return fat_read_entry (fat, entry, off, file->data, len, NULL)? len: -1;
+	ut64 readable = entry->size;
+	if (entry->flags & R_FS_FILE_DELETED) {
+		fat_plan (file);
+		readable = entry->readable;
+	}
+	if (off >= readable) {
+		return -1;
+	}
+	fat->cache_size = 0;
+	len = R_MIN ((ut64)len, readable - off);
+	if (!fat_read_entry (fat, entry, off, file->data, len, NULL)) {
+		file->flags |= R_FS_FILE_PARTIAL;
+		return -1;
+	}
+	return len;
 }
 
 static void fat_close(RFSFile *file) {
@@ -434,15 +467,17 @@ static RList *fat_dir(RFSRoot *root, const char *path, ut64 id, int view) {
 	return list;
 }
 
-static int fat_extents(RFSFile *file, RFSRangeCb cb, void *user) {
+static int fat_walk(RFSFile *file, ut64 remaining, RBitmap *owners, RFSRangeCb cb, void *user) {
 	FatFS *fat = file->root->ptr;
 	FatEntry *entry = file->ptr;
 	bool directory = entry->attr & 0x10;
-	ut64 remaining = directory? UT64_MAX: entry->size;
 	if (!remaining) {
 		return R_FS_WALK_COMPLETE;
 	}
 	if (directory && !entry->cluster) {
+		if (entry->id != UT64_MAX) {
+			return R_FS_WALK_ERROR;
+		}
 		RFSRange range = { 0, fat->root->delta + fat->g.root, (ut64)fat->g.root_entries * 32, R_FS_RANGE_ALLOCATED };
 		return cb (&range, user)? R_FS_WALK_COMPLETE: R_FS_WALK_STOPPED;
 	}
@@ -460,10 +495,22 @@ static int fat_extents(RFSFile *file, RFSRangeCb cb, void *user) {
 			status = R_FS_WALK_ERROR;
 			break;
 		}
+		ut32 flags = fat_state (fat, next);
+		if ((owners && r_bitmap_test (owners, cluster)) || (entry->contiguous && flags == R_FS_RANGE_ALLOCATED)) {
+			file->flags |= R_FS_FILE_CONFLICT;
+			status = R_FS_WALK_ERROR;
+			break;
+		}
+		if (flags == R_FS_RANGE_BAD || flags == R_FS_RANGE_UNKNOWN) {
+			status = R_FS_WALK_ERROR;
+			break;
+		}
 		r_bitmap_set (seen, cluster);
 		ut64 physical = fat->root->delta + fat_cluster_offset (fat, cluster);
 		ut64 size = R_MIN (remaining, fat->g.cluster_size);
-		ut32 flags = fat_state (fat, next);
+		if (entry->contiguous) {
+			flags |= R_FS_RANGE_HEURISTIC;
+		}
 		if (run.size && (run.physical + run.size != physical || run.flags != flags)) {
 			if (!cb (&run, user)) {
 				status = R_FS_WALK_STOPPED;
@@ -481,7 +528,7 @@ static int fat_extents(RFSFile *file, RFSRangeCb cb, void *user) {
 		if (directory && fat_eoc (fat, next)) {
 			break;
 		}
-		cluster = next;
+		cluster = entry->contiguous? cluster + 1: next;
 	}
 	if (status != R_FS_WALK_STOPPED && run.size && !cb (&run, user)) {
 		status = R_FS_WALK_STOPPED;
@@ -558,6 +605,42 @@ static RBitmap *fat_owners(FatFS *fat) {
 	}
 	r_bitmap_free (owners.directories);
 	return owners.used;
+}
+
+static bool fat_count_range(const RFSRange *range, void *user) {
+	ut64 *size = user;
+	*size += range->size;
+	return true;
+}
+
+static int fat_plan(RFSFile *file) {
+	FatFS *fat = file->root->ptr;
+	FatEntry *entry = file->ptr;
+	if (!entry->plan_status) {
+		RBitmap *owners = entry->flags & R_FS_FILE_DELETED? fat_owners (fat): NULL;
+		entry->plan_status = R_FS_WALK_ERROR;
+		if (!(entry->flags & R_FS_FILE_DELETED) || owners) {
+			entry->plan_status = fat_walk (file, entry->attr & 0x10? UT64_MAX: entry->size,
+				owners, fat_count_range, &entry->readable);
+		}
+		if (entry->plan_status != R_FS_WALK_COMPLETE) {
+			file->flags |= R_FS_FILE_PARTIAL;
+		}
+		r_bitmap_free (owners);
+	}
+	return entry->plan_status;
+}
+
+static int fat_extents(RFSFile *file, RFSRangeCb cb, void *user) {
+	FatEntry *entry = file->ptr;
+	int status = fat_plan (file);
+	if (entry->readable) {
+		int result = fat_walk (file, entry->readable, NULL, cb, user);
+		if (result != R_FS_WALK_COMPLETE) {
+			return result;
+		}
+	}
+	return status;
 }
 
 static int fat_ranges(RFSRoot *root, ut32 flags, RFSRangeCb cb, void *user) {

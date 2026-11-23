@@ -132,7 +132,16 @@ Opening by ID can reconstruct names within the containing directory cluster
 or fixed root region; fragments in an earlier noncontiguous cluster require
 normal directory enumeration. OEM bytes without a known codepage are
 rendered as hexadecimal escapes.
+R_FS_OPEN_CHAIN follows surviving FAT links. R_FS_OPEN_CONTIGUOUS is an
+explicit heuristic for deleted regular files and only uses consecutive free
+clusters. It never skips allocated clusters to assemble a guess.
 The returned handle uses the ordinary read, close and file-free operations.
+Before deleted data is mapped or read, FAT checks live ownership. Incomplete
+ownership enumeration refuses recovery; reused clusters stop the readable
+prefix and set R_FS_FILE_CONFLICT. R_FS_FILE_PARTIAL records incomplete data.
+The declared size remains unchanged; reads can return a short prefix, then an
+error. No missing content is synthesized. Open a new handle after modifying
+the image, because the recovery plan is retained for that handle.
 The ID and disk offset use UT64_MAX when unknown; deletion is recorded in
 RFSFile.flags independently of the file type.
 .Pp
