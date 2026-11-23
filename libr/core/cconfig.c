@@ -3481,6 +3481,8 @@ static bool cb_searchin(void *user, void *data) {
 			r_cons_printf (core->cons, "Valid values for search.in (depends on .from/.to and io.va):\n"
 						"range              search between .from/.to boundaries\n"
 						"raw                search the whole file\n"
+						"fs.free            search free clusters in the mount selected by fs.cwd\n"
+						"fs.lost            search allocated clusters without a live owner (fs.cwd)\n"
 						"flag               find boundaries in ranges defined by flags larger than 1 byte\n"
 						"flag:[glob]        find boundaries in flags matching given glob and larger than 1 byte\n"
 						"block              search in the current block\n"
@@ -5083,7 +5085,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("search.from", -1, "search start address");
 	n = NODECB ("search.in", "io.maps", &cb_searchin);
 	SETDESC (n, "specify search boundaries");
-	SETOPTIONS (n, "raw", "flag", "flag:", "block", "bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x", "io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x", "dbg.stack", "dbg.heap", "dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x", "anal.fcn", "anal.bb", NULL);
+	SETOPTIONS (n, "fs.free", "fs.lost", "raw", "flag", "flag:", "block", "bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x", "io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x", "dbg.stack", "dbg.heap", "dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x", "anal.fcn", "anal.bb", NULL);
 	SETICB ("search.kwidx", 0, &cb_search_kwidx, "store last search index count");
 	SETS ("search.prefix", "hit", "prefix name in search hits label");
 	SETB ("search.show", "true", "show search results");

@@ -905,6 +905,22 @@ static void append_bound(RList *list, RIO *io, RInterval search_itv, ut64 from, 
 	}
 }
 
+typedef struct {
+	RCore *core;
+	RList *list;
+	RInterval interval;
+} FSSearchBounds;
+
+static bool fs_search_bound(const RFSRange *range, void *user) {
+	FSSearchBounds *bounds = user;
+	if (r_cons_is_breaked (bounds->core->cons) || range->physical == UT64_MAX
+			|| !range->size || range->size > UT64_MAX - range->physical) {
+		return false;
+	}
+	append_bound (bounds->list, bounds->core->io, bounds->interval, range->physical, range->size, R_PERM_R);
+	return true;
+}
+
 static bool maskMatches(int perm, int mask, bool only) {
 	if (mask) {
 		if (only) {
@@ -943,7 +959,18 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 	if (perm == -1) {
 		perm = R_PERM_RWX;
 	}
-	if (!strcmp (mode, "flag")) {
+	if (!strcmp (mode, "fs.free") || !strcmp (mode, "fs.lost")) {
+		FSSearchBounds bounds = { core, list, search_itv };
+		ut32 flags = !strcmp (mode, "fs.free")? R_FS_RANGE_FREE: R_FS_RANGE_ORPHAN;
+		const char *mountpoint = r_config_get (core->config, "fs.cwd");
+		int status = r_fs_ranges (core->fs, mountpoint, flags, fs_search_bound, &bounds);
+		if (status != R_FS_WALK_COMPLETE) {
+			R_LOG_ERROR ("Cannot enumerate %s in %s (%s)", mode, mountpoint,
+				status == R_FS_WALK_UNSUPPORTED? "unsupported": "incomplete");
+			r_list_free (list);
+			return NULL;
+		}
+	} else if (!strcmp (mode, "flag")) {
 		const RVecFlagItemPtr *ls = r_flag_get_vec (core->flags, core->addr);
 		RFlagItem *fi;
 		RFlagItem **iter;
@@ -4366,6 +4393,10 @@ static void cmd_search_magic(RCore *core, RSearchParameters *param, const char *
 	RListIter *iter;
 	RIOMap *map;
 	r_list_foreach (param->boundaries, iter, map) {
+		if (r_str_startswith (param->mode, "fs.")) {
+			mc.from = r_io_map_begin (map);
+			mc.to = r_io_map_end (map);
+		}
 		if (param->outmode != R_MODE_JSON) {
 			eprintf ("-- %"PFMT64x" %"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
 		}
@@ -4384,7 +4415,9 @@ static void cmd_search_magic(RCore *core, RSearchParameters *param, const char *
 			}
 			addr += ret - 1;
 		}
-		r_cons_clear_line (core->cons, true, true);
+		if (param->outmode != R_MODE_JSON) {
+			r_cons_clear_line (core->cons, true, true);
+		}
 		r_cons_break_pop (core->cons);
 	}
 	free (mc.ofile);
@@ -4459,6 +4492,11 @@ static int cmd_search(void *data, const char *input) {
 
 	param.mode = r_config_get (core->config, "search.in");
 	param.boundaries = r_core_get_boundaries_prot (core, -1, param.mode, "search");
+	if (!param.boundaries) {
+		errcode = 1;
+		status = R_CMD_RC_FAILURE;
+		goto beach;
+	}
 	param.progressbar = r_config_get_b (core->config, "scr.progressbar");
 	if (param.progressbar) {
 		param.progressbar = r_config_get_b (core->config, "scr.interactive");
@@ -5122,7 +5160,9 @@ reread:
 		} else {
 			r_cons_cmd_help (core->cons, help_msg_slash_magic);
 		}
-		r_cons_clear_line (core->cons, true, true);
+		if (param.outmode != R_MODE_JSON) {
+			r_cons_clear_line (core->cons, true, true);
+		}
 		break;
 	case 'p': // "/p"
 		if (input[1] == '?') { // "/p" -- find next pattern
@@ -5583,12 +5623,13 @@ again:
 		break;
 	case 'z': // "/z" search strings of min-max range
 	{
-		const char *p = input[1]? strchr (input + 2, ' '): NULL;
+		const char *limits = r_str_trim_head_ro (input + param_offset);
+		const char *p = strchr (limits, ' ');
 		if (!p) {
 			r_cons_cmd_help_match (core->cons, help_msg_slash, "/z", 0, true);
 			break;
 		}
-		char *minstr = r_str_ndup (input + 2, p - (input + 2));
+		char *minstr = r_str_ndup (limits, p - limits);
 		const char *maxstr = r_str_trim_head_ro (p + 1);
 		ut32 min = r_num_math (core->num, minstr);
 		ut32 max = r_num_math (core->num, maxstr);
