@@ -209,9 +209,7 @@ EOF
 EXPECT=<<EOF
 d etc
 d bin
-f åeadme~1.swp
 f README.md
-f åeadme~1.swx
 EOF
 RUN
 
@@ -963,7 +961,7 @@ m /mnt fat 0
 mdx /mnt~eadme.md
 EOF
 EXPECT=<<EOF
-x \xe5eadme.md
+x 0x700 _eadme.md
 EOF
 RUN
 
@@ -995,7 +993,7 @@ m /mnt fat 0
 mix 0x2ae00~mnt
 EOF
 EXPECT=<<EOF
-/mnt/\xe5eadme.md
+/mnt/_eadme.md
 EOF
 RUN
 
@@ -1205,12 +1203,6 @@ mfo / 0
 EOF2
 EXPECT=<<EOF2
 /one/dir/a
-/one/dir/a
-/two/b
-/one/dir/a
-/two/b
-/one/dir/a
-/two/b
 /two/b
 EOF2
 EXPECT_ERR=
@@ -1229,8 +1221,6 @@ EOF2
 EXPECT=<<EOF2
 /a
 /dir
-/dir/b
-/a
 /dir/b
 EOF2
 EXPECT_ERR=
@@ -1614,6 +1604,7 @@ NAME=ntfs index views are special entries rather than regular files
 FILE=bins/fs/ntfs.img
 CMDS=<<EOF
 m /mnt ntfs 0
+e fs.view=special
 md /mnt/$Extend
 EOF
 EXPECT=<<EOF

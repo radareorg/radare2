@@ -348,7 +348,7 @@ static int apfs_dir_entry_cmp(const void *a, const void *b) {
 	return (fb && fb->name) ? strcmp (fa->name, fb->name) : 1;
 }
 
-static RList *fs_apfs_dir(RFSRoot *root, const char *path, int view) {
+static RList *fs_apfs_dir(RFSRoot *root, const char *path, R_UNUSED ut64 id, int view) {
 	R_RETURN_VAL_IF_FAIL (root, NULL);
 
 	ApfsFS *ctx = root->ptr;

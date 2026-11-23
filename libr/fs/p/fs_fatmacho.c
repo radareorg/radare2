@@ -326,7 +326,6 @@ static RFSFile *fs_fatmacho_open(RFSRoot *root, const char *path, bool create) {
 	file->type = R_FS_FILE_TYPE_REGULAR;
 	file->size = s->size;
 	file->off = s->offset;
-	file->p = root->p;
 	file->ptr = s;
 	return file;
 }
@@ -391,7 +390,7 @@ static int fs_fatmacho_read(RFSFile *file, ut64 addr, int len) {
 	return len;
 }
 
-static RList *fs_fatmacho_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
+static RList *fs_fatmacho_dir(RFSRoot *root, const char *path, R_UNUSED ut64 id, R_UNUSED int view) {
 	FatmachoCtx *ctx = root->ptr;
 	if (!ctx) {
 		return NULL;

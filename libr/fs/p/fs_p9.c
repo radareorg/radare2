@@ -1135,7 +1135,7 @@ static void fs_p9_close(RFSFile *file) {
 	}
 }
 
-static RList *fs_p9_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
+static RList *fs_p9_dir(RFSRoot *root, const char *path, R_UNUSED ut64 id, R_UNUSED int view) {
 	if (!root || !root->ptr || !path) {
 		return NULL;
 	}

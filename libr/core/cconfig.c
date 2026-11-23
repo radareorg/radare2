@@ -2581,24 +2581,22 @@ static bool cb_cmd_esil_trap(void *user, void *data) {
 }
 
 static bool cb_fsview(void *user, void *data) {
-	int type = R_FS_VIEW_NORMAL;
-	RCore *core = (RCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
+	RConfigNode *node = data;
 	if (*node->value == '?') {
 		print_node_options (user, node);
 		return false;
 	}
-	if (!strcmp (node->value, "all")) {
-		type = R_FS_VIEW_ALL;
+	const char *names[] = { "normal", "deleted", "special", "all" };
+	int views[] = { R_FS_VIEW_NORMAL, R_FS_VIEW_DELETED, R_FS_VIEW_SPECIAL, R_FS_VIEW_ALL };
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (names); i++) {
+		if (!strcmp (node->value, names[i])) {
+			node->i_value = views[i];
+			return true;
+		}
 	}
-	if (!strstr (node->value, "del")) {
-		type |= R_FS_VIEW_DELETED;
-	}
-	if (!strstr (node->value, "spe")) {
-		type |= R_FS_VIEW_SPECIAL;
-	}
-	r_fs_view (core->fs, type);
-	return true;
+	R_LOG_ERROR ("Invalid filesystem view: %s", node->value);
+	return false;
 }
 
 static bool cb_cmddepth(void *user, void *data) {

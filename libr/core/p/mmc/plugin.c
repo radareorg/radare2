@@ -146,7 +146,7 @@ static void mmc_panel_load_fs(RCore *core, MMCPanel *panel, MMCOrderMode orderin
 		start_idx = 1;
 	}
 
-	list = r_fs_dir (core->fs, panel->path);
+	list = r_fs_dir (core->fs, panel->path, UT64_MAX, r_config_get_i (core->config, "fs.view"));
 	if (list) {
 		fs_count = r_list_length (list);
 		panel->count += fs_count;

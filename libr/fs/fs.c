@@ -66,7 +66,6 @@ R_API R_MUSTUSE const RFSType *r_fs_type_index(int i) {
 
 R_API R_MUSTUSE RFS *r_fs_new(void) {
 	RFS *fs = R_NEW0 (RFS);
-	fs->view = R_FS_VIEW_NORMAL;
 	fs->roots = r_list_new ();
 	if (!fs->roots) {
 		r_fs_free (fs);
@@ -122,15 +121,6 @@ R_API bool r_fs_plugin_add(RFS *fs, RFSPlugin *p) {
 	memcpy (sp, p, sizeof (RFSPlugin));
 	r_list_append (fs->libstore->plugins, sp);
 	return true;
-}
-
-R_API bool r_fs_plugin_remove(RFS *fs, RFSPlugin *p) {
-	// XXX TODO
-	return true;
-}
-
-R_API void r_fs_del(RFS *fs, RFSPlugin *p) {
-	// TODO: implement r_fs_del
 }
 
 /* mountpoint */
@@ -192,7 +182,7 @@ R_API RFSRoot *r_fs_mount_with_options(RFS *fs, const char *R_NULLABLE fstype, c
 		free (str);
 		return NULL;
 	}
-	RList *list = r_fs_dir (fs, str);
+	RList *list = r_fs_dir (fs, str, UT64_MAX, R_FS_VIEW_NORMAL);
 	if (!r_list_empty (list)) {
 		r_list_free (list);
 		R_LOG_ERROR ("r_fs_mount: Invalid mount point");
@@ -332,30 +322,62 @@ R_API RFSFile *r_fs_open(RFS *fs, const char *p, bool create) {
 	return f;
 }
 
+static RFSRoot *fs_mountpoint(RFS *fs, const char *path) {
+	RListIter *iter;
+	RFSRoot *root;
+	r_list_foreach (fs->roots, iter, root) {
+		if (!strcmp (root->path, path)) {
+			return root;
+		}
+	}
+	return NULL;
+}
+
+R_API RFSFile *r_fs_open_id(RFS *fs, const char *mountpoint, ut64 id, ut32 flags) {
+	R_RETURN_VAL_IF_FAIL (fs && mountpoint, NULL);
+	RFSRoot *root = fs_mountpoint (fs, mountpoint);
+	return root && root->p->open_id? root->p->open_id (root, id, flags): NULL;
+}
+
+R_API int r_fs_extents(RFSFile *file, RFSRangeCb cb, void *user) {
+	R_RETURN_VAL_IF_FAIL (file && file->root && file->root->p && cb, R_FS_WALK_ERROR);
+	RFSPlugin *p = file->root->p;
+	return p->extents? p->extents (file, cb, user): R_FS_WALK_UNSUPPORTED;
+}
+
+R_API int r_fs_ranges(RFS *fs, const char *mountpoint, ut32 flags, RFSRangeCb cb, void *user) {
+	R_RETURN_VAL_IF_FAIL (fs && mountpoint && cb, R_FS_WALK_ERROR);
+	RFSRoot *root = fs_mountpoint (fs, mountpoint);
+	if (!root) {
+		return R_FS_WALK_ERROR;
+	}
+	return root->p->ranges? root->p->ranges (root, flags, cb, user): R_FS_WALK_UNSUPPORTED;
+}
+
 // NOTE: close doesnt free
 R_API void r_fs_close(RFS *fs, RFSFile *file) {
 	R_RETURN_IF_FAIL (fs && file);
 	R_FREE (file->data);
-	if (file->p && file->p->close) {
-		file->p->close (file);
+	if (file->root && file->root->p && file->root->p->close) {
+		file->root->p->close (file);
 	}
 }
 
 R_API int r_fs_write(RFS *fs, RFSFile *file, ut64 addr, const ut8 *data, int len) {
-	R_RETURN_VAL_IF_FAIL (fs && file && data && len >= 0, -1);
+	R_RETURN_VAL_IF_FAIL (fs && file && file->root && data && len >= 0, -1);
 	if (fs && file) {
 		// TODO: fill file->data? looks like dupe of rbuffer
-		if (file->p && file->p->write) {
-			return file->p->write (file, addr, data, len);
+		if (file->root->p && file->root->p->write) {
+			return file->root->p->write (file, addr, data, len);
 		}
-		R_LOG_ERROR ("null file->p->write");
+		R_LOG_ERROR ("null file->root->p->write");
 	}
 	return -1;
 }
 
 R_API int r_fs_read(RFS *fs, RFSFile *file, ut64 addr, int len) {
-	R_RETURN_VAL_IF_FAIL (fs && file && len > 0, -1);
-	if (file->p && file->p->read) {
+	R_RETURN_VAL_IF_FAIL (fs && file && file->root && len > 0, -1);
+	if (file->root->p && file->root->p->read) {
 		// some plugins write len bytes into the existing buffer, so it must be
 		// sized for every request, not only for the first one
 		free (file->data);
@@ -363,9 +385,9 @@ R_API int r_fs_read(RFS *fs, RFSFile *file, ut64 addr, int len) {
 		if (!file->data) {
 			return -1;
 		}
-		return file->p->read (file, addr, len);
+		return file->root->p->read (file, addr, len);
 	}
-	R_LOG_ERROR ("null file->p->read");
+	R_LOG_ERROR ("null file->root->p->read");
 	return -1;
 }
 
@@ -395,7 +417,15 @@ R_API RList *r_fs_dir_bins(RFS *fs, RBuffer *buf) {
 	return NULL;
 }
 
-R_API RList *r_fs_dir(RFS *fs, const char *p) {
+static bool fs_visible(const RFSFile *file, int view) {
+	if (file->flags & R_FS_FILE_DELETED) {
+		return view & R_FS_VIEW_DELETED;
+	}
+	bool special = file->type && strchr ("sSbBcC", file->type);
+	return view & (special? R_FS_VIEW_SPECIAL: R_FS_VIEW_NORMAL);
+}
+
+R_API RList *r_fs_dir(RFS *fs, const char *p, ut64 id, int view) {
 	R_RETURN_VAL_IF_FAIL (fs && p, NULL);
 	RList *ret = NULL;
 	RFSRoot *root;
@@ -404,15 +434,23 @@ R_API RList *r_fs_dir(RFS *fs, const char *p) {
 	r_str_trim_path (path);
 	RList *roots = r_fs_root (fs, path);
 	r_list_foreach (roots, iter, root) {
-		if (root && root->p && root->p->dir) {
+		if (root && root->p && root->p->dir && (id == UT64_MAX || root->p->open_id)) {
 			const char *dir = r_str_nlen (root->path, 2) == 1
 				? path
 				: path + strlen (root->path);
 			if (!*dir) {
 				dir = "/";
 			}
-			ret = root->p->dir (root, dir, fs->view);
+			ret = root->p->dir (root, dir, id, view);
 			if (ret) {
+				RListIter *it, *next;
+				RFSFile *file;
+				r_list_foreach_safe (ret, it, next, file) {
+					file->root = root;
+					if (!fs_visible (file, view)) {
+						r_list_delete (ret, it);
+					}
+				}
 				break;
 			}
 		}
@@ -484,7 +522,7 @@ static bool fs_dir_dump(RFS *fs, const char *path, const char *name, int depth, 
 	RListIter *iter;
 	RFSFile *file, *item;
 
-	RList *list = r_fs_dir (fs, path);
+	RList *list = r_fs_dir (fs, path, UT64_MAX, R_FS_VIEW_NORMAL);
 	if (!list) {
 		return false;
 	}
@@ -548,10 +586,10 @@ R_API bool r_fs_dir_dump(RFS *fs, const char *path, const char *name) {
 	return fs_dir_dump (fs, path, name, 1, &budget);
 }
 
-static void fs_find(RFS *fs, const char *path, const char *glob, ut64 offset, RList *list, int depth, int *budget) {
+static void fs_find(RFS *fs, const char *path, ut64 id, const char *glob, ut64 offset, int view, RList *list, int depth, int *budget) {
 	RListIter *iter;
 	RFSFile *item;
-	RList *dirs = r_fs_dir (fs, path);
+	RList *dirs = r_fs_dir (fs, path, id, view | R_FS_VIEW_NORMAL);
 	r_list_foreach (dirs, iter, item) {
 		if (!strcmp (item->name, ".") || !strcmp (item->name, "..")) {
 			continue;
@@ -563,11 +601,12 @@ static void fs_find(RFS *fs, const char *path, const char *glob, ut64 offset, RL
 		if (!found) {
 			break;
 		}
-		bool matches = glob && r_str_glob (item->name, glob);
-		if (!glob && item->type != R_FS_FILE_TYPE_DIRECTORY) {
-			RFSFile *file = r_fs_open (fs, found, false);
+		bool visible = fs_visible (item, view);
+		bool matches = visible && glob && r_str_glob (item->name, glob);
+		if (visible && !glob && item->type != R_FS_FILE_TYPE_DIRECTORY) {
+			RFSFile *file = item->id != UT64_MAX? r_fs_open_id (fs, item->root->path, item->id, R_FS_OPEN_CHAIN): r_fs_open (fs, found, false);
 			if (file) {
-				matches = file->off == offset;
+				matches = file->off != UT64_MAX && file->off == offset;
 				r_fs_close (fs, file);
 				r_fs_file_free (file);
 			}
@@ -576,7 +615,7 @@ static void fs_find(RFS *fs, const char *path, const char *glob, ut64 offset, RL
 			r_list_append (list, found);
 		}
 		if (item->type == R_FS_FILE_TYPE_DIRECTORY) {
-			fs_find (fs, found, glob, offset, list, depth + 1, budget);
+			fs_find (fs, found, item->id, glob, offset, view, list, depth + 1, budget);
 		}
 		if (!matches) {
 			free (found);
@@ -585,7 +624,7 @@ static void fs_find(RFS *fs, const char *path, const char *glob, ut64 offset, RL
 	r_list_free (dirs);
 }
 
-static RList *fs_find_paths(RFS *fs, const char *name, const char *glob, ut64 offset) {
+static RList *fs_find_paths(RFS *fs, const char *name, const char *glob, ut64 offset, int view) {
 	char *path = strdup (name);
 	if (!path) {
 		return NULL;
@@ -597,10 +636,10 @@ static RList *fs_find_paths(RFS *fs, const char *name, const char *glob, ut64 of
 		RListIter *iter;
 		RFSRoot *root;
 		r_list_foreach (fs->roots, iter, root) {
-			fs_find (fs, root->path, glob, offset, list, 1, &budget);
+			fs_find (fs, root->path, UT64_MAX, glob, offset, view, list, 1, &budget);
 		}
 	} else {
-		fs_find (fs, path, glob, offset, list, 1, &budget);
+		fs_find (fs, path, UT64_MAX, glob, offset, view, list, 1, &budget);
 	}
 	if (budget < 0) {
 		R_LOG_WARN ("Search stopped: directory tree is too large or too deep");
@@ -609,14 +648,14 @@ static RList *fs_find_paths(RFS *fs, const char *name, const char *glob, ut64 of
 	return list;
 }
 
-R_API RList *r_fs_find_off(RFS *fs, const char *name, ut64 off) {
+R_API RList *r_fs_find_off(RFS *fs, const char *name, ut64 off, int view) {
 	R_RETURN_VAL_IF_FAIL (fs && name, NULL);
-	return fs_find_paths (fs, name, NULL, off);
+	return fs_find_paths (fs, name, NULL, off, view);
 }
 
-R_API RList *r_fs_find_name(RFS *fs, const char *name, const char *glob) {
+R_API RList *r_fs_find_name(RFS *fs, const char *name, const char *glob, int view) {
 	R_RETURN_VAL_IF_FAIL (fs && name && glob, NULL);
-	return fs_find_paths (fs, name, glob, 0);
+	return fs_find_paths (fs, name, glob, 0, view);
 }
 
 // returns the file with its whole contents in file->data and the plugin handle
@@ -857,11 +896,6 @@ R_API char *r_fs_name(RFS *fs, ut64 offset) {
 		}
 	}
 	return NULL;
-}
-
-R_API void r_fs_view(RFS *fs, int view) {
-	R_RETURN_IF_FAIL (fs);
-	fs->view = view;
 }
 
 R_API bool r_fs_check(RFS *fs, const char *p) {

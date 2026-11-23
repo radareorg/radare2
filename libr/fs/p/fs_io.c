@@ -33,7 +33,6 @@ static RFSFile *fs_io_open(RFSRoot *root, const char *path, bool create) {
 			return NULL;
 		}
 		file->ptr = NULL;
-		file->p = root->p;
 		file->size = size;
 		return file;
 	}
@@ -94,7 +93,7 @@ static void append_file(RList *list, const char *name, int type, int time, ut64 
 	}
 }
 
-static RList *fs_io_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
+static RList *fs_io_dir(RFSRoot *root, const char *path, R_UNUSED ut64 id, int view /*ignored*/) {
 	RList *list = r_list_new ();
 	if (!list) {
 		return NULL;

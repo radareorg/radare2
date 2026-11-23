@@ -619,7 +619,7 @@ static void fs_ubifs_umount(RFSRoot *root) {
 	root->ptr = NULL;
 }
 
-static RList *fs_ubifs_dir(RFSRoot *root, const char *path, int view) {
+static RList *fs_ubifs_dir(RFSRoot *root, const char *path, R_UNUSED ut64 id, int view) {
 	R_RETURN_VAL_IF_FAIL (root, NULL);
 
 	ubifs_ctx_t *ctx = root->ptr;

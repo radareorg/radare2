@@ -141,7 +141,7 @@ static int rafs2_list_plugins(Rafs2State *s) {
 }
 
 static int rafs2_list(Rafs2State *s, const char *path) {
-	RList *list = r_fs_dir (s->fs, path);
+	RList *list = r_fs_dir (s->fs, path, UT64_MAX, R_FS_VIEW_NORMAL);
 	if (!list) {
 		R_LOG_ERROR ("Cannot list directory: %s", path);
 		return 1;
@@ -391,7 +391,6 @@ R_API int r_main_rafs2(int argc, const char **argv) {
 		return 1;
 	}
 
-	r_fs_view (fs, R_FS_VIEW_NORMAL);
 	r_io_bind (io, &(fs->iob));
 	r_cons_bind (s->cons, &(fs->csb));
 

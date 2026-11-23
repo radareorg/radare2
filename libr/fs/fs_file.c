@@ -7,9 +7,7 @@
 R_API RFSFile* r_fs_file_new(RFSRoot* root, const char* path) {
 	RFSFile* file = R_NEW0 (RFSFile);
 	file->root = root;
-	if (root) {
-		file->p = file->root->p; // XXX dupe
-	}
+	file->id = file->off = UT64_MAX;
 	file->path = strdup (path);
 	char *last = (char *)r_str_rchr (file->path, NULL, '/');
 	if (last) {

@@ -265,7 +265,7 @@ static bool test_r_fs_sfs_unterminated_names(void) {
 	mu_assert_notnull (r_io_open (io, "malloc://8192", R_PERM_RW, 0), "open sfs image");
 	r_io_write_at (io, 0, img, imgsz);
 	mu_assert_notnull (r_fs_mount (fs, "sfs", "/mnt", 0), "mount sfs image with unterminated label");
-	RList *dir = r_fs_dir (fs, "/mnt");
+	RList *dir = r_fs_dir (fs, "/mnt", UT64_MAX, R_FS_VIEW_NORMAL);
 	mu_assert_notnull (dir, "list a directory with an unterminated entry name");
 	r_list_free (dir);
 	r_fs_free (fs);

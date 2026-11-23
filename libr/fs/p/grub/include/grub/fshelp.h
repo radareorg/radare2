@@ -27,7 +27,6 @@
 
 typedef struct grub_fshelp_node *grub_fshelp_node_t;
 
-extern int grub_fshelp_view;
 #define GRUB_FSHELP_CASE_INSENSITIVE	0x100
 #define GRUB_FSHELP_TYPE_MASK	0xff
 #define GRUB_FSHELP_FLAGS_MASK	0x100

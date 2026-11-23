@@ -90,7 +90,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		}
 		free (msg);
 	} else if (r_str_startswith (buf, "getall")) {
-		RList *list = r_fs_dir (fs, shell->cwd);
+		RList *list = r_fs_dir (fs, shell->cwd, UT64_MAX, R_FS_VIEW_NORMAL);
 		r_list_foreach (list, iter, file) {
 			if (file->type == 'f') {
 				R_LOG_INFO ("Downloading: %s", file->name);
@@ -117,7 +117,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		} else {
 			cwd = strdup (shell->cwd);
 		}
-		RList *list = r_fs_dir (fs, cwd);
+		RList *list = r_fs_dir (fs, cwd, UT64_MAX, R_FS_VIEW_NORMAL);
 		if (list) {
 			r_list_foreach (list, iter, file) {
 				if (minus_ele) {
@@ -155,7 +155,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		free (shell->cwd);
 		shell->cwd = abspath;
 #if 0
-		RList *list = r_fs_dir (fs, path);
+		RList *list = r_fs_dir (fs, path, UT64_MAX, R_FS_VIEW_NORMAL);
 		if (r_list_empty (list)) {
 			RFSRoot *r;
 			RListIter *iter;

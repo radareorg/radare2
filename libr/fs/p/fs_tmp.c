@@ -247,7 +247,7 @@ static int fs_tmp_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 	return len;
 }
 
-static RList *fs_tmp_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
+static RList *fs_tmp_dir(RFSRoot *root, const char *path, R_UNUSED ut64 id, R_UNUSED int view) {
 	RFSTmpNode *tnode = tmp_root (root);
 	if (!tnode) {
 		return NULL;
