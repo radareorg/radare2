@@ -30,7 +30,6 @@ KERNFILES+=kern/mm.c
 KERNFILES+=fs/fshelp.c
 KERNFILES+=fs/reiserfs.c
 KERNFILES+=fs/ext2.c
-KERNFILES+=fs/fat.c
 KERNFILES+=fs/ntfs.c
 KERNFILES+=fs/ntfscomp.c
 KERNFILES+=fs/cpio.c

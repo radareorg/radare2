@@ -18,7 +18,6 @@ grub_disk_t grubfs_disk (void *data);
 void grubfs_disk_free (struct grub_disk *gd);
 
 extern struct grub_fs grub_ext2_fs;
-extern struct grub_fs grub_fat_fs;
 extern struct grub_fs grub_ntfs_fs;
 extern struct grub_fs grub_ntfscomp_fs;
 extern struct grub_fs grub_reiserfs_fs;

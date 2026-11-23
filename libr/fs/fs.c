@@ -4,6 +4,7 @@
 
 #include <r_fs.h>
 #include <config.h>
+#include "p/fs_fat.h"
 
 #if WITH_GPL
 #ifndef USE_GRUB
@@ -31,6 +32,7 @@ static const RFSType fstypes[] = {
 	{ "hfsplus", 0x400, "H+", 2, 0, 0, 0x400 },
 	{ "ubifs", 0x0, "\x31\x18", 2, 0, 0, 0 },
 	{ "fat", 0x36, "FAT12", 5, 0, 0, 0 },
+	{ "fat", 0x36, "FAT16", 5, 0, 0, 0 },
 	{ "fat", 0x52, "FAT32", 5, 0, 0, 0 },
 	{ "fossil", 0x20000, "\x37\x76\xae\x89", 4, 0, 0, 0 },
 	{ "ext2", 0x438, "\x53\xef", 2, 0, 0, 0 },
@@ -825,6 +827,10 @@ R_API char *r_fs_name(RFS *fs, ut64 offset) {
 	R_RETURN_VAL_IF_FAIL (fs, NULL);
 	ut8 buf[1024];
 	int i, j, len, ret = false;
+	FatGeometry geometry;
+	if (fs->iob.read_at (fs->iob.io, offset, buf, 512) == 512 && fat_geometry (buf, &geometry)) {
+		return strdup ("fat");
+	}
 
 	for (i = 0; fstypes[i].name; i++) {
 		const RFSType *f = &fstypes[i];

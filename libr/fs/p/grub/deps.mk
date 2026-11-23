@@ -36,7 +36,6 @@ OBJS+=p/grub/fs/jfs.o
 # OBJS+=p/grub/fs/befs_be.o
 # OBJS+=p/grub/fs/affs.o
 # OBJS+=p/grub/fs/afs.o
-OBJS+=p/grub/fs/fat.o
 OBJS+=p/grub/fs/ext2.o
 OBJS+=p/grub/fs/ntfscomp.o
 OBJS+=p/grub/fs/minix.o

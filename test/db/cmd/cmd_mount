@@ -1330,21 +1330,12 @@ EOF2
 RUN
 
 NAME=mfn and mfo stop on a FAT directory that contains itself
-FILE=malloc://4096
+FILE=gzip://bins/fs/fat/fat12-dir-cycle.img.gz
+ARGS=-n
 CMDS=<<EOF2
-wx 020101000100000000f8 @ 0xc
-wx 08000000010000000000000002 @ 0x20
-wx 4641543332202020 @ 0x52
-wx f8ffff0fffffff0fffffff0fffffff0fffffff0fffffff0f @ 0x200
-wx 444952202020202020202010 @ 0x400
-wx 03 @ 0x41a
-wx 4e4f54452020202054585420 @ 0x600
-wx 05000f000000494e4e455220202020202010 @ 0x61a
-wx 03 @ 0x63a
-wx 68656c6c6f2066726f6d206661740a @ 0xa00
 m /root fat 0
 mfn /root *.txt~?
-mfo /root 0xa00~?
+mfo /root 0x3000~?
 EOF2
 EXPECT=<<EOF2
 63
@@ -1357,15 +1348,9 @@ EOF2
 RUN
 
 NAME=mdt bounds the tree of a directory that contains itself twice
-FILE=malloc://4096
+FILE=gzip://bins/fs/fat/fat12-tree-cycle.img.gz
+ARGS=-n
 CMDS=<<EOF2
-wx 00020101000100000000f8 @ 0xb
-wx 0800000001000000000000000200 @ 0x20
-w FAT32    @ 0x52
-wx f8ffff0fffffff0fffffff0fffffff0f @ 0x200
-wx 44495220202020202020201000000000000000000000000000000300 @ 0x400
-wx 41202020202020202020201000000000000000000000000000000300 @ 0x600
-wx 42202020202020202020201000000000000000000000000000000300 @ 0x620
 m /mnt fat 0
 mdt /mnt 2
 ?v $?
