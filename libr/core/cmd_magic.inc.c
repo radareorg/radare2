@@ -10,6 +10,8 @@ typedef struct {
 	int hits;
 	int calls;
 	bool text;
+	ut64 from;
+	ut64 to;
 	// TODO: add PJ and other stuff
 } MagicContext;
 
@@ -41,6 +43,9 @@ static int magic_at(MagicContext *mc, RSearchKeyword *kw, const char *file, ut64
 	int max_hits = r_config_get_i (core->config, "search.maxhits");
 	char *flag;
 
+	if (mc->to && (addr < mc->from || addr >= mc->to)) {
+		return 0;
+	}
 	if (max_hits > 0 && mc->hits >= max_hits) {
 		return 0;
 	}
@@ -114,7 +119,15 @@ static int magic_at(MagicContext *mc, RSearchKeyword *kw, const char *file, ut64
 		ret = -1;
 		goto seek_exit;
 	}
-	str = r_magic_buffer (core->magic, core->block + delta, core->blocksize - delta);
+	ut64 available = core->blocksize - delta;
+	if (mc->to) {
+		available = R_MIN (available, mc->to - addr);
+	}
+	if (available < 2) {
+		ret = 1;
+		goto seek_exit;
+	}
+	str = r_magic_buffer (core->magic, core->block + delta, available);
 	if (str) {
 		const char *cmdhit;
 #if USE_LIB_MAGIC
