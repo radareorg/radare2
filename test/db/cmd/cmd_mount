@@ -443,7 +443,7 @@ EXPECT=<<EOF2
 a  b
 dir name/
 empty file
-[{"type":"unknown","size":4,"name":"a b"}]
+[{"type":"file","size":4,"name":"a b"}]
 EOF2
 EXPECT_ERR=
 RUN
@@ -521,7 +521,7 @@ EOF2
 EXPECT=<<EOF2
 /tmp/a b
 616263
-'f file 3 0x00000000
+size 3 offset unknown
 EOF2
 EXPECT_ERR=
 RUN
@@ -631,7 +631,7 @@ rm "`$temp`"
 EOF2
 EXPECT=<<EOF2
 0x0
-'f file 0 0x00000000
+size 0 offset unknown
 0x0
 directory-created
 EOF2

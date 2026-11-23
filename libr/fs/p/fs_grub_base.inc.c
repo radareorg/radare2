@@ -17,7 +17,6 @@ static RFSFile* FSP(_open)(RFSRoot *root, const char *path, bool create) {
 		return NULL;
 	}
 	file->ptr = gfs;
-	file->p = root->p;
 	grubfs_bind_io (NULL, file->root->delta);
 	bool ok = !gfs->file->fs->open (gfs->file, path);
 	if (ok) {
@@ -71,13 +70,12 @@ static int dirhook(const char *filename, const struct grub_dirhook_info *info, v
 	return 0;
 }
 
-static RList *FSP(_dir)(RFSRoot *root, const char *path, int view) {
+static RList *FSP(_dir)(RFSRoot *root, const char *path, R_UNUSED ut64 id, int view) {
 	if (!root) {
 		return NULL;
 	}
 	GrubFS *gfs = root->ptr;
 	list = r_list_newf ((RListFree)r_fs_file_free);
-	grub_fshelp_view = view;
 	//gfs->file->device->data = &root->iob;
 	grubfs_bind_io (&root->iob, root->delta);
 	gfs->file->fs->dir (gfs->file->device, path, dirhook, 0);

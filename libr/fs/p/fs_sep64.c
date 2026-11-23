@@ -315,7 +315,6 @@ static RFSFile *fs_sep64_open(RFSRoot *root, const char *path, bool create) {
 		f->type = R_FS_FILE_TYPE_REGULAR;
 		f->size = s->size;
 		f->off = s->phys_text;
-		f->p = root->p;
 		f->ptr = s;
 	}
 	return f;
@@ -354,7 +353,7 @@ static RFSFile *fs_sep64_slurp(RFSRoot *root, const char *path) {
 	return f;
 }
 
-static RList *fs_sep64_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
+static RList *fs_sep64_dir(RFSRoot *root, const char *path, R_UNUSED ut64 id, R_UNUSED int view) {
 	Ctx *ctx = root->ptr;
 	if (!ctx) {
 		return NULL;

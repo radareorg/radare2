@@ -2950,7 +2950,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 			}
 		} else {
 			if (root) {
-				list = r_fs_dir (core->fs, path);
+				list = r_fs_dir (core->fs, path, UT64_MAX, r_config_get_i (core->config, "fs.view"));
 				if (list) {
 					r_cons_printf (core->cons, "%s:\n\n", path);
 					i = 0;
@@ -2973,7 +2973,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 		}
 		if (mode == 2) {
 			r_str_trim_path (path);
-			list = r_fs_dir (core->fs, path);
+			list = r_fs_dir (core->fs, path, UT64_MAX, r_config_get_i (core->config, "fs.view"));
 			file = r_list_get_n (list, dir);
 			if (file && file->type != 'd') {
 				r_core_cmdf (core, "px @ 0x%" PFMT64x "!64", file->off);
@@ -3034,7 +3034,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 					list = NULL;
 				} else if (mode == 2) {
 					r_str_trim_path (path);
-					list = r_fs_dir (core->fs, path);
+					list = r_fs_dir (core->fs, path, UT64_MAX, r_config_get_i (core->config, "fs.view"));
 					file = r_list_get_n (list, dir);
 					if (file) {
 						if (file->type == 'd') {
@@ -3102,7 +3102,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 						option++;
 					}
 				} else {
-					list = r_fs_dir (core->fs, path);
+					list = r_fs_dir (core->fs, path, UT64_MAX, r_config_get_i (core->config, "fs.view"));
 					if (dir < r_list_length (list) - 1) {
 						dir++;
 					}
@@ -3142,7 +3142,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 			case 'g':
 				if (mode == 2) {
 					r_str_trim_path (path);
-					list = r_fs_dir (core->fs, path);
+					list = r_fs_dir (core->fs, path, UT64_MAX, r_config_get_i (core->config, "fs.view"));
 					file = r_list_get_n (list, dir);
 					if (file && root) {
 						char *fname = r_str_newf ("%s/%s", path, file->name);

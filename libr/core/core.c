@@ -518,7 +518,7 @@ static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const
 	if (!dirname || !basename) {
 		goto out;
 	}
-	RList *list = r_fs_dir (core->fs, dirname);
+	RList *list = r_fs_dir (core->fs, dirname, UT64_MAX, r_config_get_i (core->config, "fs.view"));
 	n = strlen (basename);
 	bool chgdir = r_str_startswith (str, "cd ");
 	if (list) {

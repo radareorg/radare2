@@ -15,7 +15,6 @@ static RFSFile* fs_posix_open(RFSRoot *root, const char *path, bool create) {
 		return NULL;
 	}
 	file->ptr = NULL;
-	file->p = root->p;
 	FILE *fd = r_sandbox_fopen (path, create? "wb": "rb");
 	if (fd) {
 		if (fseek (fd, 0, SEEK_END) != 0) {
@@ -48,7 +47,7 @@ static void fs_posix_close(RFSFile *file) {
 	// fclose (file->ptr);
 }
 
-static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
+static RList *fs_posix_dir(RFSRoot *root, const char *path, R_UNUSED ut64 id, int view /*ignored*/) {
 	RListIter *iter;
 	struct stat st;
 	char *file;

@@ -245,7 +245,6 @@ static int __version(RFSRoot *root, RFSFile *file, const char *path) {
 	file->ptr = NULL;
 	free (file->data);
 	file->data = (ut8*)res;
-	file->p = root->p;
 	file->size = strlen (res);
 	return file->size;
 }
@@ -279,7 +278,6 @@ static int __bsize_cat(RFSRoot *root, RFSFile *file, const char *path) {
 	char *res = root->cob.cmdStrF (root->cob.core, "b");
 	file->ptr = NULL;
 	file->data = (ut8*)res;
-	file->p = root->p;
 	file->size = strlen (res);
 	return file->size;
 }
@@ -297,7 +295,6 @@ static int __seek_cat(RFSRoot *root, RFSFile *file, const char *path) {
 	char *res = root->cob.cmdStrF (root->cob.core, "s");
 	file->ptr = NULL;
 	file->data = (ut8*)res;
-	file->p = root->p;
 	file->size = strlen (res);
 	return file->size;
 }
@@ -459,7 +456,6 @@ static int __cl_cat(RFSRoot *root, RFSFile *file, const char *path) {
 	file->ptr = NULL;
 	free (file->data);
 	file->data = (ut8*)res;
-	file->p = root->p;
 	file->size = strlen (res);
 	return file->size;
 }
@@ -478,7 +474,7 @@ static RList *__root(RFSRoot *root, const char *path) {
 	return list;
 }
 
-static RList *fs_r2_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
+static RList *fs_r2_dir(RFSRoot *root, const char *path, R_UNUSED ut64 id, int view /*ignored*/) {
 	R_RETURN_VAL_IF_FAIL (root, NULL);
 	size_t i;
 	for (i = 0; routes[i].path; i++) {

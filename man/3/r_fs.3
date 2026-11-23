@@ -81,11 +81,11 @@ Reads data from a file at the specified offset.
 Writes data to a file at the specified offset.
 .Sh DIRECTORY OPERATIONS
 .Ft RList *
-.Fn r_fs_dir "RFS *fs" "const char *path"
+.Fn r_fs_dir "RFS *fs" "const char *path" "ut64 id" "int view"
 .Pp
 Returns a `RList` of `RFSFile` objects for the given virtual directory. The core uses this to implement the `md` command and directory listings; for example:
 .Bd -literal -offset indent
-RList *files = r_fs_dir (core->fs, "/");
+RList *files = r_fs_dir (core->fs, "/", UT64_MAX, R_FS_VIEW_NORMAL);
 // iterate and inspect file->name, file->size, file->type
 .Ed
 .Pp
@@ -100,12 +100,12 @@ Dumps the contents of a directory to disk.
 Convenience helper that opens and reads a file fully into memory returning an `RFSFile` whose `data` and `size` fields are populated. This is useful when a single buffer is required by consumers (e.g. analysis or dumping).
 .Sh SEARCHING
 .Ft RList *
-.Fn r_fs_find_name "RFS *fs" "const char *name" "const char *glob"
+.Fn r_fs_find_name "RFS *fs" "const char *name" "const char *glob" "int view"
 .Pp
 Finds files by name using glob patterns.
 .Pp
 .Ft RList *
-.Fn r_fs_find_off "RFS *fs" "const char *name" "ut64 off"
+.Fn r_fs_find_off "RFS *fs" "const char *name" "ut64 off" "int view"
 .Pp
 Finds files containing data at a specific offset.
 .Sh PARTITIONS
@@ -119,10 +119,37 @@ Enumerates partitions using the built-in partition detectors or a specific parti
 .Pp
 Adds a filesystem plugin to the context.
 .Pp
-.Ft bool
-.Fn r_fs_plugin_remove "RFS *fs" "RFSPlugin *p"
+.Sh FORENSIC OPERATIONS
+.Ft RFSFile *
+.Fn r_fs_open_id "RFS *fs" "const char *mountpoint" "ut64 id" "ut32 flags"
 .Pp
-Removes a filesystem plugin from the context.
+Open a metadata entry by its filesystem-specific ID in an exact mounted root.
+FAT IDs are volume-relative byte offsets of short directory entries.
+The returned handle uses the ordinary read, close and file-free operations.
+The ID and disk offset use UT64_MAX when unknown; deletion is recorded in
+RFSFile.flags independently of the file type.
+.Pp
+Directory listing and searches take an explicit visibility mask:
+R_FS_VIEW_NORMAL, R_FS_VIEW_DELETED, R_FS_VIEW_SPECIAL or R_FS_VIEW_ALL.
+For directory listing, UT64_MAX selects the directory by path; another ID
+selects directory metadata in the filesystem mounted above that path.
+.Pp
+.Ft int
+.Fn r_fs_extents "RFSFile *file" "RFSRangeCb cb" "void *user"
+.Pp
+Enumerate logical file offsets and their physical backing-image locations.
+.Pp
+.Ft int
+.Fn r_fs_ranges "RFS *fs" "const char *mountpoint" "ut32 flags" "RFSRangeCb cb" "void *user"
+.Pp
+Enumerate allocation ranges in a mounted filesystem. Flags select allocation
+states such as R_FS_RANGE_FREE; unreferenced allocated space is a separate
+R_FS_RANGE_ORPHAN category.
+.Pp
+Both iterators borrow each RFSRange for the duration of the callback, whose
+false return requests a stop. Results are R_FS_WALK_COMPLETE,
+R_FS_WALK_STOPPED, R_FS_WALK_ERROR or R_FS_WALK_UNSUPPORTED.
+An unsupported allocation map must not be interpreted as free space.
 .Sh SHELL
 .Ft bool
 .Fn r_fs_shell "RFSShell *shell" "RFS *fs" "const char *root"

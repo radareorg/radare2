@@ -143,3 +143,117 @@ invalid-fat
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=FAT deleted entries expose stable IDs independently of their types
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=mdxj /root
+EXPECT=<<EOF
+[{"type":"file","size":522,"name":"_one.txt","id":6912,"deleted":true},{"type":"file","size":526,"name":"_hain.txt","id":6944,"deleted":true},{"type":"directory","size":0,"name":"_lddir","id":6976,"deleted":true},{"type":"file","size":9,"name":"_ostlo~1.txt","id":7072,"deleted":true}]
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=FAT entry metadata can be opened by ID including empty files
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+mij /root 0x1b00
+mij /root/empty.txt
+EOF
+EXPECT=<<EOF
+{"name":"_one.txt","type":"file","size":522,"id":6912,"offset":14848,"flags":1,"time":0}
+{"name":"empty.txt","type":"file","size":0,"id":6720,"flags":0,"time":0}
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=FAT deleted directories can be listed by entry ID
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=mdxj /root 0x1b40
+EXPECT=<<EOF
+[{"type":"file","size":6,"name":"_hild.txt","id":17472,"deleted":true}]
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=FAT listing visibility is explicit and does not leak between commands
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+mdxq /root~?
+e fs.view
+mdq /root~?
+e fs.view=deleted
+mdq /root~?
+e fs.view=all
+mdq /root~?
+e fs.view=normal
+mdq /root~?
+EOF
+EXPECT=<<EOF
+4
+normal
+6
+4
+10
+6
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=FAT live 0x05 name escape is not a deletion marker
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+e io.cache=true
+wx 05 @ 0x1b00
+mdxq /root~?
+mdq /root~?
+EOF
+EXPECT=<<EOF
+3
+7
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=FAT entry IDs reject misalignment FAT metadata and out of bounds offsets
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+e log.level=0
+mi /root 0x1b01 || echo unaligned
+mi /root 0x200 || echo not-a-directory-entry
+mi /root 0x100000 || echo past-volume
+EOF
+EXPECT=<<EOF
+unaligned
+not-a-directory-entry
+past-volume
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=FAT IDs stay volume relative when a mount has a disk offset
+FILE=gzip://bins/fs/fat/fat12-offset.img.gz
+ARGS=-n
+CMDS=<<EOF
+m /mnt fat 0x1000
+mij /mnt 0x1b00
+EOF
+EXPECT=<<EOF
+{"name":"_one.txt","type":"file","size":522,"id":6912,"offset":18944,"flags":1,"time":0}
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Filesystem views reject invalid values without changing visibility
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+e log.level=0
+e fs.view=bad
+e fs.view
+mdq /root~?
+EOF
+EXPECT=<<EOF
+normal
+6
+EOF
+EXPECT_ERR=
+RUN

@@ -39,7 +39,6 @@ static RFSFile *fs_zip_open(RFSRoot *root, const char *path, bool create) {
 			return NULL;
 		}
 		file->ptr = NULL;
-		file->p = root->p;
 		file->size = 0;
 		return file;
 	}
@@ -107,7 +106,7 @@ static void fs_zip_close_archive(zip_t *za, zip_source_t *zs) {
 #endif
 }
 
-static RList *fs_zip_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
+static RList *fs_zip_dir(RFSRoot *root, const char *path, R_UNUSED ut64 id, R_UNUSED int view) {
 	// zip_open_from_source spills the buffer into a temporary file
 	if (r_sandbox_enable (false)) {
 		R_LOG_ERROR ("Sandbox prevents listing zip mounts");

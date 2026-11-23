@@ -16,12 +16,12 @@ static RCoreHelpMessage help_msg_m = {
 	"md", " /", "list files and directory on the virtual r2's fs",
 	"mdt", " [path] [depth]", "show a directory tree (scr.utf8; default depth: 64)",
 	"mdd", " /", "show file size like `ls -l` in ms",
-	"mdx", " /", "list deleted files (FAT)",
+	"mdx", "[j] / [directory-id]", "list deleted entries and their IDs",
 	"mdq", " /", "show just the file name (quiet)",
 	"mf", "[?] [o|n]", "search files for given filename or for offset",
 	"mg", " /foo [offset [size]]", "dump file to disk; size 0 reads to EOF (supports base64:)",
 	"mg", " /directory", "recursively dump a directory into the current directory",
-	"mi", " /foo/bar", "get offset and size of given file",
+	"mi", "[j] /foo/bar [entry-id]", "show file metadata by path or mounted entry ID",
 	"mi", " 0x1234", "find filename by offset in current fs",
 	"mix", " 0x1234", "find deleted filename by offset (FAT)",
 	"mis", " /foo/bar", "get offset and size of file and seek to it",
@@ -55,7 +55,8 @@ static RCoreHelpMessage help_msg_mf = {
 
 static const char *mount_file_type(const char ch) {
 	switch (ch) {
-	case 'f': return "file";
+	case 'f':
+	case 'r': return "file";
 	case 'd': return "directory";
 	case 'm': return "mountpoint";
 	}
@@ -92,14 +93,13 @@ static bool mount_ls(RCmdContext *ctx) {
 	if (!input) {
 		return false;
 	}
-	int old_view = core->fs->view;
-	if (deleted_only) {
-		r_fs_view (core->fs, R_FS_VIEW_DELETED);
+	ut64 id = UT64_MAX;
+	if (r_cmdctx_argc (ctx) > 1 && !r_cmdctx_num (ctx, 1, core->num, &id)) {
+		free (input);
+		return false;
 	}
-	RList *list = r_fs_dir (core->fs, input);
-	if (deleted_only) {
-		r_fs_view (core->fs, old_view);
-	}
+	int view = deleted_only? R_FS_VIEW_DELETED: r_config_get_i (core->config, "fs.view");
+	RList *list = r_fs_dir (core->fs, input, id, view);
 	PJ *pj = NULL;
 	if (is_json) {
 		pj = r_core_pj_new (core);
@@ -107,15 +107,19 @@ static bool mount_ls(RCmdContext *ctx) {
 	}
 	bool ok = list || strlen (input) <= 1;
 	r_list_foreach (list, iter, file) {
-		bool is_deleted = deleted_only && (ut8)file->name[0] == 0xe5;
+		bool is_deleted = file->flags & R_FS_FILE_DELETED;
 		if (deleted_only && !is_deleted) {
 			continue;
 		}
 		if (pj) {
 			pj_o (pj);
-			pj_ks (pj, "type", is_deleted? "deleted": mount_file_type (file->type));
+			pj_ks (pj, "type", mount_file_type (file->type));
 			pj_kn (pj, "size", file->size);
 			pj_ks (pj, "name", file->name);
+			if (file->id != UT64_MAX) {
+				pj_kn (pj, "id", file->id);
+				pj_kb (pj, "deleted", is_deleted);
+			}
 			pj_end (pj);
 		} else {
 			char ftype = is_deleted? R_FS_FILE_TYPE_DELETED: file->type;
@@ -125,6 +129,8 @@ static bool mount_ls(RCmdContext *ctx) {
 				r_cons_printf (ctx->cons, "%s%s\n", name, ftype == 'd'? "/": "");
 			} else if (long_format) {
 				r_cons_printf (ctx->cons, "%c %10u %s\n", ftype, file->size, name);
+			} else if (is_deleted && file->id != UT64_MAX) {
+				r_cons_printf (ctx->cons, "%c 0x%"PFMT64x" %s\n", ftype, file->id, name);
 			} else {
 				r_cons_printf (ctx->cons, "%c %s\n", ftype, name);
 			}
@@ -168,7 +174,7 @@ static int mount_tree_file_cmp(const void *a, const void *b) {
 }
 
 static RList *mount_tree_dir(RCore *core, RFSRoot *root, const char *path) {
-	RList *list = root? root->p->dir (root, path, core->fs->view): r_fs_dir (core->fs, path);
+	RList *list = root? root->p->dir (root, path, UT64_MAX, r_config_get_i (core->config, "fs.view")): r_fs_dir (core->fs, path, UT64_MAX, r_config_get_i (core->config, "fs.view"));
 	if (!root && !strcmp (path, "/")) {
 		if (!list) {
 			list = r_list_newf ((RListFree)r_fs_file_free);
@@ -599,33 +605,59 @@ static bool mount_info(RCmdContext *ctx) {
 	const char *path = r_cmdctx_arg (ctx, 0).a;
 	const RCmdRow *command = ctx->handler_user;
 	const char mode = command->name[2];
-	if (mode == 'x' || (!mode && (r_str_isnumber (path) || r_str_startswith (path, "0x")))) {
-		ut64 off = 0;
-		if (!r_cmdctx_num (ctx, 0, core->num, &off)) {
+	int argc = r_cmdctx_argc (ctx);
+	if (mode == 'x' || (!mode && argc == 1 && (r_str_isnumber (path) || r_str_startswith (path, "0x")))) {
+		ut64 off;
+		if (!r_cmdctx_num (ctx, argc == 2? 1: 0, core->num, &off)) {
 			return false;
 		}
-		const char *cwd = r_config_get (core->config, "fs.cwd");
-		int old_view = core->fs->view;
-		if (mode == 'x') {
-			r_fs_view (core->fs, R_FS_VIEW_DELETED);
-		}
-		RList *list = r_fs_find_off (core->fs, cwd, off);
-		r_fs_view (core->fs, old_view);
-		mount_print_paths (ctx, list, mode == 'x');
+		const char *cwd = argc == 2? path: r_config_get (core->config, "fs.cwd");
+		int view = mode == 'x'? R_FS_VIEW_DELETED: r_config_get_i (core->config, "fs.view");
+		mount_print_paths (ctx, r_fs_find_off (core->fs, cwd, off, view), mode == 'x');
 		return true;
 	}
-	RFSFile *file = r_fs_open (core->fs, path, false);
+	ut64 id = UT64_MAX;
+	if (argc == 2 && !r_cmdctx_num (ctx, 1, core->num, &id)) {
+		return false;
+	}
+	RFSFile *file = argc == 2? r_fs_open_id (core->fs, path, id, R_FS_OPEN_CHAIN): r_fs_open (core->fs, path, false);
 	if (!file) {
 		R_LOG_ERROR ("Cannot open file");
 		return false;
 	}
-	if (mode == 's') {
-		r_core_seek (core, file->off, true);
+	bool ok = true;
+	if (mode == 'j') {
+		PJ *pj = r_core_pj_new (core);
+		pj_o (pj);
+		pj_ks (pj, "name", file->name);
+		pj_ks (pj, "type", mount_file_type (file->type));
+		pj_kn (pj, "size", file->size);
+		if (file->id != UT64_MAX) {
+			pj_kn (pj, "id", file->id);
+		}
+		if (file->off != UT64_MAX) {
+			pj_kn (pj, "offset", file->off);
+		}
+		pj_kn (pj, "flags", file->flags);
+		pj_kn (pj, "time", file->time);
+		pj_end (pj);
+		r_cons_println (ctx->cons, pj_string (pj));
+		pj_free (pj);
+	} else if (file->off == UT64_MAX) {
+		r_cons_printf (ctx->cons, "size %u offset unknown\n", file->size);
+		ok = mode != 's';
+		if (!ok) {
+			R_LOG_ERROR ("File has no known disk offset");
+		}
+	} else {
+		if (mode == 's') {
+			r_core_seek (core, file->off, true);
+		}
+		r_cons_printf (ctx->cons, "'f file %u 0x%08"PFMT64x"\n", file->size, file->off);
 	}
-	r_cons_printf (ctx->cons, "'f file %u 0x%08" PFMT64x "\n", file->size, file->off);
 	r_fs_close (core->fs, file);
 	r_fs_file_free (file);
-	return true;
+	return ok;
 }
 
 static bool mount_find(RCmdContext *ctx) {
@@ -638,8 +670,8 @@ static bool mount_find(RCmdContext *ctx) {
 	if (!by_name && !r_cmdctx_num (ctx, 1, core->num, &offset)) {
 		return false;
 	}
-	RList *list = by_name? r_fs_find_name (core->fs, args[0], args[1])
-		: r_fs_find_off (core->fs, args[0], offset);
+	RList *list = by_name? r_fs_find_name (core->fs, args[0], args[1], r_config_get_i (core->config, "fs.view"))
+		: r_fs_find_off (core->fs, args[0], offset, r_config_get_i (core->config, "fs.view"));
 	mount_print_paths (ctx, list, false);
 	return true;
 }
@@ -785,15 +817,17 @@ static bool r_core_cmd_mount_init(RCmd *cmd) {
 		{ "mdj", mount_ls, " [path]", NULL, 0, 1 },
 		{ "mdq", mount_ls, " [path]", NULL, 0, 1 },
 		{ "mdt", mount_tree, " [path] [depth]", NULL, 0, 2 },
-		{ "mdx", mount_ls, " [path]", NULL, 0, 1 },
+		{ "mdx", mount_ls, " [path] [directory-id]", NULL, 0, 2 },
+		{ "mdxj", mount_ls, " [path] [directory-id]", NULL, 0, 2 },
 		{ "mdxq", mount_ls, " [path]", NULL, 0, 1 },
 		{ "mf", mount_help_mf, "[no] [path] [name|offset]", help_msg_mf, 0, 0 },
 		{ "mfn", mount_find, " [path] [pattern]", NULL, 2, 2 },
 		{ "mfo", mount_find, " [path] [offset]", NULL, 2, 2 },
 		{ "mg", mount_get, " [filename] [offset [size]]", NULL, 1, 3 },
-		{ "mi", mount_info, " [path|offset]", NULL, 1, 1 },
+		{ "mi", mount_info, " [path|offset] [entry-id]", NULL, 1, 2 },
+		{ "mij", mount_info, " [path] [entry-id]", NULL, 1, 2 },
 		{ "mis", mount_info, " [path]", NULL, 1, 1 },
-		{ "mix", mount_info, " 0xOFFSET", NULL, 1, 1 },
+		{ "mix", mount_info, " [mountpoint] offset", NULL, 1, 2 },
 		{ "mj", mount_list, "", NULL, 0, 0 },
 		{ "mmc", mount_mmc_missing, "", NULL, 0, UT8_MAX },
 		{ "mn", mount_details, " [mountpoint]", NULL, 0, 1 },

@@ -162,7 +162,7 @@ static int append_file(RList *list, struct SqshDirectoryIterator *entry) {
 	return 0;
 }
 
-static RList *fs_squashfs_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
+static RList *fs_squashfs_dir(RFSRoot *root, const char *path, R_UNUSED ut64 id, int view /*ignored*/) {
 	int err = 0;
 	struct SqshArchive *archive = root->ptr;
 	struct SqshFile *file = sqsh_open (archive, path, &err);

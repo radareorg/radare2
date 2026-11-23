@@ -23,7 +23,6 @@ typedef struct r_fs_t {
 	RCoreBind cob;
 	RConsBind csb;
 	RList /*<RFSRoot>*/ *roots;
-	int view;
 	void *ptr;
 	RLibStore *libstore;
 } RFS;
@@ -36,15 +35,15 @@ typedef struct r_fs_file_t {
 	char *name;
 	char *path;
 	ut64 off;
+	ut64 id;
+	ut32 flags;
 	ut32 size;
 	char type;
 	ut8 *data;
-	void *ctx;
 	ut32 uid; // owner
 	ut32 gid; // group
 	ut32 perm; // rwx
 	ut64 time;
-	struct r_fs_plugin_t *p;
 	struct r_fs_root_t *root;
 	void *ptr; // internal pointer
 	// Populated only when the file is a loadable bin inside a container.
@@ -72,6 +71,44 @@ typedef struct r_fs_root_t {
 	RCoreBind cob;
 } RFSRoot;
 
+typedef struct {
+	ut64 logical;
+	ut64 physical;
+	ut64 size;
+	ut32 flags;
+} RFSRange;
+
+// The range is borrowed; return false to stop enumeration.
+typedef bool (*RFSRangeCb)(const RFSRange *range, void *user);
+
+enum {
+	R_FS_WALK_UNSUPPORTED = -2,
+	R_FS_WALK_ERROR = -1,
+	R_FS_WALK_STOPPED = 0,
+	R_FS_WALK_COMPLETE = 1,
+};
+
+enum {
+	R_FS_RANGE_FREE = 1,
+	R_FS_RANGE_ALLOCATED = 2,
+	R_FS_RANGE_ORPHAN = 4,
+	R_FS_RANGE_BAD = 8,
+	R_FS_RANGE_UNKNOWN = 16,
+	R_FS_RANGE_HEURISTIC = 32,
+};
+
+enum {
+	R_FS_FILE_DELETED = 1,
+	R_FS_FILE_HEURISTIC = 2,
+	R_FS_FILE_PARTIAL = 4,
+	R_FS_FILE_CONFLICT = 8,
+};
+
+enum {
+	R_FS_OPEN_CHAIN = 0,
+	R_FS_OPEN_CONTIGUOUS = 1,
+};
+
 typedef struct r_fs_plugin_t {
 	RPluginMeta meta;
 	RFSFile* (*slurp)(RFSRoot *root, const char *path);
@@ -80,7 +117,10 @@ typedef struct r_fs_plugin_t {
 	int (*write)(RFSFile *fs, ut64 addr, const ut8 *data, int len);
 	int (*read)(RFSFile *fs, ut64 addr, int len);
 	void (*close)(RFSFile *fs);
-	RList *(*dir)(RFSRoot *root, const char *path, int view);
+	RList *(*dir)(RFSRoot *root, const char *path, ut64 id, int view);
+	RFSFile *(*open_id)(RFSRoot *root, ut64 id, ut32 flags);
+	int (*extents)(RFSFile *file, RFSRangeCb cb, void *user);
+	int (*ranges)(RFSRoot *root, ut32 flags, RFSRangeCb cb, void *user);
 	bool (*mkdir)(RFSRoot *root, const char *path);
 	bool (*init)(void);
 	void (*fini)(void);
@@ -161,20 +201,17 @@ typedef struct r_fs_partition_type_t {
 #define R_FS_PARTITIONS_LENGTH (int)(sizeof (partitions)/sizeof (RFSPartitionType)-1)
 
 enum {
-	R_FS_VIEW_NORMAL = 0,
-	R_FS_VIEW_DELETED = 1,
-	R_FS_VIEW_SPECIAL = 2,
-	R_FS_VIEW_ALL = 0xff,
+	R_FS_VIEW_NORMAL = 1,
+	R_FS_VIEW_DELETED = 2,
+	R_FS_VIEW_SPECIAL = 4,
+	R_FS_VIEW_ALL = 7,
 };
 
 #ifdef R_API
 R_API RFS *r_fs_new(void);
 R_API void r_fs_free(RFS* fs);
 
-R_API void r_fs_view(RFS* fs, int view);
 R_API bool r_fs_plugin_add(RFS *fs, RFSPlugin *p);
-R_API bool r_fs_plugin_remove(RFS *fs, RFSPlugin *p);
-R_API void r_fs_del(RFS *fs, RFSPlugin *p);
 
 R_API RFSRoot *r_fs_mount(RFS* fs, const char *fstype, const char *path, ut64 delta);
 R_API RFSRoot *r_fs_mount_with_options(RFS* fs, const char *fstype, const char *path, ut64 delta, const char *options);
@@ -182,11 +219,15 @@ R_API bool r_fs_umount(RFS* fs, const char *path);
 R_API RFSRoot *r_fs_root_by_fd(RFS *fs, int fd);
 
 R_API RFSFile *r_fs_open(RFS* fs, const char *path, bool create);
+R_API RFSFile *r_fs_open_id(RFS *fs, const char *mountpoint, ut64 id, ut32 flags);
+R_API int r_fs_extents(RFSFile *file, RFSRangeCb cb, void *user);
+R_API int r_fs_ranges(RFS *fs, const char *mountpoint, ut32 flags, RFSRangeCb cb, void *user);
 R_API void r_fs_close(RFS* fs, RFSFile *file);
 R_API int r_fs_read(RFS* fs, RFSFile *file, ut64 addr, int len);
 R_API int r_fs_write(RFS* fs, RFSFile* file, ut64 addr, const ut8 *data, int len);
 R_API RFSFile *r_fs_slurp(RFS* fs, const char *path);
-R_API RList *r_fs_dir(RFS* fs, const char *path);
+// UT64_MAX selects by path; otherwise id identifies a directory in its mounted filesystem.
+R_API RList *r_fs_dir(RFS *fs, const char *path, ut64 id, int view);
 R_API bool r_fs_dir_dump(RFS* fs, const char *path, const char *name);
 R_API bool r_fs_mkdir(RFS *fs, const char *path);
 
@@ -194,8 +235,8 @@ R_API bool r_fs_mkdir(RFS *fs, const char *path);
 R_API RList/*<RFSFile>*/ *r_fs_dir_bins(RFS *fs, RBuffer *buf);
 
 // Search all mounted roots for / or an empty path, otherwise stay below the given directory.
-R_API RList *r_fs_find_name(RFS* fs, const char *name, const char *glob);
-R_API RList *r_fs_find_off(RFS* fs, const char *name, ut64 off);
+R_API RList *r_fs_find_name(RFS *fs, const char *name, const char *glob, int view);
+R_API RList *r_fs_find_off(RFS *fs, const char *name, ut64 off, int view);
 R_API RList *r_fs_partitions(RFS* fs, const char *ptype, ut64 delta);
 
 R_API R_MUSTUSE const RFSType *r_fs_type_index(int i);

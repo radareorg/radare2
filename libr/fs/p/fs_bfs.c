@@ -705,7 +705,7 @@ fail:
 	return false;
 }
 
-static RList *fs_bfs_dir(RFSRoot *root, const char *path, int view) {
+static RList *fs_bfs_dir(RFSRoot *root, const char *path, R_UNUSED ut64 id, int view) {
 	R_RETURN_VAL_IF_FAIL (root, NULL);
 
 	BeosFS *ctx = root->ptr;

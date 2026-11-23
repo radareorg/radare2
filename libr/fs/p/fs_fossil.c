@@ -671,7 +671,7 @@ static void fs_fossil_umount(RFSRoot *root) {
 	root->ptr = NULL;
 }
 
-static RList *fs_fossil_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
+static RList *fs_fossil_dir(RFSRoot *root, const char *path, R_UNUSED ut64 id, R_UNUSED int view) {
 	R_RETURN_VAL_IF_FAIL (root, NULL);
 	FossilFS *fs = root->ptr;
 	FossilNode node;
