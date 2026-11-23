@@ -89,6 +89,9 @@ RList *files = r_fs_dir (core->fs, "/", UT64_MAX, R_FS_VIEW_NORMAL);
 // iterate and inspect file->name, file->size, file->type
 .Ed
 .Pp
+FAT directory listings retain entries read before corruption and log a warning.
+A directory that cannot be read at all returns NULL.
+.Pp
 .Ft bool
 .Fn r_fs_dir_dump "RFS *fs" "const char *path" "const char *name"
 .Pp
@@ -136,7 +139,11 @@ R_FS_OPEN_CHAIN follows surviving FAT links. R_FS_OPEN_CONTIGUOUS is an
 explicit heuristic for deleted regular files and only uses consecutive free
 clusters. It never skips allocated clusters to assemble a guess.
 The returned handle uses the ordinary read, close and file-free operations.
-Before deleted data is mapped or read, FAT checks live ownership. Incomplete
+Extent enumeration normally reports the mappings claimed by directory
+metadata, including deleted claims whose clusters may now be reused.
+R_FS_OPEN_RECOVER requests ownership-checked recovery extents;
+R_FS_OPEN_CONTIGUOUS implies it. Deleted data reads always check live ownership.
+Recovery previews and extraction commands use ownership-checked extents. Incomplete
 ownership enumeration refuses recovery; reused clusters stop the readable
 prefix and set R_FS_FILE_CONFLICT. R_FS_FILE_PARTIAL records incomplete data.
 The declared size remains unchanged; reads can return a short prefix, then an

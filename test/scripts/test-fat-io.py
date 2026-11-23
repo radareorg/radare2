@@ -27,6 +27,14 @@ class File(C.Structure):
                 ("type", C.c_char), ("data", C.c_void_p)]
 
 
+class Range(C.Structure):
+    _fields_ = [("logical", C.c_uint64), ("physical", C.c_uint64),
+                ("size", C.c_uint64), ("flags", C.c_uint32)]
+
+
+RangeCallback = C.CFUNCTYPE(C.c_bool, C.POINTER(Range), C.c_void_p)
+
+
 def api(name, result, *arguments):
     function = getattr(fs, name)
     function.restype, function.argtypes = result, arguments
@@ -40,6 +48,11 @@ open_file = api("r_fs_open", C.c_void_p, C.c_void_p, C.c_char_p, C.c_bool)
 read = api("r_fs_read", C.c_int, C.c_void_p, C.c_void_p, C.c_uint64, C.c_int)
 close = api("r_fs_close", None, C.c_void_p, C.c_void_p)
 free_file = api("r_fs_file_free", None, C.c_void_p)
+extents = api("r_fs_extents", C.c_int, C.c_void_p, RangeCallback, C.c_void_p)
+open_id = api("r_fs_open_id", C.c_void_p, C.c_void_p, C.c_char_p, C.c_uint64, C.c_uint32)
+find = api("r_fs_find_off", C.c_void_p, C.c_void_p, C.c_char_p, C.c_uint64, C.c_int)
+list_length = api("r_list_length", C.c_int, C.c_void_p)
+list_free = api("r_list_free", None, C.c_void_p)
 ReadAt = C.CFUNCTYPE(C.c_int, C.c_void_p, C.c_uint64, C.c_void_p, C.c_int)
 
 image = bytearray(gzip.decompress((ROOT / "test/bins/fs/fat/fat32.img.gz").read_bytes()))
@@ -95,6 +108,63 @@ try:
     assert len(reads) <= 3 and sum(length for _, length in reads) < 8192, reads
     assert read(filesystem, handle, 0, 1) == 1
     assert C.string_at(File.from_address(handle).data, 1) == b"P"
+
+    runs = []
+
+    @RangeCallback
+    def collect_range(pointer, _):
+        item = pointer.contents
+        runs.append((item.logical, item.physical, item.size, item.flags))
+        return True
+
+    reads.clear()
+    assert extents(handle, collect_range, None) == 1
+    assert runs == [(0, physical, count * cluster_size, 2)], runs
+    assert sum(length for _, length in reads) < count * 4 + 8192, reads
+    print("FAT32 extent enumeration reads the large file's FAT chain once")
+
+    reads.clear()
+    paths = find(filesystem, b"/fat", data + 8 * cluster_size + 1, 2)
+    assert paths and list_length(paths) == 1
+    list_free(paths)
+    assert sum(length for _, length in reads) < 65536, reads
+    print("Deleted offset lookup avoids repeated live-ownership scans")
+    close(filesystem, handle)
+    free_file(handle)
+    handle = None
+
+    handle = open_id(filesystem, b"/fat", root + 288, 2)
+    assert handle
+    calls = []
+
+    @RangeCallback
+    def stop_range(pointer, _):
+        calls.append(pointer.contents.size)
+        return False
+
+    assert extents(handle, stop_range, None) == 0
+    assert len(calls) == 1
+    assert read(filesystem, handle, cluster_size, 1) == 1
+    assert C.string_at(File.from_address(handle).data, 1) == b"r"
+    close(filesystem, handle)
+    free_file(handle)
+    handle = None
+
+    handle = open_id(filesystem, b"/fat", root + 288, 2)
+    assert handle
+    contents = []
+
+    @RangeCallback
+    def read_range(pointer, _):
+        item = pointer.contents
+        result = read(filesystem, handle, item.logical, 1)
+        contents.append((result, C.string_at(File.from_address(handle).data, 1)))
+        return True
+
+    reads.clear()
+    assert extents(handle, read_range, None) == 1
+    assert contents == [(1, b"C"), (1, b"r")], contents
+    assert sum(length for _, length in reads) < count * 4 + 65536, reads
     close(filesystem, handle)
     free_file(handle)
     handle = None

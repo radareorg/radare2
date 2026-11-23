@@ -107,6 +107,7 @@ enum {
 enum {
 	R_FS_OPEN_CHAIN = 0,
 	R_FS_OPEN_CONTIGUOUS = 1,
+	R_FS_OPEN_RECOVER = 2,
 };
 
 typedef struct r_fs_plugin_t {
