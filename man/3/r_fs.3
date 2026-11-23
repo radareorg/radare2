@@ -171,6 +171,27 @@ that reads as zero; its physical offset identifies the allocated disk range.
 Unwritten ranges also carry R_FS_RANGE_ALLOCATED. These flags describe logical
 file contents and do not establish that the physical bytes contain zeros.
 For FAT, allocation flags describe the current FAT state of the mapped clusters.
+For classic ext2, IDs are inode numbers. Deleted directory names are inferred
+from directory slack and marked heuristic. Listing deleted entries with
+directory ID 0 scans free inodes and assigns synthetic inode-N names, allowing
+discovery when no directory name survives. Recovery checks both allocation
+bitmaps and live inode references, including filesystem metadata. It stops at
+reused or unreadable storage and retains the known prefix. Cleared inode block
+pointers cannot establish the original locations of deleted data.
+Explicit contiguous recovery guesses consecutive blocks starting at the first
+retained data pointer, applies the same ownership checks, and marks the result
+heuristic. Sparse recovery requires the retained block map to account for the
+inode's recorded block count; otherwise missing pointers stop the known prefix.
+Recovering a symlink writes its target text to the output file.
+Typical commands after mounting an ext2 image at /root are:
+.Bd -literal -offset indent
+mdx /root             # deleted directory names and inode IDs
+mdx /root 0           # carve free inodes without names
+mie /root 13          # inspect inode 13's retained block map
+mgx /root 13 output   # recover inode 13 with ownership checks
+mfu /root free        # unallocated block ranges
+mfu /root orphan      # allocated blocks without live owners
+.Ed
 A damaged or cleared chain can yield a known prefix followed by WALK_ERROR;
 this is not a complete recovery.
 .Pp

@@ -39,6 +39,8 @@ compiler and does not load a kernel module or access kernel memory.
    sparse-file reads against compressed testbins images, run `python3 test/scripts/test-fat-io.py` after building.
    It loads this checkout's shared filesystem library; set `R2_FS_LIB` to use
    another matching build.
+ * To check ext2 deleted-inode recovery and damaged block maps, run
+   `python3 test/scripts/test-ext2-io.py` after building.
  * To check HTTP sandbox enforcement on a local server, use `make http-sandbox`
    after building and installing this checkout. This requires Python 3 and
    permission to open localhost sockets.

@@ -1,0 +1,112 @@
+/* radare - LGPL - Copyright 2011-2024 - pancake */
+
+#include <r_fs.h>
+#include <grub/fshelp.h>
+#include "grubfs.h"
+
+#if WITH_GPL
+
+static RFSFile* FSP(_open)(RFSRoot *root, const char *path, bool create) {
+	RFSFile *file = r_fs_file_new (root, path);
+	if (!file) {
+		return NULL;
+	}
+	GrubFS *gfs = grubfs_new (&FSIPTR, &root->iob);
+	if (!gfs) {
+		r_fs_file_free (file);
+		return NULL;
+	}
+	file->ptr = gfs;
+	grubfs_bind_io (NULL, file->root->delta);
+	bool ok = !gfs->file->fs->open (gfs->file, path);
+	if (ok) {
+		file->size = gfs->file->size;
+		// Resolve the starting offset without allocating or reading the whole file.
+		if (file->size > 0) {
+			char byte;
+			grub_hack_lastoff = 0;
+			ok = gfs->file->fs->read (gfs->file, &byte, 1) == 1;
+			if (ok) {
+				file->off = grub_hack_lastoff;
+			} else {
+				gfs->file->fs->close (gfs->file);
+			}
+			gfs->file->offset = 0;
+		}
+	}
+	if (!ok) {
+		r_fs_file_free (file);
+		grubfs_free (gfs);
+		file = NULL;
+	}
+	return file;
+}
+
+static int FSP(_read)(RFSFile *file, ut64 addr, int len) {
+	GrubFS *gfs = file->ptr;
+	grubfs_bind_io (NULL, file->root->delta);
+	gfs->file->offset = addr;
+	return gfs->file->fs->read (gfs->file, (char*)file->data, len);
+}
+
+static void FSP(_close)(RFSFile *file) {
+	GrubFS *gfs = file->ptr;
+	gfs->file->fs->close (gfs->file);
+}
+
+static R_TH_LOCAL RList *list = NULL;
+
+static int dirhook(const char *filename, const struct grub_dirhook_info *info, void *closure) {
+	RFSFile *fsf = r_fs_file_new (NULL, filename);
+	if (!fsf) {
+		return 0;
+	}
+	fsf->type = info->dir? 'd': info->symlink? 'l': info->special? 's': 'f';
+	fsf->time = info->mtime;
+	r_list_append (list, fsf);
+	//info->mtimeset
+	//info->case_insensitive
+	//printf ("DIRFILE: %c (%d) %s\n", info->dir?'d':'f', info->mtime, filename);
+	return 0;
+}
+
+static RList *FSP(_dir)(RFSRoot *root, const char *path, R_UNUSED ut64 id, int view) {
+	if (!root) {
+		return NULL;
+	}
+	GrubFS *gfs = root->ptr;
+	list = r_list_newf ((RListFree)r_fs_file_free);
+	//gfs->file->device->data = &root->iob;
+	grubfs_bind_io (&root->iob, root->delta);
+	gfs->file->fs->dir (gfs->file->device, path, dirhook, 0);
+	grubfs_bind_io (NULL, root->delta);
+	return list;
+}
+
+static int do_nothing(const char *a, const struct grub_dirhook_info *b, void *c) { return 0; }
+
+static bool FSP(_mount)(RFSRoot *root) {
+	GrubFS *gfs = grubfs_new (&FSIPTR, &root->iob);
+	root->ptr = gfs;
+	grubfs_bind_io (&root->iob, root->delta);
+	// XXX: null hook seems to be problematic on some filesystems
+	//return gfs->file->fs->dir (gfs->file->device, "/", NULL, 0)? false:true;
+	bool ret = gfs->file->fs->dir (gfs->file->device, "/", do_nothing, 0) == 0;
+	grubfs_bind_io (NULL, root->delta);
+	return ret;
+}
+
+static void FSP(_umount)(RFSRoot *root) {
+	R_RETURN_IF_FAIL (root);
+	grubfs_free (root->ptr);
+	root->ptr = NULL;
+}
+
+#ifdef FSDETAILS
+static void FSP(details)(RFSRoot *root, RStrBuf *sb) {
+	R_RETURN_IF_FAIL (root && sb);
+	FSDETAILS (root, sb);
+}
+#endif
+
+#endif

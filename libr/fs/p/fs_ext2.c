@@ -254,4 +254,29 @@ static void details_ext2(RFSRoot *root, RStrBuf *sb) {
 #define FSDETAILS details_ext2
 #endif
 
-#include "fs_grub_base.inc.c"
+#include "fs_grub_reader.inc.c"
+
+#if WITH_GPL
+#include "fs_ext2_forensic.inc.c"
+#endif
+
+RFSPlugin r_fs_plugin_ext2 = {
+	.meta = {
+		.name = FSNAME,
+		.author = "pancake",
+		.desc = FSDESC,
+		.license = "GPL-3.0-only",
+	},
+#if WITH_GPL
+	.open = FSP(_forensic_open),
+	.read = FSP(_forensic_read),
+	.close = FSP(_forensic_close),
+	.dir = FSP(_forensic_dir),
+	.open_id = FSP(_forensic_open_id),
+	.extents = FSP(_forensic_extents),
+	.ranges = FSP(_forensic_ranges),
+	.mount = FSP(_forensic_mount),
+	.umount = FSP(_umount),
+	.details = FSP(details),
+#endif
+};

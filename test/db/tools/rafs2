@@ -65,12 +65,12 @@ NAME=rafs2 -l list ext2 root directory
 FILE=--
 CMDS=!rafs2 -t ext2 -l / bins/fs/ext2.img 2>/dev/null
 EXPECT=<<EOF
-d          0  .
-d          0  ..
-d          0  lost+found
-d          0  bin
-d          0  etc
-f          0  README.md
+d       1024  .
+d       1024  ..
+d      12288  lost+found
+d       1024  bin
+d       1024  etc
+f         26  README.md
 EOF
 RUN
 
@@ -162,9 +162,9 @@ NAME=rafs2 with offset
 FILE=--
 CMDS=!rafs2 -t ext2 -o 0 -l / bins/fs/ext2.img 2>/dev/null | head -3
 EXPECT=<<EOF
-d          0  .
-d          0  ..
-d          0  lost+found
+d       1024  .
+d       1024  ..
+d      12288  lost+found
 EOF
 RUN
 

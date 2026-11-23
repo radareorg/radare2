@@ -16,7 +16,7 @@ static RCoreHelpMessage help_msg_m = {
 	"md", " /", "list files and directory on the virtual r2's fs",
 	"mdt", " [path] [depth]", "show a directory tree (scr.utf8; default depth: 64)",
 	"mdd", " /", "show file size like `ls -l` in ms",
-	"mdx", "[j] / [directory-id]", "list deleted entries and their IDs",
+	"mdx", "[j] / [directory-id]", "list deleted entries and their IDs (ext2: ID 0 scans free inodes)",
 	"mdxr", "[j] /path [depth]", "list deleted entries recursively (maximum depth 64)",
 	"mdq", " /", "show just the file name (quiet)",
 	"mf", "[?] [o|n]", "search files for given filename or for offset",
@@ -474,7 +474,7 @@ static bool mount_recover(RCmdContext *ctx) {
 		return false;
 	}
 	RFSFile *file = r_fs_open_id (core->fs, r_cmdctx_arg (ctx, 0).a, id, flags | R_FS_OPEN_RECOVER);
-	if (!file || (file->type != 'f' && file->type != R_FS_FILE_TYPE_REGULAR)) {
+	if (!file || (file->type != 'f' && file->type != 'l' && file->type != R_FS_FILE_TYPE_REGULAR)) {
 		if (file) {
 			r_fs_close (core->fs, file);
 			r_fs_file_free (file);
