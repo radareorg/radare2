@@ -57,10 +57,14 @@ static int debug_gdb_write_at(libgdbr_t *desc, const ut8 *buf, int sz, ut64 addr
 	last = sz % size_max;
 	ut64 offset = 0;
 	for (x = 0; x < packets; x++, offset += size_max) {
-		gdbr_write_memory (desc, addr + offset, buf + offset, size_max);
+		if (gdbr_write_memory (desc, addr + offset, buf + offset, size_max) < 0) {
+			return -1;
+		}
 	}
 	if (last) {
-		gdbr_write_memory (desc, addr + offset, buf + offset, last);
+		if (gdbr_write_memory (desc, addr + offset, buf + offset, last) < 0) {
+			return -1;
+		}
 	}
 	return sz;
 }

@@ -1124,13 +1124,10 @@ int gdbr_write_bin_registers(libgdbr_t *g, const char *regs, int len) {
 		goto end;
 	}
 	if (read_packet (g, false) >= 0) {
-		handle_G (g);
+		ret = handle_G (g);
 	} else {
 		ret = -1;
-		goto end;
 	}
-
-	ret = 0;
 end:
 	gdbr_lock_leave (g);
 	free (command);
@@ -1199,11 +1196,13 @@ int gdbr_write_reg(libgdbr_t *g, const char *name, char *value, int len) {
 		ret = -1;
 		goto end;
 	}
-	if (g->stub_features.P && (ret = gdbr_write_register (g, g->registers[i].regnum, value, len)) == 0) {
-		goto end;
+	if (g->stub_features.P) {
+		ret = gdbr_write_register (g, g->registers[i].regnum, value, len);
+		// gdbr_write_register clears stub_features.P only when the stub lacks it
+		if (g->stub_features.P) {
+			goto end;
+		}
 	}
-
-	// Use 'G' if write_register failed/isn't supported: rewrite the block with this register changed
 	if (gdbr_read_registers (g) < 0) {
 		ret = -1;
 		goto end;
@@ -1315,10 +1314,7 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 	if (ret < 0) {
 		goto end;
 	}
-	read_packet (g, false);
-	handle_G (g);
-
-	ret = 0;
+	ret = read_packet (g, false) < 0? -1: handle_G (g);
 end:
 	free (command);
 	free (buff);

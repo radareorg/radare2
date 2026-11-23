@@ -15,17 +15,29 @@ int handle_g(libgdbr_t *g) {
 	return send_ack (g);
 }
 
+static int handle_ok(libgdbr_t *g) {
+	if (send_ack (g) < 0) {
+		return -1;
+	}
+	return g->data_len == 2 && !memcmp (g->data, "OK", 2)? 0: -1;
+}
+
 int handle_G(libgdbr_t *g) {
-	return send_ack (g);
+	return handle_ok (g);
 }
 
 int handle_M(libgdbr_t *g) {
-	return send_ack (g);
+	return handle_ok (g);
 }
 
 int handle_P(libgdbr_t *g) {
-	g->last_code = g->data_len? MSG_OK: MSG_NOT_SUPPORTED;
-	return send_ack (g);
+	if (!g->data_len) {
+		g->last_code = MSG_NOT_SUPPORTED;
+		return send_ack (g);
+	}
+	int ret = handle_ok (g);
+	g->last_code = ret < 0? MSG_ERROR_1: MSG_OK;
+	return ret;
 }
 
 int handle_m(libgdbr_t *g) {
@@ -85,11 +97,11 @@ int handle_qC(libgdbr_t *g) {
 }
 
 int handle_setbp(libgdbr_t *g) {
-	return send_ack (g);
+	return handle_ok (g);
 }
 
 int handle_removebp(libgdbr_t *g) {
-	return send_ack (g);
+	return handle_ok (g);
 }
 
 int handle_attach(libgdbr_t *g) {

@@ -387,7 +387,9 @@ static bool gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 		if (!current) {
 			break;
 		}
-		gdbr_write_reg (pd->desc, current->name, (char*)arena->bytes + (current->offset / 8), current->size / 8);
+		if (gdbr_write_reg (pd->desc, current->name, (char*)arena->bytes + (current->offset / 8), current->size / 8) < 0) {
+			return false;
+		}
 	}
 	return true;
 }
@@ -547,25 +549,25 @@ static bool r_debug_gdb_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set
 	// TODO handle size (area of watch in upper layer and then bpsize. For the moment watches are set on exact on byte
 	case R_PERM_W: {
 		if (set) {
-			gdbr_set_hww (pd->desc, b->addr, "", 1);
+			ret = gdbr_set_hww (pd->desc, b->addr, "", 1);
 		} else {
-			gdbr_remove_hww (pd->desc, b->addr, 1);
+			ret = gdbr_remove_hww (pd->desc, b->addr, 1);
 		}
 		break;
 	}
 	case R_PERM_R: {
 		if (set) {
-			gdbr_set_hwr (pd->desc, b->addr, "", 1);
+			ret = gdbr_set_hwr (pd->desc, b->addr, "", 1);
 		} else {
-			gdbr_remove_hwr (pd->desc, b->addr, 1);
+			ret = gdbr_remove_hwr (pd->desc, b->addr, 1);
 		}
 		break;
 	}
 	case R_PERM_ACCESS: {
 		if (set) {
-			gdbr_set_hwa (pd->desc, b->addr, "", 1);
+			ret = gdbr_set_hwa (pd->desc, b->addr, "", 1);
 		} else {
-			gdbr_remove_hwa (pd->desc, b->addr, 1);
+			ret = gdbr_remove_hwa (pd->desc, b->addr, 1);
 		}
 		break;
 	}
