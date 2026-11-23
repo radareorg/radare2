@@ -70,6 +70,20 @@ static bool fat_next(FatFS *fat, ut32 cluster, ut32 *next) {
 	return true;
 }
 
+static bool fat_eoc(FatFS *fat, ut32 value) {
+	return value >= (fat->g.bits == 12? 0xff8: fat->g.bits == 16? 0xfff8: 0x0ffffff8);
+}
+
+static ut32 fat_state(FatFS *fat, ut32 value) {
+	if (!value) {
+		return R_FS_RANGE_FREE;
+	}
+	if (value == (fat->g.bits == 12? 0xff7: fat->g.bits == 16? 0xfff7: 0x0ffffff7)) {
+		return R_FS_RANGE_BAD;
+	}
+	return fat_valid_cluster (fat, value) || fat_eoc (fat, value)? R_FS_RANGE_ALLOCATED: R_FS_RANGE_UNKNOWN;
+}
+
 static bool fat_cluster_at(FatFS *fat, FatEntry *entry, ut32 index, ut32 *cluster) {
 	if (!entry->power || index < entry->index) {
 		entry->current = entry->checkpoint = entry->cluster;
@@ -182,7 +196,9 @@ static int fat_iterate(FatFS *fat, FatEntry *dir, int view, FatEntryCb cb, void 
 	for (off = 0; off < limit; off += 32) {
 		ut64 physical;
 		if (!fat_read_entry (fat, dir, off, raw, sizeof (raw), &physical)) {
-			return -1;
+			ut32 next;
+			return off && !(off % fat->g.cluster_size) && fat_next (fat, dir->current, &next)
+				&& fat_eoc (fat, next)? 0: -1;
 		}
 		if (!raw[0]) {
 			return 0;
@@ -228,7 +244,7 @@ static int fat_iterate(FatFS *fat, FatEntry *dir, int view, FatEntryCb cb, void 
 		slot = slots = 0;
 		checksum = -1;
 	}
-	return -1;
+	return dir->cluster? -1: 0;
 }
 
 typedef struct {
@@ -335,6 +351,180 @@ static RList *fat_dir(RFSRoot *root, const char *path, ut64 id, int view) {
 	return list;
 }
 
+static int fat_extents(RFSFile *file, RFSRangeCb cb, void *user) {
+	FatFS *fat = file->root->ptr;
+	FatEntry *entry = file->ptr;
+	bool directory = entry->attr & 0x10;
+	ut64 remaining = directory? UT64_MAX: entry->size;
+	if (!remaining) {
+		return R_FS_WALK_COMPLETE;
+	}
+	if (directory && !entry->cluster) {
+		RFSRange range = { 0, fat->root->delta + fat->g.root, (ut64)fat->g.root_entries * 32, R_FS_RANGE_ALLOCATED };
+		return cb (&range, user)? R_FS_WALK_COMPLETE: R_FS_WALK_STOPPED;
+	}
+	RBitmap *seen = r_bitmap_new (fat->g.clusters + 2);
+	if (!seen) {
+		return R_FS_WALK_ERROR;
+	}
+	RFSRange run = {0};
+	ut32 cluster = entry->cluster;
+	int status = R_FS_WALK_COMPLETE;
+	fat->cache_size = 0;
+	while (remaining) {
+		ut32 next;
+		if (!fat_valid_cluster (fat, cluster) || r_bitmap_test (seen, cluster) || !fat_next (fat, cluster, &next)) {
+			status = R_FS_WALK_ERROR;
+			break;
+		}
+		r_bitmap_set (seen, cluster);
+		ut64 physical = fat->root->delta + fat_cluster_offset (fat, cluster);
+		ut64 size = R_MIN (remaining, fat->g.cluster_size);
+		ut32 flags = fat_state (fat, next);
+		if (run.size && (run.physical + run.size != physical || run.flags != flags)) {
+			if (!cb (&run, user)) {
+				status = R_FS_WALK_STOPPED;
+				break;
+			}
+			run.logical += run.size;
+			run.size = 0;
+		}
+		if (!run.size) {
+			run.physical = physical;
+			run.flags = flags;
+		}
+		run.size += size;
+		remaining -= size;
+		if (directory && fat_eoc (fat, next)) {
+			break;
+		}
+		cluster = next;
+	}
+	if (status != R_FS_WALK_STOPPED && run.size && !cb (&run, user)) {
+		status = R_FS_WALK_STOPPED;
+	}
+	if (status == R_FS_WALK_ERROR) {
+		file->flags |= R_FS_FILE_PARTIAL;
+	}
+	r_bitmap_free (seen);
+	return status;
+}
+
+typedef struct {
+	RBitmap *used;
+	RBitmap *directories;
+	int depth;
+	int budget;
+	bool ok;
+} FatOwners;
+
+static bool fat_mark_chain(FatFS *fat, FatEntry *entry, RBitmap *used) {
+	ut32 cluster = entry->cluster;
+	if (!cluster && !entry->size) {
+		return !(entry->attr & 0x10) || entry->id == UT64_MAX;
+	}
+	while (fat_valid_cluster (fat, cluster)) {
+		if (r_bitmap_test (used, cluster)) {
+			return true;
+		}
+		r_bitmap_set (used, cluster);
+		ut32 next;
+		if (!fat_next (fat, cluster, &next)) {
+			return false;
+		}
+		if (fat_eoc (fat, next)) {
+			return true;
+		}
+		cluster = next;
+	}
+	return false;
+}
+
+static bool fat_owner_cb(FatFS *fat, FatEntry *entry, void *user) {
+	FatOwners *owners = user;
+	if (!strcmp (entry->name, ".") || !strcmp (entry->name, "..")) {
+		return false;
+	}
+	if (--owners->budget < 0 || !fat_mark_chain (fat, entry, owners->used)) {
+		owners->ok = false;
+		return true;
+	}
+	if ((entry->attr & 0x10) && !r_bitmap_test (owners->directories, entry->cluster)) {
+		r_bitmap_set (owners->directories, entry->cluster);
+		if (++owners->depth > 64 || fat_iterate (fat, entry, R_FS_VIEW_NORMAL, fat_owner_cb, owners) < 0) {
+			owners->ok = false;
+		}
+		owners->depth--;
+	}
+	return !owners->ok;
+}
+
+static RBitmap *fat_owners(FatFS *fat) {
+	FatOwners owners = {
+		.used = r_bitmap_new (fat->g.clusters + 2),
+		.directories = r_bitmap_new (fat->g.clusters + 2),
+		.budget = 0x100000,
+		.ok = true,
+	};
+	FatEntry root = { .cluster = fat->g.root_cluster, .attr = 0x10, .id = UT64_MAX };
+	fat->cache_size = 0;
+	if (!owners.used || !owners.directories || !fat_mark_chain (fat, &root, owners.used)
+			|| fat_iterate (fat, &root, R_FS_VIEW_NORMAL, fat_owner_cb, &owners) < 0 || !owners.ok) {
+		r_bitmap_free (owners.used);
+		owners.used = NULL;
+	}
+	r_bitmap_free (owners.directories);
+	return owners.used;
+}
+
+static int fat_ranges(RFSRoot *root, ut32 flags, RFSRangeCb cb, void *user) {
+	FatFS *fat = root->ptr;
+	ut32 states = R_FS_RANGE_FREE | R_FS_RANGE_ALLOCATED | R_FS_RANGE_ORPHAN | R_FS_RANGE_BAD | R_FS_RANGE_UNKNOWN;
+	if (!flags || (flags & ~states)) {
+		return R_FS_WALK_ERROR;
+	}
+	RBitmap *used = flags & R_FS_RANGE_ORPHAN? fat_owners (fat): NULL;
+	if ((flags & R_FS_RANGE_ORPHAN) && !used) {
+		return R_FS_WALK_ERROR;
+	}
+	RFSRange run = {0};
+	ut32 cluster;
+	int status = R_FS_WALK_COMPLETE;
+	fat->cache_size = 0;
+	for (cluster = 2; cluster < fat->g.clusters + 2; cluster++) {
+		ut32 next;
+		if (!fat_next (fat, cluster, &next)) {
+			status = R_FS_WALK_ERROR;
+			break;
+		}
+		ut32 state = fat_valid_cluster (fat, cluster)? fat_state (fat, next): R_FS_RANGE_UNKNOWN;
+		if (used && state == R_FS_RANGE_ALLOCATED && !r_bitmap_test (used, cluster)) {
+			state |= R_FS_RANGE_ORPHAN;
+		}
+		ut64 logical = fat_cluster_offset (fat, cluster);
+		if (run.size && (!(state & flags) || run.flags != state || run.logical + run.size != logical)) {
+			if (!cb (&run, user)) {
+				status = R_FS_WALK_STOPPED;
+				break;
+			}
+			run.size = 0;
+		}
+		if (state & flags) {
+			if (!run.size) {
+				run.logical = logical;
+				run.physical = root->delta + logical;
+				run.flags = state;
+			}
+			run.size += fat->g.cluster_size;
+		}
+	}
+	if (status == R_FS_WALK_COMPLETE && run.size && !cb (&run, user)) {
+		status = R_FS_WALK_STOPPED;
+	}
+	r_bitmap_free (used);
+	return status;
+}
+
 static bool fat_mount(RFSRoot *root) {
 	ut8 boot[512];
 	FatGeometry g;
@@ -398,6 +588,8 @@ RFSPlugin r_fs_plugin_fat = {
 	},
 	.open = fat_open,
 	.open_id = fat_open_id,
+	.extents = fat_extents,
+	.ranges = fat_ranges,
 	.read = fat_read,
 	.close = fat_close,
 	.dir = fat_dir,

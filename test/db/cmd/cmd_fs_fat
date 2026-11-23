@@ -257,3 +257,164 @@ normal
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=FAT12 complete extents coalesce adjacent clusters and omit slack
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+miej /root/frag.txt
+miej /root/cross.txt
+miej /root/empty.txt
+EOF
+EXPECT=<<EOF
+{"ranges":[{"logical":0,"physical":11264,"size":512,"flags":2},{"logical":512,"physical":13312,"size":17,"flags":2}],"status":"complete","flags":0}
+{"ranges":[{"logical":0,"physical":184320,"size":519,"flags":2}],"status":"complete","flags":0}
+{"ranges":[],"status":"complete","flags":0}
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=FAT ownership queries cover later fragments and exclude slack
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+mfo /root 0x3401
+mfo /root 0x3410
+mfo /root 0x3411
+mfo /root 0x2e01
+mfo /root 0x2d206
+mfo /root 0x2d207
+EOF
+EXPECT=<<EOF
+/root/frag.txt
+/root/frag.txt
+/root/cross.txt
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=FAT12 free allocation map excludes metadata and coalesces clusters
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+mfuj /root
+EOF
+EXPECT=<<EOF
+{"ranges":[{"logical":10752,"physical":10752,"size":512,"flags":1},{"logical":12288,"physical":12288,"size":512,"flags":1},{"logical":14848,"physical":14848,"size":1024,"flags":1},{"logical":16384,"physical":16384,"size":512,"flags":1},{"logical":17408,"physical":17408,"size":7680,"flags":1},{"logical":26112,"physical":26112,"size":158208,"flags":1},{"logical":185344,"physical":185344,"size":863232,"flags":1}],"status":"complete"}
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=FAT allocated orphan map excludes every live file and directory
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+mfuj /root orphan
+EOF
+EXPECT=<<EOF
+{"ranges":[{"logical":15872,"physical":15872,"size":512,"flags":6},{"logical":16896,"physical":16896,"size":512,"flags":6},{"logical":25088,"physical":25088,"size":1024,"flags":6}],"status":"complete"}
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=FAT16 extents and orphan map use the physical sector size
+FILE=gzip://bins/fs/fat/fat16.img.gz
+CMDS=<<EOF
+miej /root/frag.txt
+mfuj /root orphan
+EOF
+EXPECT=<<EOF
+{"ranges":[{"logical":0,"physical":38912,"size":1024,"flags":2},{"logical":1024,"physical":43008,"size":17,"flags":2}],"status":"complete","flags":0}
+{"ranges":[{"logical":48128,"physical":48128,"size":1024,"flags":6},{"logical":50176,"physical":50176,"size":1024,"flags":6},{"logical":66560,"physical":66560,"size":2048,"flags":6}],"status":"complete"}
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=FAT32 mapping uses the active FAT and marks the root directory as owned
+FILE=gzip://bins/fs/fat/fat32.img.gz
+CMDS=<<EOF
+miej /root/frag.txt
+mfuj /root orphan
+EOF
+EXPECT=<<EOF
+{"ranges":[{"logical":0,"physical":565760,"size":512,"flags":2},{"logical":512,"physical":567808,"size":17,"flags":2}],"status":"complete","flags":0}
+{"ranges":[{"logical":570368,"physical":570368,"size":512,"flags":6},{"logical":571392,"physical":571392,"size":512,"flags":6},{"logical":579584,"physical":579584,"size":1024,"flags":6}],"status":"complete"}
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=FAT extents and orphan map include the mount disk offset
+FILE=gzip://bins/fs/fat/fat12-offset.img.gz
+ARGS=-n
+CMDS=<<EOF
+m /mnt fat 0x1000
+miej /mnt/frag.txt
+mfo /mnt 0x4401
+mfuj /mnt orphan
+EOF
+EXPECT=<<EOF
+{"ranges":[{"logical":0,"physical":15360,"size":512,"flags":2},{"logical":512,"physical":17408,"size":17,"flags":2}],"status":"complete","flags":0}
+/mnt/frag.txt
+{"ranges":[{"logical":15872,"physical":19968,"size":512,"flags":6},{"logical":16896,"physical":20992,"size":512,"flags":6},{"logical":25088,"physical":29184,"size":1024,"flags":6}],"status":"complete"}
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=FAT allocation distinguishes bad clusters and reserved values
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+e io.cache=true
+wx f7ffff @ 0x20f
+mfuj /root bad
+wx f1ffff @ 0x20f
+mfuj /root unknown
+EOF
+EXPECT=<<EOF
+{"ranges":[{"logical":14848,"physical":14848,"size":512,"flags":8}],"status":"complete"}
+{"ranges":[{"logical":14848,"physical":14848,"size":512,"flags":16}],"status":"complete"}
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=FAT orphan enumeration fails if live ownership cannot be established
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+e io.cache=true
+wx 0000 @ 0x20d
+e log.level=0
+mfuj /root orphan || echo incomplete
+EOF
+EXPECT=<<EOF
+{"ranges":[],"status":"error"}
+incomplete
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Unsupported allocation maps are not reported as free space
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+m /tmp tmp
+e log.level=0
+mfuj /tmp || echo unsupported
+mfuj /root/subdir || echo exact-mount-required
+EOF
+EXPECT=<<EOF
+{"ranges":[],"status":"unsupported"}
+unsupported
+{"ranges":[],"status":"error"}
+exact-mount-required
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=FAT cyclic file extents return only unique clusters and an error
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+e io.cache=true
+wx 00060000 @ 0x1a3c
+wx 3f00 @ 0x20a
+e log.level=0
+miej /root/frag.txt
+EOF
+EXPECT=<<EOF
+{"ranges":[{"logical":0,"physical":11264,"size":512,"flags":2},{"logical":512,"physical":13312,"size":512,"flags":2}],"status":"error","flags":4}
+EOF
+EXPECT_ERR=
+RUN
