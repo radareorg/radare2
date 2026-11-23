@@ -230,8 +230,7 @@ static int stop_reason_death(libgdbr_t *g, bool is_signal) {
 }
 
 int handle_stop_reason(libgdbr_t *g) {
-	send_ack (g);
-	if (g->data_len < 3) {
+	if (send_ack (g) < 0 || g->data_len < 3) {
 		return -1;
 	}
 	switch (g->data[0]) {
@@ -250,19 +249,26 @@ int handle_stop_reason(libgdbr_t *g) {
 	case 'X':
 		return stop_reason_death (g, true);
 	}
-	if (g->data[0] != 'T') {
+	if ((g->data[0] != 'T' && g->data[0] != 'S')
+	    || (g->data[0] == 'S' && g->data_len != 3)) {
 		return -1;
+	}
+	const int high = hex2int ((ut8)g->data[1]);
+	const int low = hex2int ((ut8)g->data[2]);
+	if (high < 0 || low < 0) {
+		return -1;
+	}
+	gdbr_stop_reason_reset (&g->stop_reason);
+	g->stop_reason.core = -1;
+	g->stop_reason.signum = high * 16 + low;
+	g->stop_reason.is_valid = true;
+	g->stop_reason.reason = g->stop_reason.signum == 5? R_DEBUG_REASON_BREAKPOINT: R_DEBUG_REASON_SIGNAL;
+	if (g->data[0] == 'S') {
+		return 0;
 	}
 	char *ptr1, *ptr2;
 	char *save_ptr = NULL;
 	g->data[g->data_len] = '\0';
-	gdbr_stop_reason_reset (&g->stop_reason);
-	g->stop_reason.core = -1;
-	if (sscanf (g->data + 1, "%02x", &g->stop_reason.signum) != 1) {
-		return -1;
-	}
-	g->stop_reason.is_valid = true;
-	g->stop_reason.reason = R_DEBUG_REASON_SIGNAL;
 	for (ptr1 = r_str_tok_r (g->data + 3, ";", &save_ptr); ptr1; ptr1 = r_str_tok_r (NULL, ";", &save_ptr)) {
 		if (stop_reason_register (g, ptr1)) {
 			continue;
@@ -341,9 +347,6 @@ int handle_stop_reason(libgdbr_t *g) {
 				continue;
 			}
 		}
-	}
-	if (g->stop_reason.signum == 5) {
-		g->stop_reason.reason = R_DEBUG_REASON_BREAKPOINT;
 	}
 	// The registers a stop reply states are its thread's, not those of the thread register packets address
 	if (g->stop_reason.thread.present && g->tid > 0 && g->stop_reason.thread.tid != g->tid) {

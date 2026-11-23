@@ -601,7 +601,7 @@ int gdbr_attach(libgdbr_t *g, int pid) {
 		ret = -2;
 		goto end;
 	}
-	ret = (g->data[0] == 'T')? handle_stop_reason (g): handle_attach (g);
+	ret = (g->data[0] == 'T' || g->data[0] == 'S')? handle_stop_reason (g): handle_attach (g);
 	if (!ret) {
 		g->pid = pid;
 		if (g->stop_reason.thread.present) {

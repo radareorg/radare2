@@ -467,6 +467,125 @@ static bool test_gdb_monitor_output(void) {
 	mu_end;
 }
 
+static bool test_gdb_short_stop_replies(void) {
+	const struct {
+		const char *short_reply;
+		const char *full_reply;
+		int signal;
+	} cases[] = {
+		{ "S05", "T05", 5 }, { "S02", "T02", 2 }, { "S0a", "T0a", 10 },
+		{ "SFF", "TFF", 255 }, { "S00", "T00", 0 }
+	};
+	const char *replies[13];
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		replies[i * 2] = cases[i].short_reply;
+		replies[i * 2 + 1] = cases[i].full_reply;
+	}
+	replies[10] = "T05thread:1c03;core:2;00:1122334455667788;exec:2f62696e2f74657374;";
+	replies[11] = "S02";
+	replies[12] = NULL;
+	RCons *cons = r_cons_new ();
+	libgdbr_t g;
+	int fds[2];
+	mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open short-stop session");
+	Stub stub;
+	RThread *th = stub_start (&stub, fds[1], -1, replies);
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		mu_assert_eq (gdbr_stop_reason (&g), 0, "query a short stop reply");
+		mu_assert_true (g.stop_reason.is_valid, "short stop is valid");
+		mu_assert_eq (g.stop_reason.signum, cases[i].signal, "two hexadecimal signal digits");
+		mu_assert_eq (g.stop_reason.reason, cases[i].signal == 5? R_DEBUG_REASON_BREAKPOINT: R_DEBUG_REASON_SIGNAL, "classify the signal");
+		mu_assert_eq (g.stop_reason.core, -1, "no invented core");
+		mu_assert_false (g.stop_reason.thread.present, "no invented thread");
+		const libgdbr_stop_reason_t short_stop = g.stop_reason;
+		mu_assert_eq (gdbr_stop_reason (&g), 0, "query the equivalent T reply");
+		mu_assert_eq (g.stop_reason.signum, short_stop.signum, "Sxx and empty Txx agree on signum");
+		mu_assert_eq (g.stop_reason.reason, short_stop.reason, "Sxx and empty Txx agree on reason");
+		mu_assert_eq (g.stop_reason.core, short_stop.core, "Sxx and empty Txx agree on core");
+		mu_assert_eq (g.stop_reason.is_valid, short_stop.is_valid, "Sxx and empty Txx agree on is_valid");
+		mu_assert_eq (g.stop_reason.thread.present, short_stop.thread.present, "Sxx and empty Txx agree on thread.present");
+		mu_assert_eq (g.stop_reason.exec.present, short_stop.exec.present, "Sxx and empty Txx agree on exec.present");
+		mu_assert_eq (g.stop_reason.watchpoint.present, short_stop.watchpoint.present, "Sxx and empty Txx agree on watchpoint.present");
+		mu_assert_eq (g.stop_reason.library, short_stop.library, "Sxx and empty Txx agree on library");
+		mu_assert_eq (g.stop_reason.swbreak, short_stop.swbreak, "Sxx and empty Txx agree on swbreak");
+		mu_assert_eq (g.stop_reason.hwbreak, short_stop.hwbreak, "Sxx and empty Txx agree on hwbreak");
+		mu_assert_eq (g.stop_reason.create, short_stop.create, "Sxx and empty Txx agree on create");
+		mu_assert_eq (g.stop_reason.vforkdone, short_stop.vforkdone, "Sxx and empty Txx agree on vforkdone");
+		mu_assert_eq (g.stop_reason.syscall, short_stop.syscall, "Sxx and empty Txx agree on syscall");
+		mu_assert_eq (g.stop_reason.fork.present, short_stop.fork.present, "Sxx and empty Txx agree on fork.present");
+		mu_assert_eq (g.stop_reason.vfork.present, short_stop.vfork.present, "Sxx and empty Txx agree on vfork.present");
+	}
+	mu_assert_eq (gdbr_stop_reason (&g), 0, "query rich T stop metadata");
+	mu_assert_true (g.stop_reason.exec.present, "rich stop owns an exec path");
+	mu_assert_streq (g.stop_reason.exec.path, "/bin/test", "decoded exec path");
+	mu_assert_true (g.stop_reason.thread.present, "rich stop names a thread");
+	mu_assert_eq (g.stop_reason.core, 2, "rich stop names a core");
+	mu_assert_eq (gdbr_stop_reason (&g), 0, "short stop replaces rich metadata");
+	mu_assert_false (g.stop_reason.exec.present, "exec metadata cleared");
+	mu_assert_null (g.stop_reason.exec.path, "owned exec path released");
+	mu_assert_false (g.stop_reason.thread.present, "thread metadata cleared");
+	mu_assert_eq (g.stop_reason.core, -1, "core metadata cleared");
+	mu_assert_eq (g.stop_reason.signum, 2, "replacement stop signal");
+	char *sent = stub_finish (&stub, th, fds[0]);
+	mu_assert_eq (r_str_char_count (sent, '\n'), 12, "each stop came from a query");
+	free (sent);
+	gdbr_cleanup (&g);
+	r_cons_free (cons);
+	mu_end;
+}
+
+static bool test_gdb_invalid_stop_signals(void) {
+	const char *replies[] = {
+		"S", "S0", "S0g", "Sg0", "S+5", "S 5", "S005", "S05;", "S05thread:1;", "S05junk",
+		"T", "T0", "T0g", "Tg0", "T+5", "T 5"
+	};
+	libgdbr_t g;
+	mu_assert_eq (gdbr_init (&g, false), 0, "initialize invalid-stop session");
+	g.no_ack = true;
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (replies); i++) {
+		r_str_ncpy (g.data, replies[i], g.data_max);
+		g.data_len = strlen (replies[i]);
+		mu_assert_eq (handle_stop_reason (&g), -1, "reject malformed signal replies");
+		mu_assert_false (g.stop_reason.is_valid, "malformed replies do not publish a stop");
+	}
+	g.no_ack = false;
+	r_str_ncpy (g.data, "S05", g.data_max);
+	g.data_len = 3;
+	mu_assert_eq (handle_stop_reason (&g), -1, "failed acknowledgement rejects the stop");
+	mu_assert_false (g.stop_reason.is_valid, "failed acknowledgement does not publish a stop");
+	gdbr_cleanup (&g);
+	mu_end;
+}
+
+static bool test_gdb_short_execution_stops(void) {
+	RCons *cons = r_cons_new ();
+	libgdbr_t g;
+	int fds[2];
+	mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open short execution-stop session");
+	g.pid = g.tid = 0;
+	g.stub_features.extended_mode = 0;
+	const char *replies[] = { "S02", "S05", "S02", "S05junk", NULL };
+	Stub stub;
+	RThread *th = stub_start (&stub, fds[1], -1, replies);
+	mu_assert_eq (gdbr_attach (&g, 0x4d2), 0, "attach accepts a short stop");
+	mu_assert_true (g.stop_reason.is_valid, "attach parsed the stop reply");
+	mu_assert_eq (g.stop_reason.signum, 2, "attach stop signal");
+	mu_assert_eq (g.tid, 0, "attach does not invent a thread");
+	mu_assert_eq (gdbr_step (&g, 1), 0, "step accepts a short stop");
+	mu_assert_eq (g.stop_reason.reason, R_DEBUG_REASON_BREAKPOINT, "step trap classification");
+	mu_assert_eq (gdbr_continue (&g, g.pid, 1, 0), 0, "continue accepts a short stop");
+	mu_assert_eq (g.stop_reason.signum, 2, "continue stop signal");
+	mu_assert_eq (gdbr_attach (&g, 0x4d3), -1, "attach rejects a malformed short stop");
+	mu_assert_eq (g.pid, 0x4d2, "failed attach preserves the previous pid");
+	char *sent = stub_finish (&stub, th, fds[0]);
+	mu_assert_streq_free (sent, "vAttach;4d2\ns\nc\nvAttach;4d3\n", "execution packets");
+	gdbr_cleanup (&g);
+	r_cons_free (cons);
+	mu_end;
+}
+
 static bool test_gdb_gdbserver_reads_g(void) {
 	RCons *cons = r_cons_new ();
 	libgdbr_t g;
@@ -1032,6 +1151,9 @@ int main(int argc, char **argv) {
 	mu_run_test (test_gdb_memory_packet_sizes);
 	mu_run_test (test_gdb_memory_packet_failures);
 	mu_run_test (test_gdb_monitor_output);
+	mu_run_test (test_gdb_short_stop_replies);
+	mu_run_test (test_gdb_invalid_stop_signals);
+	mu_run_test (test_gdb_short_execution_stops);
 	mu_run_test (test_gdb_gdbserver_reads_g);
 	mu_run_test (test_gdb_lldb_reads_g_with_thread);
 	mu_run_test (test_gdb_lldb_reads_p);
