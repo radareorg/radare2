@@ -36,6 +36,7 @@ if get_option('enable_tests')
     'cmd_api',
     'config',
     'cons',
+    'core_anal',
     'core_bin_classes',
     'core_disasm',
     'core_esil',
