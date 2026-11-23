@@ -900,3 +900,37 @@ EXPECT_ERR=<<EOF
 WARN: Incomplete FAT directory listing: /subdir
 EOF
 RUN
+
+NAME=Deleted offset lookup preserves a reused claim while recovery refuses it
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+e io.cache=true
+wx 0900 @ 0x1b1a
+e log.level=0
+mix /root 0x3801
+miej /root 0x1b00
+mgx /root 0x1b00 - || echo reused-cluster
+EOF
+EXPECT=<<EOF
+/root/_one.txt
+{"ranges":[],"status":"error","flags":13}
+reused-cluster
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Deleted offset lookup remains useful when live ownership is corrupt
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+e io.cache=true
+wx 0000 @ 0x20d
+e log.level=0
+mix /root 0x3a01
+miej /root 0x1b00
+EOF
+EXPECT=<<EOF
+/root/_one.txt
+{"ranges":[],"status":"error","flags":5}
+EOF
+EXPECT_ERR=
+RUN

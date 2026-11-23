@@ -35,8 +35,8 @@ compiler and does not load a kernel module or access kernel memory.
 
  * To run *all* tests, use `make -k all`.
  * To execute only the unit tests use `make -k unit-tests`.
- * To verify FAT prefix reads, damaged chains and IO costs against compressed
-   testbins images, run `python3 test/scripts/test-fat-io.py` after building.
+ * To verify FAT prefix reads, extent/lookup costs and damaged chains against
+   compressed testbins images, run `python3 test/scripts/test-fat-io.py` after building.
    It loads this checkout's shared filesystem library; set `R2_FS_LIB` to use
    another matching build.
  * To check HTTP sandbox enforcement on a local server, use `make http-sandbox`

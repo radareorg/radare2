@@ -473,7 +473,7 @@ static bool mount_recover(RCmdContext *ctx) {
 	if (!r_cmdctx_num (ctx, 1, core->num, &id) || !mount_recovery_mode (r_cmdctx_arg (ctx, 3).a, &flags)) {
 		return false;
 	}
-	RFSFile *file = r_fs_open_id (core->fs, r_cmdctx_arg (ctx, 0).a, id, flags);
+	RFSFile *file = r_fs_open_id (core->fs, r_cmdctx_arg (ctx, 0).a, id, flags | R_FS_OPEN_RECOVER);
 	if (!file || (file->type != 'f' && file->type != R_FS_FILE_TYPE_REGULAR)) {
 		if (file) {
 			r_fs_close (core->fs, file);
@@ -818,7 +818,7 @@ static bool mount_ranges(RCmdContext *ctx) {
 	}
 	RFSFile *file = NULL;
 	if (extents) {
-		file = state? r_fs_open_id (core->fs, path, id, flags): r_fs_open (core->fs, path, false);
+		file = state? r_fs_open_id (core->fs, path, id, flags | R_FS_OPEN_RECOVER): r_fs_open (core->fs, path, false);
 		if (!file) {
 			R_LOG_ERROR ("Cannot open file");
 			pj_free (output.pj);
