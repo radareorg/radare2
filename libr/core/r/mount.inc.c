@@ -22,6 +22,8 @@ static RCoreHelpMessage help_msg_m = {
 	"mg", " /foo [offset [size]]", "dump file to disk; size 0 reads to EOF (supports base64:)",
 	"mg", " /directory", "recursively dump a directory into the current directory",
 	"mi", "[j] /foo/bar [entry-id]", "show file metadata by path or mounted entry ID",
+	"mie", "[j] /foo/bar [entry-id]", "file extents: logical, physical, size, flags",
+	"mfu", "[j] /mount [state]", "list free or other allocation ranges (mf?)",
 	"mi", " 0x1234", "find filename by offset in current fs",
 	"mix", " 0x1234", "find deleted filename by offset (FAT)",
 	"mis", " /foo/bar", "get offset and size of file and seek to it",
@@ -49,7 +51,8 @@ static RCoreHelpMessage help_msg_mcolon = {
 static RCoreHelpMessage help_msg_mf = {
 	"Usage:", "mf[no] [...]", "search files matching name or offset",
 	"mfn", " /foo *.c", "search files by name in /foo path",
-	"mfo", " /foo 0x5e91", "search files by offset in /foo path",
+	"mfo", " /foo 0x5e91", "find files containing a disk offset",
+	"mfu", "[j] /mount [state]", "allocation ranges: free (default), allocated, orphan, bad, unknown, all",
 	NULL
 };
 
@@ -600,6 +603,103 @@ static void mount_print_paths(RCmdContext *ctx, RList *R_OWNED list, bool escape
 	r_list_free (list);
 }
 
+typedef struct {
+	RCmdContext *ctx;
+	PJ *pj;
+} MountRanges;
+
+static bool mount_range_cb(const RFSRange *range, void *user) {
+	MountRanges *output = user;
+	if (r_cons_is_breaked (output->ctx->cons)) {
+		return false;
+	}
+	if (output->pj) {
+		pj_o (output->pj);
+		pj_kn (output->pj, "logical", range->logical);
+		pj_kn (output->pj, "physical", range->physical);
+		pj_kn (output->pj, "size", range->size);
+		pj_kn (output->pj, "flags", range->flags);
+		pj_end (output->pj);
+	} else {
+		r_cons_printf (output->ctx->cons, "0x%08"PFMT64x" 0x%08"PFMT64x" %"PFMT64u" 0x%x\n",
+			range->logical, range->physical, range->size, range->flags);
+	}
+	return true;
+}
+
+static const char *mount_range_status(int status) {
+	switch (status) {
+	case R_FS_WALK_COMPLETE: return "complete";
+	case R_FS_WALK_STOPPED: return "stopped";
+	case R_FS_WALK_UNSUPPORTED: return "unsupported";
+	}
+	return "error";
+}
+
+static bool mount_ranges(RCmdContext *ctx) {
+	RCore *core = ctx->user;
+	const RCmdRow *command = ctx->handler_user;
+	bool extents = command->name[1] == 'i';
+	MountRanges output = { ctx, strchr (command->name, 'j')? r_core_pj_new (core): NULL };
+	ut32 flags = R_FS_RANGE_FREE;
+	ut64 id = UT64_MAX;
+	const char *path = r_cmdctx_arg (ctx, 0).a;
+	const char *state = r_cmdctx_arg (ctx, 1).a;
+	if (extents) {
+		if (state && !r_cmdctx_num (ctx, 1, core->num, &id)) {
+			pj_free (output.pj);
+			return false;
+		}
+	} else if (state) {
+		const char *names[] = { "free", "allocated", "orphan", "bad", "unknown", "all" };
+		ut32 masks[] = { R_FS_RANGE_FREE, R_FS_RANGE_ALLOCATED, R_FS_RANGE_ORPHAN, R_FS_RANGE_BAD, R_FS_RANGE_UNKNOWN, 31 };
+		int i;
+		for (i = 0; i < R_ARRAY_SIZE (names) && strcmp (state, names[i]); i++) {
+		}
+		if (i == R_ARRAY_SIZE (names)) {
+			R_LOG_ERROR ("Expected free, allocated, orphan, bad, unknown or all");
+			pj_free (output.pj);
+			return false;
+		}
+		flags = masks[i];
+	}
+	RFSFile *file = NULL;
+	if (extents) {
+		file = state? r_fs_open_id (core->fs, path, id, R_FS_OPEN_CHAIN): r_fs_open (core->fs, path, false);
+		if (!file) {
+			R_LOG_ERROR ("Cannot open file");
+			pj_free (output.pj);
+			return false;
+		}
+	}
+	if (output.pj) {
+		pj_o (output.pj);
+		pj_ka (output.pj, "ranges");
+	}
+	r_cons_break_push (core->cons, NULL, NULL);
+	int status = extents? r_fs_extents (file, mount_range_cb, &output)
+		: r_fs_ranges (core->fs, path, flags, mount_range_cb, &output);
+	r_cons_break_pop (core->cons);
+	if (output.pj) {
+		pj_end (output.pj);
+		pj_ks (output.pj, "status", mount_range_status (status));
+		if (file) {
+			pj_kn (output.pj, "flags", file->flags);
+		}
+		pj_end (output.pj);
+		r_cons_println (ctx->cons, pj_string (output.pj));
+		pj_free (output.pj);
+	}
+	if (file) {
+		r_fs_close (core->fs, file);
+		r_fs_file_free (file);
+	}
+	if (status != R_FS_WALK_COMPLETE) {
+		R_LOG_ERROR ("Filesystem range enumeration: %s", mount_range_status (status));
+	}
+	return status == R_FS_WALK_COMPLETE;
+}
+
 static bool mount_info(RCmdContext *ctx) {
 	RCore *core = ctx->user;
 	const char *path = r_cmdctx_arg (ctx, 0).a;
@@ -823,8 +923,12 @@ static bool r_core_cmd_mount_init(RCmd *cmd) {
 		{ "mf", mount_help_mf, "[no] [path] [name|offset]", help_msg_mf, 0, 0 },
 		{ "mfn", mount_find, " [path] [pattern]", NULL, 2, 2 },
 		{ "mfo", mount_find, " [path] [offset]", NULL, 2, 2 },
+		{ "mfu", mount_ranges, " /mount [free|allocated|orphan|bad|unknown|all]", NULL, 1, 2 },
+		{ "mfuj", mount_ranges, " /mount [free|allocated|orphan|bad|unknown|all]", NULL, 1, 2 },
 		{ "mg", mount_get, " [filename] [offset [size]]", NULL, 1, 3 },
 		{ "mi", mount_info, " [path|offset] [entry-id]", NULL, 1, 2 },
+		{ "mie", mount_ranges, " [path] [entry-id]", NULL, 1, 2 },
+		{ "miej", mount_ranges, " [path] [entry-id]", NULL, 1, 2 },
 		{ "mij", mount_info, " [path] [entry-id]", NULL, 1, 2 },
 		{ "mis", mount_info, " [path]", NULL, 1, 1 },
 		{ "mix", mount_info, " [mountpoint] offset", NULL, 1, 2 },

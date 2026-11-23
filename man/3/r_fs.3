@@ -138,6 +138,10 @@ selects directory metadata in the filesystem mounted above that path.
 .Fn r_fs_extents "RFSFile *file" "RFSRangeCb cb" "void *user"
 .Pp
 Enumerate logical file offsets and their physical backing-image locations.
+Ranges exclude file slack; contiguous logical and physical runs are coalesced.
+For FAT, allocation flags describe the current FAT state of the mapped clusters.
+A damaged or cleared chain can yield a known prefix followed by WALK_ERROR;
+this is not a complete recovery.
 .Pp
 .Ft int
 .Fn r_fs_ranges "RFS *fs" "const char *mountpoint" "ut32 flags" "RFSRangeCb cb" "void *user"
@@ -150,6 +154,11 @@ Both iterators borrow each RFSRange for the duration of the callback, whose
 false return requests a stop. Results are R_FS_WALK_COMPLETE,
 R_FS_WALK_STOPPED, R_FS_WALK_ERROR or R_FS_WALK_UNSUPPORTED.
 An unsupported allocation map must not be interpreted as free space.
+All offsets and sizes are bytes. Physical offsets include the mount delta.
+For allocation ranges, logical is the volume-relative offset.
+FAT allocation maps exclude reserved sectors, FAT copies and the fixed root
+region. ORPHAN requires a complete walk of live directory ownership and
+selects allocated clusters without a live owner; it differs from FREE.
 .Sh SHELL
 .Ft bool
 .Fn r_fs_shell "RFSShell *shell" "RFS *fs" "const char *root"

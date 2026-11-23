@@ -586,6 +586,21 @@ R_API bool r_fs_dir_dump(RFS *fs, const char *path, const char *name) {
 	return fs_dir_dump (fs, path, name, 1, &budget);
 }
 
+typedef struct {
+	ut64 offset;
+	bool found;
+} FSFindOffset;
+
+static bool fs_find_extent(const RFSRange *range, void *user) {
+	FSFindOffset *query = user;
+	if (range->physical != UT64_MAX && query->offset >= range->physical
+			&& query->offset - range->physical < range->size) {
+		query->found = true;
+		return false;
+	}
+	return true;
+}
+
 static void fs_find(RFS *fs, const char *path, ut64 id, const char *glob, ut64 offset, int view, RList *list, int depth, int *budget) {
 	RListIter *iter;
 	RFSFile *item;
@@ -606,7 +621,9 @@ static void fs_find(RFS *fs, const char *path, ut64 id, const char *glob, ut64 o
 		if (visible && !glob && item->type != R_FS_FILE_TYPE_DIRECTORY) {
 			RFSFile *file = item->id != UT64_MAX? r_fs_open_id (fs, item->root->path, item->id, R_FS_OPEN_CHAIN): r_fs_open (fs, found, false);
 			if (file) {
-				matches = file->off != UT64_MAX && file->off == offset;
+				FSFindOffset query = { .offset = offset };
+				int status = r_fs_extents (file, fs_find_extent, &query);
+				matches = status == R_FS_WALK_UNSUPPORTED? file->off != UT64_MAX && file->off == offset: query.found;
 				r_fs_close (fs, file);
 				r_fs_file_free (file);
 			}
