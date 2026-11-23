@@ -4034,7 +4034,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 
 	int res = agraph_print (core, g, grd->fs, true, *fcn);
 
-	if (r_config_get_b (core->config, "scr.scrollbar")) {
+	if (r_config_get_i (core->config, "scr.scrollbar") > 0) {
 		r_core_print_scrollbar (core);
 	}
 
@@ -4049,8 +4049,15 @@ static void agraph_set_need_reload_nodes(struct agraph_refresh_data *grd) {
 	grd->g->need_reload_nodes = true;
 }
 
+// graph.scroll is the amount of lines or nodes moved per keypress, so a zero
+// or negative value would freeze the canvas. Treat it as the minimum speed
+static int agraph_config_speed(RConfig *cfg) {
+	const int speed = (int)r_config_get_i (cfg, "graph.scroll");
+	return speed < 1? DEFAULT_SPEED: speed;
+}
+
 static void agraph_toggle_speed(RAGraph *g, RCore *core) {
-	const int alt = r_config_get_i (core->config, "graph.scroll");
+	const int alt = agraph_config_speed (core->config);
 	g->movspeed = g->movspeed == DEFAULT_SPEED? alt: DEFAULT_SPEED;
 }
 
@@ -4794,7 +4801,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			return false;
 		}
 	}
-	can->linemode = r_config_get_b (core->config, "graph.linemode");
+	can->linemode = r_config_get_i (core->config, "graph.linemode");
 	can->color = r_config_get_i (core->config, "scr.color");
 
 	if (!g) {
@@ -4824,7 +4831,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 	}
 
 	g->can = can;
-	g->movspeed = r_config_get_i (core->config, "graph.scroll");
+	g->movspeed = agraph_config_speed (core->config);
 	const int graph_zoom = r_config_get_i (core->config, "graph.zoom");
 	if (graph_zoom) {
 		agraph_set_zoom (g, graph_zoom);

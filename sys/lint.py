@@ -138,6 +138,7 @@ MESSAGES = {
 	"tab-free": "missing space before parenthesis: write 'free ('",
 	"cfg-debug-get-i": "read cfg.debug with r_config_get_b, not get_i",
 	"bool-config-get-i": "read this boolean config with r_config_get_b, not get_i",
+	"int-config-get-b": "read this integer config with r_config_get_i, not r_config_get_b",
 	"strndup-space": "missing space before parenthesis in strndup()",
 	"eprintf-error": "eprintf reporting an error, use R_LOG_ERROR",
 	"appendf-no-format": "appendf without a format specifier, use append",
@@ -355,6 +356,27 @@ CHECKS = [
 		[Rx(rb'"(?:\\.|[^"\\\r\n])*"(?:PFMT|PRI)[A-Za-z0-9_]+\b')], prefixes=EVERYWHERE,
 		numbered=True, filters=[(rb"^[^:]+\.h:", True)]),
 ]
+
+# integer configs declared with SETI() must not be read with r_config_get_b,
+# which collapses every value above 1 to true (graph.scroll was one of them).
+# the key list is read from cconfig.c so it follows the new keys by itself
+def int_config_get_b_check():
+	try:
+		with open(os.path.join(ROOT, "libr", "core", "cconfig.c"), "rb") as f:
+			cconfig = f.read()
+	except OSError:
+		return None
+	keys = sorted(set(re.findall(rb'SETI\s*\(\s*"([^"]+)"', cconfig)))
+	if not keys:
+		return None
+	alt = b"|".join(re.escape(k) for k in keys)
+	return Check("int-config-get-b",
+		[Rx(rb'r_config_get_b\s*\([^;\n,]*,\s*"(?:' + alt + rb')"')],
+		prefixes=LIBR_BINR)
+
+_int_config_get_b = int_config_get_b_check()
+if _int_config_get_b is not None:
+	CHECKS.append(_int_config_get_b)
 
 # printed after the c++ compat check, like in the old lint.sh
 WARNING_CHECKS = [
