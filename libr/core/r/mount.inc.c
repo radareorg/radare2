@@ -468,7 +468,7 @@ static bool mount_recovery_size(const RFSRange *range, void *user) {
 
 static bool mount_recover(RCmdContext *ctx) {
 	RCore *core = ctx->user;
-	ut64 id;
+	ut64 id = 0;
 	ut32 flags;
 	if (!r_cmdctx_num (ctx, 1, core->num, &id) || !mount_recovery_mode (r_cmdctx_arg (ctx, 3).a, &flags)) {
 		return false;
@@ -860,7 +860,7 @@ static bool mount_info(RCmdContext *ctx) {
 	const char mode = command->name[2];
 	int argc = r_cmdctx_argc (ctx);
 	if (mode == 'x' || (!mode && argc == 1 && (r_str_isnumber (path) || r_str_startswith (path, "0x")))) {
-		ut64 off;
+		ut64 off = 0;
 		if (!r_cmdctx_num (ctx, argc == 2? 1: 0, core->num, &off)) {
 			return false;
 		}
