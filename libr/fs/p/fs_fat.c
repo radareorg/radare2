@@ -24,8 +24,7 @@ typedef struct {
 	char name[1024];
 	ut32 current;
 	ut32 index;
-	ut32 checkpoint;
-	ut32 power;
+	RBitset *visited;
 	ut64 readable;
 	int plan_status;
 	bool contiguous;
@@ -92,36 +91,40 @@ static bool fat_cluster_at(FatFS *fat, FatEntry *entry, ut32 index, ut32 *cluste
 		*cluster = entry->cluster + index;
 		return fat_valid_cluster (fat, *cluster);
 	}
-	if (!entry->power || index < entry->index) {
-		entry->current = entry->checkpoint = entry->cluster;
+	if (!entry->visited || index < entry->index) {
+		r_bitset_free (entry->visited);
+		entry->visited = NULL;
+		entry->current = entry->cluster;
 		entry->index = 0;
-		entry->power = 1;
+		if (index) {
+			entry->visited = r_bitset_new ();
+			if (!entry->visited || !r_bitset_set (entry->visited, entry->cluster)) {
+				return false;
+			}
+		}
 	}
 	while (entry->index < index) {
 		ut32 next;
 		if (entry->index >= fat->g.clusters || !fat_next (fat, entry->current, &next)
-				|| !fat_valid_cluster (fat, next) || next == entry->checkpoint) {
+				|| !fat_valid_cluster (fat, next) || !r_bitset_set (entry->visited, next)) {
 			return false;
 		}
 		entry->current = next;
 		entry->index++;
-		if (entry->index == entry->power) {
-			entry->checkpoint = next;
-			entry->power <<= 1;
-		}
 	}
 	*cluster = entry->current;
 	return fat_valid_cluster (fat, *cluster);
 }
 
-static bool fat_read_entry(FatFS *fat, FatEntry *entry, ut64 off, ut8 *buf, int len, ut64 *physical) {
+static int fat_read_entry(FatFS *fat, FatEntry *entry, ut64 off, ut8 *buf, int len, ut64 *physical) {
+	int nread = 0;
 	while (len > 0) {
 		ut64 at;
 		int chunk;
 		if (!entry->cluster && (entry->attr & 0x10)) {
 			ut64 bytes = (ut64)fat->g.root_entries * 32;
 			if (off >= bytes) {
-				return false;
+				break;
 			}
 			at = fat->g.root + off;
 			chunk = R_MIN ((ut64)len, bytes - off);
@@ -129,13 +132,13 @@ static bool fat_read_entry(FatFS *fat, FatEntry *entry, ut64 off, ut8 *buf, int 
 			ut32 cluster;
 			if (off / fat->g.cluster_size >= fat->g.clusters
 					|| !fat_cluster_at (fat, entry, off / fat->g.cluster_size, &cluster)) {
-				return false;
+				break;
 			}
 			at = fat_cluster_offset (fat, cluster) + off % fat->g.cluster_size;
 			chunk = R_MIN ((ut32)len, fat->g.cluster_size - off % fat->g.cluster_size);
 		}
 		if (!fat_read_at (fat, at, buf, chunk)) {
-			return false;
+			break;
 		}
 		if (physical) {
 			*physical = at;
@@ -144,8 +147,9 @@ static bool fat_read_entry(FatFS *fat, FatEntry *entry, ut64 off, ut8 *buf, int 
 		buf += chunk;
 		off += chunk;
 		len -= chunk;
+		nread += chunk;
 	}
-	return true;
+	return nread? nread: -1;
 }
 
 static ut8 fat_checksum(const ut8 *name) {
@@ -258,16 +262,19 @@ static int fat_iterate(FatFS *fat, FatEntry *dir, int view, FatEntryCb cb, void 
 	int slot = 0, slots = 0, checksum = -1, deleted_slots = 0;
 	ut64 limit = dir->cluster? (ut64)fat->g.clusters * fat->g.cluster_size: (ut64)fat->g.root_entries * 32;
 	ut64 off;
+	int status = dir->cluster? -1: 0;
 	fat->cache_size = 0;
 	for (off = 0; off < limit; off += 32) {
 		ut64 physical;
-		if (!fat_read_entry (fat, dir, off, raw, sizeof (raw), &physical)) {
+		if (fat_read_entry (fat, dir, off, raw, sizeof (raw), &physical) != sizeof (raw)) {
 			ut32 next;
-			return off && !(off % fat->g.cluster_size) && fat_next (fat, dir->current, &next)
+			status = off && !(off % fat->g.cluster_size) && fat_next (fat, dir->current, &next)
 				&& fat_eoc (fat, next)? 0: -1;
+			break;
 		}
 		if (!raw[0]) {
-			return 0;
+			status = 0;
+			break;
 		}
 		if (raw[11] == 0x0f) {
 			if (raw[0] == 0xe5) {
@@ -314,13 +321,16 @@ static int fat_iterate(FatFS *fat, FatEntry *dir, int view, FatEntryCb cb, void 
 				}
 			}
 			if (cb (fat, &entry, user)) {
-				return 1;
+				status = 1;
+				break;
 			}
 		}
 		slot = slots = deleted_slots = 0;
 		checksum = -1;
 	}
-	return dir->cluster? -1: 0;
+	r_bitset_free (dir->visited);
+	dir->visited = NULL;
+	return status;
 }
 
 typedef struct {
@@ -429,7 +439,7 @@ static int fat_read(RFSFile *file, ut64 off, int len) {
 		return 0;
 	}
 	ut64 readable = entry->size;
-	if ((entry->flags & R_FS_FILE_DELETED) || entry->size > fat->g.cluster_size) {
+	if (entry->flags & R_FS_FILE_DELETED) {
 		fat_plan (file);
 		readable = entry->readable;
 	}
@@ -438,14 +448,18 @@ static int fat_read(RFSFile *file, ut64 off, int len) {
 	}
 	fat->cache_size = 0;
 	len = R_MIN ((ut64)len, readable - off);
-	if (!fat_read_entry (fat, entry, off, file->data, len, NULL)) {
+	int nread = fat_read_entry (fat, entry, off, file->data, len, NULL);
+	if (nread != len) {
 		file->flags |= R_FS_FILE_PARTIAL;
-		return -1;
 	}
-	return len;
+	return nread;
 }
 
 static void fat_close(RFSFile *file) {
+	FatEntry *entry = file->ptr;
+	if (entry) {
+		r_bitset_free (entry->visited);
+	}
 	R_FREE (file->ptr);
 }
 
