@@ -856,3 +856,47 @@ panda~1.txt
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=Unreadable FAT directories report failure without preventing other listings
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+e io.cache=true
+wx ffff @ 0x1a7a
+mdj /root/subdir || echo unreadable
+mdxrj /root~?
+?v $?
+mc /root/live.txt
+EOF
+EXPECT=<<EOF
+[]
+unreadable
+1
+0x1
+FAT12 live
+
+EOF
+EXPECT_ERR=<<EOF
+WARN: Incomplete FAT directory listing: /subdir
+ERROR: Invalid path
+WARN: Incomplete FAT directory listing: /
+ERROR: Deleted directory walk is incomplete
+EOF
+RUN
+
+NAME=Damaged FAT directory chains preserve entries read before the break
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+e io.cache=true
+wx e5 @@s:0x2e60 0x3000 32
+wx f70f @ 0x206
+mdq /root/subdir~nested.txt
+?v $?
+EOF
+EXPECT=<<EOF
+nested.txt
+0x0
+EOF
+EXPECT_ERR=<<EOF
+WARN: Incomplete FAT directory listing: /subdir
+EOF
+RUN

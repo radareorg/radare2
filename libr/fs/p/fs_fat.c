@@ -464,7 +464,13 @@ static RList *fat_dir(RFSRoot *root, const char *path, ut64 id, int view) {
 		return NULL;
 	}
 	RList *list = r_list_newf ((RListFree)r_fs_file_free);
-	fat_iterate (fat, &dir, view, fat_dir_cb, list);
+	if (fat_iterate (fat, &dir, view, fat_dir_cb, list) < 0) {
+		R_LOG_WARN ("Incomplete FAT directory listing: %s", path);
+		if (r_list_empty (list)) {
+			r_list_free (list);
+			return NULL;
+		}
+	}
 	return list;
 }
 
