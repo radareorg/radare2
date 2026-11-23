@@ -125,6 +125,13 @@ Adds a filesystem plugin to the context.
 .Pp
 Open a metadata entry by its filesystem-specific ID in an exact mounted root.
 FAT IDs are volume-relative byte offsets of short directory entries.
+Deleted short names use an underscore for the missing first byte. Valid
+adjacent VFAT fragments can supply a long name, marked R_FS_FILE_HEURISTIC;
+the checksum is evidence of association, not proof of historical identity.
+Opening by ID can reconstruct names within the containing directory cluster
+or fixed root region; fragments in an earlier noncontiguous cluster require
+normal directory enumeration. OEM bytes without a known codepage are
+rendered as hexadecimal escapes.
 The returned handle uses the ordinary read, close and file-free operations.
 The ID and disk offset use UT64_MAX when unknown; deletion is recorded in
 RFSFile.flags independently of the file type.

@@ -17,6 +17,7 @@ static RCoreHelpMessage help_msg_m = {
 	"mdt", " [path] [depth]", "show a directory tree (scr.utf8; default depth: 64)",
 	"mdd", " /", "show file size like `ls -l` in ms",
 	"mdx", "[j] / [directory-id]", "list deleted entries and their IDs",
+	"mdxr", "[j] /path [depth]", "list deleted entries recursively (maximum depth 64)",
 	"mdq", " /", "show just the file name (quiet)",
 	"mf", "[?] [o|n]", "search files for given filename or for offset",
 	"mg", " /foo [offset [size]]", "dump file to disk; size 0 reads to EOF (supports base64:)",
@@ -122,6 +123,7 @@ static bool mount_ls(RCmdContext *ctx) {
 			if (file->id != UT64_MAX) {
 				pj_kn (pj, "id", file->id);
 				pj_kb (pj, "deleted", is_deleted);
+				pj_kn (pj, "flags", file->flags);
 			}
 			pj_end (pj);
 		} else {
@@ -167,6 +169,88 @@ static bool mount_ls(RCmdContext *ctx) {
 		pj_free (pj);
 	}
 	free (input);
+	return ok;
+}
+
+static bool mount_deleted_walk(RCmdContext *ctx, const char *path, const char *display, ut64 id, int depth, int *budget, PJ *pj) {
+	RCore *core = ctx->user;
+	RList *list = r_fs_dir (core->fs, path, id, R_FS_VIEW_NORMAL | R_FS_VIEW_DELETED);
+	if (!list) {
+		return false;
+	}
+	bool ok = true;
+	RListIter *iter;
+	RFSFile *file;
+	r_list_foreach (list, iter, file) {
+		if (!strcmp (file->name, ".") || !strcmp (file->name, "..")) {
+			continue;
+		}
+		if (--(*budget) < 0 || r_cons_is_breaked (ctx->cons)) {
+			ok = false;
+			break;
+		}
+		char *child = r_str_newf ("%s/%s", !strcmp (display, "/")? "": display, file->name);
+		if (!child) {
+			ok = false;
+			break;
+		}
+		if (file->flags & R_FS_FILE_DELETED) {
+			if (pj) {
+				pj_o (pj);
+				pj_ks (pj, "path", child);
+				pj_kn (pj, "id", file->id);
+				pj_ks (pj, "type", mount_file_type (file->type));
+				pj_kn (pj, "size", file->size);
+				pj_kn (pj, "flags", file->flags);
+				pj_end (pj);
+			} else {
+				char *escaped = r_str_escape_utf8_keep_printable (child, false, true);
+				r_cons_printf (ctx->cons, "0x%"PFMT64x" %c %u %s\n", file->id, file->type, file->size, escaped? escaped: child);
+				free (escaped);
+			}
+		}
+		if (file->type == R_FS_FILE_TYPE_DIRECTORY && depth > 1) {
+			const char *select = file->id != UT64_MAX? file->root->path: child;
+			ok &= mount_deleted_walk (ctx, select, child, file->id, depth - 1, budget, pj);
+		}
+		free (child);
+		if (*budget < 0) {
+			break;
+		}
+	}
+	r_list_free (list);
+	return ok;
+}
+
+static bool mount_deleted_recursive(RCmdContext *ctx) {
+	RCore *core = ctx->user;
+	ut64 depth = 64;
+	if (!r_cmdctx_num (ctx, 1, core->num, &depth) || depth < 1 || depth > 64) {
+		R_LOG_ERROR ("Directory depth must be between 1 and 64");
+		return false;
+	}
+	char *path = mount_path (ctx);
+	if (!path) {
+		return false;
+	}
+	const RCmdRow *command = ctx->handler_user;
+	PJ *pj = strchr (command->name, 'j')? r_core_pj_new (core): NULL;
+	if (pj) {
+		pj_a (pj);
+	}
+	int budget = 0x4000;
+	r_cons_break_push (core->cons, NULL, NULL);
+	bool ok = mount_deleted_walk (ctx, path, path, UT64_MAX, depth, &budget, pj);
+	r_cons_break_pop (core->cons);
+	if (pj) {
+		pj_end (pj);
+		r_cons_println (ctx->cons, pj_string (pj));
+		pj_free (pj);
+	}
+	if (!ok) {
+		R_LOG_ERROR ("Deleted directory walk is incomplete");
+	}
+	free (path);
 	return ok;
 }
 
@@ -919,7 +1003,9 @@ static bool r_core_cmd_mount_init(RCmd *cmd) {
 		{ "mdt", mount_tree, " [path] [depth]", NULL, 0, 2 },
 		{ "mdx", mount_ls, " [path] [directory-id]", NULL, 0, 2 },
 		{ "mdxj", mount_ls, " [path] [directory-id]", NULL, 0, 2 },
-		{ "mdxq", mount_ls, " [path]", NULL, 0, 1 },
+		{ "mdxq", mount_ls, " [path] [directory-id]", NULL, 0, 2 },
+		{ "mdxr", mount_deleted_recursive, " /path [depth]", NULL, 1, 2 },
+		{ "mdxrj", mount_deleted_recursive, " /path [depth]", NULL, 1, 2 },
 		{ "mf", mount_help_mf, "[no] [path] [name|offset]", help_msg_mf, 0, 0 },
 		{ "mfn", mount_find, " [path] [pattern]", NULL, 2, 2 },
 		{ "mfo", mount_find, " [path] [offset]", NULL, 2, 2 },

@@ -20,7 +20,7 @@ typedef struct {
 	ut64 id;
 	ut64 time;
 	ut8 attr;
-	bool deleted;
+	ut32 flags;
 	char name[1024];
 	ut32 current;
 	ut32 index;
@@ -150,6 +150,62 @@ static ut8 fat_checksum(const ut8 *name) {
 	return sum;
 }
 
+static bool fat_short_char(ut8 ch) {
+	return ch >= 0x20 && ch != 0x7f && !strchr ("\"*+,./:;<=>?[\\]|", ch);
+}
+
+static bool fat_name_checksum(const ut8 *raw, int checksum) {
+	if (raw[0] != 0xe5) {
+		return checksum == fat_checksum (raw);
+	}
+	ut8 first = checksum;
+	int i;
+	for (i = 10; i > 0; i--) {
+		first -= raw[i];
+		first = (first << 1) | (first >> 7);
+	}
+	return first != 0xe5 && first != ' ' && (first == 5 || fat_short_char (first));
+}
+
+static bool fat_long_name(FatEntry *entry, const ut8 *lfn, int units) {
+	int length = 0;
+	while (length < units && r_read_le16 (lfn + length * 2)) {
+		length++;
+	}
+	if (!length || length > 255) {
+		return false;
+	}
+	int i;
+	for (i = length + 1; i < units; i++) {
+		if (r_read_le16 (lfn + i * 2) != 0xffff) {
+			return false;
+		}
+	}
+	for (i = 0; i < length; i++) {
+		ut16 rune = r_read_le16 (lfn + i * 2);
+		if (rune >= 0xd800 && rune <= 0xdbff) {
+			if (++i >= length) {
+				return false;
+			}
+			rune = r_read_le16 (lfn + i * 2);
+			if (rune < 0xdc00 || rune > 0xdfff) {
+				return false;
+			}
+		} else if ((rune >= 0xdc00 && rune <= 0xdfff) || rune < 0x20 || rune == 0xffff
+				|| (rune < 0x80 && strchr ("\"*/:<>?\\|", rune))) {
+			return false;
+		}
+	}
+	int bytes = r_str_utf16_to_utf8 ((ut8 *)entry->name, sizeof (entry->name), lfn, length * 2, false);
+	return bytes > 0;
+}
+
+static void fat_lfn_part(ut8 *dst, const ut8 *raw) {
+	memcpy (dst, raw + 1, 10);
+	memcpy (dst + 10, raw + 14, 12);
+	memcpy (dst + 22, raw + 28, 4);
+}
+
 static bool fat_decode(FatFS *fat, const ut8 *raw, ut64 id, FatEntry *entry) {
 	if (!raw[0] || raw[0] == ' ' || raw[11] == 0x0f || (raw[11] & 0xc8)) {
 		return false;
@@ -159,7 +215,7 @@ static bool fat_decode(FatFS *fat, const ut8 *raw, ut64 id, FatEntry *entry) {
 		.size = r_read_le32 (raw + 28),
 		.id = id,
 		.attr = raw[11],
-		.deleted = raw[0] == 0xe5,
+		.flags = raw[0] == 0xe5? R_FS_FILE_DELETED: 0,
 	};
 	if (fat->g.bits == 32) {
 		entry->cluster |= (r_read_le16 (raw + 20) & 0xfff) << 16;
@@ -173,23 +229,25 @@ static bool fat_decode(FatFS *fat, const ut8 *raw, ut64 id, FatEntry *entry) {
 			entry->name[length++] = '.';
 		}
 		if (raw[i] != ' ') {
-			entry->name[length++] = i == 0 && entry->deleted? '_'
-				: i == 0 && raw[i] == 5? 0xe5: tolower (raw[i]);
+			ut8 ch = i == 0 && raw[i] == 5? 0xe5: raw[i];
+			if (i == 0 && (entry->flags & R_FS_FILE_DELETED)) {
+				entry->name[length++] = '_';
+			} else if (ch >= 0x80) {
+				length += snprintf (entry->name + length, sizeof (entry->name) - length, "\\x%02x", ch);
+			} else if (fat_short_char (ch) || ((entry->attr & 0x10) && ch == '.' && i < 2)) {
+				entry->name[length++] = tolower (ch);
+			} else {
+				return false;
+			}
 		}
 	}
 	entry->name[length] = 0;
-	return *entry->name && !strchr (entry->name, '/') && !strchr (entry->name, '\\');
-}
-
-static bool fat_entry_id(FatFS *fat, ut64 id, FatEntry *entry) {
-	ut8 raw[32];
-	return !(id & 31) && id >= fat->g.root
-		&& fat_read_at (fat, id, raw, sizeof (raw)) && fat_decode (fat, raw, id, entry);
+	return *entry->name != 0;
 }
 
 static int fat_iterate(FatFS *fat, FatEntry *dir, int view, FatEntryCb cb, void *user) {
 	ut8 raw[32], lfn[520];
-	int slot = 0, slots = 0, checksum = -1;
+	int slot = 0, slots = 0, checksum = -1, deleted_slots = 0;
 	ut64 limit = dir->cluster? (ut64)fat->g.clusters * fat->g.cluster_size: (ut64)fat->g.root_entries * 32;
 	ut64 off;
 	fat->cache_size = 0;
@@ -204,44 +262,54 @@ static int fat_iterate(FatFS *fat, FatEntry *dir, int view, FatEntryCb cb, void 
 			return 0;
 		}
 		if (raw[11] == 0x0f) {
+			if (raw[0] == 0xe5) {
+				if (!deleted_slots) {
+					checksum = raw[13];
+				} else if (checksum != raw[13]) {
+					deleted_slots = 21;
+				}
+				slot = slots = 0;
+				if (++deleted_slots <= 20 && !raw[12] && !r_read_le16 (raw + 26)) {
+					fat_lfn_part (lfn + (20 - deleted_slots) * 26, raw);
+				} else {
+					deleted_slots = 21;
+				}
+				continue;
+			}
+			deleted_slots = 0;
 			int id = raw[0] & 31;
 			if (raw[0] & 0x40) {
 				slot = slots = id;
 				checksum = raw[13];
-				memset (lfn, 0xff, sizeof (lfn));
 			}
-			if (raw[0] == 0xe5 || !id || id > 20 || id != slot
+			if (!id || id > 20 || id != slot || (raw[0] & 0xa0)
 					|| raw[12] || r_read_le16 (raw + 26) || raw[13] != checksum) {
 				slot = slots = 0;
 				checksum = -1;
 				continue;
 			}
-			ut8 *p = lfn + --slot * 26;
-			memcpy (p, raw + 1, 10);
-			memcpy (p + 10, raw + 14, 12);
-			memcpy (p + 22, raw + 28, 4);
+			fat_lfn_part (lfn + --slot * 26, raw);
 			continue;
 		}
 		FatEntry entry;
 		if (fat_decode (fat, raw, physical, &entry)
-				&& (view & (entry.deleted? R_FS_VIEW_DELETED: R_FS_VIEW_NORMAL))) {
-			int length = 0;
-			if (slots && !slot && checksum == fat_checksum (raw)) {
-				while (length < R_MIN (slots * 13, 255)
-						&& r_read_le16 (lfn + length * 2) && r_read_le16 (lfn + length * 2) != 0xffff) {
-					length++;
+				&& (view & ((entry.flags & R_FS_FILE_DELETED)? R_FS_VIEW_DELETED: R_FS_VIEW_NORMAL))) {
+			if (fat_name_checksum (raw, checksum)) {
+				bool restored = false;
+				if ((entry.flags & R_FS_FILE_DELETED) && deleted_slots > 0 && deleted_slots <= 20) {
+					restored = fat_long_name (&entry, lfn + (20 - deleted_slots) * 26, deleted_slots * 13);
+				} else if (slots && !slot && !deleted_slots) {
+					restored = fat_long_name (&entry, lfn, slots * 13);
 				}
-				length = r_str_utf16_to_utf8 ((ut8 *)entry.name, sizeof (entry.name) - 1, lfn, length * 2, false);
+				if (restored && (entry.flags & R_FS_FILE_DELETED)) {
+					entry.flags |= R_FS_FILE_HEURISTIC;
+				}
 			}
-			if (length > 0) {
-				entry.name[length] = 0;
-			}
-			if (*entry.name && !strchr (entry.name, '/') && !strchr (entry.name, '\\')
-					&& cb (fat, &entry, user)) {
+			if (cb (fat, &entry, user)) {
 				return 1;
 			}
 		}
-		slot = slots = 0;
+		slot = slots = deleted_slots = 0;
 		checksum = -1;
 	}
 	return dir->cluster? -1: 0;
@@ -254,11 +322,25 @@ typedef struct {
 
 static bool fat_lookup_cb(FatFS *fat, FatEntry *entry, void *user) {
 	FatLookup *lookup = user;
-	if (!r_str_casecmp (entry->name, lookup->name)) {
+	if (lookup->name? !r_str_casecmp (entry->name, lookup->name): entry->id == lookup->entry->id) {
 		*lookup->entry = *entry;
 		return true;
 	}
 	return false;
+}
+
+static bool fat_entry_id(FatFS *fat, ut64 id, FatEntry *entry) {
+	ut8 raw[32];
+	if ((id & 31) || id < fat->g.root || !fat_read_at (fat, id, raw, sizeof (raw)) || !fat_decode (fat, raw, id, entry)) {
+		return false;
+	}
+	FatEntry dir = { .attr = 0x10, .id = UT64_MAX };
+	if (id >= fat->g.data) {
+		dir.cluster = 2 + (id - fat->g.data) / fat->g.cluster_size;
+	}
+	FatLookup lookup = { NULL, entry };
+	fat_iterate (fat, &dir, R_FS_VIEW_ALL, fat_lookup_cb, &lookup);
+	return true;
 }
 
 static bool fat_lookup(FatFS *fat, const char *path, FatEntry *entry) {
@@ -287,14 +369,14 @@ static void fat_fill_file(FatFS *fat, RFSFile *file, FatEntry *entry) {
 	file->size = entry->size;
 	file->time = entry->time;
 	file->id = entry->id;
-	file->flags = entry->deleted? R_FS_FILE_DELETED: 0;
+	file->flags = entry->flags;
 	file->off = fat_valid_cluster (fat, entry->cluster)
 		? fat->root->delta + fat_cluster_offset (fat, entry->cluster): UT64_MAX;
 }
 
 static RFSFile *fat_file(FatFS *fat, const char *path, FatEntry *entry) {
-	if (entry->size && !(entry->attr & 0x10) && !fat_valid_cluster (fat, entry->cluster)) {
-		return NULL;
+	if (entry->size && !fat_valid_cluster (fat, entry->cluster)) {
+		entry->flags |= R_FS_FILE_PARTIAL;
 	}
 	RFSFile *file = r_fs_file_new (fat->root, path);
 	FatEntry *handle = R_NEW (FatEntry);
@@ -343,7 +425,8 @@ static bool fat_dir_cb(FatFS *fat, FatEntry *entry, void *user) {
 static RList *fat_dir(RFSRoot *root, const char *path, ut64 id, int view) {
 	FatFS *fat = root->ptr;
 	FatEntry dir;
-	if (!(id == UT64_MAX? fat_lookup (fat, path, &dir): fat_entry_id (fat, id, &dir)) || !(dir.attr & 0x10)) {
+	if (!(id == UT64_MAX? fat_lookup (fat, path, &dir): fat_entry_id (fat, id, &dir))
+			|| !(dir.attr & 0x10) || (!dir.cluster && dir.id != UT64_MAX)) {
 		return NULL;
 	}
 	RList *list = r_list_newf ((RListFree)r_fs_file_free);

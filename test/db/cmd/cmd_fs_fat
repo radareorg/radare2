@@ -148,7 +148,7 @@ NAME=FAT deleted entries expose stable IDs independently of their types
 FILE=gzip://bins/fs/fat/fat12.img.gz
 CMDS=mdxj /root
 EXPECT=<<EOF
-[{"type":"file","size":522,"name":"_one.txt","id":6912,"deleted":true},{"type":"file","size":526,"name":"_hain.txt","id":6944,"deleted":true},{"type":"directory","size":0,"name":"_lddir","id":6976,"deleted":true},{"type":"file","size":9,"name":"_ostlo~1.txt","id":7072,"deleted":true}]
+[{"type":"file","size":522,"name":"_one.txt","id":6912,"deleted":true,"flags":1},{"type":"file","size":526,"name":"_hain.txt","id":6944,"deleted":true,"flags":1},{"type":"directory","size":0,"name":"_lddir","id":6976,"deleted":true,"flags":1},{"type":"file","size":9,"name":"Lost long name.txt","id":7072,"deleted":true,"flags":3}]
 EOF
 EXPECT_ERR=
 RUN
@@ -170,7 +170,7 @@ NAME=FAT deleted directories can be listed by entry ID
 FILE=gzip://bins/fs/fat/fat12.img.gz
 CMDS=mdxj /root 0x1b40
 EXPECT=<<EOF
-[{"type":"file","size":6,"name":"_hild.txt","id":17472,"deleted":true}]
+[{"type":"file","size":6,"name":"_hild.txt","id":17472,"deleted":true,"flags":1}]
 EOF
 EXPECT_ERR=
 RUN
@@ -415,6 +415,75 @@ miej /root/frag.txt
 EOF
 EXPECT=<<EOF
 {"ranges":[{"logical":0,"physical":11264,"size":512,"flags":2},{"logical":512,"physical":13312,"size":512,"flags":2}],"status":"error","flags":4}
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Deleted VFAT name reconstruction is explicit and stable by entry ID
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+mij /root 0x1ba0
+e log.level=0
+mc "/root/Lost long name.txt" || echo deleted-entry-requires-id
+EOF
+EXPECT=<<EOF
+{"name":"Lost long name.txt","type":"file","size":9,"id":7072,"offset":18432,"flags":3,"time":0}
+deleted-entry-requires-id
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Deleted VFAT checksum disagreement falls back to the short name
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+e io.cache=true
+wx 00 @ 0x1b8d
+mij /root 0x1ba0
+EOF
+EXPECT=<<EOF
+{"name":"_ostlo~1.txt","type":"file","size":9,"id":7072,"offset":18432,"flags":1,"time":0}
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=VFAT rejects unpaired UTF16 surrogates while retaining entry metadata
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+e io.cache=true
+wx 00d8 @ 0x1aa1
+wx 00d8 @ 0x1b61
+mij /root 0x1ac0
+mij /root 0x1ba0
+EOF
+EXPECT=<<EOF
+{"name":"panda~1.txt","type":"file","size":8,"id":6848,"offset":13824,"flags":0,"time":0}
+{"name":"_ostlo~1.txt","type":"file","size":9,"id":7072,"offset":18432,"flags":1,"time":0}
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=FAT metadata can be inspected when the first cluster is missing
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+e io.cache=true
+wx 0000 @ 0x1b1a
+mij /root 0x1b00
+EOF
+EXPECT=<<EOF
+{"name":"_one.txt","type":"file","size":522,"id":6912,"flags":5,"time":0}
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Recursive deleted listings descend into deleted directories by ID
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+mdxrj /root
+mdxr /root 1~?
+EOF
+EXPECT=<<EOF
+[{"path":"/root/_one.txt","id":6912,"type":"file","size":522,"flags":1},{"path":"/root/_hain.txt","id":6944,"type":"file","size":526,"flags":1},{"path":"/root/_lddir","id":6976,"type":"directory","size":0,"flags":1},{"path":"/root/_lddir/_hild.txt","id":17472,"type":"file","size":6,"flags":1},{"path":"/root/Lost long name.txt","id":7072,"type":"file","size":9,"flags":3}]
+4
 EOF
 EXPECT_ERR=
 RUN
