@@ -216,7 +216,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			 " :detach [pid]    - detach from remote/detach specific pid\n"
 			 " :inv.reg         - invalidate reg cache\n"
 			 " :pktsz           - get max packet size used\n"
-			 " :pktsz bytes     - set max. packet size as 'bytes' bytes\n"
+			 " :pktsz bytes     - lower max. packet size to 'bytes' bytes\n"
 			 " :exec_file [pid] - get file which was executed for"
 			                     " current/specified pid\n");
 		return NULL;
@@ -228,7 +228,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		ut64 pktsz = r_num_get (NULL, ptr);
 		if (pktsz) {
-			desc->stub_features.pkt_sz = R_MAX (pktsz, 8); // min = 64
+			desc->stub_features.pkt_sz = R_MIN (pktsz, desc->stub_features.pkt_sz);
 		}
 		return NULL;
 	}

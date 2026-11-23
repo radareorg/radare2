@@ -12,6 +12,7 @@
 #include <r_util/r_log.h>
 #include <r_cons.h>
 #include <r_debug.h>
+#include <r_types_overflow.h>
 
 #if R2__UNIX__
 #include <errno.h>
@@ -278,9 +279,12 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	char *env_pktsz_str;
 	ut32 env_pktsz = 0;
 	if ((env_pktsz_str = r_sys_getenv ("R2_GDB_PKTSZ"))) {
-		if ((env_pktsz = (ut32)strtoul (env_pktsz_str, NULL, 10))) {
-			g->stub_features.pkt_sz = R_MAX (env_pktsz, GDB_MAX_PKTSZ);
+		char *end;
+		ut64 size = strtoull (env_pktsz_str, &end, 10);
+		if (isdigit ((ut8)*env_pktsz_str) && !*end && size <= UT32_MAX) {
+			env_pktsz = size;
 		}
+		free (env_pktsz_str);
 	}
 	// Use the default break handler for r_socket_connect to send a signal
 	RCons *cons = r_cons_singleton ();
@@ -330,7 +334,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		goto end;
 	}
 	if (env_pktsz > 0) {
-		g->stub_features.pkt_sz = R_MAX (R_MIN (env_pktsz, g->stub_features.pkt_sz), GDB_MAX_PKTSZ);
+		g->stub_features.pkt_sz = R_MIN (env_pktsz, g->stub_features.pkt_sz);
 	}
 	// If no-ack supported, enable no-ack mode (should speed up things)
 	if (g->stub_features.QStartNoAckMode) {
@@ -868,8 +872,11 @@ static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) 
 		goto end;
 	}
 
-	g->stub_features.pkt_sz = R_MAX (g->stub_features.pkt_sz, GDB_MAX_PKTSZ);
 	int data_sz = g->stub_features.pkt_sz / 2;
+	if (!data_sz) {
+		ret_len = -1;
+		goto end;
+	}
 	int num_pkts = len / data_sz;
 	last = len % data_sz;
 	ret_len = 0;
@@ -981,69 +988,63 @@ end:
 }
 
 int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len) {
-	int ret = -1;
-	int command_len, pkt, max_cmd_len = 64;
-	ut64 num_pkts, last, data_sz;
-	char *tmp;
-	if (!g || !data) {
+	if (!g || (!data && len)) {
 		return -1;
 	}
-	g->stub_features.pkt_sz = R_MAX (g->stub_features.pkt_sz, GDB_MAX_PKTSZ);
-	data_sz = g->stub_features.pkt_sz / 2;
-	if (data_sz < 1) {
+	if (!len) {
+		return 0;
+	}
+	ut64 last_address;
+	if (len > SIZE_MAX || r_add_overflow_ut64 (address, len - 1, &last_address)) {
 		return -1;
 	}
-	num_pkts = len / data_sz;
-	last = len % data_sz;
-	if (!(tmp = calloc (max_cmd_len + g->stub_features.pkt_sz, sizeof (char)))) {
-		return -1;
-	}
-
 	if (!gdbr_lock_enter (g)) {
+		return -1;
+	}
+	int ret = -1;
+	char *command = NULL;
+	char header[64];
+	if (g->send_max <= 5) {
 		goto end;
 	}
-
-	for (pkt = num_pkts - 1; pkt >= 0; pkt--) {
-		if ((command_len = snprintf (tmp, max_cmd_len,
-			    "%s%016"PFMT64x ",%"PFMT64x ":", CMD_WRITEMEM,
-			    address + (pkt * data_sz), data_sz)) < 0) {
-			ret = -1;
-			goto end;
-		}
-		pack_hex ((char *)data + (pkt * data_sz), data_sz, (tmp + command_len));
-		if ((ret = send_msg (g, tmp)) < 0) {
-			goto end;
-		}
-		if ((ret = read_packet (g, false)) < 0) {
-			goto end;
-		}
-		if ((ret = handle_M (g)) < 0) {
-			goto end;
-		}
+	const size_t payload_max = R_MIN ((size_t)g->send_max - 5, g->stub_features.pkt_sz);
+	// Even the final address must fit a one-byte write before any data is changed.
+	int header_len = snprintf (header, sizeof (header), "M%"PFMT64x",1:", last_address);
+	if (header_len < 0 || (size_t)header_len + 2 > payload_max) {
+		goto end;
 	}
-	if (last) {
-		if ((command_len = snprintf (tmp, max_cmd_len,
-			    "%s%016"PFMT64x ",%"PFMT64x ":", CMD_WRITEMEM,
-			    address + (num_pkts * data_sz), last)) < 0) {
-			ret = -1;
-			goto end;
-		}
-		pack_hex ((char *)data + (num_pkts * data_sz), last, (tmp + command_len));
-		if ((ret = send_msg (g, tmp)) < 0) {
-			goto end;
-		}
-		if ((ret = read_packet (g, false)) < 0) {
-			goto end;
-		}
-		if ((ret = handle_M (g)) < 0) {
-			goto end;
-		}
+	size_t command_size;
+	if (r_add_overflow_size_t (payload_max, 1, &command_size)
+	    || !(command = malloc (command_size))) {
+		goto end;
 	}
-
+	ut64 offset = 0;
+	while (offset < len) {
+		ut64 chunk = R_MIN (len - offset, payload_max / 2);
+		while (chunk) {
+			header_len = snprintf (header, sizeof (header), "M%"PFMT64x",%"PFMT64x":", address + offset, chunk);
+			if (header_len < 0 || (size_t)header_len >= sizeof (header)) {
+				goto end;
+			}
+			if (header_len + chunk * 2 <= payload_max) {
+				break;
+			}
+			chunk--;
+		}
+		if (!chunk) {
+			goto end;
+		}
+		memcpy (command, header, header_len);
+		pack_hex ((const char *)data + offset, chunk, command + header_len);
+		if (send_msg (g, command) < 0 || read_packet (g, false) < 0 || handle_M (g) < 0) {
+			goto end;
+		}
+		offset += chunk;
+	}
 	ret = 0;
 end:
 	gdbr_lock_leave (g);
-	free (tmp);
+	free (command);
 	return ret;
 }
 
@@ -1612,8 +1613,11 @@ int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
 	if (!gdbr_lock_enter (g)) {
 		goto end;
 	}
-	g->stub_features.pkt_sz = R_MAX (g->stub_features.pkt_sz, GDB_MAX_PKTSZ);
 	data_sz = g->stub_features.pkt_sz / 2;
+	if (!data_sz) {
+		ret = -1;
+		goto end;
+	}
 	ret = 0;
 	while (ret < max_len) {
 		if ((ret1 = snprintf (command, sizeof (command) - 1,

@@ -188,14 +188,17 @@ int pack(libgdbr_t *g, const char *msg) {
 	size_t msg_len;
 	const char *src;
 	char prev;
-	/* Buffer layout: '$' + payload + "#xx" + '\0'. Reserve 5 bytes overhead. */
-	const size_t payload_max = (g->send_max > 5) ? (size_t)g->send_max - 5 : 0;
+	// Reserve the framing bytes and terminator separately from the peer's payload limit.
+	if (!g->send_buff || g->send_max < 5) {
+		return -1;
+	}
+	size_t payload_max = (size_t)g->send_max - 5;
+	if (!g->is_server) {
+		payload_max = R_MIN (payload_max, g->stub_features.pkt_sz);
+	}
 	msg_len = strlen (msg);
 	if (msg_len > payload_max) {
 		R_LOG_ERROR ("%s: message too long: %s", __func__, msg);
-		return -1;
-	}
-	if (!g->send_buff) {
 		return -1;
 	}
 	g->send_buff[0] = '$';

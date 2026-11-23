@@ -6,6 +6,7 @@
 #include "utils.h"
 #include "r_util/r_str.h"
 #include "r_util/r_log.h"
+#include <errno.h>
 
 int handle_qSupported(libgdbr_t *g) {
 	char *tok = NULL;
@@ -18,10 +19,19 @@ int handle_qSupported(libgdbr_t *g) {
 	tok = r_str_tok_r (g->data, ";", &save_ptr);
 	while (tok) {
 		if (r_str_startswith (tok, "PacketSize=")) {
-			// Largest packet size we support is 2048
-			g->stub_features.pkt_sz = R_MIN (strtoul (tok + strlen ("PacketSize="), NULL, 16), 2048);
-			// Shouldn't be smaller than 64 (Erroneous 0 etc.)
-			g->stub_features.pkt_sz = R_MAX (g->stub_features.pkt_sz, 64);
+			const char *value = tok + strlen ("PacketSize=");
+			const char *digit = value;
+			while (isxdigit ((ut8)*digit)) {
+				digit++;
+			}
+			errno = 0;
+			ut64 size = strtoull (value, NULL, 16);
+			if (digit == value || *digit || !size || errno == ERANGE) {
+				g->stub_features.pkt_sz = 0;
+				send_ack (g);
+				return -1;
+			}
+			g->stub_features.pkt_sz = R_MIN (size, 2048);
 		} else if (r_str_startswith (tok, "qXfer:")) {
 			if (!tok[6]) {
 				tok = r_str_tok_r (NULL, ";", &save_ptr);

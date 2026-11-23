@@ -3,6 +3,7 @@
 #include <gdbclient/responses.h>
 #include <gdbclient/xml.h>
 #include <gdbr_common.h>
+#include <packet.h>
 #include <gdbserver/core.h>
 #include "minunit.h"
 #include "../../libr/core/rtr_gdb.inc.c"
@@ -58,6 +59,47 @@ static bool test_gdb_server_register_values(void) {
 		mu_assert_eq (r_reg_getv (dbg->reg, "large"), endian? 0x12345678: 0x78563412, "scalar write zero-extends");
 	}
 	r_debug_free (dbg);
+	mu_end;
+}
+
+static bool test_gdb_packet_limits(void) {
+	libgdbr_t g;
+	mu_assert_eq (gdbr_init (&g, false), 0, "initialize packet limits");
+	g.stub_features.pkt_sz = 4;
+	mu_assert_eq (pack (&g, "abcd"), 8, "exact peer payload limit");
+	mu_assert_eq (pack (&g, "abcde"), -1, "reject one byte beyond peer limit");
+	mu_assert_eq (pack (&g, "ab#"), 8, "escaped payload fits peer limit");
+	mu_assert_eq (pack (&g, "abc#"), -1, "escaping also consumes peer capacity");
+	g.stub_features.pkt_sz = 64;
+	g.send_max = 10;
+	mu_assert_eq (pack (&g, "abcde"), 9, "local framing and terminator fit");
+	mu_assert_eq (pack (&g, "abcdef"), -1, "local capacity includes framing");
+	mu_assert_eq (pack (&g, "abc#"), 9, "escaped payload fits local capacity");
+	mu_assert_eq (pack (&g, "abcd#"), -1, "escaping consumes local capacity");
+	g.send_max = 4;
+	mu_assert_eq (pack (&g, ""), -1, "even an empty frame needs its terminator");
+	g.send_max = 2500;
+	g.stub_features.pkt_sz = 4;
+	g.is_server = true;
+	mu_assert_eq (pack (&g, "abcdefgh"), 12, "peer request limit does not restrict server replies");
+	g.no_ack = true;
+	const struct {
+		const char *reply;
+		ut32 limit;
+	} cases[] = {
+		{ "PacketSize=20", 32 }, { "PacketSize=3", 3 }, { "PacketSize=1", 1 },
+		{ "PacketSize=8000", 2048 }, { "PacketSize=0", 0 }, { "PacketSize=", 0 },
+		{ "PacketSize=garbage", 0 }, { "PacketSize=20junk", 0 }, { "PacketSize=+20", 0 },
+		{ "PacketSize=0x20", 0 }, { "PacketSize=fffffffffffffffffffffffff", 0 }
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		r_str_ncpy (g.data, cases[i].reply, g.data_max);
+		g.stub_features.pkt_sz = 64;
+		mu_assert_eq (handle_qSupported (&g), cases[i].limit? 0: -1, "validate advertised capacity");
+		mu_assert_eq (g.stub_features.pkt_sz, cases[i].limit, "never invent peer capacity");
+	}
+	gdbr_cleanup (&g);
 	mu_end;
 }
 
@@ -272,6 +314,120 @@ static bool session_open(libgdbr_t *g, int fds[2], int remote_type) {
 	g->remote_type = remote_type;
 	g->pid = g->tid = 0x1c03;
 	return !gdbr_set_reg_profile (g, PROFILE);
+}
+
+static bool check_memory_packets(char *sent, ut64 address, const ut8 *data, size_t len, size_t limit, size_t *written) {
+	char *save_ptr = NULL;
+	char *packet = r_str_tok_r (sent, "\n", &save_ptr);
+	*written = 0;
+	while (packet) {
+		ut64 at = 0, size = 0;
+		int header_len = 0;
+		mu_assert ("payload respects the negotiated budget", strlen (packet) <= limit);
+		mu_assert_eq (sscanf (packet, "M%"PFMT64x",%"PFMT64x":%n", &at, &size, &header_len), 2, "parse memory write");
+		mu_assert ("complete memory header", header_len > 0);
+		mu_assert_eq (at, address + *written, "chunks cover consecutive addresses");
+		mu_assert ("nonempty bounded chunk", size && size <= len - *written && size <= 256);
+		mu_assert_eq (strlen (packet + header_len), size * 2, "declared memory size matches payload");
+		ut8 bytes[256];
+		mu_assert_eq (r_hex_str2bin (packet + header_len, bytes), size, "valid memory bytes");
+		mu_assert_memeq (bytes, data + *written, size, "wire data reconstructs the original write");
+		*written += size;
+		packet = r_str_tok_r (NULL, "\n", &save_ptr);
+	}
+	return true;
+}
+
+static bool test_gdb_memory_packet_sizes(void) {
+	const struct {
+		ut32 limit;
+		int send_max;
+		ut64 address;
+		size_t len;
+	} cases[] = {
+		{ 64, 2500, 0x1000, 256 }, { 63, 2500, 0x1000, 27 }, { 63, 2500, 0x1000, 28 },
+		{ 8, 2500, 0xf, 3 }, { 39, 2500, 0xfffffff0, 70 },
+		{ 64, 2500, 0x123456789abcdef0ULL, 128 }, { 64, 2500, UT64_MAX, 1 },
+		{ 64, 36, 0x1000, 75 }
+	};
+	RCons *cons = r_cons_new ();
+	ut8 bytes[256];
+	const char *replies[257];
+	size_t i;
+	for (i = 0; i < sizeof (bytes); i++) {
+		bytes[i] = i;
+		replies[i] = "OK";
+	}
+	replies[256] = NULL;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		libgdbr_t g;
+		int fds[2];
+		mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open memory session");
+		g.stub_features.pkt_sz = cases[i].limit;
+		g.send_max = cases[i].send_max;
+		Stub stub;
+		RThread *th = stub_start (&stub, fds[1], -1, replies);
+		mu_assert_eq (gdbr_write_memory (&g, cases[i].address, bytes, cases[i].len), 0, "complete memory write");
+		char *sent = stub_finish (&stub, th, fds[0]);
+		size_t written;
+		mu_assert_true (check_memory_packets (sent, cases[i].address, bytes, cases[i].len,
+			R_MIN (cases[i].limit, cases[i].send_max - 5), &written), "validate memory transcript");
+		mu_assert_eq (written, cases[i].len, "all input bytes reached the peer");
+		mu_assert_eq (g.stub_features.pkt_sz, cases[i].limit, "writes preserve the peer limit");
+		free (sent);
+		gdbr_cleanup (&g);
+	}
+	r_cons_free (cons);
+	mu_end;
+}
+
+static bool test_gdb_memory_packet_failures(void) {
+	const struct {
+		ut32 limit;
+		int send_max;
+		ut64 address;
+		ut64 len;
+	} cases[] = {
+		{ 0, 2500, 0, 1 }, { 1, 2500, 0, 1 }, { 6, 2500, 0, 1 },
+		{ 7, 2500, 0xf, 2 }, { 64, 9, 0, 1 }, { 64, 2500, UT64_MAX, 2 }
+	};
+	RCons *cons = r_cons_new ();
+	const ut8 bytes[32] = { 1, 2, 3, 4 };
+	const char *replies[] = { "OK", "E01", NULL };
+	size_t i;
+	for (i = 0; i <= R_ARRAY_SIZE (cases); i++) {
+		libgdbr_t g;
+		int fds[2];
+		mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open memory failure session");
+		const bool rejected = i == R_ARRAY_SIZE (cases);
+		g.stub_features.pkt_sz = rejected? 16: cases[i].limit;
+		g.send_max = rejected? 2500: cases[i].send_max;
+		Stub stub;
+		RThread *th = stub_start (&stub, fds[1], -1, replies);
+		mu_assert_eq (gdbr_write_memory (&g, 0, NULL, 0), 0, "zero bytes need no packet");
+		mu_assert_eq (gdbr_write_memory (&g, rejected? 0: cases[i].address, bytes,
+			rejected? sizeof (bytes): cases[i].len), -1, "invalid or refused write fails");
+		if (!rejected && cases[i].limit < 2) {
+			ut8 byte;
+			g.remote_file_fd = 1;
+			mu_assert_eq (gdbr_read_memory (&g, 0, &byte, 1), -1, "tiny read budget cannot divide by zero");
+			mu_assert_eq (gdbr_read_file (&g, &byte, 1), -1, "tiny file budget makes no progress");
+			mu_assert_eq (g.stub_features.pkt_sz, cases[i].limit, "read paths preserve tiny limits");
+		}
+		char *sent = stub_finish (&stub, th, fds[0]);
+		if (rejected) {
+			mu_assert_eq (r_str_char_count (sent, '\n'), 2, "stop sending after a failed chunk");
+			size_t written;
+			mu_assert_true (check_memory_packets (sent, 0, bytes, sizeof (bytes), 16, &written), "rejected transcript remains bounded");
+			mu_assert ("later bytes are not attempted", written < sizeof (bytes));
+		} else {
+			mu_assert_streq (sent, "", "impossible writes send no packets");
+		}
+		free (sent);
+		gdbr_cleanup (&g);
+	}
+	r_cons_free (cons);
+	mu_end;
 }
 
 static bool test_gdb_monitor_output(void) {
@@ -748,6 +904,40 @@ static char *connect_transcript(libgdbr_t *g, const char **replies) {
 	return sent;
 }
 
+static bool test_gdb_connect_packet_limits(void) {
+	const struct {
+		const char *reply;
+		const char *override;
+		ut32 limit;
+		bool connected;
+	} cases[] = {
+		{ "PacketSize=20", "1024", 32, true },
+		{ "PacketSize=20", "16", 16, true },
+		{ "PacketSize=1", "1024", 1, false }
+	};
+	RCons *cons = r_cons_new ();
+	char *saved = r_sys_getenv ("R2_GDB_PKTSZ");
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		const char *replies[] = { cases[i].reply, "QC1", "vCont;c;s", "OK", "OK", NULL };
+		libgdbr_t g;
+		r_sys_setenv ("R2_GDB_PKTSZ", cases[i].override);
+		char *sent = connect_transcript (&g, replies);
+		r_sys_setenv ("R2_GDB_PKTSZ", saved);
+		mu_assert_eq (sent != NULL, cases[i].connected, "connection observes effective capacity");
+		mu_assert_eq (g.stub_features.pkt_sz, cases[i].limit, "override only lowers the peer capacity");
+		if (sent) {
+			mu_assert ("initial negotiation is not inflated by the override", r_str_startswith (sent,
+				"qSupported:multiprocess+;qRelocInsn+;xmlRegisters=i386\n"));
+		}
+		free (sent);
+		gdbr_cleanup (&g);
+	}
+	free (saved);
+	r_cons_free (cons);
+	mu_end;
+}
+
 static bool test_gdb_connect_probes(void) {
 	RCons *cons = r_cons_new ();
 	libgdbr_t g;
@@ -816,6 +1006,12 @@ static bool test_gdb_io_monitor_output(void) {
 	size_t len;
 	r_cons_get_buffer (cons, &len);
 	mu_assert_eq (len, 0, "IO returns output without printing it");
+	free (r_io_system (io, "pktsz 16"));
+	mu_assert_streq_free (r_io_system (io, "pktsz"), "packet size: 16 bytes\n", "IO can lower the budget");
+	free (r_io_system (io, "pktsz 0xffffffffffffffff"));
+	mu_assert_streq_free (r_io_system (io, "pktsz"), "packet size: 16 bytes\n", "IO cannot raise or truncate the budget");
+	free (r_io_system (io, "pktsz 1"));
+	mu_assert_streq_free (r_io_system (io, "pktsz"), "packet size: 1 bytes\n", "IO preserves a tiny user limit");
 	r_io_free (io);
 	r_th_wait (th);
 	r_th_free (th);
@@ -829,9 +1025,12 @@ static bool test_gdb_io_monitor_output(void) {
 
 int main(int argc, char **argv) {
 	mu_run_test (test_gdb_server_register_values);
+	mu_run_test (test_gdb_packet_limits);
 #if R2__UNIX__ && !__wasi__
 	mu_run_test (test_gdb_server_wide_packets);
 	mu_run_test (test_gdb_processes_xml);
+	mu_run_test (test_gdb_memory_packet_sizes);
+	mu_run_test (test_gdb_memory_packet_failures);
 	mu_run_test (test_gdb_monitor_output);
 	mu_run_test (test_gdb_gdbserver_reads_g);
 	mu_run_test (test_gdb_lldb_reads_g_with_thread);
@@ -846,6 +1045,7 @@ int main(int argc, char **argv) {
 	mu_run_test (test_gdb_target_xml_offsets);
 	mu_run_test (test_gdb_target_xml_regnums);
 	mu_run_test (test_gdb_target_xml_names);
+	mu_run_test (test_gdb_connect_packet_limits);
 	mu_run_test (test_gdb_connect_probes);
 	mu_run_test (test_gdb_io_monitor_output);
 #endif
