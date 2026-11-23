@@ -430,6 +430,301 @@ static bool test_gdb_memory_packet_failures(void) {
 	mu_end;
 }
 
+static bool test_gdb_runtime_console_flows(void) {
+	const char *requests[] = { "?", "s", "c", "vAttach;4d2" };
+	const ut8 expected[] = { ' ', ' ', '%', 's', '\n', 'A', 0, 'B' };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (requests); i++) {
+		RCons *cons = r_cons_new ();
+		cons->context->noflush = true;
+		libgdbr_t g;
+		int fds[2];
+		mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open console session");
+		g.connected = 1;
+		g.stub_features.extended_mode = 0;
+		mu_assert_true (send_response (fds[1], "O"), "queue empty console output");
+		mu_assert_true (send_response (fds[1], "O202025730a"), "queue literal formatted text");
+		mu_assert_true (send_response (fds[1], "O410042"), "queue binary console output");
+		mu_assert_true (send_response (fds[1], i == 1? "T05thread:1c03;": "S02"), "queue actual stop");
+		int ret;
+		switch (i) {
+		case 0: ret = gdbr_stop_reason (&g); break;
+		case 1: ret = gdbr_step (&g, 1); break;
+		case 2: ret = gdbr_continue (&g, g.pid, 1, 0); break;
+		default: ret = gdbr_attach (&g, 0x4d2); break;
+		}
+		mu_assert_eq (ret, 0, "console packets do not complete the command");
+		mu_assert_true (g.stop_reason.is_valid, "actual stop is reported");
+		mu_assert_eq (g.stop_reason.signum, i == 1? 5: 2, "terminal signal survives output");
+		size_t length;
+		const char *output = r_cons_get_buffer (cons, &length);
+		mu_assert_eq (length, sizeof (expected), "console output preserves exact length");
+		mu_assert_memeq (output, expected, length, "console output preserves whitespace percent and NUL bytes");
+		mu_assert_streq_free (stub_recv (fds[1]), requests[i], "send only the original request");
+		struct pollfd pollfd = { .fd = fds[1], .events = POLLIN };
+		mu_assert_eq (poll (&pollfd, 1, 0), 0, "no extra resume or stop query");
+		gdbr_cleanup (&g);
+		close (fds[1]);
+		r_cons_free (cons);
+	}
+	mu_end;
+}
+
+static bool test_gdb_console_terminal_replies(void) {
+	const char *replies[] = { "W00", "X0b", "E01", NULL };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (replies); i++) {
+		RCons *cons = r_cons_new ();
+		cons->context->noflush = true;
+		libgdbr_t g;
+		int fds[2];
+		mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open terminal console session");
+		g.connected = 1;
+		g.stop_reason.reason = R_DEBUG_REASON_SIGNAL;
+		g.stop_reason.signum = 9;
+		g.stop_reason.exec.path = strdup ("previous");
+		g.stop_reason.exec.present = true;
+		mu_assert_true (send_response (fds[1], "O6279650a"), "queue output before terminal reply");
+		if (replies[i]) {
+			mu_assert_true (send_response (fds[1], replies[i]), "queue terminal reply");
+		} else {
+			shutdown (fds[1], SHUT_WR);
+		}
+		mu_assert_eq (gdbr_continue (&g, g.pid, 1, 0), i < 2? 0: -1, "terminal reply or EOF result");
+		size_t length;
+		const char *output = r_cons_get_buffer (cons, &length);
+		mu_assert_eq (length, 4, "output survives errors and termination");
+		mu_assert_memeq (output, "bye\n", length, "terminal output is visible");
+		mu_assert_eq (g.stop_reason.is_valid, i < 2, "only actual terminal stops are valid");
+		if (i < 2) {
+			mu_assert_eq (g.stop_reason.reason, R_DEBUG_REASON_DEAD, "exit survives disconnect cleanup");
+			if (i == 1) {
+				mu_assert_eq (g.stop_reason.signum, 0x0b, "termination signal survives disconnect cleanup");
+			}
+			mu_assert_eq (g.connected, 0, "terminal reply closes the single-process connection");
+		} else {
+			mu_assert_eq (g.stop_reason.signum, 9, "output is not a replacement stop");
+			mu_assert_streq (g.stop_reason.exec.path, "previous", "output preserves prior owned metadata");
+		}
+		gdbr_cleanup (&g);
+		close (fds[1]);
+		r_cons_free (cons);
+	}
+	mu_end;
+}
+
+static bool test_gdb_console_rejections(void) {
+	const char *replies[] = { "O1", "Ogg", "O41gg", "O000", "O0x", "O 0", "OKextra" };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (replies); i++) {
+		RCons *cons = r_cons_new ();
+		cons->context->noflush = true;
+		libgdbr_t g;
+		int fds[2];
+		mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open invalid console session");
+		g.connected = 1;
+		mu_assert_true (send_response (fds[1], "O61"), "queue prior valid output");
+		mu_assert_true (send_response (fds[1], replies[i]), "queue invalid console packet");
+		mu_assert_true (send_response (fds[1], "S05"), "queue later stop");
+		mu_assert_eq (gdbr_stop_reason (&g), -1, "malformed console bytes are rejected");
+		mu_assert_false (g.stop_reason.is_valid, "malformed output does not publish a stop");
+		size_t length;
+		const char *output = r_cons_get_buffer (cons, &length);
+		mu_assert_eq (length, 1, "malformed bytes are not printed");
+		mu_assert_memeq (output, "a", 1, "valid prior output remains visible");
+		gdbr_cleanup (&g);
+		close (fds[1]);
+		r_cons_free (cons);
+	}
+	mu_end;
+}
+
+static bool test_gdb_console_acknowledgements(void) {
+	RCons *cons = r_cons_new ();
+	cons->context->noflush = true;
+	libgdbr_t g;
+	int fds[2];
+	mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open acknowledged console session");
+	g.no_ack = false;
+	const char *replies[] = { "O", "O61", "O62", "S05" };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (replies); i++) {
+		mu_assert_true (send_response (fds[1], replies[i]), "queue acknowledged reply");
+	}
+	mu_assert_eq (gdbr_stop_reason (&g), 0, "wait through every console packet");
+	mu_assert_streq_free (stub_recv (fds[1]), "?", "query is sent once");
+	for (i = 0; i < R_ARRAY_SIZE (replies); i++) {
+		char ack;
+		mu_assert_true (stub_getc (fds[1], &ack), "receive one packet acknowledgement");
+		mu_assert_eq (ack, '+', "positive packet acknowledgement");
+	}
+	struct pollfd pollfd = { .fd = fds[1], .events = POLLIN };
+	mu_assert_eq (poll (&pollfd, 1, 0), 0, "no duplicate acknowledgement");
+	gdbr_cleanup (&g);
+	close (fds[1]);
+	r_cons_free (cons);
+	mu_end;
+}
+
+static bool test_gdb_console_attach_compatibility(void) {
+	const char *replies[] = { "OK", "", "E01" };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (replies); i++) {
+		RCons *cons = r_cons_new ();
+		cons->context->noflush = true;
+		libgdbr_t g;
+		int fds[2];
+		mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open console attach session");
+		g.stub_features.extended_mode = 0;
+		mu_assert_true (send_response (fds[1], "O61"), "queue attach output");
+		mu_assert_true (send_response (fds[1], replies[i]), "queue legacy attach reply");
+		mu_assert_eq (gdbr_attach (&g, 0x4d2), i == 0? 0: i == 1? -2: -1, "legacy and refused attach results");
+		mu_assert_false (g.stop_reason.is_valid, "legacy OK and output do not invent stop metadata");
+		size_t length;
+		const char *output = r_cons_get_buffer (cons, &length);
+		mu_assert_eq (length, 1, "attach output remains visible");
+		mu_assert_memeq (output, "a", 1, "literal attach output");
+		gdbr_cleanup (&g);
+		close (fds[1]);
+		r_cons_free (cons);
+	}
+	mu_end;
+}
+
+typedef struct {
+	int fd;
+	char *request;
+	bool ok;
+} ConsolePeer;
+
+static RThreadFunctionRet delayed_console_peer(RThread *thread) {
+	ConsolePeer *peer = thread->user;
+	peer->request = stub_recv (peer->fd);
+	const char *payload = "T0500:0*,;thread:1c03;";
+	char *stop = r_str_newf ("$%s#%02x", payload, cmd_checksum (payload));
+	const size_t split = strchr (stop, '*') - stop;
+	char *prefix = r_str_newf ("$O6869#%02x%.*s", cmd_checksum ("O6869"), (int)split, stop);
+	char ack;
+	if (peer->request && write (peer->fd, prefix, strlen (prefix)) == strlen (prefix)
+	    && stub_getc (peer->fd, &ack) && ack == '+') {
+		r_sys_usleep (350000);
+		peer->ok = write (peer->fd, stop + split, strlen (stop) - split) == strlen (stop) - split
+			&& stub_getc (peer->fd, &ack) && ack == '+';
+	}
+	free (prefix);
+	free (stop);
+	shutdown (peer->fd, SHUT_WR);
+	return R_TH_STOP;
+}
+
+static bool test_gdb_console_waiting(void) {
+	RCons *cons = r_cons_new ();
+	cons->context->noflush = true;
+	libgdbr_t g;
+	int fds[2];
+	mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open delayed console session");
+	g.connected = 1;
+	g.no_ack = false;
+	ConsolePeer peer = { .fd = fds[1] };
+	RThread *thread = r_th_new (delayed_console_peer, &peer, 0);
+	r_th_start (thread);
+	int ret = gdbr_continue (&g, g.pid, 1, 0);
+	r_th_wait (thread);
+	r_th_free (thread);
+	mu_assert_true (peer.ok, "peer completed the delayed exchange");
+	mu_assert_eq (ret, 0, "running wait survives a partial-frame poll timeout");
+	mu_assert_streq_free (peer.request, "c", "send the resume request once");
+	mu_assert_true (g.stop_reason.is_valid, "output alone does not stop execution");
+	mu_assert_eq (g.stop_reason.signum, 5, "actual stop follows output");
+	mu_assert_streq (g.data, "T0500:0000000000000000", "RLE at a continuation boundary retains its predecessor");
+	size_t length;
+	const char *output = r_cons_get_buffer (cons, &length);
+	mu_assert_eq (length, 2, "output survives polling");
+	mu_assert_memeq (output, "hi", length, "console bytes before delayed stop");
+	gdbr_cleanup (&g);
+	close (fds[1]);
+	r_cons_free (cons);
+	mu_end;
+}
+
+static bool test_gdb_console_interrupt(void) {
+	RCons *cons = r_cons_new ();
+	libgdbr_t g;
+	int fds[2];
+	mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open interrupted console session");
+	g.connected = 1;
+	g.isbreaked = true;
+	cons->context->breaked = true;
+	char *packet = r_str_newf ("$O6166746572#%02x", cmd_checksum ("O6166746572"));
+	memcpy (g.read_buff, packet, 5);
+	g.read_len = 5;
+	mu_assert_eq (write (fds[1], packet + 5, strlen (packet) - 5), strlen (packet) - 5, "queue partial output continuation");
+	free (packet);
+	mu_assert_true (send_response (fds[1], "S02"), "queue stop after interrupt output");
+	mu_assert_eq (read_packet (&g, true), 0, "interrupt preserves partial output framing");
+	mu_assert_streq (g.data, "O6166746572", "complete console packet remains available");
+	mu_assert_false (cons->context->breaked, "processed interrupt permits subsequent console writes");
+	mu_assert_false (g.stop_reason.is_valid, "output packet is not a stop");
+	mu_assert_eq (read_packet (&g, true), 0, "read actual stop after output");
+	mu_assert_eq (handle_stop_reason (&g), 0, "parse interrupt stop");
+	mu_assert_eq (g.stop_reason.signum, 2, "actual interrupt signal");
+	char interrupt;
+	mu_assert_true (stub_getc (fds[1], &interrupt), "receive run interrupt");
+	mu_assert_eq (interrupt, 3, "single raw interrupt byte");
+	struct pollfd pollfd = { .fd = fds[1], .events = POLLIN };
+	mu_assert_eq (poll (&pollfd, 1, 0), 0, "no duplicate interrupt");
+	gdbr_cleanup (&g);
+	close (fds[1]);
+	r_cons_free (cons);
+	mu_end;
+}
+
+static bool test_gdb_console_query_timeout(void) {
+	RCons *cons = r_cons_new ();
+	cons->context->noflush = true;
+	libgdbr_t g;
+	int fds[2];
+	mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open bounded console query");
+	g.connected = 1;
+	g.num_retries = 1;
+	mu_assert_true (send_response (fds[1], "O61"), "queue output without a stop reply");
+	mu_assert_eq (gdbr_stop_reason (&g), -1, "ordinary queries retain bounded timeouts");
+	mu_assert_false (g.stop_reason.is_valid, "output followed by timeout is not a stop");
+	mu_assert_streq_free (stub_recv (fds[1]), "?", "query is sent once");
+	size_t length;
+	const char *output = r_cons_get_buffer (cons, &length);
+	mu_assert_eq (length, 1, "output before query timeout is retained");
+	mu_assert_memeq (output, "a", 1, "literal query output");
+	gdbr_cleanup (&g);
+	close (fds[1]);
+	r_cons_free (cons);
+	mu_end;
+}
+
+static bool test_gdb_console_transport_failures(void) {
+	RCons *cons = r_cons_new ();
+	libgdbr_t g;
+	int fds[2];
+	mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open transport failure session");
+	g.isbreaked = true;
+	mu_assert_eq (read_packet (&g, true), -1, "cancel pre-handshake probing");
+	struct pollfd pollfd = { .fd = fds[1], .events = POLLIN };
+	mu_assert_eq (poll (&pollfd, 1, 0), 0, "connection cancellation sends no run interrupt");
+	mu_assert_eq (gdbr_stop_reason (&g), -1, "cancel a pending ordinary query");
+	g.isbreaked = true;
+	mu_assert_eq (gdbr_attach (&g, 0x4d2), -1, "cancel a pending attach");
+	mu_assert_eq (poll (&pollfd, 1, 0), 0, "canceled queries and attach send no request or run interrupt");
+	g.isbreaked = false;
+	memcpy (g.read_buff, "$S05#00", 7);
+	g.read_len = 7;
+	mu_assert_true (send_response (fds[1], "S05"), "queue valid reply after bad buffered frame");
+	mu_assert_eq (read_packet (&g, true), -1, "buffered checksum errors are not discarded");
+	gdbr_cleanup (&g);
+	close (fds[1]);
+	r_cons_free (cons);
+	mu_end;
+}
+
 static bool test_gdb_monitor_output(void) {
 	const struct {
 		const char *replies[4];
@@ -441,6 +736,9 @@ static bool test_gdb_monitor_output(void) {
 		{ { "E01", NULL }, "", -1 },
 		{ { "O68656c6c6f20", "E01", NULL }, "hello ", -1 },
 		{ { "O20203132330a0a", "OK", NULL }, "  123\n\n", 0 },
+		{ { "O", "OK", NULL }, "", 0 },
+		{ { "Ogg", NULL }, "", -1 },
+		{ { "O000", NULL }, "", -1 },
 	};
 	RCons *cons = r_cons_new ();
 	size_t i;
@@ -1150,6 +1448,15 @@ int main(int argc, char **argv) {
 	mu_run_test (test_gdb_processes_xml);
 	mu_run_test (test_gdb_memory_packet_sizes);
 	mu_run_test (test_gdb_memory_packet_failures);
+	mu_run_test (test_gdb_runtime_console_flows);
+	mu_run_test (test_gdb_console_terminal_replies);
+	mu_run_test (test_gdb_console_rejections);
+	mu_run_test (test_gdb_console_acknowledgements);
+	mu_run_test (test_gdb_console_attach_compatibility);
+	mu_run_test (test_gdb_console_waiting);
+	mu_run_test (test_gdb_console_interrupt);
+	mu_run_test (test_gdb_console_query_timeout);
+	mu_run_test (test_gdb_console_transport_failures);
 	mu_run_test (test_gdb_monitor_output);
 	mu_run_test (test_gdb_short_stop_replies);
 	mu_run_test (test_gdb_invalid_stop_signals);

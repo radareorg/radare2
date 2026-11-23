@@ -225,8 +225,9 @@ static int stop_reason_death(libgdbr_t *g, bool is_signal) {
 	if (is_signal) {
 		g->stop_reason.signum = value;
 	}
+	int ret = multi? 0: gdbr_disconnect (g);
 	g->stop_reason.is_valid = true;
-	return multi? 0: gdbr_disconnect (g);
+	return ret;
 }
 
 int handle_stop_reason(libgdbr_t *g) {
@@ -234,16 +235,6 @@ int handle_stop_reason(libgdbr_t *g) {
 		return -1;
 	}
 	switch (g->data[0]) {
-	case 'O':
-		unpack_hex (g->data + 1, g->data_len - 1, g->data + 1);
-		R_LOG_DEBUG ("%s: %s", __func__, g->data + 1);
-		if (send_ack (g) < 0) {
-			return -1;
-		}
-		gdbr_stop_reason_reset (&g->stop_reason);
-		g->stop_reason.signum = -1;
-		g->stop_reason.reason = R_DEBUG_REASON_NONE;
-		return 0;
 	case 'W':
 		return stop_reason_death (g, false);
 	case 'X':

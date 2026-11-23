@@ -274,6 +274,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (!gdbr_lock_enter (g)) {
 		goto end;
 	}
+	g->connected = 0;
 	// Initial max_packet_size for remote target (minimum so far for AVR = 64)
 	g->stub_features.pkt_sz = 64;
 	char *env_pktsz_str;
@@ -396,9 +397,11 @@ end:
 
 int gdbr_disconnect(libgdbr_t *g) {
 	// TODO Disconnect maybe send something to gdbserver
-	if (!g || !r_socket_close (g->sock)) {
+	if (!g || !g->sock) {
 		return -1;
 	}
+	// r_socket_close returns the close status despite its bool return type.
+	const int ret = r_socket_close (g->sock)? -1: 0;
 	if (!gdbr_lock_enter (g)) {
 		goto end;
 	}
@@ -413,7 +416,7 @@ int gdbr_disconnect(libgdbr_t *g) {
 	g->connected = 0;
 end:
 	gdbr_lock_leave (g);
-	return 0;
+	return ret;
 }
 
 int gdbr_select(libgdbr_t *g, int pid, int tid) {
@@ -506,16 +509,83 @@ end:
 	return ret;
 }
 
+static bool decode_console_output(libgdbr_t *g, size_t *length) {
+	if (g->data_len < 1 || g->data[0] != 'O' || !(g->data_len % 2)) {
+		return false;
+	}
+	const size_t bytes = (g->data_len - 1) / 2;
+	size_t i;
+	for (i = 0; i < bytes; i++) {
+		const int high = hex2int ((ut8)g->data[1 + i * 2]);
+		const int low = hex2int ((ut8)g->data[2 + i * 2]);
+		if (high < 0 || low < 0) {
+			return false;
+		}
+		g->data[1 + i] = high * 16 + low;
+	}
+	g->data[1 + bytes] = '\0';
+	*length = bytes;
+	return true;
+}
+
+static int read_stop_reply(libgdbr_t *g, bool attaching, bool running) {
+	g->stop_reason.is_valid = false;
+	for (;;) {
+		int ret = read_packet (g, running);
+		if (ret == GDBR_READ_TIMEOUT && running) {
+			continue;
+		}
+		if (ret < 0) {
+			return -1;
+		}
+		const bool attach_ok = attaching && g->data_len == 2 && !memcmp (g->data, "OK", 2);
+		if (g->data_len && g->data[0] == 'O' && !attach_ok) {
+			if (send_ack (g) < 0) {
+				return -1;
+			}
+			size_t length;
+			if (!decode_console_output (g, &length)) {
+				return -1;
+			}
+			if (length) {
+				RCons *cons = r_cons_singleton ();
+				if (!r_cons_write (cons, g->data + 1, length)) {
+					if (!running || !g->isbreaked || !cons->context->breaked) {
+						return -1;
+					}
+					// Keep the run interrupt pending while retrying output rejected by Ctrl-C.
+					r_cons_break_clear (cons);
+					if (!r_cons_write (cons, g->data + 1, length)) {
+						if (!g->isbreaked || !cons->context->breaked) {
+							return -1;
+						}
+						continue;
+					}
+				}
+				r_cons_flush (cons);
+			}
+			continue;
+		}
+		if (attach_ok) {
+			return handle_attach (g);
+		}
+		if (attaching && !g->data_len) {
+			return send_ack (g) < 0? -1: -2;
+		}
+		return handle_stop_reason (g);
+	}
+}
+
 int gdbr_stop_reason(libgdbr_t *g) {
 	int ret = -1;
 	if (!gdbr_lock_enter (g)) {
 		goto end;
 	}
-	if (!g || send_msg (g, "?") < 0 || read_packet (g, false) < 0) {
+	if (!g || send_msg (g, "?") < 0) {
 		ret = -1;
 		goto end;
 	}
-	ret = handle_stop_reason (g);
+	ret = read_stop_reply (g, false, false);
 end:
 	gdbr_lock_leave (g);
 	return ret;
@@ -592,16 +662,7 @@ int gdbr_attach(libgdbr_t *g, int pid) {
 		goto end;
 	}
 
-	if (read_packet (g, false) < 0) {
-		ret = -1;
-		goto end;
-	}
-	if (!g->data_len) {
-		send_ack (g);
-		ret = -2;
-		goto end;
-	}
-	ret = (g->data[0] == 'T' || g->data[0] == 'S')? handle_stop_reason (g): handle_attach (g);
+	ret = read_stop_reply (g, true, false);
 	if (!ret) {
 		g->pid = pid;
 		if (g->stop_reason.thread.present) {
@@ -1395,19 +1456,7 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 	}
 
 	bed = r_cons_sleep_begin (cons);
-	while ((ret = read_packet (g, true)) < 0 && !g->isbreaked && r_socket_is_connected (g->sock));
-	if (g->isbreaked) {
-		g->isbreaked = false;
-		// Stop target
-		r_socket_write (g->sock, "\x03", 1);
-		// Read the stop reason
-		if (read_packet (g, false) < 0) {
-			ret = -1;
-			goto end;
-		}
-	}
-
-	ret = handle_cont (g);
+	ret = read_stop_reply (g, false, true);
 end:
 	r_cons_sleep_end (cons, bed);
 	gdbr_lock_leave (g);
@@ -1724,17 +1773,13 @@ int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, RStrBuf *output) {
 			ret = -1;
 			goto end;
 		}
-		if (!strncmp (g->data, "OK", 2)) {
+		if (g->data_len == 2 && !memcmp (g->data, "OK", 2)) {
 			break;
 		}
-		if (g->data[0] == 'O' && g->data_len % 2 == 1) {
-			// Console output from gdbserver
-			unpack_hex (g->data + 1, g->data_len - 1, g->data + 1);
-			g->data[g->data_len - 1] = '\0';
-			if (!r_strbuf_append (output, g->data + 1)) {
-				ret = -1;
-				goto end;
-			}
+		size_t length;
+		if (!decode_console_output (g, &length) || !r_strbuf_append_n (output, g->data + 1, length)) {
+			ret = -1;
+			goto end;
 		}
 		if ((ret = read_packet (g, false)) < 0) {
 			goto end;

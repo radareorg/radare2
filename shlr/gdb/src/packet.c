@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "gdbr_common.h"
 #include <r_util.h>
+#include <r_cons.h>
 
 #define READ_TIMEOUT (250 * 1000)
 
@@ -35,12 +36,15 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 	R_RETURN_VAL_IF_FAIL (g, -1);
 	int i = 0;
 	int j = 0;
-	bool first = true;
 	g->read_buff[len] = '\0';
 	for (i = 0; i < len; i++) {
 		char cur = g->read_buff[i];
 		if (ctx->flags & CHKSUM) {
-			ctx->sum -= hex2int (cur) << (ctx->chksum_nibble * 4);
+			const int digit = hex2int ((ut8)cur);
+			if (digit < 0) {
+				return -1;
+			}
+			ctx->sum -= digit << (ctx->chksum_nibble * 4);
 			if (!--ctx->chksum_nibble) {
 				continue;
 			}
@@ -104,7 +108,7 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 			ctx->flags |= ESC;
 			break;
 		case '*':
-			if (first) {
+			if (!g->data_len) {
 				R_LOG_ERROR ("%s: Invalid repeat", __func__);
 				return -1;
 			}
@@ -121,7 +125,6 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 			}
 			/* Fall-through */
 		default:
-			first = false;
 			if (!append (g, cur)) {
 				return -1;
 			}
@@ -131,30 +134,63 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 	return 1;
 }
 
+static bool send_pending_interrupt(libgdbr_t *g, bool polling) {
+	if (!g->isbreaked) {
+		return true;
+	}
+	if (!polling || !g->connected) {
+		return false;
+	}
+	g->isbreaked = false;
+	if (r_socket_write (g->sock, "\x03", 1) != 1) {
+		return false;
+	}
+	r_cons_break_clear (r_cons_singleton ());
+	return true;
+}
+
 int read_packet(libgdbr_t *g, bool vcont) {
 	R_RETURN_VAL_IF_FAIL (g, -1);
 	struct parse_ctx ctx = {0};
-	int ret, i;
+	int ret, retries = 0;
 	g->data_len = 0;
-	if (g->read_len > 0) {
-		if (unpack (g, &ctx, g->read_len) == 0) {
-			// TODO: Evaluate if partial packets are clubbed
-			g->data[g->data_len] = '\0';
-			R_LOG_DEBUG ("getpkt (\"%s\");  %s", g->data,
-					g->no_ack ? "[no ack sent]" : "[sending ack]");
-			return 0;
-		}
+	if (!send_pending_interrupt (g, vcont)) {
+		return -1;
 	}
-	g->data_len = 0;
-	for (i = 0; i < g->num_retries && !g->isbreaked; i++) {
-		ret = r_socket_ready (g->sock, 0, READ_TIMEOUT);
-		if (ret == 0 && !vcont) {
-			continue;
-		}
-		if (ret <= 0) {
+	if (g->read_len > 0) {
+		ret = unpack (g, &ctx, g->read_len);
+		if (ret < 0) {
 			return -1;
 		}
+		if (!ret) {
+			goto complete;
+		}
+		g->read_len = 0;
+	}
+	while (retries < g->num_retries) {
+		if (!send_pending_interrupt (g, vcont)) {
+			return -1;
+		}
+		ret = r_socket_ready (g->sock, 0, READ_TIMEOUT);
+		if (ret < 0) {
+			if (vcont && g->connected && g->isbreaked) {
+				continue;
+			}
+			return -1;
+		}
+		if (!ret) {
+			if (vcont && !(ctx.flags & HEADER)) {
+				return GDBR_READ_TIMEOUT;
+			}
+			if (!vcont || !g->connected) {
+				retries++;
+			}
+			continue;
+		}
 		int sz = r_socket_read (g->sock, (void *)g->read_buff, g->read_max - 1);
+		if (sz < 0 && vcont && g->connected && g->isbreaked) {
+			continue;
+		}
 		if (sz <= 0) {
 			R_LOG_ERROR ("%s: read failed", __func__);
 			return -1;
@@ -165,13 +201,19 @@ int read_packet(libgdbr_t *g, bool vcont) {
 			return -1;
 		}
 		if (!ret) {
-			g->data[g->data_len] = '\0';
-			R_LOG_DEBUG ("getpkt (\"%s\");  %s", g->data,
-					g->no_ack ? "[no ack sent]" : "[sending ack]");
-			return 0;
+			goto complete;
 		}
+		retries = 0;
 	}
 	return -1;
+complete:
+	g->data[g->data_len] = '\0';
+	R_LOG_DEBUG ("getpkt (\"%s\");  %s", g->data,
+		g->no_ack? "[no ack sent]": "[sending ack]");
+	if (!send_pending_interrupt (g, vcont)) {
+		return -1;
+	}
+	return 0;
 }
 
 int send_packet(libgdbr_t *g) {

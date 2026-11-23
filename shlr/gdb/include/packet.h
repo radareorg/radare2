@@ -24,8 +24,9 @@ int send_packet(libgdbr_t *g);
  * \brief Function reads data from the established connection
  * \param g the "instance" of the current libgdbr session
  * \param vcont whether it's called to receive reply to a vcont packet
- * \returns a failure code (currently -1) or 0 if call successfully
+ * \returns 0 for a complete packet, GDBR_READ_TIMEOUT for an idle poll, or -1 on failure
  */
+#define GDBR_READ_TIMEOUT (-2)
 int read_packet(libgdbr_t *g, bool vcont);
 
 int pack(libgdbr_t *g, const char *msg);
