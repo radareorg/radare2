@@ -73,7 +73,10 @@ Closes an open file handle.
 .Ft int
 .Fn r_fs_read "RFS *fs" "RFSFile *file" "ut64 addr" "int len"
 .Pp
-Reads data from a file at the specified offset.
+Reads data from a file at the specified 64-bit offset. File sizes are ut64;
+each read request and its return value remain int-sized. Read large files in
+bounded chunks. RFSFile.data contains the most recent read, while RFSFile.size
+retains the full logical file size.
 .Pp
 .Ft int
 .Fn r_fs_write "RFS *fs" "RFSFile *file" "ut64 addr" "const ut8 *data" "int len"
@@ -100,7 +103,7 @@ Dumps the contents of a directory to disk.
 .Ft RFSFile *
 .Fn r_fs_slurp "RFS *fs" "const char *path"
 .Pp
-Convenience helper that opens and reads a file fully into memory returning an `RFSFile` whose `data` and `size` fields are populated. This is useful when a single buffer is required by consumers (e.g. analysis or dumping).
+Convenience helper that opens and reads a file fully into memory returning an `RFSFile` whose `data` and `size` fields are populated. Files larger than INT_MAX are rejected; use bounded reads or streaming extraction for those files. This is useful when a single buffer is required by consumers (e.g. analysis or dumping).
 .Sh SEARCHING
 .Ft RList *
 .Fn r_fs_find_name "RFS *fs" "const char *name" "const char *glob" "int view"

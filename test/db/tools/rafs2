@@ -57,7 +57,7 @@ CMDS=!rafs2 -t fat -l / bins/fs/fat.img 2>/dev/null
 EXPECT=<<EOF
 d          0  etc
 d          0  bin
-f          0  README.md
+f         24  README.md
 EOF
 RUN
 
@@ -181,7 +181,7 @@ FILE=--
 CMDS=!rafs2 -L | grep -E "(ext2|fat|ntfs|iso9660)"
 EXPECT=<<EOF
   ext2         ext2 filesystem
-  fat          FAT filesystem
+  fat          FAT12/16/32 and VFAT filesystem
   fatmacho     Fat Mach-O slice enumeration
   iso9660      ISO9660 filesystem
   ntfs         NTFS filesystem

@@ -705,7 +705,7 @@ static void p9_file_fill(RFSFile *file, const P9Stat *st) {
 	file->type = p9_file_type (st);
 	file->time = st->mtime;
 	file->perm = st->mode & 0777;
-	file->size = st->length > UT32_MAX? UT32_MAX: (ut32)st->length;
+	file->size = st->length;
 }
 
 static void p9_append_file(RList *list, const P9Stat *st) {
@@ -1043,6 +1043,10 @@ static int fs_p9_read(RFSFile *file, ut64 addr, int len) {
 	if (!file || !file->ptr || len < 0) {
 		return -1;
 	}
+	if (addr >= file->size) {
+		return 0;
+	}
+	len = R_MIN ((ut64)len, file->size - addr);
 	P9File *pf = (P9File *)file->ptr;
 	P9Client *c = pf->client;
 	ut32 maxread = p9_max_read (c);
@@ -1087,12 +1091,14 @@ static int fs_p9_read(RFSFile *file, ut64 addr, int len) {
 	if (!done) {
 		R_FREE (file->data);
 	}
-	file->size = done > 0? (ut32)done: 0;
 	return done;
 }
 
 static int fs_p9_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 	if (!file || !file->ptr || !data || len < 0) {
+		return -1;
+	}
+	if ((ut64)len > UT64_MAX - addr) {
 		return -1;
 	}
 	P9File *pf = (P9File *)file->ptr;
@@ -1121,7 +1127,7 @@ static int fs_p9_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 		}
 	}
 	if (addr + done > file->size) {
-		file->size = addr + done > UT32_MAX? UT32_MAX: (ut32)(addr + done);
+		file->size = addr + done;
 	}
 	return done;
 }

@@ -10,6 +10,9 @@
 #endif
 
 static RFSFile* fs_posix_open(RFSRoot *root, const char *path, bool create) {
+	if (r_file_is_directory (path)) {
+		return NULL;
+	}
 	RFSFile *file = r_fs_file_new (root, path);
 	if (!file) {
 		return NULL;
@@ -17,12 +20,7 @@ static RFSFile* fs_posix_open(RFSRoot *root, const char *path, bool create) {
 	file->ptr = NULL;
 	FILE *fd = r_sandbox_fopen (path, create? "wb": "rb");
 	if (fd) {
-		if (fseek (fd, 0, SEEK_END) != 0) {
-			fclose (fd);
-			r_fs_file_free (file);
-			return NULL;
-		}
-		file->size = ftell (fd);
+		file->size = r_file_size (path);
 		fclose (fd);
 	} else {
 		r_fs_file_free (file);
@@ -97,6 +95,7 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, R_UNUSED ut64 id, in
 				fsf->type = toupper (fsf->type);
 			}
 			fsf->time = st.st_atime;
+			fsf->size = st.st_size > 0? (ut64)st.st_size: 0;
 		}
 		r_list_append (list, fsf);
 	}

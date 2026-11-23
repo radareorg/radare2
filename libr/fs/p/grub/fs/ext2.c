@@ -493,6 +493,14 @@ grub_ext2_read_block(grub_fshelp_node_t node, grub_disk_addr_t fileblock) {
 	return blknr;
 }
 
+static grub_uint64_t grub_ext2_inode_size(const struct grub_ext2_inode *inode) {
+	grub_uint64_t size = grub_le_to_cpu32 (inode->size);
+	if ((grub_le_to_cpu16 (inode->mode) & FILETYPE_INO_MASK) == FILETYPE_INO_REG) {
+		size |= (grub_uint64_t)grub_le_to_cpu32 (inode->dir_acl) << 32;
+	}
+	return size;
+}
+
 /* Read LEN bytes from the file described by DATA starting with byte
 POS.  Return the amount of read bytes in READ.  */
 static grub_ssize_t
@@ -506,7 +514,7 @@ grub_ext2_read_file(grub_fshelp_node_t node,
 	grub_off_t pos,
 	grub_size_t len,
 	char *buf) {
-	return grub_fshelp_read_file (node->data->disk, node, read_hook, closure, flags, pos, len, buf, grub_ext2_read_block, grub_le_to_cpu32 (node->inode.size), LOG2_EXT2_BLOCK_SIZE (node->data));
+	return grub_fshelp_read_file (node->data->disk, node, read_hook, closure, flags, pos, len, buf, grub_ext2_read_block, grub_ext2_inode_size (&node->inode), LOG2_EXT2_BLOCK_SIZE (node->data));
 }
 
 /* Read the inode INO for the file described by DATA into INODE.  */
@@ -797,7 +805,7 @@ grub_ext2_open(struct grub_file *file, const char *name) {
 	grub_memcpy (data->inode, &fdiro->inode, sizeof (struct grub_ext2_inode));
 	grub_free (fdiro);
 
-	file->size = grub_le_to_cpu32 (data->inode->size);
+	file->size = grub_ext2_inode_size (data->inode);
 	file->data = data;
 	file->offset = 0;
 

@@ -36,8 +36,8 @@ typedef struct r_fs_file_t {
 	char *path;
 	ut64 off;
 	ut64 id;
+	ut64 size;
 	ut32 flags;
-	ut32 size;
 	char type;
 	ut8 *data;
 	ut32 uid; // owner

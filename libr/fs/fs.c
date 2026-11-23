@@ -559,17 +559,28 @@ static bool fs_dir_dump(RFS *fs, const char *path, const char *name, int depth, 
 				return false;
 			}
 			break;
+		case 'f':
 		case R_FS_FILE_TYPE_REGULAR:
 			item = r_fs_open (fs, npath, false);
-			if (item) {
-				r_fs_read (fs, item, 0, item->size);
-				if (!r_file_dump (str, item->data, item->size, 0)) {
-					free (npath);
-					free (str);
-					r_list_free (list);
-					return false;
+			bool ok = item && r_file_dump (str, NULL, 0, false);
+			ut64 offset = 0;
+			while (ok && offset < item->size) {
+				int chunk = R_MIN (item->size - offset, 65536);
+				int nread = r_fs_read (fs, item, offset, chunk);
+				ok = nread > 0 && nread <= chunk && item->data && r_file_dump (str, item->data, nread, true);
+				if (ok) {
+					offset += nread;
 				}
+			}
+			if (item) {
 				r_fs_close (fs, item);
+				r_fs_file_free (item);
+			}
+			if (!ok) {
+				free (npath);
+				free (str);
+				r_list_free (list);
+				return false;
 			}
 			break;
 		}
@@ -698,13 +709,13 @@ R_API RFSFile *r_fs_slurp(RFS *fs, const char *p) {
 			if (!file) {
 				continue;
 			}
-			int len = file->size > 0? r_fs_read (fs, file, 0, file->size): 0;
+			int len = !file->size? 0: file->size <= INT_MAX? r_fs_read (fs, file, 0, file->size): -1;
 			ut8 *data = file->data;
 			file->data = NULL;
 			if (root->p->close) {
 				root->p->close (file);
 			}
-			if (len < 0 || (!data && !(data = calloc (1, 1)))) {
+			if (len < 0 || (ut64)len != file->size || (!data && !(data = calloc (1, 1)))) {
 				free (data);
 				r_fs_file_free (file);
 				file = NULL;

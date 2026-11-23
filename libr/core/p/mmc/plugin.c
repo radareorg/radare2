@@ -538,11 +538,11 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 	if (panel->is_fs_panel) {
 		file = r_fs_open (core->fs, fullpath, false);
 		if (file) {
-			size = file->size;
+			size = file->size <= INT_MAX? file->size: 0;
 			start_addr = file->off;
 			if (size > 0) {
-				r_fs_read (core->fs, file, 0, file->size);
-				data = malloc (size);
+				int nread = r_fs_read (core->fs, file, 0, (int)size);
+				data = nread == size && file->data? malloc (size): NULL;
 				if (data) {
 					memcpy (data, file->data, size);
 				}
@@ -997,10 +997,10 @@ static void mmc_preview_scroll_text(RCore *core, MMCState *state, bool down, int
 	if (left_panel->is_fs_panel) {
 		file = r_fs_open (core->fs, fullpath, false);
 		if (file) {
-			size = file->size;
+			size = file->size <= INT_MAX? file->size: 0;
 			if (size > 0) {
-				r_fs_read (core->fs, file, 0, file->size);
-				data = malloc (size);
+				int nread = r_fs_read (core->fs, file, 0, (int)size);
+				data = nread == size && file->data? malloc (size): NULL;
 				if (data) {
 					memcpy (data, file->data, size);
 				}
@@ -1076,11 +1076,11 @@ static void mmc_draw_file_preview(RCore *core, RConsCanvas *canvas, MMCState *st
 	if (left_panel->is_fs_panel) {
 		file = r_fs_open (core->fs, fullpath, false);
 		if (file) {
-			size = file->size;
+			size = file->size <= INT_MAX? file->size: 0;
 			addr = file->off;
 			if (size > 0) {
-				r_fs_read (core->fs, file, 0, file->size);
-				data = malloc (size);
+				int nread = r_fs_read (core->fs, file, 0, (int)size);
+				data = nread == size && file->data? malloc (size): NULL;
 				if (data) {
 					memcpy (data, file->data, size);
 				}
@@ -1321,7 +1321,7 @@ static void mmc_show_info(RCore *core, MMCState *state, int width, int height) {
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
 
-			line = r_str_newf ("%s%s    Size: %d bytes", state->colors.bg, state->colors.fg, file->size);
+			line = r_str_newf ("%s%s    Size: %"PFMT64u" bytes", state->colors.bg, state->colors.fg, file->size);
 			r_cons_canvas_write_at (canvas, line, pane_x + 2, y++);
 			free (line);
 
@@ -1551,9 +1551,9 @@ static void mmc_copy_file_confirmed(RCore *core, MMCState *state) {
 				r_cons_message (core->cons, msg);
 				free (msg);
 			} else {
-				int len = file->size > 0? r_fs_read (core->fs, file, 0, file->size): 0;
+				int len = !file->size? 0: file->size <= INT_MAX? r_fs_read (core->fs, file, 0, file->size): -1;
 				char *msg;
-				if (file->size > 0 && (len <= 0 || !file->data)) {
+				if (len < 0 || (ut64)len != file->size || (len && !file->data)) {
 					msg = r_str_newf ("Failed to read file: %s", src_path);
 				} else if (!r_file_dump (dst_path, file->data, len, false)) {
 					msg = r_str_newf ("Cannot create file: %s", dst_path);

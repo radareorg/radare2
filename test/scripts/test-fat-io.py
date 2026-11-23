@@ -23,7 +23,7 @@ class Binding(C.Structure):
 class File(C.Structure):
     _fields_ = [("name", C.c_void_p), ("path", C.c_void_p),
                 ("off", C.c_uint64), ("id", C.c_uint64),
-                ("flags", C.c_uint32), ("size", C.c_uint32),
+                ("size", C.c_uint64), ("flags", C.c_uint32),
                 ("type", C.c_char), ("data", C.c_void_p)]
 
 
@@ -182,6 +182,60 @@ try:
         free_file(handle)
         handle = None
     print("FAT32 damaged and cyclic chains retain only their readable prefixes")
+finally:
+    if handle:
+        close(filesystem, handle)
+        free_file(handle)
+    free(filesystem)
+
+# The file is larger than 4 GiB; the compressed filesystem occupies under 1 KiB.
+image = bytearray(gzip.decompress((ROOT / "test/bins/fs/ext2-large/large.img.gz").read_bytes()))
+buffer = (C.c_ubyte * len(image)).from_buffer(image)
+filesystem = new()
+binding = Binding.from_address(filesystem)
+binding.init = 1
+binding.read_at = C.cast(read_at, C.c_void_p).value
+handle = None
+try:
+    assert mount(filesystem, b"ext2", b"/ext2", 0)
+    handle = open_file(filesystem, b"/ext2/large", False)
+    assert handle and File.from_address(handle).size == 0x100000011
+    for offset, length, expected in (
+            (0, 5, b"HEAD\n"),
+            (0x1000, 16, bytes(16)),
+            (0xfffffff8, 25, b"BEFORE!\nAFTER-4G:THE-END\n"),
+            (0x100000000, 17, b"AFTER-4G:THE-END\n"),
+            (0x100000010, 8, b"\n"),
+            (0x100000011, 1, None)):
+        result = read(filesystem, handle, offset, length)
+        wanted = len(expected) if expected is not None else -1
+        assert result == wanted, (hex(offset), result, wanted)
+        if result >= 0:
+            assert C.string_at(File.from_address(handle).data, result) == expected
+        assert File.from_address(handle).size == 0x100000011
+    print("ext2 sparse file: 64-bit size, reads across 4 GiB, holes and EOF preserved")
+finally:
+    if handle:
+        close(filesystem, handle)
+        free_file(handle)
+    free(filesystem)
+
+write = api("r_fs_write", C.c_int, C.c_void_p, C.c_void_p, C.c_uint64, C.c_char_p, C.c_int)
+filesystem = new()
+handle = None
+try:
+    assert mount(filesystem, b"tmp", b"/tmp", 0)
+    handle = open_file(filesystem, b"/tmp/file", True)
+    assert handle
+    assert write(filesystem, handle, 0, b"0123456789", 10) == 10
+    assert read(filesystem, handle, 7, 3) == 3
+    assert C.string_at(File.from_address(handle).data, 3) == b"789"
+    assert File.from_address(handle).size == 10
+    assert read(filesystem, handle, 10, 1) == 0
+    assert File.from_address(handle).size == 10
+    assert write(filesystem, handle, 0xffffffffffffffff, b"x", 1) == -1
+    assert File.from_address(handle).size == 10
+    print("Temporary filesystem reads preserve logical size and reject overflowing writes")
 finally:
     if handle:
         close(filesystem, handle)

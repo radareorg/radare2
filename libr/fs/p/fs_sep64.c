@@ -346,7 +346,7 @@ static RFSFile *fs_sep64_slurp(RFSRoot *root, const char *path) {
 	if (!f) {
 		return NULL;
 	}
-	if (fs_sep64_read (f, 0, ((Slice *)f->ptr)->size) < 0) {
+	if (f->size > INT_MAX || fs_sep64_read (f, 0, f->size) != f->size) {
 		r_fs_file_free (f);
 		return NULL;
 	}

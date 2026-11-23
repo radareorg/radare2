@@ -426,3 +426,32 @@ f root.txt
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=Filesystem metadata preserves a sparse file size above 4 GiB
+FILE=gzip://bins/fs/ext2-large/large.img.gz
+CMDS=<<EOF2
+mi /root/large~[2]
+mij /root/large~{size}
+EOF2
+EXPECT=<<EOF2
+4294967313
+4294967313
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=Whole buffer filesystem commands reject oversized files without wrapping
+FILE=gzip://bins/fs/ext2-large/large.img.gz
+CMDS=<<EOF2
+e log.level=0
+mc /root/large || echo use-chunked-read
+mo /root/large || echo use-chunked-read
+my /root/large || echo use-chunked-read
+EOF2
+EXPECT=<<EOF2
+use-chunked-read
+use-chunked-read
+use-chunked-read
+EOF2
+EXPECT_ERR=
+RUN

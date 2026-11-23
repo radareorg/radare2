@@ -3155,9 +3155,17 @@ R_API void r_core_visual_mounts(RCore *core) {
 						if (file) {
 							const char *dump_path = r_cons_visual_readln (core->cons, "Dump path (ej: /tmp/file): ", NULL);
 							if (dump_path && *dump_path) {
-								r_fs_read (core->fs, file, 0, file->size);
-								r_file_dump (dump_path, file->data, file->size, 0);
-								r_cons_printf (core->cons, "Done\n");
+								bool ok = r_file_dump (dump_path, NULL, 0, false);
+								ut64 offset = 0;
+								while (ok && offset < file->size) {
+									int chunk = R_MIN (file->size - offset, 65536);
+									int nread = r_fs_read (core->fs, file, offset, chunk);
+									ok = nread > 0 && nread <= chunk && file->data && r_file_dump (dump_path, file->data, nread, true);
+									if (ok) {
+										offset += nread;
+									}
+								}
+								r_cons_println (core->cons, ok? "Done": "Cannot dump file");
 							}
 							r_fs_close (core->fs, file);
 						} else {

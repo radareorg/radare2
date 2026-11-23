@@ -20,8 +20,8 @@ static RFSFile *fs_io_open(RFSRoot *root, const char *path, bool create) {
 	char *res = root->iob.system (root->iob.io, cmd);
 	R_FREE (cmd);
 	if (res) {
-		ut32 size = 0;
-		if (sscanf (res, "%u", &size) != 1) {
+		ut64 size = 0;
+		if (sscanf (res, "%"PFMT64u, &size) != 1) {
 			size = 0;
 		}
 		R_FREE (res);

@@ -273,7 +273,7 @@ static bool bfs_read_stream(BeosFS *ctx, BeosInode *inode, ut64 offset, ut8 *buf
 			if (pos < consumed + run_size) {
 				ut64 offset_in_run = pos - consumed;
 				ut64 disk_offset = bfs_block_to_offset (ctx, run) + offset_in_run;
-				ut32 chunk = R_MIN ((ut32) (run_size - offset_in_run), remaining);
+				ut32 chunk = R_MIN (run_size - offset_in_run, (ut64)remaining);
 				if (!bfs_read_at (ctx, disk_offset, buf, chunk)) {
 					return false;
 				}

@@ -121,7 +121,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		if (list) {
 			r_list_foreach (list, iter, file) {
 				if (minus_ele) {
-					cb_printf (cons, "%c %8d %s\n", file->type, file->size, file->name);
+					cb_printf (cons, "%c %8"PFMT64u" %s\n", file->type, file->size, file->name);
 				} else {
 					cb_printf (cons, "%c %s\n", file->type, file->name);
 				}
@@ -253,15 +253,18 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		char *abspath = fs_abspath (shell, input);
 		file = r_fs_open (fs, abspath, false);
 		if (file) {
-			r_fs_read (fs, file, 0, file->size);
-			if (file->data) {
+			int nread = file->size <= INT_MAX? r_fs_read (fs, file, 0, file->size): -1;
+			if (nread >= 0 && (ut64)nread == file->size && file->data) {
 				char *b64 = r_base64_encode_dyn ((const ut8 *)file->data, file->size);
 				if (b64) {
 					cb_printf (cons, "%s\n", b64);
 					free (b64);
 				}
+			} else {
+				R_LOG_ERROR ("Cannot read file into a single buffer");
 			}
 			r_fs_close (fs, file);
+			r_fs_file_free (file);
 		} else {
 			R_LOG_ERROR ("Cannot open file");
 		}
@@ -275,9 +278,21 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		}
 		file = r_fs_open (fs, abspath, false);
 		if (file) {
-			r_fs_read (fs, file, 0, file->size);
-			r_file_dump (fname, file->data, file->size, 0);
+			bool ok = fname && r_file_dump (fname, NULL, 0, false);
+			ut64 offset = 0;
+			while (ok && offset < file->size) {
+				int chunk = R_MIN (file->size - offset, 65536);
+				int nread = r_fs_read (fs, file, offset, chunk);
+				ok = nread > 0 && nread <= chunk && file->data && r_file_dump (fname, file->data, nread, true);
+				if (ok) {
+					offset += nread;
+				}
+			}
+			if (!ok) {
+				R_LOG_ERROR ("Cannot extract file");
+			}
 			r_fs_close (fs, file);
+			r_fs_file_free (file);
 		} else {
 			char *f = r_str_newf ("./%s", fname);
 			if (!r_fs_dir_dump (fs, abspath, f)) {
@@ -402,8 +417,8 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		if (abspath) {
 			file = r_fs_open (fs, abspath, false);
 			if (file) {
-				int nread = r_fs_read (fs, file, 0, file->size);
-				if (nread <= 0 || !file->data) {
+				int nread = file->size <= INT_MAX? r_fs_read (fs, file, 0, file->size): -1;
+				if (nread <= 0 || (ut64)nread != file->size || !file->data) {
 					R_LOG_ERROR ("Cannot read file (backing fd closed?)");
 					r_fs_close (fs, file);
 					r_fs_file_free (file);
@@ -411,7 +426,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 					free (data);
 					return true;
 				}
-				char *uri = r_str_newf ("malloc://%d", file->size);
+				char *uri = r_str_newf ("malloc://%"PFMT64u, file->size);
 				RIODesc *fd = fs->iob.open_at (fs->iob.io, uri, R_PERM_RW, 0, 0);
 				free (uri);
 				if (fd) {

@@ -595,7 +595,7 @@ static RFSFile *fossil_file_from_node(RFSRoot *root, const char *path, FossilNod
 		file->type = R_FS_FILE_TYPE_SPECIAL;
 	} else {
 		file->type = R_FS_FILE_TYPE_REGULAR;
-		file->size = node->source.size > UT32_MAX? UT32_MAX: (ut32)node->source.size;
+		file->size = node->source.size;
 	}
 	file->time = node->dir.mtime;
 	file->perm = node->dir.mode & 0777;
@@ -709,7 +709,7 @@ static RList *fs_fossil_dir(RFSRoot *root, const char *path, R_UNUSED ut64 id, R
 				if (!(de.mode & FOSSIL_MODE_DIR)) {
 					FossilEntry source;
 					if (fossil_source_open (fs, &node.source, de.entry, &source) && source.gen == de.gen) {
-						file->size = source.size > UT32_MAX? UT32_MAX: (ut32)source.size;
+						file->size = source.size;
 					}
 				}
 				r_list_append (list, file);

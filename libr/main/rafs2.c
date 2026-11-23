@@ -168,11 +168,24 @@ static int rafs2_list(Rafs2State *s, const char *path) {
 		RFSFile *file;
 		r_list_foreach (list, iter, file) {
 			char type = file->type;
-			printf ("%c %10u  %s\n", type, file->size, file->name);
+			printf ("%c %10"PFMT64u"  %s\n", type, file->size, file->name);
 		}
 	}
 	r_list_free (list);
 	return 0;
+}
+
+static bool rafs2_copy(RFS *fs, RFSFile *file, FILE *output) {
+	ut64 offset = 0;
+	while (offset < file->size) {
+		int chunk = R_MIN (file->size - offset, 65536);
+		int nread = r_fs_read (fs, file, offset, chunk);
+		if (nread < 1 || nread > chunk || !file->data || fwrite (file->data, 1, nread, output) != nread) {
+			return false;
+		}
+		offset += nread;
+	}
+	return true;
 }
 
 static int rafs2_cat(Rafs2State *s, const char *path) {
@@ -183,15 +196,10 @@ static int rafs2_cat(Rafs2State *s, const char *path) {
 		return 1;
 	}
 
-	if (file->size > 0) {
-		int len = r_fs_read (fs, file, 0, file->size);
-		if (len > 0 && file->data) {
-			fwrite (file->data, 1, len, stdout);
-		}
-	}
-
+	bool ok = rafs2_copy (fs, file, stdout);
 	r_fs_close (fs, file);
-	return 0;
+	r_fs_file_free (file);
+	return ok? 0: 1;
 }
 
 static int rafs2_details(Rafs2State *s) {
@@ -258,24 +266,22 @@ static int rafs2_extract(Rafs2State *s, const char *paths) {
 		return 1;
 	}
 
-	int len = file->size > 0? r_fs_read (fs, file, 0, file->size): 0;
-	if (file->size > 0 && (len <= 0 || !file->data)) {
-		R_LOG_ERROR ("Failed to read file: %s", src);
-		r_fs_close (fs, file);
-		free (src);
-		return 1;
+	FILE *output = r_sandbox_fopen (dst, "wb");
+	bool ok = output && rafs2_copy (fs, file, output);
+	if (output && fclose (output)) {
+		ok = false;
 	}
-	// r_file_dump honors the sandbox, this main also runs inside r2
-	if (!r_file_dump (dst, file->data, len, false)) {
-		r_fs_close (fs, file);
-		free (src);
-		return 1;
+	if (ok) {
+		printf ("Extracted %s -> %s (%"PFMT64u" bytes)\n", src, dst, file->size);
+	} else if (!output) {
+		R_LOG_ERROR ("Cannot open '%s' for writing", dst);
+	} else {
+		R_LOG_ERROR ("Failed to extract file: %s", src);
 	}
-	printf ("Extracted %s -> %s (%d bytes)\n", src, dst, len);
-
 	r_fs_close (fs, file);
+	r_fs_file_free (file);
 	free (src);
-	return 0;
+	return ok? 0: 1;
 }
 
 static int rafs2_shell(Rafs2State *s) {

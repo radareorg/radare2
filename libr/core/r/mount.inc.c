@@ -134,7 +134,7 @@ static bool mount_ls(RCmdContext *ctx) {
 			if (quiet) {
 				r_cons_printf (ctx->cons, "%s%s\n", name, ftype == 'd'? "/": "");
 			} else if (long_format) {
-				r_cons_printf (ctx->cons, "%c %10u %s\n", ftype, file->size, name);
+				r_cons_printf (ctx->cons, "%c %10"PFMT64u" %s\n", ftype, file->size, name);
 			} else if (is_deleted && file->id != UT64_MAX) {
 				r_cons_printf (ctx->cons, "%c 0x%"PFMT64x" %s\n", ftype, file->id, name);
 			} else {
@@ -206,7 +206,7 @@ static bool mount_deleted_walk(RCmdContext *ctx, const char *path, const char *d
 				pj_end (pj);
 			} else {
 				char *escaped = r_str_escape_utf8_keep_printable (child, false, true);
-				r_cons_printf (ctx->cons, "0x%"PFMT64x" %c %u %s\n", file->id, file->type, file->size, escaped? escaped: child);
+				r_cons_printf (ctx->cons, "0x%"PFMT64x" %c %"PFMT64u" %s\n", file->id, file->type, file->size, escaped? escaped: child);
 				free (escaped);
 			}
 		}
@@ -492,7 +492,7 @@ static bool mount_recover(RCmdContext *ctx) {
 	r_cons_break_pop (core->cons);
 	bool ok = status == R_FS_WALK_COMPLETE && written == file->size;
 	if (!ok) {
-		R_LOG_WARN ("Partial recovery: %"PFMT64u" of %u bytes, flags 0x%x",
+		R_LOG_WARN ("Partial recovery: %"PFMT64u" of %"PFMT64u" bytes, flags 0x%x",
 			written == UT64_MAX? 0: written, file->size, file->flags);
 	}
 	r_fs_close (core->fs, file);
@@ -897,7 +897,7 @@ static bool mount_info(RCmdContext *ctx) {
 		r_cons_println (ctx->cons, pj_string (pj));
 		pj_free (pj);
 	} else if (file->off == UT64_MAX) {
-		r_cons_printf (ctx->cons, "size %u offset unknown\n", file->size);
+		r_cons_printf (ctx->cons, "size %"PFMT64u" offset unknown\n", file->size);
 		ok = mode != 's';
 		if (!ok) {
 			R_LOG_ERROR ("File has no known disk offset");
@@ -906,7 +906,7 @@ static bool mount_info(RCmdContext *ctx) {
 		if (mode == 's') {
 			r_core_seek (core, file->off, true);
 		}
-		r_cons_printf (ctx->cons, "'f file %u 0x%08"PFMT64x"\n", file->size, file->off);
+		r_cons_printf (ctx->cons, "'f file %"PFMT64u" 0x%08"PFMT64x"\n", file->size, file->off);
 	}
 	r_fs_close (core->fs, file);
 	r_fs_file_free (file);
@@ -937,7 +937,7 @@ static bool mount_open(RCmdContext *ctx) {
 	}
 	bool ok = false;
 	if (file->size > 0) {
-		char *uri = r_str_newf ("malloc://%u", file->size);
+		char *uri = r_str_newf ("malloc://%"PFMT64u, file->size);
 		RIODesc *fd = r_io_open (core->io, uri, R_PERM_RW, 0);
 		free (uri);
 		if (fd) {

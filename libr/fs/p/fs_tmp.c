@@ -7,7 +7,7 @@ typedef struct r_fs_tmp_node_t {
 	bool is_dir;
 	RList *children;
 	ut8 *data;
-	ut32 size;
+	ut64 size;
 	ut64 time;
 } RFSTmpNode;
 
@@ -190,7 +190,6 @@ static int fs_tmp_read(RFSFile *file, ut64 addr, int len) {
 	}
 	if ((ut64)node->size <= addr) {
 		R_FREE (file->data);
-		file->size = 0;
 		return 0;
 	}
 	ut64 remaining = node->size - addr;
@@ -203,7 +202,6 @@ static int fs_tmp_read(RFSFile *file, ut64 addr, int len) {
 		}
 		memcpy (file->data, node->data + (size_t)addr, (size_t)tocopy);
 	}
-	file->size = (ut32)tocopy;
 	return (int)tocopy;
 }
 
@@ -222,8 +220,8 @@ static int fs_tmp_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 	if (!node || node->is_dir) {
 		return -1;
 	}
-	ut64 needed = addr + len;
-	if (needed > UT32_MAX) {
+	ut64 needed;
+	if (r_add_overflow_ut64 (addr, (ut64)len, &needed) || needed > SIZE_MAX) {
 		return -1;
 	}
 	if (needed > node->size) {
@@ -235,7 +233,7 @@ static int fs_tmp_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 			memset (newdata + node->size, 0, (size_t)(needed - node->size));
 		}
 		node->data = newdata;
-		node->size = (ut32)needed;
+		node->size = needed;
 	}
 	if (len > 0) {
 		memcpy (node->data + (size_t)addr, data, (size_t)len);
