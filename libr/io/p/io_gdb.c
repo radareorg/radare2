@@ -241,6 +241,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			 " :tls lm offset   - resolve TLS for the selected thread and load module\n"
 			 " :tib             - resolve the selected Windows thread's TIB address\n"
 			 " :catch-syscalls <all|off|number ...> - configure remote syscall stops\n"
+			 " :nonstop [on|off|wait] - inspect, change, or wait in non-stop mode\n"
 			 " :pkt s           - send packet 's'\n"
 			 " :rd              - show reverse debugging availability\n"
 			 " :dsb             - step backwards\n"
@@ -313,6 +314,22 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	}
 	if (!strcmp (cmd, "osabi")) {
 		return r_str_newf ("%s\n", r_str_get_fail (desc->target.osabi, "unknown"));
+	}
+	if (!strcmp (cmd, "nonstop") || r_str_startswith (cmd, "nonstop ")) {
+		const char *action = r_str_trim_head_ro (cmd + strlen ("nonstop"));
+		if (!*action) {
+			return strdup (desc->non_stop? "on\n": "off\n");
+		}
+		if (!strcmp (action, "wait")) {
+			if (gdbr_wait_nonstop (desc) >= 0) {
+				return r_str_newf ("thread %d: %d\n", desc->stop_reason.thread.tid, desc->stop_reason.reason);
+			}
+		} else if ((!strcmp (action, "on") || !strcmp (action, "off"))
+		    && gdbr_set_nonstop (desc, !strcmp (action, "on"))) {
+			return strdup ("OK\n");
+		}
+		R_LOG_ERROR ("Cannot complete GDB non-stop operation");
+		return NULL;
 	}
 	if (!strcmp (cmd, "catch-syscalls") || r_str_startswith (cmd, "catch-syscalls ")) {
 		if (!set_syscall_catchpoints (desc, r_str_trim_head_ro (cmd + strlen ("catch-syscalls")))) {

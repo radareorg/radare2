@@ -11,6 +11,7 @@ typedef unsigned int ssize_t;
 #include "r_types_base.h"
 #include "r_socket.h"
 #include "r_th.h"
+#include <sdb/ht_uu.h>
 
 #define MSG_OK 0
 #define MSG_NOT_SUPPORTED -1
@@ -205,6 +206,12 @@ typedef struct libgdbr_t {
 	libgdbr_caps_t caps;
 	libgdbr_regs_t regs;
 	ut64 library_generation;
+	ut64 thread_stop_generation;
+	RList *stop_events;
+	HtUU *stopped_threads;
+	char *stop_notification;
+	bool non_stop;
+	bool draining_stops;
 
 	int remote_file_fd; // For remote file I/O
 	int num_retries; // number of retries for packet reading
@@ -258,6 +265,7 @@ int gdbr_set_reg_profile(libgdbr_t *g, const char *str);
 
 void gdbr_stop_reason_fini(libgdbr_stop_reason_t *reason);
 void gdbr_stop_reason_reset(libgdbr_stop_reason_t *reason);
+void gdbr_nonstop_reset(libgdbr_t *g);
 
 /*!
  * \brief frees all buffers and cleans the libgdbr instance stuff

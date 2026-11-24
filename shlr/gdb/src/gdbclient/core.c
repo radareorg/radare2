@@ -281,6 +281,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		goto end;
 	}
 	g->connected = 0;
+	gdbr_nonstop_reset (g);
 	g->no_ack = false;
 	g->ack_retries = -1;
 	g->read_len = 0;
@@ -413,6 +414,7 @@ int gdbr_disconnect(libgdbr_t *g) {
 		goto end;
 	}
 	gdbr_regs_invalidate (g);
+	gdbr_nonstop_reset (g);
 	gdbr_stop_reason_fini (&g->stop_reason);
 	g->stop_reason.is_valid = false;
 	if (g->target.valid) {
@@ -580,16 +582,177 @@ static int read_stop_reply(libgdbr_t *g, bool attaching, bool running) {
 	}
 }
 
+static bool reply_ok(const libgdbr_t *g) {
+	return g->data_len == 2 && !memcmp (g->data, "OK", 2);
+}
+
+static bool send_query_ok(libgdbr_t *g, const char *query) {
+	return send_msg (g, query) >= 0 && read_packet (g, false) >= 0 && reply_ok (g);
+}
+
+static ut64 nonstop_thread_key(const libgdbr_t *g, int pid, int tid) {
+	return (g->stub_features.multiprocess? (ut64)(ut32)pid << 32: 0) | (ut32)tid;
+}
+
+static void stop_event_free(void *data) {
+	gdbr_stop_reason_fini (data);
+	free (data);
+}
+
+static bool queue_stop_event(libgdbr_t *g) {
+	if (r_list_length (g->stop_events) >= GDBR_THREADS_MAX || handle_stop_reason (g) < 0) {
+		return false;
+	}
+	libgdbr_stop_reason_t *stop = &g->stop_reason;
+	if (stop->reason != R_DEBUG_REASON_DEAD) {
+		if (!stop->thread.present || stop->thread.tid <= 0) {
+			return false;
+		}
+		ut64 key = nonstop_thread_key (g, stop->thread.pid, stop->thread.tid);
+		if (!ht_uu_update (g->stopped_threads, key, g->thread_stop_generation)) {
+			return false;
+		}
+	} else if (!g->stub_features.multiprocess) {
+		g->thread_stop_generation++;
+	}
+	libgdbr_stop_reason_t *event = r_mem_dup (stop, sizeof (*stop));
+	if (!event) {
+		return false;
+	}
+	memset (stop, 0, sizeof (*stop));
+	if (!r_list_append (g->stop_events, event)) {
+		stop_event_free (event);
+		return false;
+	}
+	return true;
+}
+
+static bool collect_stop_events(libgdbr_t *g, bool query) {
+	bool ok;
+	g->draining_stops = true;
+	if (query) {
+		R_FREE (g->stop_notification);
+		ok = send_msg (g, "?") >= 0 && read_packet (g, false) >= 0;
+	} else {
+		size_t len = strlen (g->stop_notification);
+		ok = gdbr_data_reserve (g, len);
+		if (ok) {
+			memcpy (g->data, g->stop_notification, len + 1);
+			g->data_len = len;
+		}
+		R_FREE (g->stop_notification);
+	}
+	while (ok && !reply_ok (g)) {
+		ok = queue_stop_event (g) && send_msg (g, "vStopped") >= 0 && read_packet (g, false) >= 0;
+	}
+	g->draining_stops = false;
+	return ok;
+}
+
+static bool publish_stop_event(libgdbr_t *g) {
+	libgdbr_stop_reason_t *event = r_list_pop_head (g->stop_events);
+	if (!event) {
+		return false;
+	}
+	gdbr_regs_invalidate (g);
+	gdbr_stop_reason_fini (&g->stop_reason);
+	g->stop_reason = *event;
+	free (event);
+	return true;
+}
+
+static int wait_nonstop(libgdbr_t *g) {
+	g->stop_reason.is_valid = false;
+	for (;;) {
+		if (g->stop_notification && !collect_stop_events (g, false)) {
+			return -1;
+		}
+		if (publish_stop_event (g)) {
+			return 0;
+		}
+		int ret = read_packet (g, true);
+		if (ret == GDBR_READ_NOTIFICATION || ret == GDBR_READ_TIMEOUT) {
+			continue;
+		}
+		if (ret == GDBR_READ_INTERRUPTED) {
+			g->isbreaked = false;
+			r_cons_break_clear (r_cons_singleton ());
+			if (send_query_ok (g, "vCtrlC") || (g->stub_features.vcont.t && send_query_ok (g, "vCont;t"))) {
+				continue;
+			}
+		}
+		return -1;
+	}
+}
+
+int gdbr_wait_nonstop(libgdbr_t *g) {
+	int ret = -1;
+	if (gdbr_lock_enter (g) && g->non_stop) {
+		RCons *cons = r_cons_singleton ();
+		void *bed = r_cons_sleep_begin (cons);
+		ret = wait_nonstop (g);
+		r_cons_sleep_end (cons, bed);
+	}
+	gdbr_lock_leave (g);
+	return ret;
+}
+
+bool gdbr_set_nonstop(libgdbr_t *g, bool enable) {
+	bool ok = false;
+	if (!gdbr_lock_enter (g)) {
+		goto end;
+	}
+	if (g->non_stop == enable) {
+		ok = true;
+		goto end;
+	}
+	if (!enable) {
+		ok = send_query_ok (g, "QNonStop:0");
+		if (ok) {
+			gdbr_nonstop_reset (g);
+			g->stop_reason.is_valid = false;
+		}
+		goto end;
+	}
+	if (!g->stub_features.QNonStop || !g->stub_features.vcont.c) {
+		goto end;
+	}
+	g->stop_events = r_list_newf (stop_event_free);
+	g->stopped_threads = ht_uu_new0 ();
+	if (!g->stop_events || !g->stopped_threads) {
+		gdbr_nonstop_reset (g);
+		goto end;
+	}
+	g->non_stop = true;
+	if (!send_query_ok (g, "QNonStop:1")) {
+		gdbr_nonstop_reset (g);
+		goto end;
+	}
+	g->stop_reason.is_valid = false;
+	ok = collect_stop_events (g, true);
+	if (!ok && send_query_ok (g, "QNonStop:0")) {
+		gdbr_nonstop_reset (g);
+	}
+end:
+	gdbr_lock_leave (g);
+	return ok;
+}
+
 int gdbr_stop_reason(libgdbr_t *g) {
 	int ret = -1;
 	if (!gdbr_lock_enter (g)) {
 		goto end;
 	}
-	if (!g || send_msg (g, "?") < 0) {
-		ret = -1;
-		goto end;
+	if (g->non_stop) {
+		if (g->stop_notification && !collect_stop_events (g, false)) {
+			goto end;
+		}
+		if (publish_stop_event (g) || (collect_stop_events (g, true) && publish_stop_event (g))) {
+			ret = 0;
+		}
+	} else if (send_msg (g, "?") >= 0) {
+		ret = read_stop_reply (g, false, false);
 	}
-	ret = read_stop_reply (g, false, false);
 end:
 	gdbr_lock_leave (g);
 	return ret;
@@ -1034,16 +1197,11 @@ int gdbr_step(libgdbr_t *g, int tid) {
 		goto end;
 	}
 
-	if (tid <= 0 || write_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid,
-		    g->stub_features.multiprocess) < 0) {
-		send_vcont (g, "vCont?", NULL);
-		r_strf_var (hcd, 32, "Hc%d", tid);
-		send_vcont (g, hcd, NULL);
+	if (tid <= 0) {
 		ret = send_vcont (g, CMD_C_STEP, NULL);
-		goto end;
+	} else if (write_thread_id (thread_id, sizeof (thread_id), g->pid, tid, g->stub_features.multiprocess) >= 0) {
+		ret = send_vcont (g, CMD_C_STEP, thread_id);
 	}
-
-	ret = send_vcont (g, CMD_C_STEP, thread_id);
 end:
 	gdbr_lock_leave (g);
 	return ret;
@@ -1063,7 +1221,7 @@ int gdbr_continue(libgdbr_t *g, int pid, int tid, int sig) {
 	} else {
 		snprintf (command, sizeof (command) - 1, "%s%02x", CMD_C_CONT_SIG, sig);
 	}
-	if (tid <= 0 || write_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid,
+	if (tid <= 0 || write_thread_id (thread_id, sizeof (thread_id) - 1, pid, tid,
 		    g->stub_features.multiprocess) < 0) {
 		ret = send_vcont (g, command, NULL);
 		goto end;
@@ -1303,77 +1461,53 @@ end:
 }
 
 int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
-	char tmp[255] = {0};
-	int ret = -1;
-	void *bed = NULL;
-
 	if (!g) {
 		return -1;
 	}
-
+	bool supported = false;
+	switch (*command) {
+	case 's': supported = g->stub_features.vcont.s; break;
+	case 'S': supported = g->stub_features.vcont.S; break;
+	case 'c': supported = g->stub_features.vcont.c; break;
+	case 'C': supported = g->stub_features.vcont.C; break;
+	case 't': supported = g->stub_features.vcont.t; break;
+	case 'r': supported = g->stub_features.vcont.r; break;
+	}
+	char packet[128];
+	if (supported) {
+		snprintf (packet, sizeof (packet), "vCont;%s%s%s", command, thread_id? ":": "", thread_id? thread_id: "");
+	}
+	int ret = -1;
 	RCons *cons = r_cons_singleton ();
-	if (!g->stub_features.vContSupported) {
-		ret = snprintf (tmp, sizeof (tmp) - 1, "%s", command);
-	} else {
-		bool supported = false;
-		switch (*command) {
-		case 's':
-			if (g->stub_features.vcont.s) {
-				supported = true;
-			}
-			break;
-		case 'S':
-			if (g->stub_features.vcont.S) {
-				supported = true;
-			}
-			break;
-		case 'c':
-			if (g->stub_features.vcont.c) {
-				supported = true;
-			}
-			break;
-		case 'C':
-			if (g->stub_features.vcont.C) {
-				supported = true;
-			}
-			break;
-		case 't':
-			if (g->stub_features.vcont.t) {
-				supported = true;
-			}
-			break;
-		case 'r':
-			if (g->stub_features.vcont.r) {
-				supported = true;
-			}
-			break;
-		}
-		if (supported) {
-			if (!thread_id) {
-				ret = snprintf (tmp, sizeof (tmp) - 1, "%s;%s", CMD_C, command);
-			} else {
-				ret = snprintf (tmp, sizeof (tmp) - 1, "%s;%s:%s", CMD_C, command, thread_id);
-			}
-		} else {
-			ret = snprintf (tmp, sizeof (tmp) - 1, "%s", command);
-		}
-	}
-	if (ret < 0) {
-		return ret;
-	}
-
+	void *bed = NULL;
 	if (!gdbr_lock_enter (g)) {
 		goto end;
 	}
 	gdbr_regs_invalidate (g);
 	g->stop_reason.is_valid = false;
-	ret = send_msg (g, tmp);
-	if (ret < 0) {
+	if (g->non_stop && !supported) {
 		goto end;
 	}
-
+	if (send_msg (g, supported? packet: command) < 0) {
+		goto end;
+	}
 	bed = r_cons_sleep_begin (cons);
-	ret = read_stop_reply (g, false, true);
+	if (!g->non_stop) {
+		ret = read_stop_reply (g, false, true);
+		goto end;
+	}
+	if (read_packet (g, false) < 0 || !reply_ok (g)) {
+		goto end;
+	}
+	if (thread_id) {
+		int pid = 0, tid = 0;
+		if (read_thread_id (thread_id, &pid, &tid, g->stub_features.multiprocess) >= 0) {
+			ht_uu_delete (g->stopped_threads, nonstop_thread_key (g, pid, tid));
+		}
+	} else {
+		g->thread_stop_generation++;
+	}
+	ret = wait_nonstop (g);
 end:
 	r_cons_sleep_end (cons, bed);
 	gdbr_lock_leave (g);
@@ -1927,10 +2061,12 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 			dpid->uid = dpid->gid = -1; // TODO
 			dpid->pid = ttid;
 			dpid->runnable = true;
-			// This is what linux native does as fallback, but
-			// probably not correct.
-			// TODO: Implement getting correct thread status from GDB
 			dpid->status = R_DBG_PROC_STOP;
+			if (g->non_stop) {
+				bool found;
+				ut64 generation = ht_uu_find (g->stopped_threads, nonstop_thread_key (g, tpid, ttid), &found);
+				dpid->status = found && generation == g->thread_stop_generation? R_DBG_PROC_STOP: R_DBG_PROC_RUN;
+			}
 			r_list_append (list, dpid);
 			dpid = NULL;
 			ptr = ptr2;
@@ -1943,12 +2079,6 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 		}
 		if (g->data[0] == 'l') {
 			break;
-		}
-	}
-	// This is the all I've been able to extract from gdb so far
-	r_list_foreach (list, iter, dpid) {
-		if (gdbr_is_thread_dead (g, pid, dpid->pid)) {
-			dpid->status = R_DBG_PROC_DEAD;
 		}
 	}
 

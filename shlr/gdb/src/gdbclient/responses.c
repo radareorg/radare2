@@ -199,7 +199,7 @@ static int stop_reason_death(libgdbr_t *g, bool is_signal) {
 		if (!end || (*end && strcmp (end, ";")) || pid == 0 || pid > INT_MAX) {
 			return -1;
 		}
-	} else {
+	} else if (!g->non_stop) {
 		gdbr_disconnect (g);
 	}
 	libgdbr_stop_reason_t *stop = &g->stop_reason;
