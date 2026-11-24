@@ -131,7 +131,7 @@ rapatch2
 EOF
 EXPECT=<<EOF
 1
-Usage: rapatch2 [-p N] [-sv] [-R] [patchfile] ([targetfile])
+Usage: rapatch2 [-B] [-p N] [-sv] [-R] [patchfile] ([targetfile])
 EOF
 EXPECT_ERR=
 RUN

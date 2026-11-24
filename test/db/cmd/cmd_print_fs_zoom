@@ -116,13 +116,13 @@ EOF2
 EXPECT_ERR=
 RUN
 
-NAME=Filesystem zoom reports unsupported allocation maps
+NAME=Filesystem zoom classifies live files in NTFS
 FILE=bins/fs/ntfs.img
 CMDS=<<EOF2
 p=gj 2
 EOF2
 EXPECT=<<EOF2
-{"mount":"/root","from":0,"to":2097152,"blocksize":1048576,"allocation_status":"unsupported","file_status":"unsupported","filesystem":[]}
+{"mount":"/root","from":0,"to":2097152,"blocksize":1048576,"allocation_status":"complete","file_status":"complete","filesystem":[{"addr":0,"size":1048576,"value":192,"flags":35,"state":"file"},{"addr":1048576,"size":1048576,"value":192,"flags":35,"state":"file"}]}
 EOF2
 EXPECT_ERR=
 RUN
