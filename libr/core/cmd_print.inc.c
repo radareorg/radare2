@@ -274,6 +274,7 @@ static RCoreHelpMessage help_msg_p_equal = {
 	"p=", "d", "min/max/number of unique bytes in block",
 	"p=", "e", "entropy for each filesize/blocksize",
 	"p=", "F", "number of 0xFF bytes for each filesize/blocksize",
+	"p=g", "[j] [N]", "filesystem allocation and file extents (see p=g?)",
 	"p=", "i", "number of invalid instructions per block",
 	"p=", "j", "number of jumps and conditional jumps in block",
 	"p=", "m", "number of flags and marks in block",
@@ -667,6 +668,7 @@ static RCoreHelpMessage help_msg_pz = {
 	"pze", "[j]", "calculate entropy and expand to 0-255 range",
 	"pzf", "[j]", "count of flags in block (same as pzm)",
 	"pzF", "[j]", "number of bytes with value 0xFF",
+	"pzg", "[j] [N]", "filesystem allocation and file extents (same as p=g)",
 	"pzh", "[j]", "head (first byte value); This is the default mode",
 	"pzi", "[j]", "number of invalid instructions per block",
 	"pzm", "[j]", "number of flags and marks in block (same as pzf)",
@@ -8133,8 +8135,17 @@ static int cmd_print_md(RCore *core, const char *input) {
 	return 0;
 }
 
+#include "cmd_print_fs.inc.c"
+
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
+	if (r_str_startswith (input, "=g") || r_str_startswith (input, "zg")) {
+		return cmd_print_fs_zoom (core, input + 2);
+	}
+	if (input[0] == 'z' && (!input[1] || input[1] == ' ' || input[1] == 'j')
+			&& core->print->zoom->mode == 'g') {
+		return cmd_print_fs_zoom (core, input + 1);
+	}
 	st64 l;
 	int i, len, ret;
 	ut8 *block = NULL;

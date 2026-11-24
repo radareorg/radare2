@@ -3246,6 +3246,7 @@ static bool cb_zoombyte(void *user, void *data) {
 	case 'e':
 	case 'f':
 	case 'F':
+	case 'g':
 	case 'h':
 	case 'i':
 	case 'm':

@@ -211,6 +211,65 @@ For allocation ranges, logical is the volume-relative offset.
 FAT allocation maps exclude reserved sectors, FAT copies and the fixed root
 region. ORPHAN requires a complete walk of live directory ownership and
 selects allocated clusters without a live owner; it differs from FREE.
+.Sh FILESYSTEM ZOOM
+Use
+.Ic pzg
+to display the mounted filesystem as an address grid.
+.Ic p=gj Ar N
+and
+.Ic pzgj Ar N
+return the same map as JSON, with up to
+.Ar N
+cells. Set
+.Va zoom.byte
+to
+.Cm g
+to use this mode for
+.Ic pz
+and
+.Ic pzj .
+.Pp
+.Va fs.cwd
+selects the containing mount. The default directory
+.Pa /
+falls back to
+.Pa /root
+or the only mount if there is no mount at
+.Pa / .
+The physical range starts at the mount offset or
+.Va zoom.from ,
+whichever is higher, and ends at the active image size or
+.Va zoom.to ,
+whichever is lower. A zero
+.Va zoom.to
+uses the image size. The end is exclusive.
+.Pp
+The
+.Dq filesystem
+array contains cells with
+.Dq addr ,
+.Dq size ,
+.Dq value ,
+.Dq flags
+and
+.Dq state .
+The address and size are physical bytes. Each cell ORs together the flags of
+ranges that touch it. Bits 1, 2, 4, 8 and 16 denote free (unallocated),
+allocated, orphan, bad and unknown space. Bits 32 and 64 denote live file
+extents and retained deleted-file claims. Deleted claims can overlap present
+ownership or free space and do not establish recoverability. Sparse holes
+have no physical location and do not set a flag.
+.Pp
+Values 0, 32, 64, 96, 128, 160, 192, 224 and 255 denote unmapped, free,
+allocated, orphan, bad, unknown, live file, deleted claim, and live file plus
+deleted claim. The highest applicable value is displayed. Cells may contain more than one flag at coarse
+resolutions. Unmapped space includes sectors outside the filesystem's
+allocation map. The
+.Dq allocation_status
+and
+.Dq file_status
+fields report completeness, including partial, stopped and unsupported
+scans. An unsupported allocation map yields an empty array.
 .Sh JOURNAL RECOVERY
 The ext2 plugin also reads internal ext3 JBD and ext4 JBD2 journals through
 plugin commands. It scans retained checkpointed records as well as the active

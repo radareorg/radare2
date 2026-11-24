@@ -1,0 +1,128 @@
+NAME=Filesystem zoom bins combine FAT allocation and file extents
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF2
+e zoom.from=0x2a00
+e zoom.to=0x3000
+pzg 3
+p=gj 3
+e zoom.from=0x3a00
+e zoom.to=0x4000
+pzgj 3
+e zoom.from=0x6200
+e zoom.to=0x6400
+pzgj 1
+EOF2
+EXPECT=<<EOF2
+/root allocation=complete files=partial
+0x00002a00  FLA
+{"mount":"/root","from":10752,"to":12288,"blocksize":512,"allocation_status":"complete","file_status":"partial","filesystem":[{"addr":10752,"size":512,"value":32,"flags":1,"state":"free"},{"addr":11264,"size":512,"value":192,"flags":34,"state":"file"},{"addr":11776,"size":512,"value":64,"flags":2,"state":"allocated"}]}
+{"mount":"/root","from":14848,"to":16384,"blocksize":512,"allocation_status":"complete","file_status":"partial","filesystem":[{"addr":14848,"size":512,"value":224,"flags":65,"state":"deleted"},{"addr":15360,"size":512,"value":32,"flags":1,"state":"free"},{"addr":15872,"size":512,"value":224,"flags":70,"state":"deleted"}]}
+{"mount":"/root","from":25088,"to":25600,"blocksize":512,"allocation_status":"complete","file_status":"partial","filesystem":[{"addr":25088,"size":512,"value":96,"flags":6,"state":"orphan"}]}
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=Filesystem zoom marks reused, bad and unknown FAT clusters
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF2
+e io.cache=true
+wx 0900 @ 0x1b1a
+e zoom.from=0x3800
+e zoom.to=0x3a00
+pzgj 1~{filesystem[0]}
+e zoom.from=0x7600
+e zoom.to=0x7800
+wx f70f @ 0x23c
+pzgj 1~{filesystem[0]}
+wx f00f @ 0x23c
+pzgj 1~{filesystem[0]}
+EOF2
+EXPECT=<<EOF2
+{"addr":14336,"size":512,"value":255,"flags":98,"state":"mixed"}
+{"addr":30208,"size":512,"value":128,"flags":8,"state":"bad"}
+{"addr":30208,"size":512,"value":160,"flags":16,"state":"unknown"}
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=Filesystem zoom at physical offsets honors partition boundaries and clips the final cell
+FILE=gzip://bins/fs/fat/fat12-offset.img.gz
+ARGS=-n
+CMDS=<<EOF2
+m /mnt fat 0x1000
+e fs.cwd=/mnt/subdir
+e zoom.from=0x49ff
+e zoom.to=0x4a04
+p=gj 3
+e zoom.from=0
+e zoom.to=0x1200
+pzgj 1
+EOF2
+EXPECT=<<EOF2
+{"mount":"/mnt","from":18943,"to":18948,"blocksize":2,"allocation_status":"complete","file_status":"partial","filesystem":[{"addr":18943,"size":2,"value":224,"flags":67,"state":"deleted"},{"addr":18945,"size":2,"value":224,"flags":65,"state":"deleted"},{"addr":18947,"size":1,"value":224,"flags":65,"state":"deleted"}]}
+{"mount":"/mnt","from":4096,"to":4608,"blocksize":512,"allocation_status":"complete","file_status":"partial","filesystem":[{"addr":4096,"size":512,"value":0,"flags":0,"state":"unmapped"}]}
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=Filesystem zoom retains basic allocation when orphan ownership is damaged
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF2
+e io.cache=true
+wx 0000 @ 0x20d
+e log.level=0
+e zoom.from=0x2a00
+e zoom.to=0x2e00
+p=gj 2
+EOF2
+EXPECT=<<EOF2
+{"mount":"/root","from":10752,"to":11776,"blocksize":512,"allocation_status":"partial","file_status":"partial","filesystem":[{"addr":10752,"size":512,"value":32,"flags":1,"state":"free"},{"addr":11264,"size":512,"value":192,"flags":34,"state":"file"}]}
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=Filesystem zoom maps ext2 file extents and unnamed deleted inodes
+FILE=gzip://bins/fs/ext2-forensic/recovery.img.gz
+CMDS=<<EOF2
+e io.cache=true
+wx 0000000000000000 @ 0x3440
+e zoom.from=0x6800
+e zoom.to=0x7400
+p=gj 3
+e zoom.byte=g
+e io.va=true
+pz 3
+pzj 3~{filesystem[1]}
+e io.va
+EOF2
+EXPECT=<<EOF2
+{"mount":"/root","from":26624,"to":29696,"blocksize":1024,"allocation_status":"complete","file_status":"complete","filesystem":[{"addr":26624,"size":1024,"value":192,"flags":34,"state":"file"},{"addr":27648,"size":1024,"value":224,"flags":65,"state":"deleted"},{"addr":28672,"size":1024,"value":224,"flags":65,"state":"deleted"}]}
+/root allocation=complete files=complete
+0x00006800  LDD
+{"addr":27648,"size":1024,"value":224,"flags":65,"state":"deleted"}
+true
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=Filesystem zoom classifies live files in ext4
+FILE=bins/fs/ext4.img
+CMDS=<<EOF2
+p=gj 2
+EOF2
+EXPECT=<<EOF2
+{"mount":"/root","from":0,"to":2097152,"blocksize":1048576,"allocation_status":"complete","file_status":"complete","filesystem":[{"addr":0,"size":1048576,"value":64,"flags":2,"state":"allocated"},{"addr":1048576,"size":1048576,"value":192,"flags":35,"state":"file"}]}
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=Filesystem zoom reports unsupported allocation maps
+FILE=bins/fs/ntfs.img
+CMDS=<<EOF2
+p=gj 2
+EOF2
+EXPECT=<<EOF2
+{"mount":"/root","from":0,"to":2097152,"blocksize":1048576,"allocation_status":"unsupported","file_status":"unsupported","filesystem":[]}
+EOF2
+EXPECT_ERR=
+RUN
