@@ -833,7 +833,27 @@ bool test_mem_bits(void) {
 	mu_end;
 }
 
+static bool test_xml_dom(void) {
+	RXmlNode *doc = rxml_dom_parse ("<map><item name = 'A &amp; B' id=\"1\">before<b/>after</item><item id='2'/></map>");
+	mu_assert_notnull (doc, "parse XML document");
+	RXmlNode *map = rxml_dom_child (doc, "map");
+	RXmlNode *first = rxml_dom_child (map, "item");
+	mu_assert_streq (rxml_dom_get_attribute (first, "name"), "A & B", "decode XML attribute");
+	mu_assert_streq (rxml_dom_get_attribute (first, "id"), "1", "preserve attributes");
+	RXmlNode *text = rxml_dom_first_child (first);
+	mu_assert_streq (rxml_dom_text (text), "before", "preserve text before child");
+	RXmlNode *child = rxml_dom_next_sibling (text);
+	mu_assert_streq (rxml_dom_name (child), "b", "preserve child order");
+	mu_assert_streq (rxml_dom_text (rxml_dom_next_sibling (child)), "after", "preserve text after child");
+	mu_assert_streq (rxml_dom_get_attribute (rxml_dom_next_sibling (first), "id"), "2", "preserve siblings");
+	rxml_dom_free (doc);
+	mu_assert_null (rxml_dom_parse ("<map><item/>"), "reject truncated XML");
+	mu_assert_null (rxml_dom_parse ("<map><item></map>"), "reject mismatched closing tag");
+	mu_end;
+}
+
 int all_tests(void) {
+	mu_run_test (test_xml_dom);
 	mu_run_test (test_ignore_prefixes);
 	mu_run_test (test_remove_r2_prefixes);
 	mu_run_test (test_dll_names);

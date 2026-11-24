@@ -4,117 +4,90 @@
 #include <r_util.h>
 #include <r_util/r_xml.h>
 
-static RXmlAttr* rxml_add_attribute(RXmlNode *node, const char *key, const char *value) {
-	RXmlAttr *attr = R_NEW (RXmlAttr);
-	attr->key = strdup (key);
-	attr->value = strdup (value);
-	attr->next = NULL;
-	// append to preserve document order
-	if (!node->attributes) {
-		node->attributes = attr;
-	} else {
-		RXmlAttr *last = node->attributes;
-		while (last->next) {
-			last = last->next;
-		}
-		last->next = attr;
+static bool flush_text(RStrBuf *sb, RXmlNode *parent, RXmlNode ***tail) {
+	const char *text = r_strbuf_get (sb);
+	if (!*text) {
+		return true;
 	}
-	return attr;
+	RXmlNode *node = R_NEW0 (RXmlNode);
+	node->type = RXML_NODE_TYPE_TEXT;
+	node->parent = parent;
+	node->text = strdup (text);
+	**tail = node;
+	*tail = &node->next;
+	r_strbuf_set (sb, "");
+	return node->text != NULL;
 }
 
-static RXmlNode* rxml_add_child(RXmlNode *parent, RXmlNode *child) {
-	if (!parent || !child) {
+R_API RXmlNode *rxml_dom_parse(const char *xml_string) {
+	R_RETURN_VAL_IF_FAIL (xml_string, NULL);
+	RXml *rx = r_xml_new (1024);
+	if (!rx) {
 		return NULL;
 	}
-	child->next = NULL;
-	// append to preserve document order
-	if (!parent->children) {
-		parent->children = child;
-	} else {
-		RXmlNode *last = parent->children;
-		while (last->next) {
-			last = last->next;
-		}
-		last->next = child;
-	}
-	return child;
-}
-
-static void flush_text(RStrBuf *sb, RXmlNode *parent) {
-	const char *text = r_strbuf_get (sb);
-	if (*text) {
-		RXmlNode *node = R_NEW0 (RXmlNode);
-		node->type = RXML_NODE_TYPE_TEXT;
-		node->text = strdup (text);
-		node->parent = parent;
-		rxml_add_child (parent, node);
-	}
-	r_strbuf_set (sb, "");
-}
-
-R_API RXmlNode* rxml_dom_parse(const char *xml_string) {
-	RXml *rx = r_xml_new (1024);
 	RXmlNode *root = R_NEW0 (RXmlNode);
 	root->type = RXML_NODE_TYPE_ELEMENT;
-	RXmlNode *current_node = root;
+	RXmlNode *current = root;
+	RXmlNode **child_tail = &root->children;
+	RXmlAttr **attr_tail = &root->attributes;
 
-	RStrBuf attrbuf;
-	r_strbuf_init (&attrbuf);
-	RStrBuf textbuf;
-	r_strbuf_init (&textbuf);
-	bool in_text = false;
-
+	RStrBuf attribute, text;
+	r_strbuf_init (&attribute);
+	r_strbuf_init (&text);
+	bool ok = true;
 	const char *p = xml_string;
-	while (*p) {
+	while (*p && ok) {
 		RXmlRet ret = r_xml_parse (rx, *p++);
-		if (ret < 0) {
-			break;
-		}
-		if (ret != R_XML_CONTENT && ret != R_XML_OK && in_text) {
-			flush_text (&textbuf, current_node);
-			in_text = false;
-		}
 		switch (ret) {
 		case R_XML_ELEMSTART: {
+			ok = flush_text (&text, current, &child_tail);
 			RXmlNode *node = R_NEW0 (RXmlNode);
 			node->type = RXML_NODE_TYPE_ELEMENT;
 			node->name = strdup (rx->elem);
-			node->parent = current_node;
-			rxml_add_child (current_node, node);
-			current_node = node;
+			node->parent = current;
+			*child_tail = node;
+			current = node;
+			child_tail = &node->children;
+			attr_tail = &node->attributes;
+			ok = ok && node->name;
 			break;
 		}
 		case R_XML_ELEMEND:
-			if (current_node->parent) {
-				current_node = current_node->parent;
-			}
+			ok = flush_text (&text, current, &child_tail);
+			child_tail = &current->next;
+			current = current->parent;
 			break;
 		case R_XML_ATTRSTART:
-			r_strbuf_set (&attrbuf, "");
+			r_strbuf_set (&attribute, "");
 			break;
 		case R_XML_ATTRVAL:
-			r_strbuf_append (&attrbuf, rx->data);
+			ok = r_strbuf_append (&attribute, rx->data);
 			break;
-		case R_XML_ATTREND:
-			if (rx->attr) {
-				rxml_add_attribute (current_node, rx->attr, r_strbuf_get (&attrbuf));
-			}
+		case R_XML_ATTREND: {
+			RXmlAttr *attr = R_NEW0 (RXmlAttr);
+			attr->key = strdup (rx->attr);
+			attr->value = strdup (r_strbuf_get (&attribute));
+			*attr_tail = attr;
+			attr_tail = &attr->next;
+			ok = attr->key && attr->value;
 			break;
+		}
 		case R_XML_CONTENT:
-			r_strbuf_append (&textbuf, rx->data);
-			in_text = true;
+			ok = r_strbuf_append (&text, rx->data);
 			break;
 		default:
+			ok = ret >= 0;
 			break;
 		}
 	}
-	if (in_text) {
-		flush_text (&textbuf, current_node);
-	}
-	r_strbuf_fini (&attrbuf);
-	r_strbuf_fini (&textbuf);
-
+	ok = ok && r_xml_eof (rx) == R_XML_OK;
+	r_strbuf_fini (&attribute);
+	r_strbuf_fini (&text);
 	r_xml_free (rx);
+	if (!ok) {
+		rxml_dom_free (root);
+		return NULL;
+	}
 	return root;
 }
 
