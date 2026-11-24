@@ -921,6 +921,26 @@ static bool fs_search_bound(const RFSRange *range, void *user) {
 	return true;
 }
 
+static ut32 fs_search_flags(const char *state) {
+	static const struct {
+		const char *name;
+		ut32 flags;
+	} modes[] = {
+		{ "free", R_FS_RANGE_FREE },
+		{ "lost", R_FS_RANGE_ORPHAN },
+		{ "allocated", R_FS_RANGE_ALLOCATED },
+		{ "bad", R_FS_RANGE_BAD },
+		{ "unknown", R_FS_RANGE_UNKNOWN },
+	};
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (modes); i++) {
+		if (!strcmp (state, modes[i].name)) {
+			return modes[i].flags;
+		}
+	}
+	return 0;
+}
+
 static bool maskMatches(int perm, int mask, bool only) {
 	if (mask) {
 		if (only) {
@@ -959,9 +979,14 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 	if (perm == -1) {
 		perm = R_PERM_RWX;
 	}
-	if (!strcmp (mode, "fs.free") || !strcmp (mode, "fs.lost")) {
+	if (r_str_startswith (mode, "fs.")) {
+		ut32 flags = fs_search_flags (mode + strlen ("fs."));
+		if (!flags) {
+			R_LOG_ERROR ("Unknown filesystem search mode: %s", mode);
+			r_list_free (list);
+			return NULL;
+		}
 		FSSearchBounds bounds = { core, list, search_itv };
-		ut32 flags = !strcmp (mode, "fs.free")? R_FS_RANGE_FREE: R_FS_RANGE_ORPHAN;
 		const char *mountpoint = r_config_get (core->config, "fs.cwd");
 		int status = r_fs_ranges (core->fs, mountpoint, flags, fs_search_bound, &bounds);
 		if (status != R_FS_WALK_COMPLETE) {

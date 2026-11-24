@@ -647,7 +647,7 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=Filesystem carving distinguishes free clusters from allocated orphans
+NAME=Filesystem carving finds live and orphaned data in allocated clusters
 FILE=gzip://bins/fs/fat/fat12.img.gz
 CMDS=<<EOF
 e search.verbose=false
@@ -659,6 +659,11 @@ e search.in=fs.free
 e search.in=fs.lost
 /xj 6f727068616e0a
 /xj 89504e470d0a1a0a
+/xj 4641543132206c697665
+e search.in=fs.allocated
+/xj 6f727068616e0a
+/xj 89504e470d0a1a0a
+/xj 4641543132206c697665
 EOF
 EXPECT=<<EOF
 [{"addr":30208,"type":"hexpair","data":"89504e470d0a1a0a"}]
@@ -666,6 +671,10 @@ EXPECT=<<EOF
 []
 [{"addr":25088,"type":"hexpair","data":"6f727068616e0a"}]
 []
+[]
+[{"addr":25088,"type":"hexpair","data":"6f727068616e0a"}]
+[]
+[{"addr":14336,"type":"hexpair","data":"4641543132206c697665"}]
 EOF
 EXPECT_ERR=
 RUN
@@ -718,17 +727,44 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=Filesystem carving observes allocation changes and omits bad clusters
+NAME=Filesystem carving observes allocation changes and finds bad clusters
 FILE=gzip://bins/fs/fat/fat12.img.gz
 CMDS=<<EOF
 e search.verbose=false
 e io.cache=true
 e fs.cwd=/root
-e search.in=fs.free
+e search.in=fs.bad
+/xj 89504e470d0a1a0a
 wx f70f @ 0x23c
+/xj 89504e470d0a1a0a
+e search.in=fs.free
 /xj 89504e470d0a1a0a
 EOF
 EXPECT=<<EOF
+[]
+[{"addr":30208,"type":"hexpair","data":"89504e470d0a1a0a"}]
+[]
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Filesystem carving finds clusters with invalid FAT entries
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+e search.verbose=false
+e io.cache=true
+e fs.cwd=/root
+wx f00f @ 0x23c
+e search.in=fs.unknown
+/xj 89504e470d0a1a0a
+e search.in=fs.allocated
+/xj 89504e470d0a1a0a
+e search.in=fs.free
+/xj 89504e470d0a1a0a
+EOF
+EXPECT=<<EOF
+[{"addr":30208,"type":"hexpair","data":"89504e470d0a1a0a"}]
+[]
 []
 EOF
 EXPECT_ERR=
@@ -773,6 +809,22 @@ exact-mount-required
 incomplete
 EOF
 EXPECT_ERR=
+RUN
+
+NAME=Filesystem carving rejects an unrecognized search mode
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF
+e search.verbose=false
+e fs.cwd=/root
+e search.in=fs.allocated.extra
+/xj 4641543132206c697665 || echo invalid-mode
+EOF
+EXPECT=<<EOF
+invalid-mode
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Unknown filesystem search mode: fs.allocated.extra
+EOF
 RUN
 
 NAME=Filesystem free ranges can be searched for strings
