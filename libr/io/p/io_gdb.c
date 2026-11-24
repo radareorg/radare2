@@ -46,27 +46,10 @@ static int debug_gdb_read_at(libgdbr_t *desc, ut8 *buf, int sz, ut64 addr) {
 }
 
 static int debug_gdb_write_at(libgdbr_t *desc, const ut8 *buf, int sz, ut64 addr) {
-	ut32 x, size_max;
-	ut32 packets;
-	ut32 last;
-	if (sz < 1 || addr >= UT64_MAX || !desc) {
+	if (!desc || sz < 1) {
 		return -1;
 	}
-	size_max = desc->read_max;
-	packets = sz / size_max;
-	last = sz % size_max;
-	ut64 offset = 0;
-	for (x = 0; x < packets; x++, offset += size_max) {
-		if (gdbr_write_memory (desc, addr + offset, buf + offset, size_max) < 0) {
-			return -1;
-		}
-	}
-	if (last) {
-		if (gdbr_write_memory (desc, addr + offset, buf + offset, last) < 0) {
-			return -1;
-		}
-	}
-	return sz;
+	return gdbr_write_memory (desc, addr, buf, sz) < 0? -1: sz;
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
@@ -123,30 +106,31 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	}
 
 	riog = R_NEW0 (RIOGdb);
-	gdbr_init (&riog->desc, false);
-
-	if (gdbr_connect (&riog->desc, host, i_port) == 0) {
-		__close (NULL);
-		if (pid > 0) { // FIXME this is here for now because RDebug's pid and libgdbr's aren't properly synced.
-			riog->desc.pid = i_pid;
-			if (gdbr_attach (&riog->desc, i_pid) < 0) {
-				R_LOG_ERROR ("gdbr: Failed to attach to PID %i", i_pid);
-				R_FREE (riog);
-				return NULL;
-			}
-		} else if ((i_pid = riog->desc.pid) < 0) {
-			i_pid = -1;
-		}
-		riogdb = r_io_desc_new (io, &r_io_plugin_gdb, file, R_PERM_RWX, mode, riog);
+	libgdbr_t *g = &riog->desc;
+	if (gdbr_init (g, false) < 0 || gdbr_connect (g, host, i_port) < 0) {
+		R_LOG_ERROR ("Cannot connect to the GDB remote target");
+		goto fail;
 	}
-	// Get name
-	if (riogdb) {
-		riogdb->name = gdbr_exec_file_read (&riog->desc, i_pid);
-	} else {
-		R_LOG_ERROR ("gdb.io.open: Cannot connect to host");
-		free (riog);
+	if (pid && (i_pid <= 0 || gdbr_attach (g, i_pid) < 0)) {
+		R_LOG_ERROR ("Cannot attach to GDB process %d", i_pid);
+		goto fail;
+	}
+	riogdb = r_io_desc_new (io, &r_io_plugin_gdb, file, R_PERM_RWX, mode, riog);
+	if (!riogdb) {
+		goto fail;
+	}
+	if (g->stub_features.qXfer_exec_file_read) {
+		char *name = gdbr_exec_file_read (g, g->pid);
+		if (name) {
+			free (riogdb->name);
+			riogdb->name = name;
+		}
 	}
 	return riogdb;
+fail:
+	gdbr_cleanup (g);
+	free (riog);
+	return NULL;
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
