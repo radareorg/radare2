@@ -39,6 +39,8 @@ void gdbr_invalidate_reg_cache(libgdbr_t *g);
  * \brief gets reason why remote target stopped
  */
 int gdbr_stop_reason(libgdbr_t *g);
+bool gdbr_set_nonstop(libgdbr_t *g, bool enable);
+int gdbr_wait_nonstop(libgdbr_t *g);
 
 /*!
  * \brief checks for extended mode availability

@@ -110,17 +110,21 @@ static bool test_gdb_packet_limits(void) {
 #include <sys/socket.h>
 #include <unistd.h>
 
-static bool send_response(int fd, const char *payload) {
+static bool send_frame(int fd, char lead, const char *payload) {
 	ut8 checksum = 0;
 	const char *p;
 	for (p = payload; *p; p++) {
 		checksum += (ut8)*p;
 	}
-	char *packet = r_str_newf ("$%s#%02x", payload, checksum);
+	char *packet = r_str_newf ("%c%s#%02x", lead, payload, checksum);
 	size_t len = strlen (packet);
 	bool ret = write (fd, packet, len) == len;
 	free (packet);
 	return ret;
+}
+
+static bool send_response(int fd, const char *payload) {
+	return send_frame (fd, '$', payload);
 }
 
 static bool test_gdb_processes_xml(void) {
@@ -347,6 +351,58 @@ static bool test_gdb_packet_retransmission(void) {
 	mu_assert_eq (poll (&pfd, 1, 0), 0, "no extra retransmissions");
 	gdbr_cleanup (&g);
 	close (fds[1]);
+	r_cons_free (cons);
+	mu_end;
+}
+
+static bool test_gdb_nonstop(void) {
+	RCons *cons = r_cons_new ();
+	libgdbr_t g;
+	int fds[2];
+	mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open non-stop session");
+	g.connected = 1;
+	g.pid = 1;
+	g.tid = 2;
+	g.stub_features.multiprocess = true;
+	g.stub_features.vcont.c = g.stub_features.vcont.s = true;
+	mu_assert_false (gdbr_set_nonstop (&g, true), "skip non-stop when not advertised");
+	g.stub_features.QNonStop = true;
+	const char *replies[] = {
+		"", "OK", "T00thread:p1.2;", "T00thread:p1.3;", "OK",
+		"OK", "T05thread:p1.3;", "OK", "mp1.2,p1.3,p1.4", "l", "OK", NULL
+	};
+	Stub stub;
+	RThread *th = stub_start (&stub, fds[1], -1, replies);
+	mu_assert_false (gdbr_set_nonstop (&g, true), "remain in all-stop after an unsupported reply");
+	mu_assert_false (g.non_stop, "clear unaccepted mode");
+	mu_assert_true (gdbr_set_nonstop (&g, true), "enable non-stop and query stopped threads");
+	mu_assert_eq (gdbr_stop_reason (&g), 0, "publish initial stop");
+	mu_assert_eq (g.stop_reason.thread.tid, 2, "initial thread");
+	mu_assert_eq (gdbr_wait_nonstop (&g), 0, "publish the other queued initial stop");
+	mu_assert_eq (g.stop_reason.thread.tid, 3, "other initial thread");
+	mu_assert_true (send_frame (fds[1], '%', "Stop:T05thread:p1.4;"), "queue notification before synchronous OK");
+	mu_assert_eq (gdbr_step (&g, 2), 0, "accept step and drain notification");
+	mu_assert_eq (g.stop_reason.thread.tid, 4, "return the asynchronous stop");
+	mu_assert_eq (gdbr_wait_nonstop (&g), 0, "return the other queued stop");
+	mu_assert_eq (g.stop_reason.thread.tid, 3, "return per-thread stop");
+	RList *threads = gdbr_threads_list (&g, 1);
+	mu_assert_eq (r_list_length (threads), 3, "list known thread states");
+	RDebugPid *thread = r_list_first (threads);
+	mu_assert_eq (thread->status, R_DBG_PROC_RUN, "resumed thread remains running");
+	thread = r_list_last (threads);
+	mu_assert_eq (thread->status, R_DBG_PROC_STOP, "notified thread is stopped");
+	threads->free = (RListFree)r_debug_pid_free;
+	r_list_free (threads);
+	mu_assert_true (send_response (fds[1], "O6e6f"), "queue forbidden non-stop output");
+	mu_assert_eq (gdbr_wait_nonstop (&g), -1, "non-stop packets cannot carry console output");
+	size_t length;
+	r_cons_get_buffer (cons, &length);
+	mu_assert_eq (length, 0, "do not print non-stop console packets");
+	mu_assert_true (gdbr_set_nonstop (&g, false), "return to all-stop mode");
+	mu_assert_streq_free (stub_finish (&stub, th, fds[0]),
+		"QNonStop:1\nQNonStop:1\n?\nvStopped\nvStopped\nvCont;s:p1.2\nvStopped\nvStopped\nqfThreadInfo\nqsThreadInfo\nQNonStop:0\n",
+		"drain stop notifications and resume only the requested thread");
+	gdbr_cleanup (&g);
 	r_cons_free (cons);
 	mu_end;
 }
@@ -1792,6 +1848,7 @@ int main(int argc, char **argv) {
 #if R2__UNIX__ && !__wasi__
 	mu_run_test (test_gdb_server_wide_packets);
 	mu_run_test (test_gdb_packet_retransmission);
+	mu_run_test (test_gdb_nonstop);
 	mu_run_test (test_gdb_server_packet_retransmission);
 	mu_run_test (test_gdb_processes_xml);
 	mu_run_test (test_gdb_memory_packet_sizes);

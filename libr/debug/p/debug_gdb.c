@@ -573,11 +573,11 @@ static bool r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
 	}
 
 	check_connection (dbg);
-	if (!pd->desc || gdbr_continue (pd->desc, pid, -1, sig) < 0) {
+	if (!pd->desc || gdbr_continue (pd->desc, pid, pd->desc->non_stop? tid: -1, sig) < 0) {
 		return execution_failed (dbg, pd->desc);
 	}
 	const libgdbr_stop_reason_t *stop = &pd->desc->stop_reason;
-	if (stop->is_valid && stop->reason != R_DEBUG_REASON_DEAD && stop->thread.present) {
+	if (!pd->desc->non_stop && stop->is_valid && stop->reason != R_DEBUG_REASON_DEAD && stop->thread.present) {
 		pd->desc->tid = stop->thread.tid;
 	}
 	dbg->tid = pd->desc->tid;
@@ -614,7 +614,9 @@ static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
 		dbg->reason.exited_normally = stop->exited_normally;
 	} else if (stop->thread.present) {
 		dbg->reason.tid = stop->thread.tid;
-		dbg->pid = stop->thread.pid;
+		if (pd->desc->stub_features.multiprocess) {
+			dbg->pid = stop->thread.pid;
+		}
 		dbg->tid = stop->thread.tid;
 		if (dbg->pid != pd->desc->pid || dbg->tid != pd->desc->tid) {
 			gdbr_select (pd->desc, dbg->pid, dbg->tid);

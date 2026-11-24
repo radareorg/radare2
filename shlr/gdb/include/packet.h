@@ -27,6 +27,8 @@ int send_packet(libgdbr_t *g);
  * \returns 0 for a complete packet, GDBR_READ_TIMEOUT for an idle poll, or -1 on failure
  */
 #define GDBR_READ_TIMEOUT (-2)
+#define GDBR_READ_NOTIFICATION (-3)
+#define GDBR_READ_INTERRUPTED (-4)
 int read_packet(libgdbr_t *g, bool vcont);
 
 int pack(libgdbr_t *g, const char *msg);

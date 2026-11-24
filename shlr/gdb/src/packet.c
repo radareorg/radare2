@@ -13,6 +13,7 @@ enum {
 	CHKSUM	= 1 << 1,
 	DUP	= 1 << 2,
 	ESC	= 1 << 3,
+	NOTIFY	= 1 << 4,
 };
 
 struct parse_ctx {
@@ -47,8 +48,8 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx) {
 	for (i = 0; i < g->read_len; i++) {
 		const ut8 cur = g->read_buff[i];
 		if (!(ctx->flags & HEADER)) {
-			if (cur == '$') {
-				ctx->flags = HEADER;
+			if (cur == '$' || cur == '%') {
+				ctx->flags = HEADER | (cur == '%'? NOTIFY: 0);
 			} else if (!g->no_ack && cur == '+') {
 				g->ack_retries = -1;
 			} else if (!g->no_ack && cur == '-' && g->ack_retries >= 0) {
@@ -149,7 +150,10 @@ int read_packet(libgdbr_t *g, bool vcont) {
 	int corrupt = 0;
 	g->data_len = 0;
 	while (timeouts < g->num_retries) {
-		if (!send_pending_interrupt (g, vcont)) {
+		if (g->non_stop && g->isbreaked && vcont && !(ctx.flags & HEADER)) {
+			return GDBR_READ_INTERRUPTED;
+		}
+		if ((!g->non_stop || !vcont) && !send_pending_interrupt (g, vcont)) {
 			return -1;
 		}
 		if (g->read_len > 0) {
@@ -158,14 +162,29 @@ int read_packet(libgdbr_t *g, bool vcont) {
 				return -1;
 			}
 			if (ret == PACKET_READY) {
-				g->ack_retries = -1;
 				g->data[g->data_len] = '\0';
-				return send_ack (g) < 0 || !send_pending_interrupt (g, vcont)? -1: 0;
+				if (!(ctx.flags & NOTIFY)) {
+					g->ack_retries = -1;
+					return send_ack (g) < 0 || (!g->non_stop && !send_pending_interrupt (g, vcont))? -1: 0;
+				}
+				if (g->non_stop && !g->draining_stops && !g->stop_notification
+				    && g->data_len > 5 && !memcmp (g->data, "Stop:", 5)
+				    && !memchr (g->data, '\0', g->data_len)) {
+					g->stop_notification = strdup (g->data + 5);
+					if (!g->stop_notification) {
+						return -1;
+					}
+					if (vcont) {
+						return GDBR_READ_NOTIFICATION;
+					}
+				}
 			}
-			if (ret == PACKET_CORRUPT) {
+			if (ret == PACKET_CORRUPT && !(ctx.flags & NOTIFY)) {
 				if (g->no_ack || r_socket_write (g->sock, "-", 1) != 1 || ++corrupt > g->num_retries) {
 					return -1;
 				}
+			}
+			if (ret != PACKET_PARTIAL) {
 				ctx = (struct parse_ctx){0};
 				g->data_len = 0;
 			}

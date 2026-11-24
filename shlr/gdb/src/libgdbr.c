@@ -166,11 +166,22 @@ void gdbr_stop_reason_reset(libgdbr_stop_reason_t *reason) {
 	memset (reason, 0, sizeof (*reason));
 }
 
+void gdbr_nonstop_reset(libgdbr_t *g) {
+	r_list_free (g->stop_events);
+	g->stop_events = NULL;
+	ht_uu_free (g->stopped_threads);
+	g->stopped_threads = NULL;
+	R_FREE (g->stop_notification);
+	g->non_stop = false;
+	g->draining_stops = false;
+}
+
 int gdbr_cleanup(libgdbr_t *g) {
 	if (!g) {
 		return -1;
 	}
 	gdbr_stop_reason_reset (&g->stop_reason);
+	gdbr_nonstop_reset (g);
 	R_FREE (g->regs.buf);
 	R_FREE (g->regs.known);
 	g->regs.cap = 0;
