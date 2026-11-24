@@ -1784,3 +1784,51 @@ EXPECT=<<EOF
 []
 EOF
 RUN
+
+NAME=Global edits preserve links and target the selected global
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e log.level=0
+CMDS=<<EOF
+fb 0x100
+fs symbols
+f reserved 1 @ 0x20
+avg char counter @ 0x20
+avgn reserved @ 0x120
+?vi $?
+avgn renamed @ 0x120
+?vi $?
+avgt missing_type @ 0x120
+?vi $?
+avgt uint16_t[3] @ 0x120
+?vi $?
+avgj
+Cf. @ 0x120
+tl
+avg- reserved @ 0x120
+?vi $?
+avg- counter @ 0x120
+?vi $?
+avg- renamed @ 0
+?vi $?
+avgj
+Cf~?
+tlj
+fj
+EOF
+EXPECT=<<EOF
+1
+0
+1
+0
+[{"name":"renamed","addr":288,"size":6,"type":"uint16_t[3]"}]
+3w
+0x00000120 = uint16_t[3]
+1
+1
+0
+[]
+0
+{"types":[]}
+[{"name":"reserved","size":1,"addr":288}]
+EOF
+RUN

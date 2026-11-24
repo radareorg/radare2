@@ -51,7 +51,7 @@ static RCoreHelpMessage help_msg_a = {
 	"ar", "[?]", "like 'dr' but for the esil vm. (registers)",
 	"as", "[?] [num]", "analyze syscall using dbg.reg",
 	"av", "[?] [.]", "show vtables",
-	"avg", "[?] [.]", "manage global variables",
+	"avg", "[j.nt-?]", "manage global variables",
 	"ax", "[?]", "manage refs/xrefs (see also afx?)",
 	NULL
 };
@@ -149,12 +149,14 @@ static RCoreHelpMessage help_msg_ap = {
 };
 
 static RCoreHelpMessage help_msg_avg = {
-	"Usage:", "avg[j.?]", " # analyze variable global",
+	"Usage:", "avg[j.nt-?]", " # manage global variables",
 	"avg", "", "list global variables and their types",
 	"avgj", "", "list global variables in JSON",
 	"avg.", "", "show the type of the global at the current address",
-	"avg", " [type] [name]", "add global variable with given type and name",
-	"avg-", "", "delete global",
+	"avg", " <type> <name>", "add or retype a global at the current address",
+	"avgn", " <name>", "rename the global at the current address to an available flag name",
+	"avgt", " <type>", "change the type of the global at the current address",
+	"avg-", " [name]", "delete a global by name or at the current address",
 	NULL
 };
 
@@ -1220,10 +1222,11 @@ static RCoreHelpMessage help_msg_as = {
 };
 
 static RCoreHelpMessage help_msg_av = {
-	"Usage:", "av[?jr*]", " C++ vtables and RTTI",
+	"Usage:", "av[?gjr*]", " C++ vtables, RTTI and global variables",
 	"av", "", "search for vtables in data sections and show results",
 	"avj", "", "like av, but as json",
 	"av*", "", "like av, but as r2 commands",
+	"avg", "[?]", "manage global variables",
 	"avr", "[j@addr]", "try to parse RTTI at vtable addr (see anal.cxxabi)",
 	"avra", "[j]", "search for vtables and try to parse RTTI at each of them",
 	"avrr", "", "recover class info from all findable RTTI (see ac)",
@@ -16455,23 +16458,42 @@ static bool list_global_variable(RFlagItem *global, void *user) {
 }
 
 static void cmd_avg(RCore *core, const char *input) {
+	bool success = false;
 	switch (input[0]) {
 	case ' ': // "avg "
 		{
 			char *a = r_str_trim_dup (input + 1);
-			char *b = strrchr (a, ' ');
-			bool success = false;
+			char *b = a? strrchr (a, ' '): NULL;
 			if (b) {
 				*b++ = 0;
 				r_str_trim (a);
 				success = r_anal_global_add (core->anal, core->addr, a, b);
 			}
 			free (a);
-			r_core_return_value (core, success? R_CMD_RC_SUCCESS: R_CMD_RC_FAILURE);
+		}
+		break;
+	case 'n': // "avgn"
+	case 't': // "avgt"
+		{
+			char *arg = IS_WHITESPACE (input[1])? r_str_trim_dup (input + 2): NULL;
+			success = R_STR_ISNOTEMPTY (arg) && (input[0] == 'n'
+				? r_anal_global_rename (core->anal, core->addr, arg)
+				: r_anal_global_retype (core->anal, core->addr, arg));
+			free (arg);
 		}
 		break;
 	case '-': // "avg-"
-		r_core_return_value (core, r_anal_global_del (core->anal, core->addr)? R_CMD_RC_SUCCESS: R_CMD_RC_FAILURE);
+		{
+			if (!input[1]) {
+				success = r_anal_global_del (core->anal, core->addr);
+				break;
+			}
+			char *name = IS_WHITESPACE (input[1])? r_str_trim_dup (input + 2): NULL;
+			RFlagItem *global = R_STR_ISNOTEMPTY (name)? r_flag_get (core->flags, name): NULL;
+			success = global && r_anal_global_get (core->anal, global->addr) == global
+				&& r_anal_global_del (core->anal, global->addr);
+			free (name);
+		}
 		break;
 	case '.': // "avg."
 		{
@@ -16480,7 +16502,7 @@ static void cmd_avg(RCore *core, const char *input) {
 				r_cons_println (core->cons, type);
 			}
 		}
-		break;
+		return;
 	case '\0': // "avg"
 	case 'j': // "avgj"
 		{
@@ -16499,14 +16521,15 @@ static void cmd_avg(RCore *core, const char *input) {
 				pj_free (ctx.pj);
 			}
 		}
-		break;
+		return;
 	case '?':
 		r_cons_cmd_help (core->cons, help_msg_avg);
-		break;
+		return;
 	default:
 		r_core_return_invalid_command (core, "avg", input[0]);
-		break;
+		return;
 	}
+	r_core_return_value (core, success? R_CMD_RC_SUCCESS: R_CMD_RC_FAILURE);
 }
 
 static void cmd_anal_virtual_functions(RCore *core, const char* input) {
