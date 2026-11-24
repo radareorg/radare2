@@ -4004,6 +4004,7 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 		} else {
 			R_LOG_ERROR ("Invalid opcode");
 		}
+		r_anal_op_fini (&aop);
 	} else if (strstr (type, "fun")) {
 		RAnalFunction *fcni;
 		r_list_foreach (core->anal->fcns, iter, fcni) {

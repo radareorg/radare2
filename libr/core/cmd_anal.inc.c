@@ -5189,13 +5189,12 @@ static void cmd_afba(RCore *core, const char *input) {
 	}
 	RListIter *iter2;
 	RAnalBlock **iter;
-	HtUP *ht = ht_up_new0 ();
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
-	RVecAddr *unrefed = RVecAddr_new ();
 	RAnalBlock *bb;
 	if (!fcn) {
 		return;
 	}
+	HtUP *ht = ht_up_new0 ();
 	R_VEC_FOREACH (&fcn->bbs, iter) {
 		bb = *iter;
 		ut64 key = bb->addr;
@@ -5216,7 +5215,6 @@ static void cmd_afba(RCore *core, const char *input) {
 	}
 	// first entries that have no xrefs .. wtf .. maybe this must be ignored? its main?
 	ut64 *v;
-	RVecAddr_free (unrefed);
 	ReverseCallData rcd = {
 		.core = core,
 		.togo = RVecAddr_new (),
@@ -5228,6 +5226,8 @@ static void cmd_afba(RCore *core, const char *input) {
 		rcd.inloop = false;
 		ht_up_foreach (ht, afba_purge, &rcd);
 		R_VEC_FOREACH (rcd.togo, v) {
+			RVecAddr *va = ht_up_find (ht, *v, NULL);
+			RVecAddr_free (va);
 			ht_up_delete (ht, *v);
 		}
 		if (RVecAddr_empty (rcd.togo)) {
@@ -5237,6 +5237,7 @@ static void cmd_afba(RCore *core, const char *input) {
 		RVecAddr_free (rcd.togo);
 		rcd.togo = RVecAddr_new ();
 	} while (rcd.inloop);
+	RVecAddr_free (rcd.togo);
 	// TODO: this is wrong, and created because of the infinite loop detected bug
 	ht_up_foreach (ht, afba_left, &rcd);
 	if (reverse) {

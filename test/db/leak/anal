@@ -1,0 +1,77 @@
+NAME=leak tcc rejected parameter list
+FILE=-
+CMDS=<<EOF
+e log.level=0
+e types.plugin=tcc
+td int f(void x)
+td int f(int x, 1)
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+<string>:1: error: parameter declared as void
+<string>:1: error: ';' expected (got ")")
+<string>:1: error: declaration expected
+<string>:1: error: invalid type
+<string>:1: error: ';' expected (got "1")
+<string>:1: error: declaration expected
+EOF
+RUN
+
+NAME=leak class attribute delete
+FILE=-
+CMDS=<<EOF
+e log.level=0
+ac Foo
+ac Bar
+acm Foo bar 0x100
+acm- Foo bar
+acb Foo Bar
+acb- Foo 0
+acv Foo 0x1000
+acv- Foo 0
+acm Foo baz 0x200
+ac- Foo
+acl
+EOF
+EXPECT=<<EOF
+Bar
+EOF
+RUN
+
+NAME=leak afba
+FILE=malloc://64
+CMDS=<<EOF
+e log.level=0
+af+ 0x10 dag
+afb+ 0x10 0x10 4 0x20 0x14
+afb+ 0x10 0x14 4 0x20
+afb+ 0x10 0x20 4
+afba @ 0x10
+afba @ 0x30
+EOF
+EXPECT=<<EOF
+0x00000010
+0x00000014
+0x00000020
+EOF
+RUN
+
+NAME=leak unaligned op with arch.codealign
+FILE=malloc://64
+CMDS=<<EOF
+e log.level=0
+e arch.codealign=4
+e dbg.trace=true
+aei
+aeim
+aer PC=1
+aes
+s 1
+sn opc
+s
+EOF
+EXPECT=<<EOF
+0x4
+EOF
+RUN
