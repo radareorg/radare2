@@ -201,7 +201,9 @@ int read_packet(libgdbr_t *g, bool vcont) {
 			if (vcont && !(ctx.flags & HEADER)) {
 				return GDBR_READ_TIMEOUT;
 			}
-			timeouts++;
+			if (!g->is_server || (ctx.flags & HEADER)) {
+				timeouts++;
+			}
 			continue;
 		}
 		int size = r_socket_read (g->sock, (ut8 *)g->read_buff, g->read_max - 1);

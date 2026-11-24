@@ -375,7 +375,7 @@ int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	int continue_tid = 0;
 	for (;;) {
 		if (read_packet (g, false) < 0) {
-			break;
+			return 0;
 		}
 		if (g->data_len == 0) {
 			continue;
@@ -502,6 +502,5 @@ int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 		if (send_msg (g, "") < 0) {
 			return -1;
 		}
-	};
-	return ret;
+	}
 }

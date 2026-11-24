@@ -298,8 +298,11 @@ static bool test_gdb_server_resume(void) {
 	mu_assert_eq (socketpair (AF_UNIX, SOCK_STREAM, 0, fds), 0, "server socket pair");
 	server.g.sock->fd = fds[0];
 	server.g.no_ack = true;
+	server.g.num_retries = 1;
 	RThread *thread = r_th_new (register_server_run, &server, 0);
 	r_th_start (thread);
+	struct pollfd pfd = { .fd = fds[1], .events = POLLIN };
+	mu_assert_eq (poll (&pfd, 1, 400), 0, "the server waits for a command while idle");
 	const char *commands[] = { "vCont?", "Hg3", "Hc2", "?", "s", "vCont;c:4", "vCont;t:4" };
 	const char *replies[] = { "vCont;c;s", "OK", "OK", "T05thread:3;", "T05thread:2;", "T05thread:4;", "E01" };
 	size_t i;
