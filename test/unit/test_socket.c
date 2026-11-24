@@ -32,6 +32,16 @@ static bool test_r_socket_proc_sandbox(void) {
 #include <sys/socket.h>
 #include <unistd.h>
 
+static bool test_r_socket_close_fd(void) {
+	int fds[2];
+	mu_assert_eq (socketpair (AF_UNIX, SOCK_STREAM, 0, fds), 0, "create socket pair");
+	RSocket socket = { .fd = fds[0] };
+	mu_assert_false (r_socket_close_fd (&socket), "close succeeds");
+	mu_assert_eq (socket.fd, R_INVALID_SOCKET, "forget the closed descriptor");
+	close (fds[1]);
+	mu_end;
+}
+
 static bool test_r_socket_gets_buffer_limit(void) {
 	int fds[2];
 	mu_assert_eq (socketpair (AF_UNIX, SOCK_STREAM, 0, fds), 0, "create socket pair");
@@ -202,6 +212,7 @@ static int all_tests(void) {
 	mu_run_test (test_network_disabled);
 #endif
 #if R2_NETWORK && R2__UNIX__ && !__wasi__
+	mu_run_test (test_r_socket_close_fd);
 	mu_run_test (test_r_socket_gets_buffer_limit);
 	mu_run_test (test_r_socket_rap_reverse);
 	mu_run_test (test_r_socket_rap_invalid_reply);
