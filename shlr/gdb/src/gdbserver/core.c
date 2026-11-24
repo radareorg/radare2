@@ -12,12 +12,8 @@
 #include <r_util.h>
 
 static int _server_handle_qSupported(libgdbr_t *g) {
-	int ret;
 	char buf[128];
 	snprintf (buf, sizeof (buf), "PacketSize=%x;QStartNoAckMode+;qXfer:exec-file:read+", (ut32) (g->read_max - 1));
-	if ((ret = handle_qSupported (g)) < 0) {
-		return -1;
-	}
 	return send_msg (g, buf);
 }
 
@@ -117,35 +113,15 @@ static int server_kill(libgdbr_t *g, gdbr_server_cmd_cb cb, void *user, bool ext
 	return killed || !extended? -1: 0;
 }
 
-static int _server_handle_z(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	char set; // Z = set, z = remove
-	int type;
-	ut64 addr;
-	char cmd[64];
-	if (sscanf (g->data, "%c%d,%"PFMT64x, &set, &type, &addr) != 3) {
+static int server_breakpoint(libgdbr_t *g, gdbr_server_cmd_cb cb, void *user) {
+	if (g->data_len < 3 || g->data[2] != ',' || !isdigit ((ut8)g->data[1])) {
 		return send_msg (g, "E01");
 	}
-	if (type != 0) {
-		// TODO handle hw breakpoints and watchpoints
-		return send_msg (g, "E01");
+	if (g->data[1] > '4') {
+		return send_msg (g, "");
 	}
-	switch (set) {
-	case 'Z':
-		// Set
-		snprintf (cmd, sizeof (cmd) - 1, "db 0x%"PFMT64x, addr);
-		break;
-	case 'z':
-		// Remove
-		snprintf (cmd, sizeof (cmd) - 1, "db- 0x%"PFMT64x, addr);
-		break;
-	default:
-		return send_msg (g, "E01");
-	}
-	if (cmd_cb (g, core_ptr, cmd, NULL, 0) < 0) {
-		send_msg (g, "E01");
-		return -1;
-	}
-	return send_msg (g, "OK");
+	int ret = cb (g, user, g->data, NULL, 0);
+	return send_msg (g, ret == GDBR_SERVER_UNSUPPORTED? "": ret < 0? "E01": "OK");
 }
 
 static bool parse_server_tid(const char *text, int *tid) {
@@ -390,7 +366,7 @@ static int server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr,
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "qSupported")) {
+		if (!strcmp (g->data, "qSupported") || r_str_startswith (g->data, "qSupported:")) {
 			if ((ret = _server_handle_qSupported (g)) < 0) {
 				return ret;
 			}
@@ -451,7 +427,7 @@ static int server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr,
 			continue;
 		}
 		if (g->data[0] == 'z' || g->data[0] == 'Z') {
-			if ((ret = _server_handle_z (g, cmd_cb, core_ptr)) < 0) {
+			if ((ret = server_breakpoint (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
 			continue;
@@ -485,14 +461,6 @@ static int server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr,
 			if ((ret = _server_handle_p (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
-
-int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	R_RETURN_VAL_IF_FAIL (g && cmd_cb, -1);
-	ServerThreads threads = {0};
-	int ret = server_serve (g, cmd_cb, core_ptr, &threads);
-	free (threads.ids);
-	return ret;
-}
 			continue;
 		}
 		if (r_str_startswith (g->data, "qXfer:exec-file:read:")) {
@@ -512,4 +480,12 @@ int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 			return -1;
 		}
 	}
+}
+
+int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+	R_RETURN_VAL_IF_FAIL (g && cmd_cb, -1);
+	ServerThreads threads = {0};
+	int ret = server_serve (g, cmd_cb, core_ptr, &threads);
+	free (threads.ids);
+	return ret;
 }

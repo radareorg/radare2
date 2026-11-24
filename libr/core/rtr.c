@@ -301,6 +301,66 @@ static int gdb_cmd_memory(RCore *core, const char *cmd, char *out_buf, size_t ma
 	return ok? 0: -1;
 }
 
+static int gdb_cmd_breakpoint(RDebug *dbg, const char *cmd) {
+	const int type = cmd[1] - '0';
+	const bool hardware = type != 0;
+	const bool watch = type >= 2;
+	const int permissions[] = { R_BP_PROT_EXEC, R_BP_PROT_EXEC, R_BP_PROT_WRITE, R_BP_PROT_READ, R_BP_PROT_ACCESS };
+	if (type < 0 || type >= R_ARRAY_SIZE (permissions)) {
+		return GDBR_SERVER_UNSUPPORTED;
+	}
+	if (watch) {
+#if __i386__ || __x86_64__
+		if (type == 3) {
+			return GDBR_SERVER_UNSUPPORTED;
+		}
+#else
+		return GDBR_SERVER_UNSUPPORTED;
+#endif
+	}
+	RBreakpoint *bp = dbg->bp;
+	if (hardware && !bp->breakpoint) {
+		return GDBR_SERVER_UNSUPPORTED;
+	}
+#if !__i386__ && !__x86_64__ && !__HAIKU__
+#if !((__ARM_ARCH && __linux__) || ((__arm64__ || __aarch64__) && (__APPLE__ || __linux__)))
+	if (hardware) {
+		return GDBR_SERVER_UNSUPPORTED;
+	}
+#endif
+#endif
+	ut64 addr, kind;
+	const char *end = gdbr_parse_hex_value (cmd + 3, &addr);
+	if (!end || *end != ',') {
+		return -1;
+	}
+	end = gdbr_parse_hex_value (end + 1, &kind);
+	if (!end || *end || kind > INT_MAX || (watch && (kind != 1 && kind != 2 && kind != 4 && kind != 8))) {
+		return -1;
+	}
+	int size = kind? (int)kind: r_bp_size (bp);
+	if (size < 1 || UT64_MAX - addr < (ut64)size - 1 || (!watch && size > 16)) {
+		return -1;
+	}
+	RBreakpointItem *existing = r_bp_get_at (bp, addr);
+	if (existing && (existing->size != size || existing->perm != permissions[type] || !!existing->hw != hardware)) {
+		return -1;
+	}
+	if (*cmd == 'z') {
+		if (existing) {
+			r_bp_restore (bp, false);
+			r_bp_del (bp, addr);
+		}
+		return 0;
+	}
+	if (existing) {
+		return 0;
+	}
+	RBreakpointItem *item = hardware? r_bp_add_hw (bp, addr, size, permissions[type]):
+		r_bp_add_sw (bp, addr, size, permissions[type]);
+	return item? 0: -1;
+}
+
 static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 			     char *out_buf, size_t max_len) {
 	int ret;
@@ -372,6 +432,8 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 						if (length == 1) {
 							out_buf[0] = 'l';
 						}
+						out_buf[length] = '\0';
+						return length;
 					}
 				case 'r': // dptr -> return current tid as int
 					return core->dbg->tid;
@@ -416,13 +478,14 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 		return gdb_cmd_memory (core, cmd, out_buf, max_len);
 	case 'D':
 		return r_debug_detach (dbg, g->pid)? 0: -1;
+	case 'z':
+	case 'Z':
+		return gdb_cmd_breakpoint (dbg, cmd);
 	default:
 		return r_core_cmd (core, cmd, 0);
 	}
 	return -1;
 }
-						out_buf[length] = '\0';
-						return length;
 
 // path = "<port> <file_name>"
 static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {

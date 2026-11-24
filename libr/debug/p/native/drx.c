@@ -85,7 +85,11 @@ int drx_set(drxt *drx, int n, ut64 addr, int len, int rwx, int global) {
 	switch (rwx) {
 	case 1: rwx = 0; break;
 	case 2: rwx = 1; break;
-	case 4: rwx = 3; break;
+	case R_BP_PROT_READ:
+	case R_BP_PROT_ACCESS:
+	case R_PERM_RW:
+		rwx = 3;
+		break;
 	default:
 		rwx = 0;
 	}
