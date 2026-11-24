@@ -221,6 +221,7 @@ typedef struct libgdbr_t {
 	// parsed from target
 	struct {
 		char *regprofile;
+		char *osabi;
 		int arch, bits;
 		bool valid;
 	} target;

@@ -281,6 +281,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	g->stub_features = (libgdbr_stub_features_t){ .pkt_sz = 64, .P = true, .extended_mode = -1 };
 	g->remote_type = GDB_REMOTE_TYPE_GDB;
 	g->caps.thread_suffix = false;
+	R_FREE (g->target.osabi);
 	char *env_pktsz_str;
 	ut32 env_pktsz = 0;
 	if ((env_pktsz_str = r_sys_getenv ("R2_GDB_PKTSZ"))) {

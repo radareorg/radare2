@@ -8,170 +8,255 @@
 #include "packet.h"
 #include <r_util.h>
 #include <r_debug.h>
+#include <errno.h>
 
 #define MAX_PID_CHARS (5)
 #define MAX_FEATURE_DEPTH (16)
 
-// left: the bytes the description, its inclusions too, may still take
-static char *gdbr_read_feature(libgdbr_t *g, const char *file, size_t *tot_len, size_t *left, int depth) {
-	*tot_len = 0;
-	if (depth >= MAX_FEATURE_DEPTH) {
-		return NULL;
-	}
-	size_t retlen;
-	char *ret = gdbr_read_xfer (g, "features", file, *left, &retlen);
-	if (!ret) {
-		return NULL;
-	}
-	*left -= retlen;
-	size_t subret_space, subret_len;
-	char *tmp, *tmp2, *tmp3;
-	tmp = strstr (ret, "<xi:include");
-	while (tmp) {
-		// inclusion
-		if (!(tmp2 = strstr (tmp, "/>"))) {
-			goto exit_err;
-		}
-		subret_space = tmp2 + 2 - tmp;
-		if (!(tmp2 = strstr (tmp, "href=\""))) {
-			goto exit_err;
-		}
-		tmp2 += 6;
-		if (!(tmp3 = strchr (tmp2, '"'))) {
-			goto exit_err;
-		}
-		*tmp3 = '\0';
-		char *subret = gdbr_read_feature (g, tmp2, &subret_len, left, depth + 1);
-		*tmp3 = '"';
-		if (!subret) {
-			goto exit_err;
-		}
-		if (subret_len > subret_space) {
-			int ptrdiff = tmp - ret;
-			tmp3 = realloc (ret, retlen + subret_len + 1);
-			if (!tmp3) {
-				free (subret);
-				goto exit_err;
-			}
-			tmp = tmp3 + ptrdiff;
-			ret = tmp3;
-		}
-		memmove (tmp + subret_len, tmp + subret_space,
-			retlen - (tmp + subret_space - ret));
-		memcpy (tmp, subret, subret_len);
-		retlen += subret_len - subret_space;
-		ret[retlen] = '\0';
-		free (subret);
-		// the included document has its own includes resolved already
-		tmp = strstr (tmp + subret_len, "<xi:include");
-	}
-	*tot_len = retlen;
-	return ret;
-exit_err:
-	free (ret);
-	return NULL;
-}
+typedef struct {
+	gdb_reg_t reg;
+	const RXmlNode *type;
+	const char *group;
+	bool pc;
+} TargetReg;
 
 typedef struct {
-	char type[32];
-	struct {
-		char name[32];
-		ut32 bit_num;
-		ut32 sz; // size in bits
-	} fields[64];
-	ut32 num_bits;
-	ut32 num_fields;
-} gdbr_xml_flags_t;
+	libgdbr_t *g;
+	RList *documents;
+	RList *registers;
+	size_t remaining;
+	ut64 next_regnum;
+	const char *osabi;
+	int arch;
+	int bits;
+} TargetDescription;
 
-typedef struct {
-	char name[32];
-	char type[8];
-	ut32 size;
-	ut32 flagnum;
-	ut64 offset; // in bits; UT64_MAX when the description does not state it
-} gdbr_xml_reg_t;
-
-static void _write_flag_bits(RStrBuf *buf, const gdbr_xml_flags_t *flags);
-static int _resolve_arch(libgdbr_t *g, char *xml_data);
-static RList *_extract_flags(char *flagstr);
-static RList *_extract_regs(char *regstr, RList *flags, RStrBuf *pc_alias);
 static RDebugPid *_extract_pid_info(const char *info, const char *path, int tid);
 
-static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
-	char *regstr, *flagstr;
-	RList *flags = NULL, *regs = NULL;
-	RListIter *iter;
-	gdbr_xml_flags_t *tmpflag;
-	gdbr_xml_reg_t *tmpreg;
-	int packed_size = 0;
-	ut64 regnum = 0, regoff = 0;
-	ut32 stubnum = 0;
-	gdb_reg_t *arch_regs = NULL;
-	RStrBuf *profile_buf = r_strbuf_new ("");
-	RStrBuf *pc_alias = r_strbuf_new ("");
-	RStrBuf *flag_bits = r_strbuf_new ("");
-	if (!profile_buf || !pc_alias || !flag_bits) {
-		goto exit_err;
+static bool decimal_attribute(const RXmlNode *node, const char *key, ut64 *value) {
+	const char *text = rxml_dom_get_attribute (node, key);
+	if (!text || !isdigit ((ut8)*text)) {
+		return false;
 	}
-	if (_resolve_arch (g, xml_data) < 0) {
-		goto exit_err;
+	char *end;
+	errno = 0;
+	*value = strtoull (text, &end, 10);
+	return !*end && errno != ERANGE;
+}
+
+static void resolve_arch(TargetDescription *target, const char *arch) {
+	arch = r_str_trim_head_ro (arch);
+	if (r_str_startswith (arch, "i386")) {
+		target->arch = R_SYS_ARCH_X86;
+		target->bits = strstr (arch, ":x86-64")? 64: 32;
+	} else if (r_str_startswith (arch, "x86_64")) {
+		target->arch = R_SYS_ARCH_X86;
+		target->bits = 64;
+	} else if (r_str_startswith (arch, "aarch64") || r_str_startswith (arch, "arm64")) {
+		target->arch = R_SYS_ARCH_ARM;
+		target->bits = 64;
+	} else if (r_str_startswith (arch, "arm")) {
+		target->arch = R_SYS_ARCH_ARM;
+		target->bits = 32;
+	} else if (r_str_startswith (arch, "mips")) {
+		target->arch = R_SYS_ARCH_MIPS;
+		target->bits = strstr (arch, "64")? 64: 32;
+	} else if (r_str_startswith (arch, "riscv")) {
+		target->arch = R_SYS_ARCH_RISCV;
+		target->bits = strstr (arch, "32")? 32: 64;
+	} else {
+		char *name = r_str_trim_dup (arch);
+		target->arch = name? r_sys_arch_id (name): R_SYS_ARCH_NONE;
+		free (name);
 	}
-	if (!(flagstr = strstr (xml_data, "<feature"))) {
-		goto exit_err;
+}
+
+static const char *register_group(const char *feature, const char *group, const char *type,
+		const RXmlNode *definition, ut64 bits) {
+	if ((group && (strstr (group, "float") || strstr (group, "Float")))
+	    || (type && (r_str_startswith (type, "ieee_") || r_str_startswith (type, "i387_") || !strcmp (type, "float")))
+	    || (feature && (strstr (feature, "vfp") || strstr (feature, "pfe")))) {
+		if (bits != 128) {
+			return "fpu";
+		}
 	}
-	regstr = flagstr;
-	if (!(flags = _extract_flags (flagstr))) {
-		goto exit_err;
+	if ((group && (!strcmp (group, "system") || !strcmp (group, "segment")))
+	    || (feature && (strstr (feature, "segments") || strstr (feature, "mpx")))) {
+		return "seg";
 	}
-	if (!(regs = _extract_regs (regstr, flags, pc_alias))) {
-		goto exit_err;
+	if (bits > 64 || (group && (!strcmp (group, "vector") || !strcmp (group, "sse") || !strcmp (group, "mmx")))
+	    || (definition && !strcmp (definition->name, "vector"))) {
+		return bits <= 64? "vec64": bits <= 128? "vec128": bits <= 256? "vec256": "vec512";
 	}
-	if (!(arch_regs = calloc (sizeof (gdb_reg_t), (r_list_length (regs) + 1)))) {
-		goto exit_err;
+	return "gpr";
+}
+
+static bool read_register_xml(TargetDescription *target, const RXmlNode *node, const char *feature, HtPP *types) {
+	const char *name = rxml_dom_get_attribute (node, "name");
+	ut64 bits;
+	if (R_STR_ISEMPTY (name) || !decimal_attribute (node, "bitsize", &bits) || !bits || bits > GDBR_REGS_MAX * 8) {
+		return false;
 	}
-	r_list_foreach (regs, iter, tmpreg) {
-		// the list holds a register at each number the stub uses, and NULL at those it skips
-		const ut32 num = stubnum++;
-		if (!tmpreg) {
+	ut64 number = target->next_regnum;
+	if ((rxml_dom_get_attribute (node, "regnum") && !decimal_attribute (node, "regnum", &number))
+	    || number >= R_REG_VBANK_MAX_REGS || r_list_length (target->registers) >= R_REG_VBANK_MAX_REGS) {
+		return false;
+	}
+	ut64 offset = UT64_MAX;
+	if (rxml_dom_get_attribute (node, "offset")) {
+		if (!decimal_attribute (node, "offset", &offset) || offset >= GDBR_REGS_MAX) {
+			return false;
+		}
+		offset *= 8;
+	}
+	TargetReg *info = R_NEW0 (TargetReg);
+	r_str_ncpy (info->reg.name, name, sizeof (info->reg.name));
+	r_name_filter (info->reg.name, -1);
+	info->reg.regnum = number;
+	info->reg.offset = offset;
+	info->reg.size = bits;
+	const char *type = rxml_dom_get_attribute (node, "type");
+	info->type = type? ht_pp_find (types, type, NULL): NULL;
+	info->group = register_group (feature, rxml_dom_get_attribute (node, "group"), type, info->type, bits);
+	info->pc = type && !strcmp (type, "code_ptr");
+	target->next_regnum = number + 1;
+	if (!*info->reg.name || !r_list_append (target->registers, info)) {
+		free (info);
+		return false;
+	}
+	return true;
+}
+
+static bool read_feature_xml(TargetDescription *target, const RXmlNode *feature) {
+	HtPP *types = ht_pp_new0 ();
+	if (!types) {
+		return false;
+	}
+	const char *name = rxml_dom_get_attribute (feature, "name");
+	if (!target->arch && name) {
+		if (strstr (name, "com.apple.debugserver.arm64")) {
+			resolve_arch (target, "arm64");
+		} else if (strstr (name, "com.apple.debugserver.x86_64")) {
+			resolve_arch (target, "x86_64");
+		} else if (strstr (name, "org.gnu.gdb.riscv")) {
+			resolve_arch (target, "riscv");
+		} else if (strstr (name, "org.gnu.gdb.mips")) {
+			resolve_arch (target, "mips");
+		}
+	}
+	const RXmlNode *node;
+	bool ok = true;
+	for (node = feature->children; node && ok; node = node->next) {
+		if (!node->name) {
 			continue;
 		}
-		// lldb's stubs state where a register sits in the 'g' block, which need not follow
-		// regnum order; gdb's convention is that the registers follow each other
-		const ut64 off = tmpreg->offset != UT64_MAX? tmpreg->offset: regoff;
-		r_str_ncpy (arch_regs[regnum].name, tmpreg->name, sizeof (arch_regs[regnum].name));
-		arch_regs[regnum].size = tmpreg->size;
-		arch_regs[regnum].offset = off;
-		arch_regs[regnum].regnum = num;
-		r_strbuf_set (flag_bits, "");
-		tmpflag = NULL;
-		if (tmpreg->flagnum < r_list_length (flags)) {
-			tmpflag = r_list_get_n (flags, tmpreg->flagnum);
-			_write_flag_bits (flag_bits, tmpflag);
+		const char *id = rxml_dom_get_attribute (node, "id");
+		if (!strcmp (node->name, "reg")) {
+			ok = read_register_xml (target, node, name, types);
+		} else if (id) {
+			ok = ht_pp_insert (types, id, (void *)node);
 		}
-		packed_size = 0;
-		if (tmpreg->size >= 64 && (strstr (tmpreg->type, "fpu") || r_str_startswith (tmpreg->type, "vec"))) {
-			packed_size = tmpreg->size / 8;
+	}
+	ht_pp_free (types);
+	return ok;
+}
+
+static bool read_target_nodes(TargetDescription *target, const RXmlNode *root, int depth);
+
+static bool read_target_document(TargetDescription *target, const char *annex, int depth) {
+	if (depth >= MAX_FEATURE_DEPTH || !target->remaining || R_STR_ISEMPTY (annex) || strchr (annex, ':')) {
+		return false;
+	}
+	size_t size;
+	char *xml = gdbr_read_xfer (target->g, "features", annex, target->remaining, &size);
+	if (!xml) {
+		return false;
+	}
+	RXmlNode *document = rxml_dom_parse (xml);
+	free (xml);
+	if (!document || !r_list_append (target->documents, document)) {
+		rxml_dom_free (document);
+		return false;
+	}
+	target->remaining -= size;
+	return read_target_nodes (target, document, depth);
+}
+
+static bool read_target_nodes(TargetDescription *target, const RXmlNode *root, int depth) {
+	const RXmlNode *arch = rxml_dom_child (root, "architecture");
+	const char *text = arch? rxml_dom_child_value (arch): NULL;
+	if (text) {
+		resolve_arch (target, text);
+	}
+	const RXmlNode *osabi = rxml_dom_child (root, "osabi");
+	if (osabi) {
+		target->osabi = rxml_dom_child_value (osabi);
+	}
+	const RXmlNode *node;
+	for (node = root->children; node; node = node->next) {
+		if (!node->name) {
+			continue;
 		}
-		r_strbuf_appendf (profile_buf, "%s\t%s\t.%u\t.%" PFMT64d "\t%d\t%s\n", tmpreg->type,
-			tmpreg->name, tmpreg->size, off,
-			packed_size,
-			r_strbuf_get (flag_bits));
-		// TODO write flag subregisters
-		if (tmpflag) {
-			int i;
-			for (i = 0; i < tmpflag->num_fields; i++) {
-				r_strbuf_appendf (profile_buf, "gpr\t%s\t"
-							".%u\t.%"PFMT64d"\t0\n", tmpflag->fields[i].name,
-							tmpflag->fields[i].sz, tmpflag->fields[i].bit_num + off);
+		if (!strcmp (node->name, "target")) {
+			if (root->name || !read_target_nodes (target, node, depth)) {
+				return false;
+			}
+		} else if (!strcmp (node->name, "feature")) {
+			if (!read_feature_xml (target, node)) {
+				return false;
+			}
+		} else if (!strcmp (node->name, "xi:include")) {
+			if (!read_target_document (target, rxml_dom_get_attribute (node, "href"), depth + 1)) {
+				return false;
 			}
 		}
-		regnum++;
-		regoff = R_MAX (regoff, off + tmpreg->size);
 	}
-	// Difficult to parse these out from xml. So manually added from gdb's xml files
-	switch (g->target.arch) {
+	return true;
+}
+
+static int compare_registers(const void *a, const void *b) {
+	const TargetReg *left = a, *right = b;
+	return (int)left->reg.regnum - (int)right->reg.regnum;
+}
+
+static bool append_register_profile(RStrBuf *profile, const TargetReg *info, const gdb_reg_t *reg) {
+	const bool packed = reg->size >= 64 && (r_str_startswith (info->group, "vec") || !strcmp (info->group, "fpu"));
+	char bits[65] = {0};
+	ut32 letters = 0;
+	const RXmlNode *type = info->type;
+	const bool bitfields = type && reg->size <= 64 && (!strcmp (type->name, "flags") || !strcmp (type->name, "struct"));
+	if (bitfields) {
+		memset (bits, '.', reg->size);
+		const RXmlNode *field;
+		for (field = type->children; field; field = field->next) {
+			const char *name = rxml_dom_get_attribute (field, "name");
+			ut64 start, end;
+			if (R_STR_ISEMPTY (name) || !decimal_attribute (field, "start", &start)
+			    || !decimal_attribute (field, "end", &end) || start > end || end >= reg->size) {
+				continue;
+			}
+			char token[32];
+			r_str_ncpy (token, name, sizeof (token));
+			r_name_filter (token, -1);
+			if (*token && !r_strbuf_appendf (profile, "gpr\t%s\t.%"PFMT64u"\t.%"PFMT64u"\t0\n",
+					token, end - start + 1, reg->offset + start)) {
+				return false;
+			}
+			int c = tolower ((ut8)token[0]) - 'a';
+			if (start == end && c >= 0 && c < 26 && !(letters & (1U << c))) {
+				bits[start] = 'a' + c;
+				letters |= 1U << c;
+			}
+		}
+	}
+	return r_strbuf_appendf (profile, "%s\t%s\t.%"PFMT64u"\t.%"PFMT64u"\t%"PFMT64u"\t%s\n",
+		info->group, reg->name, (ut64)reg->size, (ut64)reg->offset, packed? (ut64)reg->size / 8: 0, bits);
+}
+
+static void prepend_register_aliases(RStrBuf *profile_buf, int arch, int bits) {
+	switch (arch) {
 	case R_SYS_ARCH_ARM:
-		switch (g->target.bits) {
+		switch (bits) {
 		case 32:
 			r_strbuf_prepend (profile_buf,
 				"=PC	pc\n"
@@ -198,7 +283,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		}
 		break;
 	case R_SYS_ARCH_X86:
-		switch (g->target.bits) {
+		switch (bits) {
 		case 32:
 			r_strbuf_prepend (profile_buf,
 				"=PC	eip\n"
@@ -221,44 +306,86 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			"=SP	r29\n");
 		break;
 	default:
-		// TODO others
-		if (!r_strbuf_is_empty (pc_alias)) {
-			r_strbuf_prepend (profile_buf, r_strbuf_get (pc_alias));
-		}
+		break;
 	}
-	// Special case for MIPS, since profile doesn't separate 32/64 bit MIPS
-	if (g->target.arch == R_SYS_ARCH_MIPS) {
-		if (arch_regs && arch_regs[0].size == 8) {
-			g->target.bits = 64;
-		}
-	}
-	r_list_free (flags);
-	r_list_free (regs);
-	flags = NULL;
-	regs = NULL;
-	char *new_profile = r_strbuf_drain (profile_buf);
-	profile_buf = NULL;
-	if (!new_profile) {
-		goto exit_err;
-	}
-	R_FREE (g->target.regprofile);
-	g->target.regprofile = new_profile;
-	r_strbuf_free (pc_alias);
-	r_strbuf_free (flag_bits);
-	g->target.valid = true;
-	free (g->registers);
-	g->registers = arch_regs;
-	gdbr_regs_invalidate (g);
-	return 0;
+}
 
-exit_err:
-	r_list_free (flags);
-	r_list_free (regs);
-	r_strbuf_free (profile_buf);
-	r_strbuf_free (pc_alias);
-	r_strbuf_free (flag_bits);
-	free (arch_regs);
-	return -1;
+static bool apply_target_description(TargetDescription *target) {
+	libgdbr_t *g = target->g;
+	char *osabi = target->osabi? r_str_trim_dup (target->osabi): NULL;
+	if (r_list_empty (target->registers)) {
+		if (target->arch && target->bits) {
+			gdbr_set_architecture (g, target->arch, target->bits);
+		}
+		free (g->target.osabi);
+		g->target.osabi = osabi;
+		return true;
+	}
+	r_list_sort (target->registers, compare_registers);
+	const size_t count = r_list_length (target->registers);
+	gdb_reg_t *registers = R_NEWS0 (gdb_reg_t, count + 1);
+	if (!registers) {
+		free (osabi);
+		return false;
+	}
+	RStrBuf profile;
+	r_strbuf_init (&profile);
+	const TargetReg *info;
+	RListIter *iter;
+	ut64 offset = 0;
+	size_t index = 0;
+	const gdb_reg_t *pc = NULL;
+	r_list_foreach (target->registers, iter, info) {
+		gdb_reg_t *reg = &registers[index];
+		*reg = info->reg;
+		if (reg->offset == UT64_MAX) {
+			reg->offset = offset;
+		}
+		size_t end;
+		if ((index && reg->regnum == registers[index - 1].regnum)
+		    || !gdbr_reg_byte_end (reg, &end) || !append_register_profile (&profile, info, reg)) {
+			break;
+		}
+		offset = R_MAX (offset, reg->offset + reg->size);
+		if (info->pc) {
+			pc = reg;
+		}
+		index++;
+	}
+	bool ok = index == count;
+	if (ok) {
+		if (target->arch == R_SYS_ARCH_MIPS && registers[0].size == 64) {
+			target->bits = 64;
+		}
+		if (!target->bits) {
+			target->bits = pc && (pc->size == 32 || pc->size == 64)? pc->size: g->target.bits;
+		}
+		if (pc) {
+			r_strf_var (alias, 64, "=PC\t%s\n", pc->name);
+			r_strbuf_prepend (&profile, alias);
+		}
+		prepend_register_aliases (&profile, target->arch, target->bits);
+		char *text = strdup (r_strbuf_get (&profile));
+		ok = text != NULL;
+		if (ok) {
+			free (g->target.regprofile);
+			free (g->target.osabi);
+			free (g->registers);
+			g->target.regprofile = text;
+			g->target.osabi = osabi;
+			g->target.arch = target->arch;
+			g->target.bits = target->bits;
+			g->target.valid = true;
+			g->registers = registers;
+			gdbr_regs_invalidate (g);
+		}
+	}
+	r_strbuf_fini (&profile);
+	if (!ok) {
+		free (registers);
+		free (osabi);
+	}
+	return ok;
 }
 
 /* Reference:
@@ -381,19 +508,21 @@ end:
 	return ret;
 }
 
-// If xml target description is supported, read it
 int gdbr_read_target_xml(libgdbr_t *g) {
 	if (!g->stub_features.qXfer_features_read) {
 		return -1;
 	}
-	char *data;
-	size_t len, left = GDBR_XFER_MAX;
-	if (!(data = gdbr_read_feature (g, "target.xml", &len, &left, 0))) {
-		return -1;
-	}
-	gdbr_parse_target_xml (g, data, len);
-	free (data);
-	return 0;
+	TargetDescription target = {
+		.g = g,
+		.documents = r_list_newf ((RListFree)rxml_dom_free),
+		.registers = r_list_newf (free),
+		.remaining = GDBR_XFER_MAX,
+	};
+	bool ok = target.documents && target.registers && read_target_document (&target, "target.xml", 0)
+		&& apply_target_description (&target);
+	r_list_free (target.documents);
+	r_list_free (target.registers);
+	return ok? 0: -1;
 }
 
 int gdbr_read_processes_xml(libgdbr_t *g, int pid, RList *list) {
@@ -408,200 +537,6 @@ int gdbr_read_processes_xml(libgdbr_t *g, int pid, RList *list) {
 	int ret = gdbr_parse_processes_xml (g, data, len, pid, list);
 	free (data);
 	return ret;
-}
-
-static void _write_flag_bits(RStrBuf *buf, const gdbr_xml_flags_t *flags) {
-	bool fc[26] = { false };
-	ut32 i, c;
-	if (!buf || !flags || flags->num_bits > 64) {
-		return;
-	}
-	r_strbuf_set (buf, "");
-	r_strbuf_pad (buf, '.', flags->num_bits);
-	char *bits = r_strbuf_get (buf);
-	for (i = 0; i < flags->num_fields; i++) {
-		// How do we show multi-bit flags?
-		if (flags->fields[i].sz != 1) {
-			continue;
-		}
-		if (flags->fields[i].bit_num >= flags->num_bits) {
-			continue;
-		}
-		// To avoid duplicates. This skips flags if first char is same. i.e.
-		// for x86_64, it will skip VIF because VM already occurred. This is
-		// same as default reg-profiles in r2
-		c = tolower ((unsigned char)flags->fields[i].name[0]) - 'a';
-		if (c >= R_ARRAY_SIZE (fc)) {
-			continue;
-		}
-		if (fc[c]) {
-			continue;
-		}
-		fc[c] = true;
-		bits[flags->fields[i].bit_num] = 'a' + c;
-	}
-}
-
-static int _resolve_arch(libgdbr_t *g, char *xml_data) {
-	char *arch;
-	// Find architecture
-	g->target.arch = R_SYS_ARCH_NONE;
-	if ((arch = strstr (xml_data, "<architecture"))) {
-		if (!(arch = strchr (arch, '>'))) {
-			return -1;
-		}
-		arch++;
-		if (r_str_startswith (arch, "i386")) {
-			g->target.arch = R_SYS_ARCH_X86;
-			g->target.bits = 32;
-			arch += 4;
-			if (r_str_startswith (arch, ":x86-64")) {
-				g->target.bits = 64;
-			}
-		} else if (r_str_startswith (arch, "x86_64")) {
-			// lldb-server
-			g->target.arch = R_SYS_ARCH_X86;
-			g->target.bits = 64;
-		} else if (r_str_startswith (arch, "aarch64") || r_str_startswith (arch, "arm64")) {
-			g->target.arch = R_SYS_ARCH_ARM;
-			g->target.bits = 64;
-		} else if (r_str_startswith (arch, "arm")) {
-			g->target.arch = R_SYS_ARCH_ARM;
-			g->target.bits = 32;
-		} else if (r_str_startswith (arch, "mips")) {
-			g->target.arch = R_SYS_ARCH_MIPS;
-			g->target.bits = 32;
-		}
-		// TODO others
-	} else {
-		// apple's debugserver on ios9
-		if (strstr (xml_data, "com.apple.debugserver.arm64")) {
-			g->target.arch = R_SYS_ARCH_ARM;
-			g->target.bits = 64;
-		} else if (strstr (xml_data, "org.gnu.gdb.riscv")) {
-			// openocd mips?
-			g->target.arch = R_SYS_ARCH_RISCV;
-			g->target.bits = 64;
-		} else if (strstr (xml_data, "org.gnu.gdb.mips")) {
-			// openocd mips?
-			g->target.arch = R_SYS_ARCH_MIPS;
-			g->target.bits = 32;
-		} else if (strstr(xml_data, "com.apple.debugserver.x86_64")) {
-			g->target.arch = R_SYS_ARCH_X86;
-			g->target.bits = 64;
-		} else {
-			R_LOG_WARN ("Unknown architecture parsing XML (%s)", xml_data);
-		}
-	}
-	return 0;
-}
-
-static RList *_extract_flags(char *flagstr) {
-	char *tmp1, *tmp2, *flagsend, *field_start, *field_end;
-	ut64 num_fields, type_sz, name_sz;
-	gdbr_xml_flags_t *tmpflag = NULL;
-	RList *flags;
-	if (!(flags = r_list_new ())) {
-		return NULL;
-	}
-	flags->free = free;
-	while ((flagstr = strstr (flagstr, "<flags"))) {
-		if (!(flagsend = strstr (flagstr, "</flags>"))) {
-			goto exit_err;
-		}
-		*flagsend = '\0';
-		tmpflag = R_NEW0 (gdbr_xml_flags_t);
-		// Get id
-		if (!(tmp1 = strstr (flagstr, "id="))) {
-			goto exit_err;
-		}
-		tmp1 += 4;
-		if (!(tmp2 = strchr (tmp1, '"'))) {
-			goto exit_err;
-		}
-		*tmp2 = '\0';
-		type_sz = sizeof (tmpflag->type);
-		r_str_ncpy (tmpflag->type, tmp1, type_sz);
-		*tmp2 = '"';
-		// Get size of flags register
-		if (!(tmp1 = strstr (flagstr, "size="))) {
-			goto exit_err;
-		}
-		tmp1 += 6;
-		if (!(tmpflag->num_bits = (ut32) strtoul (tmp1, NULL, 10))) {
-			goto exit_err;
-		}
-		tmpflag->num_bits *= 8;
-		// Get fields
-		num_fields = 0;
-		field_start = flagstr;
-		while ((field_start = strstr (field_start, "<field"))) {
-			// Max 64 fields
-			if (num_fields >= 64) {
-				break;
-			}
-			if (!(field_end = strstr (field_start, "/>"))) {
-				goto exit_err;
-			}
-			*field_end = '\0';
-			// Get name
-			if (!(tmp1 = strstr (field_start, "name="))) {
-				goto exit_err;
-			}
-			tmp1 += 6;
-			if (!(tmp2 = strchr (tmp1, '"'))) {
-				goto exit_err;
-			}
-			// If name length is 0, it is a 1 field. Don't include
-			if (tmp2 - tmp1 <= 1) {
-				*field_end = '/';
-				field_start = field_end + 1;
-				continue;
-			}
-			*tmp2 = '\0';
-			name_sz = sizeof (tmpflag->fields[num_fields].name);
-			r_str_ncpy (tmpflag->fields[num_fields].name, tmp1, name_sz);
-			*tmp2 = '"';
-			// names from the stub end up in the reg profile and in .dr* commands
-			if (!r_name_filter (tmpflag->fields[num_fields].name, -1)) {
-				R_LOG_WARN ("Invalid flag field name in target.xml, using %s", tmpflag->fields[num_fields].name);
-			}
-			// Get offset
-			if (!(tmp1 = strstr (field_start, "start="))) {
-				goto exit_err;
-			}
-			tmp1 += 7;
-			if (!isdigit ((unsigned char)*tmp1)) {
-				goto exit_err;
-			}
-			tmpflag->fields[num_fields].bit_num = (ut32) strtoul (tmp1, NULL, 10);
-			// Get end
-			if (!(tmp1 = strstr (field_start, "end="))) {
-				goto exit_err;
-			}
-			tmp1 += 5;
-			if (!isdigit ((unsigned char)*tmp1)) {
-				goto exit_err;
-			}
-			tmpflag->fields[num_fields].sz = (ut32) strtoul (tmp1, NULL, 10) + 1;
-			tmpflag->fields[num_fields].sz -= tmpflag->fields[num_fields].bit_num;
-			num_fields++;
-			*field_end = '/';
-			field_start = field_end + 1;
-		}
-		tmpflag->num_fields = num_fields;
-		r_list_push (flags, tmpflag);
-		tmpflag = NULL;
-		*flagsend = '<';
-		flagstr = flagsend + 1;
-	}
-	return flags;
-exit_err:
-	if (flags) {
-		r_list_free (flags);
-	}
-	free (tmpflag);
-	return NULL;
 }
 
 static RDebugPid *_extract_pid_info(const char *info, const char *path, int tid) {
@@ -647,209 +582,4 @@ static RDebugPid *_extract_pid_info(const char *info, const char *path, int tid)
 	pid_info->runnable = true;
 	pid_info->pc = 0;
 	return pid_info;
-}
-
-static RList *_extract_regs(char *regstr, RList *flags, RStrBuf *pc_alias) {
-	char *regstr_end, *regname, *tmp1, *tmpregstr, *feature_end;
-	const char *typegroup, *regtype;
-	ut32 flagnum, regname_len, regsize, regnum;
-	bool code_ptr;
-	RList *regs;
-	RListIter *iter;
-	gdbr_xml_reg_t *tmpreg;
-	gdbr_xml_flags_t *tmpflag;
-	if (!(regs = r_list_newf (free))) {
-		return NULL;
-	}
-	// Set gpr as the default register type for all of the following registers until `feature` is found
-	typegroup = "gpr";
-	while ((tmpregstr = strstr (regstr, "<reg"))) {
-		if (!(regstr_end = strchr (tmpregstr, '/'))) {
-			goto exit_err;
-		}
-		// Most regs don't have group/type params, attempt to get the type from `feature`.
-		// Multiple registers can be wrapped with a certain feature so this typegroup
-		// applies on all of the following registers until </feature>
-		if (r_str_startswith (regstr, "<feature")) {
-			// Verify that we found the feature in the current node
-			feature_end = strchr (regstr, '>');
-			// To parse features of other architectures refer to:
-			// https://sourceware.org/gdb/onlinedocs/gdb/Standard-Target-Features.html#Standard-Target-Features
-            // - x86
-			if ((tmp1 = strstr (regstr, "core")) && tmp1 < feature_end) {
-				typegroup = "gpr";
-			} else if ((tmp1 = strstr (regstr, "segments")) && tmp1 < feature_end) {
-				typegroup = "seg";
-			} else if ((tmp1 = strstr (regstr, "linux")) && tmp1 < feature_end) {
-				typegroup = "gpr";
-			// Includes avx.512
-			} else if ((tmp1 = strstr (regstr, "avx")) && tmp1 < feature_end) {
-				typegroup = "vec256";
-			} else if ((tmp1 = strstr (regstr, "mpx")) && tmp1 < feature_end) {
-				typegroup = "seg";
-			// - arm
-			} else if ((tmp1 = strstr (regstr, "m-profile")) && tmp1 < feature_end) {
-				typegroup = "gpr";
-			} else if ((tmp1 = strstr (regstr, "pfe")) && tmp1 < feature_end) {
-				typegroup = "fpu";
-			} else if ((tmp1 = strstr (regstr, "vfp")) && tmp1 < feature_end) {
-				typegroup = "fpu";
-			} else if ((tmp1 = strstr (regstr, "iwmmxt")) && tmp1 < feature_end) {
-				typegroup = "vec128";
-			// -- Aarch64
-			} else if ((tmp1 = strstr (regstr, "sve")) && tmp1 < feature_end) {
-				typegroup = "vec256";
-			} else {
-				typegroup = "gpr";
-			}
-		}
-		// Reset to typegroup in case the previous register had a group/type parameter
-		// that indicated it's specific type which doesn't correspond to type defined by
-		// the parent feature tag
-		regtype = typegroup;
-		code_ptr = false;
-		regstr = tmpregstr;
-		*regstr_end = '\0';
-		// name
-		if (!(regname = strstr (regstr, "name="))) {
-			goto exit_err;
-		}
-		regname += 6;
-		if (!(tmp1 = strchr (regname, '"'))) {
-			goto exit_err;
-		}
-		regname_len = tmp1 - regname;
-		// size
-		if (!(tmp1 = strstr (regstr, "bitsize="))) {
-			goto exit_err;
-		}
-		tmp1 += 9;
-		if (!isdigit ((unsigned char)*tmp1)) {
-			goto exit_err;
-		}
-		regsize = strtoul (tmp1, NULL, 10);
-		// regnum
-		regnum = UINT32_MAX;
-		if ((tmp1 = strstr (regstr, "regnum="))) {
-			tmp1 += 8;
-			if (!isdigit ((ut8)*tmp1)) {
-				goto exit_err;
-			}
-			char *end;
-			unsigned long parsed_regnum = strtoul (tmp1, &end, 10);
-			if (*end != '"' || parsed_regnum >= R_REG_VBANK_MAX_REGS) {
-				goto exit_err;
-			}
-			regnum = (ut32)parsed_regnum;
-		}
-		// offset, in bytes
-		ut64 regoffset = UT64_MAX;
-		if ((tmp1 = strstr (regstr, " offset="))) {
-			tmp1 += 9;
-			if (!isdigit ((ut8)*tmp1)) {
-				goto exit_err;
-			}
-			char *end;
-			unsigned long parsed_offset = strtoul (tmp1, &end, 10);
-			if (*end != '"' || parsed_offset > UT32_MAX / 8) {
-				goto exit_err;
-			}
-			regoffset = (ut64)parsed_offset * 8;
-		}
-		flagnum = r_list_length (flags);
-		if ((tmp1 = strstr (regstr, "group="))) {
-			tmp1 += 7;
-			if (r_str_startswith (tmp1, "float")) {
-				regtype = "fpu";
-			} else if (r_str_startswith (tmp1, "mmx")) {
-				regtype = "vec64";
-			} else if (r_str_startswith (tmp1, "sse")) {
-				regtype = "vec128";
-			} else if (r_str_startswith (tmp1, "vector")) {
-				regtype = "vec256";
-			} else if (r_str_startswith (tmp1, "system")) {
-				regtype = "seg";
-			}
-			// We need type information in r2 register profiles
-		}
-		if ((tmp1 = strstr (regstr, "type="))) {
-			tmp1 += 6;
-			if (r_str_startswith (tmp1, "vec")
-			    || r_str_startswith (tmp1, "i387_ext")
-			    || r_str_startswith (tmp1, "ieee_single")
-			    || r_str_startswith (tmp1, "ieee_double")) {
-				regtype = "fpu";
-			} else if (r_str_startswith (tmp1, "code_ptr")) {
-				code_ptr = true;
-			} else {
-				// Check all flags. If reg is a flag, write flag data
-				flagnum = 0;
-				r_list_foreach (flags, iter, tmpflag) {
-					if (r_str_startswith (tmp1, tmpflag->type)) {
-						// Max 64-bit :/
-						if (tmpflag->num_bits <= 64) {
-							break;
-						}
-					}
-					flagnum++;
-				}
-			}
-			// We need type information in r2 register profiles
-		}
-		// Move unidentified vector/large registers from gpr to vec128 since r2 set/get
-		// registers doesn't support >64bit registers atm(but it's still possible to
-		// read them using gdbr's implementation through dr/drt)
-		if (regsize > 64 && !strcmp (regtype, "gpr")) {
-			regtype = "vec128";
-		}
-		// Move appropriately sized unidentified xmm registers from fpu to vec128
-		if (regsize == 128 && !strcmp (regtype, "fpu")) {
-			regtype = "vec128";
-		}
-		if (regnum == UINT32_MAX && r_list_length (regs) >= R_REG_VBANK_MAX_REGS) {
-			goto exit_err;
-		}
-		tmpreg = R_NEW0 (gdbr_xml_reg_t);
-		regname[regname_len] = '\0';
-		if (regname_len > sizeof (tmpreg->name) - 1) {
-			R_LOG_WARN ("Register name too long: %s", regname);
-		}
-		r_str_ncpy (tmpreg->name, regname, sizeof (tmpreg->name));
-		regname[regname_len] = '"';
-		if (!r_name_filter (tmpreg->name, -1)) {
-			R_LOG_WARN ("Invalid register name in target.xml, using %s", tmpreg->name);
-		}
-		r_str_ncpy (tmpreg->type, regtype, sizeof (tmpreg->type));
-		tmpreg->size = regsize;
-		tmpreg->flagnum = flagnum;
-		tmpreg->offset = regoffset;
-		if (code_ptr) {
-			r_strbuf_set (pc_alias, "=PC\t");
-			r_strbuf_append (pc_alias, tmpreg->name);
-			r_strbuf_append (pc_alias, "\n");
-		}
-		if (regnum == UINT32_MAX) {
-			r_list_push (regs, tmpreg);
-		} else if (regnum >= r_list_length (regs)) {
-			int i;
-			for (i = regnum - r_list_length (regs); i > 0; i--) {
-				r_list_push (regs, NULL);
-			}
-			r_list_push (regs, tmpreg);
-		} else {
-			// this is where we replace those placeholder regs
-			r_list_set_n (regs, regnum, tmpreg);
-		}
-		*regstr_end = '/';
-		regstr = regstr_end + 2;
-		if (r_str_startswith (regstr, "</feature>")) {
-			regstr += sizeof ("</feature>") - 1;
-			// Revert to default
-			typegroup = "gpr";
-		}
-	}
-	return regs;
-exit_err:
-	r_list_free (regs);
-	return NULL;
 }

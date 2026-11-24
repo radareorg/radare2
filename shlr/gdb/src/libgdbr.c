@@ -64,8 +64,9 @@ bool gdbr_set_architecture(libgdbr_t *g, int arch, int bits) {
 		R_LOG_ERROR ("%s: cannot find gdb reg_profile", __func__);
 		return false;
 	}
-	if (!gdbr_set_reg_profile (g, regprofile)) {
-		free (regprofile);
+	int ret = gdbr_set_reg_profile (g, regprofile);
+	free (regprofile);
+	if (ret < 0) {
 		return false;
 	}
 	g->target.arch = arch;
@@ -176,6 +177,7 @@ int gdbr_cleanup(libgdbr_t *g) {
 	gdbr_regs_invalidate (g);
 	R_FREE (g->registers);
 	R_FREE (g->target.regprofile);
+	R_FREE (g->target.osabi);
 	g->target.valid = false;
 	R_FREE (g->data);
 	g->send_len = 0;
