@@ -424,7 +424,8 @@ static bool test_gdb_debug_watchpoints(void) {
 	mu_assert_true (r_debug_use (dbg, "gdb"), "select the GDB debugger");
 	RDebugPlugin *plugin = dbg->current->plugin;
 	const char *replies[] = {
-		"OK", "OK", "T05watch:1234;", "OK", "OK", "T05rwatch:1235;", "OK", "OK", "T05awatch:ffffffffffffffff;", NULL
+		"OK", "OK", "T05watch:1234;", "OK", "OK", "T05rwatch:1235;", "OK", "OK", "T05awatch:ffffffffffffffff;",
+		"W0;process:10", "Xb;process:10", "W2a", NULL
 	};
 	const struct {
 		int perm;
@@ -446,8 +447,26 @@ static bool test_gdb_debug_watchpoints(void) {
 		mu_assert_eq (plugin->wait (dbg, dbg->pid), cases[i].reason, "report watchpoint access type");
 		mu_assert_eq (dbg->reason.addr, cases[i].addr, "report watched address");
 	}
+	g.stub_features.multiprocess = true;
+	g.connected = 1;
+	mu_assert_true (plugin->cont (dbg, dbg->pid, dbg->tid, 0), "continue to successful exit");
+	mu_assert_eq (plugin->wait (dbg, dbg->pid), R_DEBUG_REASON_DEAD, "report successful exit");
+	mu_assert_true (dbg->reason.exited_normally, "distinguish a zero exit status from no status");
+	mu_assert_eq (dbg->reason.exit_code, 0, "report zero exit code");
+	mu_assert_eq (dbg->reason.tid, 0x10, "report the exited process");
+	mu_assert_eq (g.connected, 1, "multiprocess exit keeps the connection");
+	mu_assert_true (plugin->cont (dbg, dbg->pid, dbg->tid, 0), "continue to signal termination");
+	mu_assert_eq (plugin->wait (dbg, dbg->pid), R_DEBUG_REASON_DEAD, "report signal termination");
+	mu_assert_false (dbg->reason.exited_normally, "signal termination has no normal status");
+	mu_assert_eq (dbg->reason.signum, 0xb, "report termination signal");
+	mu_assert_true (plugin->cont (dbg, dbg->pid, dbg->tid, 0), "continue to a nonzero exit");
+	mu_assert_eq (g.connected, 0, "single-process exit closes the connection");
+	mu_assert_eq (plugin->wait (dbg, dbg->pid), R_DEBUG_REASON_DEAD, "report exit after disconnect");
+	mu_assert_true (dbg->reason.exited_normally, "preserve normal exit after disconnect");
+	mu_assert_eq (dbg->reason.exit_code, 0x2a, "report nonzero exit code");
+	mu_assert_eq (dbg->reason.signum, 0, "normal exit clears prior signal");
 	mu_assert_streq_free (stub_finish (&stub, th, fds[0]),
-		"Z2,1234,10\nz2,1234,10\nc\nZ3,1234,10\nz3,1234,10\nc\nZ4,1234,10\nz4,1234,10\nc\n",
+		"Z2,1234,10\nz2,1234,10\nc\nZ3,1234,10\nz3,1234,10\nc\nZ4,1234,10\nz4,1234,10\nc\nc\nc\nc\n",
 		"watchpoint packets use the same hexadecimal length for insertion and removal");
 	core->io->desc = NULL;
 	r_core_free (core);

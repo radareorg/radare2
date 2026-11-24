@@ -779,7 +779,11 @@ R_API RDebugReasonType r_debug_wait(RDebug * R_NONNULL dbg, RBreakpointItem ** R
 	if (plugin && plugin->wait) {
 		reason = plugin->wait (dbg, dbg->pid);
 		if (reason == R_DEBUG_REASON_DEAD) {
-			R_LOG_INFO ("==> Process finished");
+			if (dbg->reason.exited_normally) {
+				R_LOG_INFO ("==> Process exited with status %"PFMT32u, dbg->reason.exit_code);
+			} else {
+				R_LOG_INFO ("==> Process finished");
+			}
 			REventDebugProcessFinished event = {
 				.pid = dbg->pid
 			};

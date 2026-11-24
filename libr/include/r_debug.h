@@ -140,7 +140,13 @@ typedef struct r_debug_reason_t {
 	ut64 bp_addr;
 	ut64 timestamp;
 	ut64 addr;
-	ut64 ptr;
+	union {
+		ut64 ptr;
+		struct {
+			ut32 exit_code;
+			bool exited_normally;
+		};
+	};
 } RDebugReason;
 
 typedef struct r_debug_map_t {

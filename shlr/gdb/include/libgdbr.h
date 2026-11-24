@@ -126,8 +126,10 @@ typedef struct libgdbr_fstat_t {
  */
 typedef struct libgdbr_stop_reason {
 	unsigned signum;
+	ut32 exit_code;
 	int core;
 	int reason;
+	bool exited_normally;
 	bool syscall;
 	bool library;
 	bool swbreak;

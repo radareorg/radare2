@@ -411,8 +411,9 @@ static bool r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
 	if (!pd->desc || gdbr_continue (pd->desc, pid, -1, sig) < 0) {
 		return execution_failed (dbg, pd->desc);
 	}
-	if (pd->desc->stop_reason.is_valid && pd->desc->stop_reason.thread.present) {
-		pd->desc->tid = pd->desc->stop_reason.thread.tid;
+	const libgdbr_stop_reason_t *stop = &pd->desc->stop_reason;
+	if (stop->is_valid && stop->reason != R_DEBUG_REASON_DEAD && stop->thread.present) {
+		pd->desc->tid = stop->thread.tid;
 	}
 	dbg->tid = pd->desc->tid;
 	return true;
@@ -434,19 +435,24 @@ static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
 			return R_DEBUG_REASON_UNKNOWN;
 		}
 	}
-	if (pd->desc->stop_reason.thread.present) {
-		dbg->reason.tid = pd->desc->stop_reason.thread.tid;
-		dbg->pid = pd->desc->stop_reason.thread.pid;
-		dbg->tid = pd->desc->stop_reason.thread.tid;
+	const libgdbr_stop_reason_t *stop = &pd->desc->stop_reason;
+	dbg->reason.ptr = 0;
+	dbg->reason.addr = stop->watchpoint.present? stop->watchpoint.addr: 0;
+	dbg->reason.signum = stop->signum;
+	dbg->reason.type = stop->reason;
+	if (stop->reason == R_DEBUG_REASON_DEAD) {
+		dbg->reason.tid = stop->thread.tid;
+		dbg->reason.exit_code = stop->exit_code;
+		dbg->reason.exited_normally = stop->exited_normally;
+	} else if (stop->thread.present) {
+		dbg->reason.tid = stop->thread.tid;
+		dbg->pid = stop->thread.pid;
+		dbg->tid = stop->thread.tid;
 		if (dbg->pid != pd->desc->pid || dbg->tid != pd->desc->tid) {
-			//eprintf ("= attach %d %d\n", dbg->pid, dbg->tid);
 			gdbr_select (pd->desc, dbg->pid, dbg->tid);
 		}
 	}
-	dbg->reason.addr = pd->desc->stop_reason.watchpoint.present? pd->desc->stop_reason.watchpoint.addr: 0;
-	dbg->reason.signum = pd->desc->stop_reason.signum;
-	dbg->reason.type = pd->desc->stop_reason.reason;
-	return pd->desc->stop_reason.reason;
+	return dbg->reason.type;
 }
 
 static bool r_debug_gdb_attach(RDebug *dbg, int pid) {

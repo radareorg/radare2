@@ -191,32 +191,54 @@ static bool stop_reason_register(libgdbr_t *g, const char *tok) {
 	return true;
 }
 
+static const char *parse_hex_value(const char *digits, ut64 *result) {
+	const char *end = digits;
+	ut64 value = 0;
+	int digit;
+	while ((digit = hex2int (*end)) >= 0) {
+		if (value > (UT64_MAX >> 4)) {
+			return NULL;
+		}
+		value = (value << 4) | digit;
+		end++;
+	}
+	*result = value;
+	return end == digits? NULL: end;
+}
+
 static int stop_reason_death(libgdbr_t *g, bool is_signal) {
-	int value = 0, pid = g->pid;
-	bool multi = g->stub_features.multiprocess && g->data_len > 3;
+	ut64 value, pid = g->pid;
+	const char *end = parse_hex_value (g->data + 1, &value);
+	if (!end || value > (is_signal? UT8_MAX: UT32_MAX)) {
+		return -1;
+	}
+	const bool multi = *end != '\0';
 	if (multi) {
-		if (sscanf (g->data + 1, "%x;process:%x", &value, &pid) != 2) {
-			R_LOG_DEBUG ("Message from remote: %s", g->data);
+		const char *prefix = ";process:";
+		if (!g->stub_features.multiprocess || !r_str_startswith (end, prefix)) {
 			return -1;
 		}
-	} else if (!isxdigit ((unsigned char)g->data[1])) {
-		R_LOG_DEBUG ("Message from remote: %s", g->data);
-		return -1;
+		end = parse_hex_value (end + strlen (prefix), &pid);
+		if (!end || (*end && strcmp (end, ";")) || pid == 0 || pid > INT_MAX) {
+			return -1;
+		}
 	} else {
-		value = (int) strtol (g->data + 1, NULL, 16);
+		gdbr_disconnect (g);
 	}
-	R_LOG_DEBUG ("Process %d %s %d", pid,
-		is_signal? "terminated with signal": "exited with status", value);
-	gdbr_stop_reason_reset (&g->stop_reason);
-	g->stop_reason.reason = R_DEBUG_REASON_DEAD;
-	g->stop_reason.thread.pid = pid;
-	g->stop_reason.thread.tid = pid;
+	libgdbr_stop_reason_t *stop = &g->stop_reason;
+	gdbr_stop_reason_reset (stop);
+	stop->reason = R_DEBUG_REASON_DEAD;
+	stop->thread.pid = pid;
+	stop->thread.tid = pid;
+	stop->thread.present = multi;
 	if (is_signal) {
-		g->stop_reason.signum = value;
+		stop->signum = value;
+	} else {
+		stop->exited_normally = true;
+		stop->exit_code = value;
 	}
-	int ret = multi? 0: gdbr_disconnect (g);
-	g->stop_reason.is_valid = true;
-	return ret;
+	stop->is_valid = true;
+	return 0;
 }
 
 static bool parse_watch_stop(libgdbr_stop_reason_t *reason, const char *field) {
@@ -230,17 +252,9 @@ static bool parse_watch_stop(libgdbr_stop_reason_t *reason, const char *field) {
 	} else {
 		return false;
 	}
-	const char *value = strchr (field, ':') + 1;
-	ut64 address = 0;
-	int digits = 0;
-	for (; *value; value++) {
-		int digit = hex2int (*value);
-		if (digit < 0 || ++digits > 16) {
-			return false;
-		}
-		address = (address << 4) | digit;
-	}
-	if (!digits) {
+	ut64 address;
+	const char *end = parse_hex_value (strchr (field, ':') + 1, &address);
+	if (!end || *end) {
 		return false;
 	}
 	reason->watchpoint.addr = address;
@@ -250,7 +264,7 @@ static bool parse_watch_stop(libgdbr_stop_reason_t *reason, const char *field) {
 }
 
 int handle_stop_reason(libgdbr_t *g) {
-	if (g->data_len < 3) {
+	if (g->data_len < 2 || memchr (g->data, '\0', g->data_len)) {
 		return -1;
 	}
 	switch (g->data[0]) {
@@ -259,7 +273,7 @@ int handle_stop_reason(libgdbr_t *g) {
 	case 'X':
 		return stop_reason_death (g, true);
 	}
-	if ((g->data[0] != 'T' && g->data[0] != 'S')
+	if (g->data_len < 3 || (g->data[0] != 'T' && g->data[0] != 'S')
 	    || (g->data[0] == 'S' && g->data_len != 3)) {
 		return -1;
 	}
