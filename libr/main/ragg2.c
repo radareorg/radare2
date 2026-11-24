@@ -491,6 +491,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 
 			if (!textFile) {
 				R_LOG_ERROR ("Failure while parsing '%s'", fileSanitized);
+				free (fileSanitized);
 				goto fail;
 			}
 
