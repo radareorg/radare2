@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise NTFS MFT recovery, mapping pairs, allocation claims and damaged records."""
+"""Exercise NTFS MFT and stream recovery, mapping pairs, allocation claims and damaged records."""
 import ctypes as C
 import gzip
 import json
@@ -1055,3 +1055,288 @@ with Image(image) as disk:
         close(disk.fs, handle)
         free_file(handle)
 print('PASS: deleted-data salvage spans continuation records while reads retain the checked prefix')
+
+
+def named_attribute(attr, name, instance=40):
+    name = name.encode('utf-16le') if isinstance(name, str) else name
+    if not attr[8]:
+        start = u16(attr, 20)
+        return resident_attribute(u32(attr, 0), bytes(attr[start:start + u32(attr, 16)]), instance, name)
+    start = (64 + len(name) + 7) & ~7
+    result = bytearray(attr[:64]) + name + bytes(start - 64 - len(name)) + attr[u16(attr, 32):]
+    result.extend(bytes((-len(result)) % 8))
+    put32(result, 4, len(result))
+    result[9] = len(name) // 2
+    put16(result, 10, 64)
+    put16(result, 14, instance)
+    put16(result, 32, start)
+    return result
+
+
+def add_named(image, number, name, payload=None, only=False):
+    record = get_record(image, number)
+    _, original = data_attribute(record)
+    instance = max(u16(value, 14) for _, value in attributes(record)) + 1
+    value = named_attribute(original, name, instance) if payload is None else resident_attribute(0x80, payload, instance, name.encode('utf-16le'))
+    values = [value for _, value in attributes(record) if not only or u32(value, 0) not in (0x30, 0x80)]
+    set_attributes(record, values + [value])
+    store_record(image, number, record)
+
+
+def stream_listing(disk, number=None, path=None, view=7):
+    listing = dir_list(disk.fs, path or b'/ntfs', number if number is not None else 0xffffffffffffffff, view)
+    try:
+        return [(C.string_at(File.from_address(list_n(listing, index)).name),
+                 File.from_address(list_n(listing, index)).id,
+                 File.from_address(list_n(listing, index)).size,
+                 File.from_address(list_n(listing, index)).flags)
+                for index in range(list_length(listing) if listing else 0)]
+    finally:
+        list_free(listing)
+
+
+def ads_id(disk, owner, name):
+    return next(number for label, number, _, _ in stream_listing(disk, owner) if label == b'ads:' + name.encode())
+
+
+def stream_payload(disk, selector, payload, flags=0, status=1, prefix=None, conflict=False, raw=False):
+    handle = open_path(disk.fs, selector, False) if isinstance(selector, bytes) else open_id(disk.fs, b'/ntfs', selector, flags)
+    assert handle, selector
+    prefix = len(payload) if prefix is None else prefix
+    try:
+        state, found = collect_call(lambda cb: extents(handle, cb, None))
+        assert state == status and sum(row[2] for row in found) == prefix, (selector, state, found)
+        assert bool(File.from_address(handle).flags & 8) == conflict
+        if prefix:
+            assert read(disk.fs, handle, 0, len(payload)) == prefix
+            assert C.string_at(File.from_address(handle).data, prefix) == payload[:prefix]
+        if prefix < File.from_address(handle).size:
+            assert read(disk.fs, handle, prefix, 1) == -1
+        else:
+            assert read(disk.fs, handle, prefix, 1) == 0
+        if raw:
+            for logical, physical, size, state in found:
+                assert disk.image[physical:physical + size] == payload[logical:logical + size]
+        return found
+    finally:
+        close(disk.fs, handle)
+        free_file(handle)
+
+
+image = bytearray(ORIGINAL)
+add_named(image, 64, 'proof', b'live stream\n')
+add_named(image, 65, 'history')
+with Image(image) as disk:
+    rows = stream_listing(disk, path=b'/ntfs/live.txt/..namedfork')
+    assert [(name, size) for name, _, size, _ in rows] == [(b'data', 15), (b'ads:proof', 12)]
+    stream_payload(disk, b'/ntfs/live.txt/..namedfork/data', b'Live NTFS file\n')
+    stream_payload(disk, b'/ntfs/live.txt/..namedfork/ads:proof', b'live stream\n', raw=True)
+    stream_payload(disk, ads_id(disk, 65, 'history'), EXPECTED, flags=2, raw=True)
+    reads = len(disk.reads)
+    assert stream_listing(disk, 64) == rows
+    assert len(disk.reads) == reads
+print('PASS: named resident and fragmented streams enumerate and recover through existing paths and IDs without rescanning')
+
+image = bytearray(ORIGINAL)
+add_named(image, 64, 'proof', b'cached stream')
+with Image(image) as disk:
+    number = ads_id(disk, 64, 'proof')
+    record = get_record(disk.image, 64)
+    put16(record, 16, u16(record, 16) + 1)
+    store_record(disk.image, 64, record)
+    assert not open_id(disk.fs, b'/ntfs', number, 0)
+print('PASS: cached stream IDs cannot reopen a backing MFT record with a changed sequence')
+
+image = bytearray(ORIGINAL)
+add_named(image, 64, 'data', b'named data')
+add_named(image, 64, 'empty', b'')
+add_named(image, 64, 'é😀%/:\\', b'escaped')
+record = get_record(image, 64)
+set_attributes(record, [value for _, value in attributes(record)] +
+               [resident_attribute(0x80, b'surrogate', 41, b'\x00\xd8')])
+store_record(image, 64, record)
+with Image(image) as disk:
+    stream_payload(disk, b'/ntfs/live.txt/..namedfork/data', b'Live NTFS file\n')
+    stream_payload(disk, b'/ntfs/live.txt/..namedfork/ads:data', b'named data')
+    stream_payload(disk, b'/ntfs/live.txt/..namedfork/ads:empty', b'')
+    stream_payload(disk, '/ntfs/live.txt/..namedfork/ads:é😀%25%2F%3A%5C'.encode(), b'escaped')
+    stream_payload(disk, b'/ntfs/live.txt/..namedfork/ads:%uD800', b'surrogate')
+    assert not open_path(disk.fs, b'/ntfs/live.txt/..namedfork/ads:missing', False)
+    assert not dir_list(disk.fs, b'/ntfs/live.txt/..namedfork/ads:missing', 0xffffffffffffffff, 7)
+    assert not open_id(disk.fs, b'/ntfs', (1 << 62) + 99999, 0)
+    assert not open_id(disk.fs, b'/ntfs', (1 << 63) | (1 << 62), 0)
+print('PASS: stream namespaces distinguish reserved names, empty data, Unicode and escaped separators and reject unknown selectors')
+
+image = bytearray(ORIGINAL)
+add_named(image, 65, 'only', b'anonymous stream', only=True)
+with Image(image) as disk:
+    assert any(number == 65 and name == b'mft-65' for number, name, _, _ in disk.listing(0))
+    rows = stream_listing(disk, 65)
+    assert [row[0] for row in rows] == [b'ads:only']
+    stream_payload(disk, rows[0][1], b'anonymous stream', flags=2, raw=True)
+print('PASS: nameless deleted records with only alternate data streams remain discoverable without inventing an unnamed stream')
+
+image = bytearray(ORIGINAL)
+record = get_record(image, 5)
+values = [value for _, value in attributes(record)]
+set_attributes(record, values + [resident_attribute(0x80, b'directory ADS', 40, 'proof'.encode('utf-16le'))])
+store_record(image, 5, record)
+with Image(image) as disk:
+    assert [row[0] for row in stream_listing(disk, path=b'/ntfs/..namedfork')] == [b'ads:proof']
+    stream_payload(disk, b'/ntfs/..namedfork/ads:proof', b'directory ADS', raw=True)
+print('PASS: directories expose named data streams without changing ordinary child enumeration')
+
+image = bytearray(ORIGINAL)
+add_named(image, 65, 'directory', b'deleted directory ADS')
+record = get_record(image, 65)
+put16(record, 22, 2)
+set_attributes(record, [value for _, value in attributes(record) if u32(value, 0) != 0x80 or value[9]])
+store_record(image, 65, record)
+with Image(image) as disk:
+    assert not stream_listing(disk, 65)
+    rows = stream_listing(disk, 65, path=b'/ntfs/..namedfork')
+    assert [row[0] for row in rows] == [b'ads:directory']
+    stream_payload(disk, rows[0][1], b'deleted directory ADS', flags=2, raw=True)
+print('PASS: explicit fork-directory selection exposes deleted directory streams by owner ID')
+
+image = bytearray(ORIGINAL)
+add_named(image, 64, 'proof', b'linked ADS')
+record = get_record(image, 64)
+_, value = data_attribute(record, 0x30)
+start = u16(value, 20)
+payload = bytearray(value[start:start + u32(value, 16)])
+name = 'alias.txt'.encode('utf-16le')
+payload[64] = len(name) // 2
+payload[66:] = name
+set_attributes(record, [value for _, value in attributes(record)] + [resident_attribute(0x30, payload, 41)])
+store_record(image, 64, record)
+with Image(image) as disk:
+    assert stream_listing(disk, path=b'/ntfs/alias.txt/..namedfork') == stream_listing(disk, path=b'/ntfs/live.txt/..namedfork')
+    stream_payload(disk, b'/ntfs/alias.txt/..namedfork/ads:proof', b'linked ADS', raw=True)
+print('PASS: hard-link aliases share the owning record streams and their snapshot IDs')
+
+
+def split_named(image, nonresident=False):
+    split_deleted(image, nonresident)
+    for number in (65, 24, 25):
+        record = get_record(image, number)
+        values = [named_attribute(value, 'history') if u32(value, 0) == 0x80 else value
+                  for _, value in attributes(record) if u32(value, 0) != 0x20]
+        if number == 65:
+            base_values = values
+        else:
+            if number == 24:
+                extension1 = values
+            else:
+                extension2 = values
+    attribute_list_image(image, 65, base_values, [(24, extension1), (25, extension2)], nonresident)
+
+
+for nonresident in (False, True):
+    image = bytearray(ORIGINAL)
+    split_named(image, nonresident)
+    with Image(image) as disk:
+        stream_payload(disk, ads_id(disk, 65, 'history'), EXPECTED, flags=2, raw=True)
+print('PASS: named data continuations reconstruct across resident and fragmented nonresident attribute lists')
+
+image = bytearray(ORIGINAL)
+split_named(image, True)
+bitmap_set(image, 16000, True)
+with Image(image) as disk:
+    stream_payload(disk, ads_id(disk, 65, 'history'), EXPECTED, flags=2, status=-1, prefix=6144, conflict=True)
+print('PASS: reused named-stream attribute-list storage preserves only the independently retained base prefix')
+
+image = bytearray(ORIGINAL)
+split_named(image)
+record = get_record(image, 24)
+put16(record, 16, 10)
+store_record(image, 24, record)
+with Image(image) as disk:
+    rows = stream_listing(disk, 65)
+    assert rows[0][3] & 4
+    stream_payload(disk, ads_id(disk, 65, 'history'), EXPECTED, flags=2, status=-1, prefix=6144)
+print('PASS: stale named-stream extension references retain a partial inspected mapping without selecting unrelated records')
+
+image = bytearray(ORIGINAL)
+record = get_record(image, 66)
+_, value = data_attribute(record)
+values = [value for _, value in attributes(record) if u32(value, 0) != 0x80]
+named = named_attribute(value, 'resident')
+padding = resident_attribute(0x40, bytes(256), 10)
+attribute_list_image(image, 66, values, [(24, [padding, named])])
+with Image(image, delta=4096) as disk:
+    found = stream_payload(disk, ads_id(disk, 66, 'resident'), b'Resident NTFS recovery\n' * 16, flags=2, raw=True)
+    assert len(found) >= 3
+bitmap_set(image, 24, True, mft=True)
+with Image(image) as disk:
+    stream_payload(disk, ads_id(disk, 66, 'resident'), b'Resident NTFS recovery\n' * 16,
+                   flags=2, status=-1, prefix=0, conflict=True)
+print('PASS: named resident extension values map update-sequence bytes with mount offsets and refuse reused extension records')
+
+image = bytearray(ORIGINAL)
+add_named(image, 67, 'huge')
+add_named(image, 68, 'uninitialized')
+with Image(image) as disk:
+    number = ads_id(disk, 67, 'huge')
+    handle = open_id(disk.fs, b'/ntfs', number, 0)
+    assert handle
+    try:
+        assert File.from_address(handle).size == 4294967808
+        state, found = collect_call(lambda cb: extents(handle, cb, None))
+        assert state == 1 and any(row[1] == 0xffffffffffffffff and row[3] & 64 for row in found)
+        assert read(disk.fs, handle, 4294967296, 512) == 512
+        assert C.string_at(File.from_address(handle).data, 512) == b'Z' * 512
+    finally:
+        close(disk.fs, handle)
+        free_file(handle)
+    stream_payload(disk, b'/ntfs/unwritten.bin/..namedfork/ads:uninitialized', b'Initialized NTFS\n' + bytes(1007))
+print('PASS: alternate streams preserve 64-bit sparse mappings and zero uninitialized logical contents')
+
+image = bytearray(ORIGINAL)
+add_named(image, 65, 'history')
+bitmap_set(image, first + 5, True)
+with Image(image) as disk:
+    number = ads_id(disk, 65, 'history')
+    stream_payload(disk, number, EXPECTED, flags=2, status=-1, prefix=5 * CLUSTER, conflict=True)
+    handle = open_id(disk.fs, b'/ntfs', number, 2 | 4)
+    assert handle
+    try:
+        state, found = collect_call(lambda cb: extents(handle, cb, None))
+        assert state == -1 and sum(row[2] for row in found) == len(EXPECTED) - CLUSTER
+        assert read(disk.fs, handle, 0, len(EXPECTED)) == 5 * CLUSTER
+    finally:
+        close(disk.fs, handle)
+        free_file(handle)
+    assert not stream_listing(disk, 65, view=1)
+    assert not open_id(disk.fs, b'/ntfs', ads_id(disk, 8, '$Bad'), 2)
+print('PASS: named-stream recovery stops at reuse while salvage inspection retains later recoverable runs and respects visibility')
+
+image = bytearray(ORIGINAL)
+add_named(image, 65, 'duplicate', b'first')
+record = get_record(image, 65)
+set_attributes(record, [value for _, value in attributes(record)] +
+               [resident_attribute(0x80, b'second', 41, 'duplicate'.encode('utf-16le'))])
+store_record(image, 65, record)
+with Image(image) as disk:
+    rows = stream_listing(disk, 65)
+    assert next(row[3] for row in rows if row[0] == b'ads:duplicate') & 12 == 12
+    stream_payload(disk, ads_id(disk, 65, 'duplicate'), b'first', flags=2, status=-1, prefix=0, conflict=True)
+print('PASS: duplicate named stream identities remain inspectable but cannot authorize checked recovery')
+
+for flags in (1, 0x4000):
+    image = bytearray(ORIGINAL)
+    add_named(image, 65, 'unsupported')
+    record = get_record(image, 65)
+    offset, _ = data_attribute(record, named=True)
+    put16(record, offset + 12, flags)
+    store_record(image, 65, record)
+    with Image(image) as disk:
+        handle = open_id(disk.fs, b'/ntfs', ads_id(disk, 65, 'unsupported'), 0)
+        assert handle
+        try:
+            assert collect_call(lambda cb: extents(handle, cb, None)) == (-2, [])
+            assert read(disk.fs, handle, 0, 1) == -1
+        finally:
+            close(disk.fs, handle)
+            free_file(handle)
+print('PASS: compressed and encrypted alternate streams expose metadata without claiming unsupported recovery')

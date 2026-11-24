@@ -227,11 +227,42 @@ space. Reused clusters stop recovery while retaining its readable prefix.
 A free allocation bit does not prove that clusters were never overwritten and freed again.
 .Pp
 NTFS metadata is cached as a read-only mounted snapshot; unmount and remount
-after modifying the backing image. Checked recovery and orphan classification
+after modifying the backing image. Named DATA attributes appear alongside the
+unnamed data stream in the virtual directory /mount/file/..namedfork.
+The data entry reuses the MFT record ID; ads:NAME entries have snapshot IDs
+with bit 62 set. Stream names are selected exactly as listed. Control characters,
+percent, colon and path separators are escaped as %XX; unpaired UTF-16 surrogates
+use %uXXXX. This preserves distinct stream identities without interpreting
+colons in ordinary filenames. Full NTFS Unicode case equivalence remains
+separate name-handling work.
+.Pp
+Existing commands accept stream paths, for example:
+.Bd -literal -offset indent
+mdj /root/live.txt/..namedfork
+mc /root/live.txt/..namedfork/ads:proof
+mie /root/live.txt/..namedfork/ads:proof
+mfo /root/live.txt/..namedfork OFFSET
+.Ed
+For deleted regular files, mdxj /mount FILE_ID lists retained streams and
+mgx /mount STREAM_ID OUTPUT performs checked extraction. Directory streams
+use /mount/directory/..namedfork; a deleted directory can be selected with
+mdxj /mount/..namedfork DIRECTORY_ID. Hard-link aliases share their owning
+MFT record's stream IDs. Anonymous deleted records containing only named DATA
+attributes remain discoverable with mdxj /mount 0.
+.Pp
+Named streams use the same resident fixup mapping, nonresident continuation,
+sparse/uninitialized data and ownership checks as unnamed data. Reused attribute
+list storage limits recovery to independently retained base mappings. Conflicting
+duplicate stream identities cannot authorize recovery. Stream discovery uses
+retained attributes and validated attribute lists; attributes removed from a
+surviving record's attribute chain are not carved from its slack.
+Enumerate stream IDs again after remounting a modified image.
+.Pp
+Checked recovery and orphan classification
 are unavailable when live ownership cannot be established, including unresolved
 extension references or a dirty volume requiring journal processing. Compressed and
-encrypted recovery and alternate-data-stream
-extraction remain unsupported by the forensic callbacks. Ordinary path reads
+encrypted recovery remain unsupported by the forensic callbacks, including named
+streams. Ordinary path reads
 retain the existing reader as a fallback where supported. These operations do
 not replay LogFile or USN journal records.
 .Pp

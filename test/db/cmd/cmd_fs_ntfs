@@ -121,3 +121,46 @@ EXPECT_ERR=<<EOF2
 ERROR: Filesystem range enumeration: error
 EOF2
 RUN
+
+NAME=NTFS lists reads and maps alternate data streams through the fork namespace
+FILE=gzip://bins/fs/ntfs-forensic/recovery.img.gz
+CMDS=<<EOF2
+e io.cache=true
+# Append resident named DATA proof to MFT 64 without changing the fixture.
+wx 800000003800000000051800000028000900000028000000700072006f006f0066000000000000004c697665204144530a00000000000000ffffffff00000000 @ 0x14180
+wv4 448 @ 0x14018
+wv2 41 @ 0x14028
+mdj /root/live.txt/..namedfork
+mc /root/live.txt/..namedfork/ads:proof
+mie /root/live.txt/..namedfork/ads:proof
+mfo /root/live.txt/..namedfork 0x141a9
+EOF2
+EXPECT=<<EOF2
+[{"type":"file","size":15,"name":"data","id":64,"deleted":false,"flags":0},{"type":"file","size":9,"name":"ads:proof","id":4611686018427387907,"deleted":false,"flags":0}]
+Live ADS
+
+0x00000000 0x000141a8 9 0x2
+/root/live.txt/..namedfork/ads:proof
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=NTFS lists and recovers retained alternate streams by snapshot ID
+FILE=gzip://bins/fs/ntfs-forensic/recovery.img.gz
+CMDS=<<EOF2
+e io.cache=true
+# Append resident named DATA proof to deleted MFT 65.
+wx 800000003800000000051800000028000c00000028000000700072006f006f00660000000000000044656c65746564204144530a00000000ffffffff00000000 @ 0x145b0
+wv4 496 @ 0x14418
+wv2 41 @ 0x14428
+mdxj /root 65
+miej /root 0x4000000000000003
+mgx /root 0x4000000000000003 -
+EOF2
+EXPECT=<<EOF2
+[{"type":"file","size":18432,"name":"data","id":65,"deleted":true,"flags":3},{"type":"file","size":12,"name":"ads:proof","id":4611686018427387907,"deleted":true,"flags":3}]
+{"ranges":[{"logical":0,"physical":83416,"size":12,"flags":2}],"status":"complete","flags":1}
+Deleted ADS
+EOF2
+EXPECT_ERR=
+RUN

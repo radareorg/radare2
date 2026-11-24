@@ -1,8 +1,11 @@
 /* radare - LGPL - Copyright 2026 - pancake */
 
 #include <r_vec.h>
+#include <sdb/ht_su.h>
 
 // R2R db/cmd/cmd_fs_ntfs
+
+#define NTFS_STREAM_ID (1ULL << 62)
 
 typedef struct {
 	ut64 logical, physical, size;
@@ -14,8 +17,19 @@ typedef struct {
 	ut8 *resident;
 	ut64 size, initialized, record, local_size;
 	ut32 value_offset, usa;
+	ut16 flags;
 	int status;
+	bool present;
 } NtfsStream;
+
+typedef struct {
+	ut64 owner;
+	ut16 sequence, state;
+	char *name;
+	NtfsStream data;
+	bool conflict;
+} NtfsData;
+R_VEC_TYPE (RVecNtfsData, NtfsData);
 
 typedef struct {
 	ut64 page;
@@ -30,6 +44,7 @@ typedef struct {
 	ut32 flags;
 	char type;
 	char *name;
+	bool has_data;
 } NtfsName;
 
 typedef struct {
@@ -40,6 +55,7 @@ typedef struct {
 	NtfsStream mft, mft_bitmap, bitmap;
 	NtfsBitmapCache mft_cache, bitmap_cache;
 	RVecNtfsRun owners, bad;
+	RVecNtfsData streams;
 	RList *names;
 	HtUP *nodes, *children;
 	bool geometry, native, dirty, catalog_ready, catalog_complete, owners_complete;
@@ -48,9 +64,9 @@ typedef struct {
 typedef struct {
 	NtfsFS *fs;
 	GrubFS *grub;
-	NtfsStream data;
+	NtfsStream local, *data;
 	ut64 id, readable;
-	bool deleted, recovery, planned, salvage;
+	bool deleted, recovery, planned, salvage, conflict;
 } NtfsFile;
 
 static ut64 ntfs_duplicate_limit(NtfsStream *stream);
@@ -231,12 +247,14 @@ static int ntfs_runs(NtfsFS *fs, const ut8 *attr, RVecNtfsRun *runs) {
 
 static int ntfs_stream_add(NtfsFS *fs, const ut8 *record, ut64 id, const ut8 *attr, NtfsStream *stream, bool first) {
 	if (first) {
+		stream->present = true;
+		stream->flags = r_read_le16 (attr + 12);
 		stream->size = attr[8]? r_read_le64 (attr + 48): r_read_le32 (attr + 16);
 		stream->initialized = attr[8]? r_read_le64 (attr + 56): stream->size;
 		if (stream->initialized > stream->size || stream->size > INT64_MAX) {
 			return R_FS_WALK_ERROR;
 		}
-	} else if (stream->resident || !attr[8]) {
+	} else if (stream->resident || !attr[8] || stream->flags != r_read_le16 (attr + 12)) {
 		return R_FS_WALK_ERROR;
 	}
 	if (r_read_le16 (attr + 12) & (1 | 0x4000)) {
@@ -401,34 +419,19 @@ static int ntfs_attrs_next(NtfsAttrIter *iter, const ut8 **attribute) {
 	return iter->status;
 }
 
-static int ntfs_stream(NtfsFS *fs, const ut8 *record, ut64 id, ut32 type, const char *name, NtfsStream *stream) {
+static int ntfs_stream(NtfsFS *fs, const ut8 *record, ut64 id, ut32 type, NtfsStream *stream) {
 	NtfsAttrIter iter;
 	ntfs_attrs_init (&iter, fs, record, id);
 	const ut8 *attr;
 	bool found = false;
-	ut16 flags = 0;
 	int status;
 	stream->status = R_FS_WALK_UNSUPPORTED;
 	while ((status = ntfs_attrs_next (&iter, &attr)) == R_FS_WALK_STOPPED) {
-		if (r_read_le32 (attr) != type || (name? attr[9] != strlen (name): attr[9] != 0)) {
+		if (r_read_le32 (attr) != type || attr[9]) {
 			continue;
 		}
-		if (name) {
-			unsigned i;
-			ut32 start = r_read_le16 (attr + 10);
-			for (i = 0; i < attr[9] && r_read_le16 (attr + start + i * 2) == (ut8)name[i]; i++) {
-			}
-			if (i != attr[9]) {
-				continue;
-			}
-		}
 		if (!found || stream->status == R_FS_WALK_COMPLETE) {
-			if (found && flags != r_read_le16 (attr + 12)) {
-				stream->status = R_FS_WALK_ERROR;
-			} else {
-				flags = r_read_le16 (attr + 12);
-				stream->status = ntfs_stream_add (fs, iter.record, iter.id, attr, stream, !found);
-			}
+			stream->status = ntfs_stream_add (fs, iter.record, iter.id, attr, stream, !found);
 			if (iter.id == id) {
 				NtfsRun *last = RVecNtfsRun_last (&stream->runs);
 				stream->local_size = stream->resident? stream->size: last? R_MIN (stream->size, last->logical + last->size): 0;
@@ -515,7 +518,7 @@ static bool ntfs_initialize(NtfsFS *fs) {
 		return false;
 	}
 	bool ok = ntfs_disk (fs, mft * fs->cluster_size, record, fs->record_size) && ntfs_fixup (fs, record)
-		&& ntfs_stream (fs, record, 0, 0x80, NULL, &fs->mft) != R_FS_WALK_UNSUPPORTED
+		&& ntfs_stream (fs, record, 0, 0x80, &fs->mft) != R_FS_WALK_UNSUPPORTED
 		&& !fs->mft.resident && RVecNtfsRun_length (&fs->mft.runs) && fs->mft.size <= fs->size;
 	if (ok) {
 		fs->records = fs->mft.initialized / fs->record_size;
@@ -532,9 +535,9 @@ static bool ntfs_initialize(NtfsFS *fs) {
 		} else if (fs->mft.status != R_FS_WALK_COMPLETE) {
 			R_LOG_WARN ("Incomplete NTFS MFT mapping: retaining readable records");
 		}
-		ntfs_stream (fs, record, 0, 0xb0, NULL, &fs->mft_bitmap);
+		ntfs_stream (fs, record, 0, 0xb0, &fs->mft_bitmap);
 		if (ntfs_record (fs, 6, record)) {
-			ntfs_stream (fs, record, 6, 0x80, NULL, &fs->bitmap);
+			ntfs_stream (fs, record, 6, 0x80, &fs->bitmap);
 		}
 		fs->dirty = true;
 		if (ntfs_record (fs, 3, record)) {
@@ -680,6 +683,105 @@ static bool ntfs_sort_children(void *user, const ut64 id, const void *value) {
 	return true;
 }
 
+static char *ntfs_stream_name(const ut8 *attr) {
+	char name[2048];
+	const ut8 *value = attr + r_read_le16 (attr + 10);
+	ut32 i, bytes = 0;
+	for (i = 0; i < attr[9]; i++) {
+		ut32 code = r_read_le16 (value + i * 2);
+		if (code >= 0xd800 && code <= 0xdbff && i + 1 < attr[9]) {
+			ut32 low = r_read_le16 (value + (i + 1) * 2);
+			if (low >= 0xdc00 && low <= 0xdfff) {
+				code = 0x10000 + ((code - 0xd800) << 10) + low - 0xdc00;
+				i++;
+			}
+		}
+		if (code >= 0xd800 && code <= 0xdfff) {
+			bytes += snprintf (name + bytes, sizeof (name) - bytes, "%%u%04X", code);
+		} else if (code < 32 || code == 127 || code == '/' || code == '\\' || code == ':' || code == '%') {
+			bytes += snprintf (name + bytes, sizeof (name) - bytes, "%%%02X", code);
+		} else {
+			bytes += r_utf8_encode ((ut8 *)name + bytes, code);
+		}
+	}
+	name[bytes] = 0;
+	return strdup (name);
+}
+
+static bool ntfs_data_add(NtfsFS *fs, NtfsAttrIter *iter, const ut8 *attr, HtSU *index) {
+	char *name = ntfs_stream_name (attr);
+	if (!name) {
+		return false;
+	}
+	bool found;
+	ut64 position = ht_su_find (index, name, &found);
+	NtfsData *data;
+	if (found) {
+		data = RVecNtfsData_at (&fs->streams, position);
+		free (name);
+		if (!attr[8] || !r_read_le64 (attr + 16)) {
+			data->conflict = true;
+			data->data.status = R_FS_WALK_ERROR;
+		}
+	} else {
+		position = RVecNtfsData_length (&fs->streams);
+		data = RVecNtfsData_emplace_back (&fs->streams);
+		if (!data) {
+			free (name);
+			return false;
+		}
+		*data = (NtfsData){ .owner = iter->base_id, .sequence = r_read_le16 (iter->base + 16),
+			.state = r_read_le16 (iter->base + 22), .name = name };
+		if (!ht_su_insert (index, name, position)) {
+			data->data.status = R_FS_WALK_ERROR;
+			return false;
+		}
+	}
+	if (!found || data->data.status == R_FS_WALK_COMPLETE) {
+		data->data.status = ntfs_stream_add (fs, iter->record, iter->id, attr, &data->data, !found);
+		if (iter->id == iter->base_id) {
+			NtfsRun *last = RVecNtfsRun_last (&data->data.runs);
+			data->data.local_size = data->data.resident? data->data.size: last? R_MIN (data->data.size, last->logical + last->size): 0;
+		}
+	}
+	return true;
+}
+
+static void ntfs_data_finish(NtfsFS *fs, NtfsAttrIter *iter, size_t first, int status) {
+	size_t i, j;
+	for (i = first; i < RVecNtfsData_length (&fs->streams); i++) {
+		NtfsStream *data = &RVecNtfsData_at (&fs->streams, i)->data;
+		if (status != R_FS_WALK_COMPLETE) {
+			data->status = R_FS_WALK_ERROR;
+		}
+		for (j = 0; j < RVecNtfsRun_length (&iter->list.runs); j++) {
+			NtfsRun *run = RVecNtfsRun_emplace_back (&data->metadata);
+			if (!run) {
+				data->status = R_FS_WALK_ERROR;
+				fs->owners_complete = false;
+				break;
+			}
+			*run = *RVecNtfsRun_at (&iter->list.runs, j);
+		}
+		if (ntfs_stream_finish (data) == R_FS_WALK_ERROR && (r_read_le16 (iter->base + 22) & 1)) {
+			fs->owners_complete = false;
+		}
+	}
+}
+
+static size_t ntfs_data_first(NtfsFS *fs, ut64 owner) {
+	size_t low = 0, high = RVecNtfsData_length (&fs->streams);
+	while (low < high) {
+		size_t mid = low + (high - low) / 2;
+		if (RVecNtfsData_at (&fs->streams, mid)->owner < owner) {
+			low = mid + 1;
+		} else {
+			high = mid;
+		}
+	}
+	return low;
+}
+
 static bool ntfs_catalog(NtfsFS *fs) {
 	if (fs->catalog_ready) {
 		return fs->catalog_complete;
@@ -745,10 +847,20 @@ static bool ntfs_catalog(NtfsFS *fs) {
 		ntfs_attrs_init (&attrs, fs, record, id);
 		const ut8 *attr;
 		NtfsStream data = {0};
-		ntfs_stream (fs, record, id, 0x80, NULL, &data);
+		ntfs_stream (fs, record, id, 0x80, &data);
 		bool named = false;
+		HtSU *streams = NULL;
+		size_t first_stream = RVecNtfsData_length (&fs->streams);
 		int status;
 		while ((status = ntfs_attrs_next (&attrs, &attr)) == R_FS_WALK_STOPPED) {
+			if (r_read_le32 (attr) == 0x80 && attr[9]) {
+				if (!streams) {
+					streams = ht_su_new0 ();
+				}
+				if (!streams || !ntfs_data_add (fs, &attrs, attr, streams)) {
+					fs->catalog_complete = fs->owners_complete = false;
+				}
+			}
 			if (r_read_le32 (attr) != 0x30 || attr[8] || r_read_le32 (attr + 16) < 66) {
 				continue;
 			}
@@ -774,6 +886,7 @@ static bool ntfs_catalog(NtfsFS *fs) {
 			entry->sequence = r_read_le16 (record + 16);
 			entry->type = r_read_le16 (record + 22) & 2? 'd': r_read_le32 (value + 56) & 0x20000000? 's': 'f';
 			entry->size = entry->type == 'f'? data.size: 0;
+			entry->has_data = data.present;
 			entry->time = ntfs_filetime_to_unix (r_read_le64 (value + 16));
 			entry->flags = r_read_le16 (record + 22) & 1? 0: R_FS_FILE_DELETED | R_FS_FILE_HEURISTIC;
 			if ((entry->flags & R_FS_FILE_DELETED) && allocated > 0) {
@@ -793,7 +906,8 @@ static bool ntfs_catalog(NtfsFS *fs) {
 			}
 			named = true;
 		}
-		if (!named && (id == 5 || (id >= 24 && !live && r_read_le16 (record + 16) && data.status != R_FS_WALK_UNSUPPORTED))) {
+		if (!named && (id == 5 || (id >= 24 && !live && r_read_le16 (record + 16)
+				&& (data.status != R_FS_WALK_UNSUPPORTED || first_stream < RVecNtfsData_length (&fs->streams))))) {
 			NtfsName *entry = R_NEW0 (NtfsName);
 			entry->id = id;
 			entry->parent = id == 5? 5: UT64_MAX;
@@ -801,6 +915,7 @@ static bool ntfs_catalog(NtfsFS *fs) {
 			entry->parent_sequence = entry->sequence;
 			entry->type = id == 5? 'd': 'f';
 			entry->size = data.size;
+			entry->has_data = data.present;
 			entry->flags = id == 5? 0: R_FS_FILE_DELETED | R_FS_FILE_HEURISTIC;
 			entry->name = id == 5? strdup ("."): r_str_newf ("mft-%"PFMT64u, id);
 			if (!entry->name) {
@@ -811,6 +926,8 @@ static bool ntfs_catalog(NtfsFS *fs) {
 			}
 		}
 		fs->catalog_complete &= status == R_FS_WALK_COMPLETE;
+		ntfs_data_finish (fs, &attrs, first_stream, status);
+		ht_su_free (streams);
 		ntfs_attrs_fini (&attrs);
 		ntfs_stream_fini (&data);
 	}
@@ -889,6 +1006,53 @@ static ut64 ntfs_lookup(NtfsFS *fs, const char *path) {
 	return parent;
 }
 
+static ut64 ntfs_fork_path(NtfsFS *fs, const char *path, NtfsName **owner, bool *recognized) {
+	*owner = NULL;
+	*recognized = false;
+	const char *at = path, *marker = NULL;
+	while ((at = strstr (at, "/..namedfork"))) {
+		if (!at[12] || at[12] == '/') {
+			marker = at;
+		}
+		at++;
+	}
+	if (!marker) {
+		return UT64_MAX;
+	}
+	char *base = r_str_ndup (path, marker - path);
+	if (!base) {
+		return UT64_MAX;
+	}
+	ut64 id = ntfs_lookup (fs, base);
+	free (base);
+	*owner = ntfs_named_record (fs, id);
+	if (!*owner) {
+		return UT64_MAX;
+	}
+	*recognized = true;
+	const char *name = marker + 12;
+	if (*name == '/') {
+		name++;
+	}
+	if (!strcmp (name, "data") && (*owner)->type != 'd' && (*owner)->has_data) {
+		return id;
+	}
+	if (!r_str_startswith (name, "ads:")) {
+		return UT64_MAX;
+	}
+	size_t i;
+	for (i = ntfs_data_first (fs, id); i < RVecNtfsData_length (&fs->streams); i++) {
+		NtfsData *stream = RVecNtfsData_at (&fs->streams, i);
+		if (stream->owner != id) {
+			break;
+		}
+		if (!strcmp (stream->name, name + 4)) {
+			return NTFS_STREAM_ID | i;
+		}
+	}
+	return UT64_MAX;
+}
+
 static ut64 ntfs_duplicate_limit(NtfsStream *stream) {
 	RVecNtfsRun physical = {0};
 	size_t i;
@@ -961,7 +1125,7 @@ static int ntfs_emit_range(RFSRange *run, const RFSRange *next, RFSRangeCb cb, v
 static int FSP(_forensic_extents)(RFSFile *file, RFSRangeCb cb, void *user) {
 	NtfsFile *entry = file->ptr;
 	NtfsFS *fs = entry->fs;
-	NtfsStream *stream = &entry->data;
+	NtfsStream *stream = entry->data;
 	if (!fs->native || file->type != 'f' || stream->status == R_FS_WALK_UNSUPPORTED) {
 		return R_FS_WALK_UNSUPPORTED;
 	}
@@ -976,9 +1140,9 @@ static int FSP(_forensic_extents)(RFSFile *file, RFSRangeCb cb, void *user) {
 				allocated = extension;
 			}
 		}
-		if (!entry->deleted || !fs->owners_complete || allocated != 0) {
+		if (!entry->deleted || !fs->owners_complete || allocated != 0 || entry->conflict) {
 			file->flags |= R_FS_FILE_PARTIAL;
-			if (!entry->deleted || allocated > 0) {
+			if (!entry->deleted || allocated > 0 || entry->conflict) {
 				file->flags |= R_FS_FILE_CONFLICT;
 			}
 			entry->planned = true;
@@ -1094,21 +1258,36 @@ static void FSP(_forensic_close)(RFSFile *file) {
 		FSP(_close) (file);
 		grubfs_free (entry->grub);
 	}
-	ntfs_stream_fini (&entry->data);
+	ntfs_stream_fini (&entry->local);
 	free (entry);
 	file->ptr = NULL;
 }
 
 static RFSFile *FSP(_forensic_open_id)(RFSRoot *root, ut64 id, ut32 flags) {
 	NtfsFS *fs = root->ptr;
-	if (!fs->native || (flags & ~(R_FS_OPEN_RECOVER | R_FS_OPEN_SALVAGE)) || id >= fs->records) {
+	if (!fs->native || (flags & ~(R_FS_OPEN_RECOVER | R_FS_OPEN_SALVAGE))) {
+		return NULL;
+	}
+	ut64 file_id = id;
+	NtfsData *selected = NULL;
+	if (id & NTFS_STREAM_ID) {
+		ntfs_catalog (fs);
+		ut64 index = id ^ NTFS_STREAM_ID;
+		if (index >= RVecNtfsData_length (&fs->streams)) {
+			return NULL;
+		}
+		selected = RVecNtfsData_at (&fs->streams, index);
+		id = selected->owner;
+	}
+	if (id >= fs->records) {
 		return NULL;
 	}
 	ut8 *record = malloc (fs->record_size);
 	if (!record) {
 		return NULL;
 	}
-	if (!ntfs_record (fs, id, record) || r_read_le64 (record + 32) || !r_read_le16 (record + 16)) {
+	if (!ntfs_record (fs, id, record) || r_read_le64 (record + 32) || !r_read_le16 (record + 16)
+			|| (selected && (r_read_le16 (record + 16) != selected->sequence || r_read_le16 (record + 22) != selected->state))) {
 		free (record);
 		return NULL;
 	}
@@ -1117,17 +1296,19 @@ static RFSFile *FSP(_forensic_open_id)(RFSRoot *root, ut64 id, ut32 flags) {
 		free (record);
 		return NULL;
 	}
-	char *name = r_str_newf ("mft-%"PFMT64u, id);
+	char *name = selected? r_str_newf ("ads:%s", selected->name): r_str_newf ("mft-%"PFMT64u, id);
 	RFSFile *file = r_fs_file_new (root, name);
 	free (name);
 	NtfsFile *entry = R_NEW0 (NtfsFile);
 	entry->fs = fs;
+	entry->data = selected? &selected->data: &entry->local;
+	entry->conflict = selected && selected->conflict;
 	entry->id = id;
 	entry->deleted = deleted;
 	entry->recovery = flags & R_FS_OPEN_RECOVER;
 	entry->salvage = entry->recovery && (flags & R_FS_OPEN_SALVAGE);
 	file->ptr = entry;
-	file->id = id;
+	file->id = file_id;
 	file->type = r_read_le16 (record + 22) & 2? 'd': 'f';
 	NtfsAttrIter attrs;
 	ntfs_attrs_init (&attrs, fs, record, id);
@@ -1145,18 +1326,28 @@ static RFSFile *FSP(_forensic_open_id)(RFSRoot *root, ut64 id, ut32 flags) {
 		}
 	}
 	ntfs_attrs_fini (&attrs);
-	ntfs_stream (fs, record, id, 0x80, NULL, &entry->data);
-	file->size = entry->data.size;
+	if (selected) {
+		file->type = 'f';
+	} else {
+		ntfs_stream (fs, record, id, 0x80, entry->data);
+	}
+	file->size = entry->data->size;
 	if (deleted) {
 		file->flags |= R_FS_FILE_DELETED;
 	}
-	if (entry->data.resident && file->size) {
+	if (entry->conflict) {
+		file->flags |= R_FS_FILE_CONFLICT;
+	}
+	if (entry->data->status == R_FS_WALK_ERROR) {
+		file->flags |= R_FS_FILE_PARTIAL;
+	}
+	if (entry->data->resident && file->size) {
 		ut64 physical, available;
-		if (ntfs_resident_location (fs, &entry->data, 0, &physical, &available)) {
+		if (ntfs_resident_location (fs, entry->data, 0, &physical, &available)) {
 			file->off = root->delta + physical;
 		}
 	} else {
-		NtfsRun *run = ntfs_run_at (&entry->data.runs, 0);
+		NtfsRun *run = ntfs_run_at (&entry->data->runs, 0);
 		if (run && run->physical != UT64_MAX) {
 			file->off = root->delta + run->physical;
 		}
@@ -1167,7 +1358,7 @@ static RFSFile *FSP(_forensic_open_id)(RFSRoot *root, ut64 id, ut32 flags) {
 
 static int FSP(_forensic_read)(RFSFile *file, ut64 addr, int len) {
 	NtfsFile *entry = file->ptr;
-	if (entry->grub && entry->data.status == R_FS_WALK_UNSUPPORTED) {
+	if (entry->grub && entry->data->status == R_FS_WALK_UNSUPPORTED) {
 		file->ptr = entry->grub;
 		int result = FSP(_read) (file, addr, len);
 		file->ptr = entry;
@@ -1194,8 +1385,8 @@ static int FSP(_forensic_read)(RFSFile *file, ut64 addr, int len) {
 	while (done < len) {
 		ut64 logical = addr + done;
 		int chunk = len - done;
-		if (!entry->data.resident) {
-			NtfsRun *run = ntfs_run_at (&entry->data.runs, logical);
+		if (!entry->data->resident) {
+			NtfsRun *run = ntfs_run_at (&entry->data->runs, logical);
 			if (!run) {
 				file->flags |= R_FS_FILE_PARTIAL;
 				break;
@@ -1203,7 +1394,7 @@ static int FSP(_forensic_read)(RFSFile *file, ut64 addr, int len) {
 			chunk = R_MIN ((ut64)chunk, run->size - (logical - run->logical));
 			chunk = R_MIN ((ut64)chunk, entry->fs->cluster_size - logical % entry->fs->cluster_size);
 		}
-		if (!ntfs_stream_read (entry->fs, &entry->data, logical, file->data + done, chunk)) {
+		if (!ntfs_stream_read (entry->fs, entry->data, logical, file->data + done, chunk)) {
 			file->flags |= R_FS_FILE_PARTIAL;
 			break;
 		}
@@ -1215,10 +1406,15 @@ static int FSP(_forensic_read)(RFSFile *file, ut64 addr, int len) {
 static RFSFile *FSP(_forensic_open)(RFSRoot *root, const char *path, bool create) {
 	NtfsFS *fs = root->ptr;
 	ut64 id = fs->native? ntfs_lookup (fs, path): UT64_MAX;
+	bool fork_path = false;
+	NtfsName *owner;
+	if (fs->native && id == UT64_MAX) {
+		id = ntfs_fork_path (fs, path, &owner, &fork_path);
+	}
 	RFSFile *native = id != UT64_MAX? FSP(_forensic_open_id) (root, id, 0): NULL;
-	if (native && native->type == 'f' && ((NtfsFile *)native->ptr)->data.status != R_FS_WALK_UNSUPPORTED) {
+	if (native && native->type == 'f' && ((NtfsFile *)native->ptr)->data->status != R_FS_WALK_UNSUPPORTED) {
 		NtfsFile *entry = native->ptr;
-		if (entry->data.status == R_FS_WALK_ERROR && !entry->data.resident && !RVecNtfsRun_length (&entry->data.runs)) {
+		if (entry->data->status == R_FS_WALK_ERROR && !entry->data->resident && !RVecNtfsRun_length (&entry->data->runs)) {
 			FSP(_forensic_close) (native);
 			r_fs_file_free (native);
 			return NULL;
@@ -1234,6 +1430,13 @@ static RFSFile *FSP(_forensic_open)(RFSRoot *root, const char *path, bool create
 		r_fs_file_free (native);
 		return file;
 	}
+	if (fork_path) {
+		if (native) {
+			FSP(_forensic_close) (native);
+			r_fs_file_free (native);
+		}
+		return NULL;
+	}
 	RFSFile *file = FSP(_open) (root, path, create);
 	if (!file) {
 		if (native) {
@@ -1246,13 +1449,54 @@ static RFSFile *FSP(_forensic_open)(RFSRoot *root, const char *path, bool create
 	entry->fs = fs;
 	entry->grub = file->ptr;
 	if (!native) {
-		entry->data.status = R_FS_WALK_UNSUPPORTED;
+		entry->data = &entry->local;
+		entry->data->status = R_FS_WALK_UNSUPPORTED;
 	} else {
 		file->id = native->id;
 		r_fs_file_free (native);
 	}
 	file->ptr = entry;
 	return file;
+}
+
+static RList *ntfs_stream_directory(NtfsFS *fs, NtfsName *owner, int view) {
+	RList *result = r_list_newf ((RListFree)r_fs_file_free);
+	if (!(view & (owner->flags & R_FS_FILE_DELETED? R_FS_VIEW_DELETED: R_FS_VIEW_NORMAL | R_FS_VIEW_SPECIAL))) {
+		return result;
+	}
+	if (owner->type != 'd' && owner->has_data) {
+		RFSFile *file = r_fs_file_new (fs->root, "data");
+		file->id = owner->id;
+		file->size = owner->size;
+		file->type = 'f';
+		file->flags = owner->flags;
+		r_list_append (result, file);
+	}
+	size_t i;
+	for (i = ntfs_data_first (fs, owner->id); i < RVecNtfsData_length (&fs->streams); i++) {
+		NtfsData *stream = RVecNtfsData_at (&fs->streams, i);
+		if (stream->owner != owner->id) {
+			break;
+		}
+		char *name = r_str_newf ("ads:%s", stream->name);
+		if (!name) {
+			continue;
+		}
+		RFSFile *file = r_fs_file_new (fs->root, name);
+		free (name);
+		file->id = NTFS_STREAM_ID | i;
+		file->size = stream->data.size;
+		file->type = 'f';
+		file->flags = owner->flags;
+		if (stream->conflict) {
+			file->flags |= R_FS_FILE_CONFLICT;
+		}
+		if (stream->data.status != R_FS_WALK_COMPLETE) {
+			file->flags |= R_FS_FILE_PARTIAL;
+		}
+		r_list_append (result, file);
+	}
+	return result;
 }
 
 static RList *FSP(_forensic_dir)(RFSRoot *root, const char *path, ut64 id, int view) {
@@ -1270,7 +1514,20 @@ static RList *FSP(_forensic_dir)(RFSRoot *root, const char *path, ut64 id, int v
 	bool carve = !id && (view & R_FS_VIEW_DELETED);
 	ut64 parent = id == UT64_MAX? ntfs_lookup (fs, path): id;
 	NtfsName *directory = ntfs_named_record (fs, parent);
-	if (!carve && (!directory || directory->type != 'd')) {
+	if (!carve && !directory && id == UT64_MAX) {
+		bool recognized;
+		ut64 selected = ntfs_fork_path (fs, path, &directory, &recognized);
+		if (recognized && directory && selected == UT64_MAX
+				&& (r_str_endswith (path, "/..namedfork") || r_str_endswith (path, "/..namedfork/"))) {
+			return ntfs_stream_directory (fs, directory, view);
+		}
+		return NULL;
+	}
+	if (!carve && directory && (directory->type != 'd' || (id != UT64_MAX
+			&& (r_str_endswith (path, "/..namedfork") || r_str_endswith (path, "/..namedfork/"))))) {
+		return ntfs_stream_directory (fs, directory, view);
+	}
+	if (!carve && !directory) {
 		return NULL;
 	}
 	RList *result = r_list_newf ((RListFree)r_fs_file_free);
@@ -1362,6 +1619,13 @@ static void FSP(_forensic_umount)(RFSRoot *root) {
 	ntfs_stream_fini (&fs->mft);
 	ntfs_stream_fini (&fs->mft_bitmap);
 	ntfs_stream_fini (&fs->bitmap);
+	size_t i;
+	for (i = 0; i < RVecNtfsData_length (&fs->streams); i++) {
+		NtfsData *stream = RVecNtfsData_at (&fs->streams, i);
+		free (stream->name);
+		ntfs_stream_fini (&stream->data);
+	}
+	RVecNtfsData_fini (&fs->streams);
 	RVecNtfsRun_fini (&fs->owners);
 	RVecNtfsRun_fini (&fs->bad);
 	ht_up_free (fs->nodes);
