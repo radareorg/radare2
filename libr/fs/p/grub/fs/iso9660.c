@@ -530,8 +530,10 @@ susp_iterate_dir(struct grub_iso9660_susp_entry *entry, void *closure) {
 		}
 		if (data[0] & GRUB_ISO9660_RR_DOT) {
 			filename = strdup (".");
+			c->filename_alloc = filename != NULL;
 		} else if (data[0] & GRUB_ISO9660_RR_DOTDOT) {
 			filename = strdup ("..");
+			c->filename_alloc = filename != NULL;
 		} else {
 			/* The name is the entry->len - 5 bytes after the flags.  */
 			int csize = entry->len - 5;
@@ -784,6 +786,9 @@ grub_iso9660_open(struct grub_file *file, const char *name) {
 	file->data = data;
 	file->size = foundnode->size;
 	file->offset = 0;
+	if (foundnode != &rootnode) {
+		grub_free (foundnode);
+	}
 
 	return 0;
 

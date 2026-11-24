@@ -1,0 +1,10 @@
+NAME=leak md on a posix mount
+FILE=-
+CMDS=<<EOF
+m /host posix
+md /host`pwd`/db~leak
+EOF
+EXPECT=<<EOF
+d leak
+EOF
+RUN

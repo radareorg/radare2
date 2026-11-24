@@ -59,6 +59,7 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, R_UNUSED ut64 id, in
 			return NULL;
 		}
 		char *fp = r_str_newf ("%s/%s", path, file);
+		free (fsf->path);
 		fsf->path = fp;
 		fsf->type = 'f';
 		fsf->time = 0;
