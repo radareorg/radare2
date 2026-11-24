@@ -10,20 +10,13 @@ typedef struct {
 	libgdbr_t desc;
 } RIOGdb;
 
-#define UNKNOWN (-1)
-#define UNSUPPORTED 0
-#define SUPPORTED 1
-
 typedef struct plugin_data_t {
-	RIOGdb ** origriogdb;
 	libgdbr_t *desc;
 	ut8* reg_buf;
 	RList *modules;
 	ut64 modules_generation;
 	int modules_pid;
 	int buf_size;
-	int support_sw_bp;
-	int support_hw_bp;
 } PluginData;
 
 // Take the arch, bits, pid and thread from the stub where it stated them
@@ -39,12 +32,28 @@ static void sync_gdb_target(RDebug *dbg, libgdbr_t *desc) {
 	}
 }
 
-static bool r_debug_gdb_attach(RDebug *dbg, int pid);
-
-static void check_connection(RDebug *dbg) {
-	PluginData *pd = R_UNWRAP3 (dbg, current, plugin_data);
-	if (pd && !pd->desc) {
-		r_debug_gdb_attach (dbg, -1);
+static void check_connection(RDebug *dbg, PluginData *pd) {
+	RIO *io = dbg->iob.io;
+	RIODesc *desc = io? io->desc: NULL;
+	libgdbr_t *g = NULL;
+	if (desc && desc->plugin && desc->plugin->meta.name && desc->data
+	    && !strcmp (desc->plugin->meta.name, "gdb")) {
+		RIOGdb *remote = desc->data;
+		g = &remote->desc;
+	}
+	if (pd->desc == g) {
+		return;
+	}
+	pd->desc = g;
+	R_FREE (pd->reg_buf);
+	pd->buf_size = 0;
+	r_list_free (pd->modules);
+	pd->modules = NULL;
+	if (g) {
+		int arch = r_sys_arch_id (dbg->arch);
+		int bits = dbg->anal->config->bits;
+		gdbr_set_architecture (g, arch, bits);
+		sync_gdb_target (dbg, g);
 	}
 }
 
@@ -62,7 +71,7 @@ static bool r_debug_gdb_step(RDebug *dbg) {
 		return false;
 	}
 
-	check_connection (dbg);
+	check_connection (dbg, pd);
 	if (!pd->desc || gdbr_step (pd->desc, dbg->tid) < 0) {
 		return execution_failed (dbg, pd->desc);
 	}
@@ -75,6 +84,7 @@ static RList* r_debug_gdb_threads(RDebug *dbg, int pid) {
 		return NULL;
 	}
 
+	check_connection (dbg, pd);
 	RList *list;
 	if ((list = gdbr_threads_list (pd->desc, pid))) {
 		list->free = (RListFree) &r_debug_pid_free;
@@ -88,6 +98,7 @@ static RList* r_debug_gdb_pids(RDebug *dbg, int pid) {
 		return NULL;
 	}
 
+	check_connection (dbg, pd);
 	RList *list;
 	if ((list = gdbr_pids_list (pd->desc, pid))) {
 		list->free = (RListFree) &r_debug_pid_free;
@@ -103,7 +114,7 @@ static bool gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 
 	int copy_size;
 	int buflen = 0;
-	check_connection (dbg);
+	check_connection (dbg, pd);
 	if (!pd->desc) {
 		return false;
 	}
@@ -236,7 +247,7 @@ static RList *r_debug_gdb_map_get(RDebug *dbg) {
 		return NULL;
 	}
 
-	check_connection (dbg);
+	check_connection (dbg, pd);
 	libgdbr_t *g = pd->desc;
 	if (!g) {
 		return NULL;
@@ -467,7 +478,7 @@ static RList *r_debug_gdb_modules_get(RDebug *dbg) {
 	if (!pd) {
 		return NULL;
 	}
-	check_connection (dbg);
+	check_connection (dbg, pd);
 	if (!pd->desc) {
 		return NULL;
 	}
@@ -518,7 +529,7 @@ static bool gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 		return false;
 	}
 
-	check_connection (dbg);
+	check_connection (dbg, pd);
 	if (!pd->desc) {
 		return false;
 	}
@@ -572,7 +583,7 @@ static bool r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
 		return false;
 	}
 
-	check_connection (dbg);
+	check_connection (dbg, pd);
 	if (!pd->desc || gdbr_continue (pd->desc, pid, pd->desc->non_stop? tid: -1, sig) < 0) {
 		return execution_failed (dbg, pd->desc);
 	}
@@ -590,7 +601,7 @@ static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
 		return 0;
 	}
 
-	check_connection (dbg);
+	check_connection (dbg, pd);
 	if (!pd->desc) {
 		return R_DEBUG_REASON_UNKNOWN;
 	}
@@ -634,27 +645,12 @@ static bool r_debug_gdb_attach(RDebug *dbg, int pid) {
 		return false;
 	}
 
-	RIODesc *d = dbg->iob.io->desc;
-	// TODO: the core must update the dbg.swstep config var when this var is changed
-	dbg->options.swstep = false;
-	if (d && d->plugin && d->plugin->meta.name && d->data) {
-		if (!strcmp ("gdb", d->plugin->meta.name)) {
-			RIOGdb *g = d->data;
-			pd->origriogdb = (RIOGdb **)&d->data;	//TODO bit of a hack, please improve
-			pd->support_sw_bp = UNKNOWN;
-			pd->support_hw_bp = UNKNOWN;
-			r_list_free (pd->modules);
-			pd->modules = NULL;
-			pd->desc = &g->desc;
-			int arch = r_sys_arch_id (dbg->arch);
-			int bits = dbg->anal->config->bits;
-			gdbr_set_architecture (pd->desc, arch, bits);
-			sync_gdb_target (dbg, pd->desc);
-		} else {
-			R_LOG_ERROR ("Underlying IO descriptor is not a GDB one");
-		}
+	check_connection (dbg, pd);
+	if (pd->desc) {
+		dbg->options.swstep = false;
+		sync_gdb_target (dbg, pd->desc);
 	}
-	return true;
+	return pd->desc != NULL;
 }
 
 static bool r_debug_gdb_detach(RDebug *dbg, int pid) {
@@ -662,18 +658,12 @@ static bool r_debug_gdb_detach(RDebug *dbg, int pid) {
 	if (!pd) {
 		return false;
 	}
-
-	bool ret = false;
-
-	if (pid <= 0 || !pd->desc->stub_features.multiprocess) {
-		ret = gdbr_detach (pd->desc);
+	check_connection (dbg, pd);
+	if (!pd->desc) {
+		return false;
 	}
-	ret = gdbr_detach_pid (pd->desc, pid);
-
-	if (dbg->pid == pid) {
-		pd->desc = NULL;
-	}
-	return ret;
+	libgdbr_t *g = pd->desc;
+	return (pid > 0 && g->stub_features.multiprocess? gdbr_detach_pid (g, pid): gdbr_detach (g)) >= 0;
 }
 
 static char *r_debug_gdb_reg_profile(RDebug *dbg) {
@@ -682,7 +672,7 @@ static char *r_debug_gdb_reg_profile(RDebug *dbg) {
 		return NULL;
 	}
 
-	check_connection (dbg);
+	check_connection (dbg, pd);
 	int arch = r_sys_arch_id (dbg->arch);
 	int bits = dbg->anal->config->bits;
 	// XXX This happens when radare2 set dbg.backend before opening io_gdb
@@ -702,20 +692,22 @@ static char *r_debug_gdb_reg_profile(RDebug *dbg) {
 static int r_debug_gdb_set_reg_profile(RDebug *dbg, const char *str) {
 	PluginData *pd = R_UNWRAP3 (dbg, current, plugin_data);
 	if (!pd) {
-		return false;
+		return -1;
 	}
 
-	if (pd->desc && str) {
-		return gdbr_set_reg_profile (pd->desc, str);
-	}
-	return false;
+	check_connection (dbg, pd);
+	return pd->desc && str? gdbr_set_reg_profile (pd->desc, str): -1;
 }
 
 static bool r_debug_gdb_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	int ret;
 	RDebug *dbg = bp->user;
 	PluginData *pd = R_UNWRAP3 (dbg, current, plugin_data);
-	if (!pd || !pd->desc || !b) {
+	if (!pd || !b) {
+		return false;
+	}
+	check_connection (dbg, pd);
+	if (!pd->desc) {
 		return false;
 	}
 	const int size = b->size;
@@ -769,13 +761,18 @@ static bool r_debug_gdb_kill(RDebug *dbg, int pid, int tid, int sig) {
 		return false;
 	}
 
-	// TODO kill based on pid and signal
-	if (sig != 0) {
-		if (gdbr_kill (pd->desc) < 0) {
-			return false;
-		}
+	check_connection (dbg, pd);
+	libgdbr_t *g = pd->desc;
+	if (!g) {
+		return false;
 	}
-	return true;
+	if (!sig) {
+		return g->connected || g->stop_reason.is_valid;
+	}
+	if (sig != 9) {
+		return false;
+	}
+	return (pid > 0 && g->stub_features.multiprocess? gdbr_kill_pid (g, pid): gdbr_kill (g)) >= 0;
 }
 
 static bool r_debug_gdb_select(RDebug *dbg, int pid, int tid) {
@@ -783,23 +780,18 @@ static bool r_debug_gdb_select(RDebug *dbg, int pid, int tid) {
 	if (!pd) {
 		return false;
 	}
-
-	if (!pd->desc || !*pd->origriogdb) {
-		pd->desc = NULL;	//TODO hacky fix, please improve. I would suggest using a **desc instead of a *desc, so it is automatically updated
-		return false;
-	}
-
-	int child = gdbr_select (pd->desc, pid, tid);
-	if (child != -1) {
-		dbg->tid = child;
-		return true;
-	}
-	return false;
+	check_connection (dbg, pd);
+	return pd->desc && gdbr_select (pd->desc, pid, tid) >= 0;
 }
 
 static RDebugInfo* r_debug_gdb_info(RDebug *dbg, const char *arg) {
 	PluginData *pd = R_UNWRAP3 (dbg, current, plugin_data);
 	if (!pd) {
+		return NULL;
+	}
+
+	check_connection (dbg, pd);
+	if (!pd->desc) {
 		return NULL;
 	}
 
@@ -817,19 +809,20 @@ static RDebugInfo* r_debug_gdb_info(RDebug *dbg, const char *arg) {
 	RListIter *it;
 	bool found = false;
 	r_list_foreach (th_list, it, th) {
-		if (th->pid == dbg->pid) {
+		if (th->pid == dbg->tid) {
 			found = true;
 			break;
 		}
 	}
 	rdi->pid = dbg->pid;
 	rdi->tid = dbg->tid;
-	rdi->exe = gdbr_exec_file_read (pd->desc, dbg->pid);
+	if (pd->desc->connected && pd->desc->stub_features.qXfer_exec_file_read) {
+		rdi->exe = gdbr_exec_file_read (pd->desc, dbg->pid);
+	}
 	rdi->status = found ? th->status : R_DBG_PROC_STOP;
 	rdi->uid = found ? th->uid : -1;
 	rdi->gid = found ? th->gid : -1;
-	if (gdbr_stop_reason (pd->desc) >= 0) {
-		R_LOG_INFO ("signal: %d", pd->desc->stop_reason.signum);
+	if (pd->desc->stop_reason.is_valid) {
 		rdi->signum = pd->desc->stop_reason.signum;
 	}
 	if (list_alloc) {
@@ -849,8 +842,6 @@ static bool init_plugin(RDebug *dbg, RDebugPluginSession *ds) {
 
 	PluginData *pd = R_NEW0 (PluginData);
 
-	pd->support_sw_bp = UNKNOWN;
-	pd->support_hw_bp = UNKNOWN;
 	ds->plugin_data = pd;
 	return true;
 }
