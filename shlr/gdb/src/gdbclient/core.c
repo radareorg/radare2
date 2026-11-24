@@ -263,7 +263,7 @@ void gdbr_lock_leave(libgdbr_t *g) {
 }
 
 int gdbr_connect(libgdbr_t *g, const char *host, int port) {
-	const char *message = "qSupported:multiprocess+;qRelocInsn+;xmlRegisters=i386";
+	const char *message = "qSupported:multiprocess+;xmlRegisters=i386";
 	int i;
 	int ret = -1;
 	void *bed = NULL;
@@ -275,8 +275,11 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		goto end;
 	}
 	g->connected = 0;
-	// Initial max_packet_size for remote target (minimum so far for AVR = 64)
-	g->stub_features.pkt_sz = 64;
+	g->no_ack = false;
+	g->read_len = 0;
+	g->stub_features = (libgdbr_stub_features_t){ .pkt_sz = 64, .P = true, .extended_mode = -1 };
+	g->remote_type = GDB_REMOTE_TYPE_GDB;
+	g->caps.thread_suffix = false;
 	char *env_pktsz_str;
 	ut32 env_pktsz = 0;
 	if ((env_pktsz_str = r_sys_getenv ("R2_GDB_PKTSZ"))) {
@@ -339,15 +342,11 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	}
 	// If no-ack supported, enable no-ack mode (should speed up things)
 	if (g->stub_features.QStartNoAckMode) {
-		if ((ret = send_msg (g, "QStartNoAckMode")) < 0) {
+		if (send_msg (g, "QStartNoAckMode") < 0 || read_packet (g, false) < 0 || send_ack (g) < 0) {
+			ret = -1;
 			goto end;
 		}
-		read_packet (g, false);
-		if (!strncmp (g->data, "OK", 2)) {
-			// Just in case, send ack
-			send_ack (g);
-			g->no_ack = true;
-		}
+		g->no_ack = g->data_len == 2 && !memcmp (g->data, "OK", 2);
 	}
 	// A stub advertising lldb's extensions takes the thread of a register packet in
 	// the packet once asked to, and from then on refuses a register packet without it
@@ -390,6 +389,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 end:
 	if (ret != 0) {
 		r_socket_close (g->sock);
+		g->connected = 0;
 	}
 	gdbr_lock_leave (g);
 	return ret;
