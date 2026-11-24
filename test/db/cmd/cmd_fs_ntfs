@@ -1,0 +1,96 @@
+NAME=NTFS discovers deleted MFT filenames without directory indexes
+FILE=gzip://bins/fs/ntfs-forensic/recovery.img.gz
+CMDS=<<EOF2
+mdxj /root
+mdxj /root 0
+EOF2
+EXPECT=<<EOF2
+[{"type":"file","size":368,"name":"inline.txt","id":66,"deleted":true,"flags":3},{"type":"file","size":18432,"name":"vanished.bin","id":65,"deleted":true,"flags":3}]
+[{"type":"file","size":18432,"name":"vanished.bin","id":65,"deleted":true,"flags":3},{"type":"file","size":368,"name":"inline.txt","id":66,"deleted":true,"flags":3}]
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=NTFS maps fragmented deleted data with signed backward cluster deltas
+FILE=gzip://bins/fs/ntfs-forensic/recovery.img.gz
+CMDS=<<EOF2
+mie /root 65
+EOF2
+EXPECT=<<EOF2
+0x00000000 0x00167400 6144 0x1
+0x00001800 0x0016a400 6144 0x1
+0x00003000 0x00168c00 6144 0x1
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=NTFS resident extents map sector fixup bytes to the update sequence array
+FILE=gzip://bins/fs/ntfs-forensic/recovery.img.gz
+CMDS=<<EOF2
+mie /root 66
+EOF2
+EXPECT=<<EOF2
+0x00000000 0x00014970 142 0x2
+0x0000008e 0x00014832 2 0x2
+0x00000090 0x00014a00 224 0x2
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=NTFS sparse files preserve logical offsets above four GiB
+FILE=gzip://bins/fs/ntfs-forensic/recovery.img.gz
+CMDS=<<EOF2
+mij /root/sparse.bin~{size}
+mie /root/sparse.bin
+EOF2
+EXPECT=<<EOF2
+4294967808
+0x00000000 0x0016bc00 512 0x2
+0x00000200 0xffffffffffffffff 4294966784 0x40
+0x100000000 0x0016be00 512 0x2
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=NTFS initialized data length prevents stale bytes leaking from allocated space
+FILE=gzip://bins/fs/ntfs-forensic/recovery.img.gz
+CMDS=<<EOF2
+mie /root/unwritten.bin
+EOF2
+EXPECT=<<EOF2
+0x00000000 0x0016cc00 17 0x2
+0x00000011 0x0016cc11 1007 0x82
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=NTFS recovers both resident and fragmented deleted file contents
+FILE=gzip://bins/fs/ntfs-forensic/recovery.img.gz
+CMDS=<<EOF2
+mgx /root 65 -~?
+mgx /root 66 -~?
+EOF2
+EXPECT=<<EOF2
+1024
+16
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=NTFS resolves resident and deleted disk ownership
+FILE=gzip://bins/fs/ntfs-forensic/recovery.img.gz
+CMDS=<<EOF2
+mfo /root 0x14171
+mix /root 0x167401
+mfu /root orphan
+mc /root/live.txt
+EOF2
+EXPECT=<<EOF2
+/root/$MFT
+/root/live.txt
+/root/vanished.bin
+Live NTFS file
+
+EOF2
+EXPECT_ERR=
+RUN

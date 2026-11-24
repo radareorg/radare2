@@ -168,7 +168,7 @@ Ranges exclude file slack; contiguous logical and physical runs are coalesced.
 R_FS_RANGE_SPARSE marks a hole that reads as zero and has no physical backing;
 its physical offset is UT64_MAX. R_FS_RANGE_UNWRITTEN marks allocated storage
 that reads as zero; its physical offset identifies the allocated disk range.
-Unwritten ranges also carry R_FS_RANGE_ALLOCATED. These flags describe logical
+Unwritten ranges retain current allocation flags where available. These flags describe logical
 file contents and do not establish that the physical bytes contain zeros.
 For FAT, allocation flags describe the current FAT state of the mapped clusters.
 For classic ext2, IDs are inode numbers. Deleted directory names are inferred
@@ -194,6 +194,31 @@ mfu /root orphan      # allocated blocks without live owners
 .Ed
 A damaged or cleared chain can yield a known prefix followed by WALK_ERROR;
 this is not a complete recovery.
+.Pp
+For NTFS, IDs are MFT record numbers. The reader discovers names from retained
+FILE_NAME attributes, independently of directory indexes. Parent record sequence
+numbers must match before a name is attached to a directory. Deleted entries
+with missing names can be discovered with directory ID 0 as mft-N entries.
+Resident data, fragmented nonresident mapping pairs, sparse runs and initialized
+data lengths are supported. Resident extents identify the actual on-disk bytes,
+including update-sequence-array words that restore sector trailers.
+.Pp
+NTFS recovery requires a clear MFT allocation bit and an unused record. Nonresident
+data must also have clear volume allocation bits and no live or metadata owner.
+Both in-use flags and MFT bitmap references protect live data, including named
+nonresident attributes. Bad clusters come from the BadClus stream. Unreadable,
+sparse or uninitialized allocation bitmaps produce unknown space, never free
+space. Reused clusters stop recovery while retaining its readable prefix.
+A free allocation bit does not prove that clusters were never overwritten and freed again.
+.Pp
+NTFS metadata is cached as a read-only mounted snapshot; unmount and remount
+after modifying the backing image. Checked recovery and orphan classification
+are unavailable when live ownership cannot be established, including unresolved
+attribute lists or a dirty volume requiring journal processing. Compressed and
+encrypted recovery, attribute-list reconstruction and alternate-data-stream
+extraction remain unsupported by the forensic callbacks. Ordinary path reads
+retain the existing reader as a fallback where supported. These operations do
+not replay LogFile or USN journal records.
 .Pp
 .Ft int
 .Fn r_fs_ranges "RFS *fs" "const char *mountpoint" "ut32 flags" "RFSRangeCb cb" "void *user"
