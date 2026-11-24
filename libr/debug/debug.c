@@ -737,6 +737,9 @@ R_API const char *r_debug_reason_tostring(int type) {
 	case R_DEBUG_REASON_TRAP: return "trap";
 	case R_DEBUG_REASON_UNKNOWN: return "unknown";
 	case R_DEBUG_REASON_USERSUSP: return "suspended-by-user";
+	case R_DEBUG_REASON_WATCHPOINT_WRITE: return "write-watchpoint";
+	case R_DEBUG_REASON_WATCHPOINT_READ: return "read-watchpoint";
+	case R_DEBUG_REASON_WATCHPOINT_ACCESS: return "access-watchpoint";
 	case R_DEBUG_REASON_WRITERR: return "write-error";
 	}
 	return "unhandled";
@@ -1089,6 +1092,11 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 			dbg->session->bp = bp;
 		}
 		dbg->steps++;
+		if (dbg->reason.type == R_DEBUG_REASON_WATCHPOINT_WRITE
+		    || dbg->reason.type == R_DEBUG_REASON_WATCHPOINT_READ
+		    || dbg->reason.type == R_DEBUG_REASON_WATCHPOINT_ACCESS) {
+			return steps_taken + 1;
+		}
 		dbg->reason.type = R_DEBUG_REASON_STEP;
 	}
 

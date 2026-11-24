@@ -412,6 +412,49 @@ static bool test_gdb_debug_execution_failures(void) {
 	mu_end;
 }
 
+static bool test_gdb_debug_watchpoints(void) {
+	RCore *core = r_core_new ();
+	libgdbr_t g;
+	int fds[2];
+	mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open watchpoint session");
+	RIOPlugin io_plugin = { .meta.name = "gdb" };
+	RIODesc io_desc = { .plugin = &io_plugin, .data = &g };
+	core->io->desc = &io_desc;
+	RDebug *dbg = core->dbg;
+	mu_assert_true (r_debug_use (dbg, "gdb"), "select the GDB debugger");
+	RDebugPlugin *plugin = dbg->current->plugin;
+	const char *replies[] = {
+		"OK", "OK", "T05watch:1234;", "OK", "OK", "T05rwatch:1235;", "OK", "OK", "T05awatch:ffffffffffffffff;", NULL
+	};
+	const struct {
+		int perm;
+		RDebugReasonType reason;
+		ut64 addr;
+	} cases[] = {
+		{ R_BP_PROT_WRITE, R_DEBUG_REASON_WATCHPOINT_WRITE, 0x1234 },
+		{ R_BP_PROT_READ, R_DEBUG_REASON_WATCHPOINT_READ, 0x1235 },
+		{ R_BP_PROT_ACCESS, R_DEBUG_REASON_WATCHPOINT_ACCESS, UT64_MAX }
+	};
+	Stub stub;
+	RThread *th = stub_start (&stub, fds[1], -1, replies);
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		RBreakpointItem bp = { .perm = cases[i].perm, .addr = 0x1234, .size = 16, .hw = 1 };
+		mu_assert_true (plugin->breakpoint (dbg->bp, &bp, true), "insert watchpoint");
+		mu_assert_true (plugin->breakpoint (dbg->bp, &bp, false), "remove watchpoint");
+		mu_assert_true (plugin->cont (dbg, dbg->pid, dbg->tid, 0), "continue to watchpoint stop");
+		mu_assert_eq (plugin->wait (dbg, dbg->pid), cases[i].reason, "report watchpoint access type");
+		mu_assert_eq (dbg->reason.addr, cases[i].addr, "report watched address");
+	}
+	mu_assert_streq_free (stub_finish (&stub, th, fds[0]),
+		"Z2,1234,10\nz2,1234,10\nc\nZ3,1234,10\nz3,1234,10\nc\nZ4,1234,10\nz4,1234,10\nc\n",
+		"watchpoint packets use the same hexadecimal length for insertion and removal");
+	core->io->desc = NULL;
+	r_core_free (core);
+	gdbr_cleanup (&g);
+	mu_end;
+}
+
 static bool test_gdb_memory_read_replies(void) {
 	const struct {
 		const char *reply;
@@ -1597,6 +1640,7 @@ int main(int argc, char **argv) {
 	mu_run_test (test_gdb_memory_packet_failures);
 	mu_run_test (test_gdb_memory_read_replies);
 	mu_run_test (test_gdb_debug_execution_failures);
+	mu_run_test (test_gdb_debug_watchpoints);
 	mu_run_test (test_gdb_runtime_console_flows);
 	mu_run_test (test_gdb_console_terminal_replies);
 	mu_run_test (test_gdb_console_rejections);

@@ -24,16 +24,6 @@
 #define CMD_WRITEMEM	"M"
 #define CMD_READMEM		"m"
 
-#define CMD_BP				"Z0"
-#define CMD_RBP				"z0"
-#define CMD_HBP				"Z1"
-#define CMD_RHBP			"z1"
-#define CMD_HWW				"Z2"
-#define CMD_RHWW			"z2"
-#define CMD_HWR				"Z3"
-#define CMD_RHWR			"z3"
-#define CMD_HWA				"Z4"
-#define CMD_RHWA			"z4"
 #define CMD_QRCMD			"qRcmd,"
 #define CMD_C				"vCont"
 #define CMD_C_CONT			"c"
@@ -55,9 +45,5 @@ enum Breakpoint {
  * \returns -1 if something went wrong
  */
 int send_vcont(libgdbr_t* g, const char* command, const char *thread_id);
-
-int set_bp(libgdbr_t* g, ut64 address, const char* conditions, enum Breakpoint type, int sizebp);
-
-int remove_bp(libgdbr_t* g, ut64 address, enum Breakpoint type, int sizebp);
 
 #endif  // GDB_CLIENT_CORE_H

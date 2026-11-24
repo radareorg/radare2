@@ -1360,149 +1360,60 @@ end:
 	return ret;
 }
 
-int set_bp(libgdbr_t *g, ut64 address, const char *conditions, enum Breakpoint type, int sizebp) {
-	char tmp[255] = {0};
-	int ret = -1;
-
-	if (!g) {
+static int change_breakpoint(libgdbr_t *g, bool set, ut64 address, enum Breakpoint type, int size) {
+	if (!g || type < BREAKPOINT || type > ACCESS_WATCHPOINT || size < 1) {
 		return -1;
 	}
-
-	switch (type) {
-	case BREAKPOINT:
-		ret = snprintf (tmp, sizeof (tmp) - 1,
-			"%s,%"PFMT64x ",%d", CMD_BP, address, sizebp);
-		break;
-	case HARDWARE_BREAKPOINT:
-		ret = snprintf (tmp, sizeof (tmp) - 1,
-			"%s,%"PFMT64x ",%d", CMD_HBP, address, sizebp);
-		break;
-	case WRITE_WATCHPOINT:
-		ret = snprintf (tmp, sizeof (tmp) - 1,
-			"%s,%"PFMT64x ",%d", CMD_HWW, address, sizebp);
-		break;
-	case READ_WATCHPOINT:
-		ret = snprintf (tmp, sizeof (tmp) - 1,
-			"%s,%"PFMT64x ",%d", CMD_HWR, address, sizebp);
-		break;
-	case ACCESS_WATCHPOINT:
-		ret = snprintf (tmp, sizeof (tmp) - 1,
-			"%s,%"PFMT64x ",%d", CMD_HWA, address, sizebp);
-		break;
-	default:
-		break;
+	int ret = -1;
+	if (gdbr_lock_enter (g)) {
+		r_strf_var (packet, 64, "%c%d,%"PFMT64x",%x", set? 'Z': 'z', type, address, (unsigned int)size);
+		if (send_msg (g, packet) >= 0 && read_packet (g, false) >= 0) {
+			ret = handle_setbp (g);
+		}
 	}
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (!gdbr_lock_enter (g)) {
-		goto end;
-	}
-
-	g->stop_reason.is_valid = false;
-	if ((ret = send_msg (g, tmp)) < 0) {
-		goto end;
-	}
-
-	if ((ret = read_packet (g, false)) < 0) {
-		goto end;
-	}
-
-	ret = handle_setbp (g);
-end:
 	gdbr_lock_leave (g);
 	return ret;
 }
 
 int gdbr_set_bp(libgdbr_t *g, ut64 address, const char *conditions, int sizebp) {
-	return set_bp (g, address, conditions, BREAKPOINT, sizebp);
+	return change_breakpoint (g, true, address, BREAKPOINT, sizebp);
 }
 
 int gdbr_set_hwbp(libgdbr_t *g, ut64 address, const char *conditions, int sizebp) {
-	return set_bp (g, address, conditions, HARDWARE_BREAKPOINT, sizebp);
+	return change_breakpoint (g, true, address, HARDWARE_BREAKPOINT, sizebp);
 }
 
 int gdbr_set_hww(libgdbr_t *g, ut64 address, const char *conditions, int sizebp) {
-	return set_bp (g, address, conditions, WRITE_WATCHPOINT, sizebp);
+	return change_breakpoint (g, true, address, WRITE_WATCHPOINT, sizebp);
 }
 
 int gdbr_set_hwr(libgdbr_t *g, ut64 address, const char *conditions, int sizebp) {
-	return set_bp (g, address, conditions, READ_WATCHPOINT, sizebp);
+	return change_breakpoint (g, true, address, READ_WATCHPOINT, sizebp);
 }
 
 int gdbr_set_hwa(libgdbr_t *g, ut64 address, const char *conditions, int sizebp) {
-	return set_bp (g, address, conditions, ACCESS_WATCHPOINT, sizebp);
+	return change_breakpoint (g, true, address, ACCESS_WATCHPOINT, sizebp);
 }
 
 int gdbr_remove_bp(libgdbr_t *g, ut64 address, int sizebp) {
-	return remove_bp (g, address, BREAKPOINT, sizebp);
+	return change_breakpoint (g, false, address, BREAKPOINT, sizebp);
 }
 int gdbr_remove_hwbp(libgdbr_t *g, ut64 address, int sizebp) {
-	return remove_bp (g, address, HARDWARE_BREAKPOINT, sizebp);
+	return change_breakpoint (g, false, address, HARDWARE_BREAKPOINT, sizebp);
 }
 
 int gdbr_remove_hww(libgdbr_t *g, ut64 address, int sizebp) {
-	return remove_bp (g, address, WRITE_WATCHPOINT, sizebp);
+	return change_breakpoint (g, false, address, WRITE_WATCHPOINT, sizebp);
 }
 
 int gdbr_remove_hwr(libgdbr_t *g, ut64 address, int sizebp) {
-	return remove_bp (g, address, READ_WATCHPOINT, sizebp);
+	return change_breakpoint (g, false, address, READ_WATCHPOINT, sizebp);
 }
 
 int gdbr_remove_hwa(libgdbr_t *g, ut64 address, int sizebp) {
-	return remove_bp (g, address, ACCESS_WATCHPOINT, sizebp);
+	return change_breakpoint (g, false, address, ACCESS_WATCHPOINT, sizebp);
 }
 
-
-int remove_bp(libgdbr_t *g, ut64 address, enum Breakpoint type, int sizebp) {
-	char tmp[255] = {0};
-	int ret = -1;
-
-	if (!g) {
-		return -1;
-	}
-
-	switch (type) {
-	case BREAKPOINT:
-		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%"PFMT64x ",%d", CMD_RBP, address, sizebp);
-		break;
-	case HARDWARE_BREAKPOINT:
-		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%"PFMT64x ",%d", CMD_RHBP, address, sizebp);
-		break;
-	case WRITE_WATCHPOINT:
-		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%"PFMT64x ",%d", CMD_RHWW, address, sizebp);
-		break;
-	case READ_WATCHPOINT:
-		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%"PFMT64x ",%d", CMD_RHWR, address, sizebp);
-		break;
-	case ACCESS_WATCHPOINT:
-		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%"PFMT64x ",%d", CMD_RHWA, address, sizebp);
-		break;
-	default:
-		break;
-	}
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (!gdbr_lock_enter (g)) {
-		goto end;
-	}
-
-	g->stop_reason.is_valid = false;
-	if ((ret = send_msg (g, tmp)) < 0) {
-		goto end;
-	}
-	if ((ret = read_packet (g, false)) < 0) {
-		goto end;
-	}
-
-	ret = handle_removebp (g);
-end:
-	gdbr_lock_leave (g);
-	return ret;
-}
 
 int gdbr_open_file(libgdbr_t *g, const char *filename, int flags, int mode) {
 	int ret = -1;
