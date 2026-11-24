@@ -1,0 +1,116 @@
+NAME=HFS+ discovers retained catalog records in free nodes and live leaf slack
+FILE=gzip://bins/fs/hfsplus-forensic/hfsplus.img.gz
+CMDS=<<EOF2
+mdxj /root
+mdxj /root 0
+EOF2
+EXPECT=<<EOF2
+[{"type":"directory","size":0,"name":"gone","id":9223372036854788390,"deleted":true,"flags":3},{"type":"file","size":27,"name":"slack.txt","id":9223372036854784796,"deleted":true,"flags":3},{"type":"file","size":1024,"name":"vanished.bin","id":9223372036854788110,"deleted":true,"flags":3}]
+[{"type":"file","size":27,"name":"slack.txt","id":9223372036854784796,"deleted":true,"flags":3},{"type":"file","size":1024,"name":"vanished.bin","id":9223372036854788110,"deleted":true,"flags":3},{"type":"directory","size":0,"name":"gone","id":9223372036854788390,"deleted":true,"flags":3},{"type":"file","size":6,"name":"child.txt","id":9223372036854788494,"deleted":true,"flags":3}]
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=HFS+ maps live data through extent overflow records
+FILE=gzip://bins/fs/hfsplus-forensic/hfsplus.img.gz
+CMDS=<<EOF2
+mie /root/fragmented.bin
+EOF2
+EXPECT=<<EOF2
+0x00000000 0x0000a400 512 0x2
+0x00000200 0x0000a800 512 0x2
+0x00000400 0x0000ac00 512 0x2
+0x00000600 0x0000b000 512 0x2
+0x00000800 0x0000b400 512 0x2
+0x00000a00 0x0000b800 512 0x2
+0x00000c00 0x0000bc00 512 0x2
+0x00000e00 0x0000c000 512 0x2
+0x00001000 0x0000c400 512 0x2
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=HFS+ checked recovery reads deleted files and deleted directory children
+FILE=gzip://bins/fs/hfsplus-forensic/hfsplus.img.gz
+CMDS=<<EOF2
+mie /root 0x800000000000300e
+mgx /root 0x800000000000231c -
+mgx /root 0x800000000000318e -
+EOF2
+EXPECT=<<EOF2
+0x00000000 0x0000dc00 512 0x1
+0x00000200 0x0000e000 512 0x1
+Deleted from catalog slack
+child
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=HFS+ identifies allocated orphans and bad blocks while protecting metadata and other forks
+FILE=gzip://bins/fs/hfsplus-forensic/hfsplus.img.gz
+CMDS=<<EOF2
+mfuj /root orphan
+mfuj /root bad
+EOF2
+EXPECT=<<EOF2
+{"ranges":[{"logical":64512,"physical":64512,"size":512,"flags":6}],"status":"complete"}
+{"ranges":[{"logical":63488,"physical":63488,"size":512,"flags":8}],"status":"complete"}
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=HFS+ resolves disk offsets inside live overflow extents and deleted file fragments
+FILE=gzip://bins/fs/hfsplus-forensic/hfsplus.img.gz
+CMDS=<<EOF2
+mfo /root 0xa001
+mfo /root 0xc401
+mix /root 0xe001
+EOF2
+EXPECT=<<EOF2
+/root/live.txt
+/root/fragmented.bin
+/root/vanished.bin
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=HFSX signature autodetection enables deleted catalog discovery
+FILE=gzip://bins/fs/hfsplus-forensic/hfsx.img.gz
+CMDS=<<EOF2
+mdx /root
+EOF2
+EXPECT=<<EOF2
+x 0x8000000000003126 gone
+x 0x800000000000231c slack.txt
+x 0x800000000000300e vanished.bin
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=HFS+ recovery uses allocation block size rather than sector size
+FILE=gzip://bins/fs/hfsplus-forensic/hfsplus-4k.img.gz
+CMDS=<<EOF2
+mie /root 0x800000000000300e
+EOF2
+EXPECT=<<EOF2
+0x00000000 0x0006e000 4096 0x1
+0x00001000 0x00070000 4096 0x1
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=HFS+ wrapper recovery includes the embedded volume offset
+FILE=gzip://bins/fs/hfsplus-forensic/wrapped.img.gz
+ARGS=-n
+CMDS=<<EOF2
+m /wrap hfsplus 0
+mie /wrap 0x800000000000300e
+mgx /wrap 0x800000000000231c -
+EOF2
+EXPECT=<<EOF2
+0x00000000 0x00011c00 512 0x1
+0x00000200 0x00012000 512 0x1
+Deleted from catalog slack
+EOF2
+EXPECT_ERR=
+RUN

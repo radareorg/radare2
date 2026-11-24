@@ -235,6 +235,34 @@ extraction remain unsupported by the forensic callbacks. Ordinary path reads
 retain the existing reader as a fallback where supported. These operations do
 not replay LogFile or USN journal records.
 .Pp
+For HFS+ and HFSX, use the hfsplus plugin. Live IDs are catalog node IDs
+(CNIDs). Retained catalog candidates use bit 63 set plus their byte offset
+within the catalog file, distinguishing remnants with the same CNID.
+Deleted listing examines free B-tree nodes, unreachable records and live-leaf
+slack. Directory ID 0 lists candidates independently of their parent paths.
+These records are marked DELETED and HEURISTIC: a remnant is evidence, not
+proof of deletion or historical identity. Unrepresentable live names use
+synthetic cnid-N names while their extents retain live ownership.
+.Pp
+HFS+ data-fork mappings include overflow extents, allocation block sizes,
+64-bit sizes and offsets, mount deltas and embedded HFS-wrapper offsets.
+Recovery requires free allocation bits and no current owner, including resource
+forks, external attributes, overflow records, special files, journal storage and
+reserved volume regions. A live CNID excludes recovery of an older candidate
+with that CNID. Only unambiguous retained overflow records extend deleted
+forks; missing, damaged or conflicting mappings retain their readable prefix.
+Cleared mappings do not establish the locations of the missing content.
+.Pp
+Allocation maps distinguish free, allocated, bad and unknown blocks. Orphan
+classification and checked recovery require complete ownership: damaged trees,
+unreadable metadata, inconsistent volume flags or a pending/unverifiable journal
+refuse these operations while retaining readable inspection. Journal checking
+accepts a checksummed empty journal; it does not replay transactions or recover
+historical journal versions. Reads never synthesize missing HFS+ file data.
+Cached metadata is a read-only mounted snapshot; remount after changing the
+backing image. Resource-fork/attribute extraction, compressed recovery, historical
+path reconstruction and classic HFS forensic callbacks remain separate work.
+.Pp
 .Ft int
 .Fn r_fs_ranges "RFS *fs" "const char *mountpoint" "ut32 flags" "RFSRangeCb cb" "void *user"
 .Pp
