@@ -233,6 +233,9 @@ static int register_server_cmd(libgdbr_t *g, void *user, const char *cmd, char *
 		server->selected = atoi (cmd + 4);
 		return 0;
 	}
+	if (!strcmp (cmd, "dpt")) {
+		return snprintf (out, size, "m1234,5678,9abc");
+	}
 	if (!strcmp (cmd, "ds") || !strcmp (cmd, "dc")) {
 		return 0;
 	}
@@ -299,12 +302,15 @@ static bool test_gdb_server_resume(void) {
 	server.g.sock->fd = fds[0];
 	server.g.no_ack = true;
 	server.g.num_retries = 1;
+	server.g.stub_features.pkt_sz = 10;
 	RThread *thread = r_th_new (register_server_run, &server, 0);
 	r_th_start (thread);
 	struct pollfd pfd = { .fd = fds[1], .events = POLLIN };
 	mu_assert_eq (poll (&pfd, 1, 400), 0, "the server waits for a command while idle");
-	const char *commands[] = { "vCont?", "Hg3", "Hc2", "?", "s", "vCont;c:4", "vCont;t:4" };
-	const char *replies[] = { "vCont;c;s", "OK", "OK", "T05thread:3;", "T05thread:2;", "T05thread:4;", "E01" };
+	const char *commands[] = { "vCont?", "Hg3", "Hc2", "?", "s", "vCont;c:4", "vCont;t:4",
+		"qfThreadInfo", "qsThreadInfo", "qsThreadInfo" };
+	const char *replies[] = { "vCont;c;s", "OK", "OK", "T05thread:3;", "T05thread:2;", "T05thread:4;", "E01",
+		"m1234,5678", "m9abc", "l" };
 	size_t i;
 	for (i = 0; i < R_ARRAY_SIZE (commands); i++) {
 		mu_assert_true (send_response (fds[1], commands[i]), "send server command");
@@ -408,7 +414,8 @@ static bool test_gdb_nonstop(void) {
 	g.stub_features.QNonStop = true;
 	const char *replies[] = {
 		"", "OK", "T00thread:p1.2;", "T00thread:p1.3;", "OK",
-		"OK", "T05thread:p1.3;", "OK", "mp1.2,p1.3,p1.4", "l", "OK", NULL
+		"OK", "T05thread:p1.3;", "OK", "mp1.2,p1.3,p1.4", "l",
+		"l<threads><thread id='p1.4' name='worker'/><thread id='p2.2'/></threads>", "OK", NULL
 	};
 	Stub stub;
 	RThread *th = stub_start (&stub, fds[1], -1, replies);
@@ -430,7 +437,14 @@ static bool test_gdb_nonstop(void) {
 	mu_assert_eq (thread->status, R_DBG_PROC_RUN, "resumed thread remains running");
 	thread = r_list_last (threads);
 	mu_assert_eq (thread->status, R_DBG_PROC_STOP, "notified thread is stopped");
-	threads->free = (RListFree)r_debug_pid_free;
+	r_list_free (threads);
+	g.stub_features.qXfer_threads_read = true;
+	g.stub_features.pkt_sz = 256;
+	threads = gdbr_threads_list (&g, 1);
+	mu_assert_eq (r_list_length (threads), 1, "XML list keeps threads of the requested process");
+	thread = r_list_first (threads);
+	mu_assert_streq (thread->path, "worker", "retain the remote thread name");
+	mu_assert_eq (thread->status, R_DBG_PROC_STOP, "XML threads use the same stop state");
 	r_list_free (threads);
 	mu_assert_true (send_response (fds[1], "O6e6f"), "queue forbidden non-stop output");
 	mu_assert_eq (gdbr_wait_nonstop (&g), -1, "non-stop packets cannot carry console output");
@@ -439,7 +453,8 @@ static bool test_gdb_nonstop(void) {
 	mu_assert_eq (length, 0, "do not print non-stop console packets");
 	mu_assert_true (gdbr_set_nonstop (&g, false), "return to all-stop mode");
 	mu_assert_streq_free (stub_finish (&stub, th, fds[0]),
-		"QNonStop:1\nQNonStop:1\n?\nvStopped\nvStopped\nvCont;s:p1.2\nvStopped\nvStopped\nqfThreadInfo\nqsThreadInfo\nQNonStop:0\n",
+		"QNonStop:1\nQNonStop:1\n?\nvStopped\nvStopped\nvCont;s:p1.2\nvStopped\nvStopped\n"
+		"qfThreadInfo\nqsThreadInfo\nqXfer:threads:read::0,fe\nQNonStop:0\n",
 		"drain stop notifications and resume only the requested thread");
 	gdbr_cleanup (&g);
 	r_cons_free (cons);
