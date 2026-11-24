@@ -1889,105 +1889,106 @@ end:
 	return list;
 }
 
-RList* gdbr_threads_list(libgdbr_t *g, int pid) {
-	int ret = -1;
-	RList *list = NULL;
-	int tpid = -1, ttid = -1;
-	size_t nids = 0;
-	char *ptr, *ptr2, *exec_file;
-	RDebugPid *dpid = NULL;
-	RListIter *iter = NULL;
+static void remote_thread_free(void *item) {
+	RDebugPid *thread = item;
+	free (thread->path);
+	free (thread);
+}
 
+static bool append_remote_thread(libgdbr_t *g, RList *list, const char *id, int pid, const char *name) {
+	int thread_pid = 0, tid = 0;
+	if (!id || read_thread_id (id, &thread_pid, &tid, g->stub_features.multiprocess) < 0 || tid <= 0
+	    || (g->stub_features.multiprocess && pid > 0 && thread_pid != pid)) {
+		return true;
+	}
+	RDebugPid *thread = R_NEW0 (RDebugPid);
+	thread->pid = tid;
+	thread->uid = thread->gid = -1;
+	thread->runnable = true;
+	thread->path = strdup (r_str_get (name));
+	thread->status = R_DBG_PROC_STOP;
+	if (g->non_stop) {
+		bool found;
+		ut64 generation = ht_uu_find (g->stopped_threads, nonstop_thread_key (g, thread_pid, tid), &found);
+		thread->status = found && generation == g->thread_stop_generation? R_DBG_PROC_STOP: R_DBG_PROC_RUN;
+	}
+	if (!thread->path || !r_list_append (list, thread)) {
+		remote_thread_free (thread);
+		return false;
+	}
+	return true;
+}
+
+static bool read_threads_xml(libgdbr_t *g, RList *list, int pid) {
+	char *text = gdbr_read_xfer (g, "threads", "", GDBR_XFER_MAX, NULL);
+	RXmlNode *doc = text? rxml_dom_parse (text): NULL;
+	free (text);
+	RXmlNode *root = rxml_dom_child (doc, "threads");
+	bool ok = root != NULL;
+	if (ok) {
+		const RXmlNode *node;
+		size_t seen = 0;
+		for (node = root->children; node && ok; node = node->next) {
+			if (node->name && !strcmp (node->name, "thread")) {
+				ok = ++seen <= GDBR_THREADS_MAX && append_remote_thread (g, list,
+					rxml_dom_get_attribute (node, "id"), pid, rxml_dom_get_attribute (node, "name"));
+			}
+		}
+	}
+	rxml_dom_free (doc);
+	return ok;
+}
+
+RList *gdbr_threads_list(libgdbr_t *g, int pid) {
 	if (!g) {
 		return NULL;
 	}
-
 	if (!gdbr_lock_enter (g)) {
-		goto end;
+		gdbr_lock_leave (g);
+		return NULL;
 	}
-	if (!g->stub_features.qXfer_exec_file_read
-		    || !(exec_file = gdbr_exec_file_read (g, pid))) {
-		exec_file = "";
-	}
-	if (g->stub_features.qXfer_threads_read) {
-		// XML thread description is supported
-		// TODO: Handle this case
-	}
-	if (send_msg (g, "qfThreadInfo") < 0 || read_packet (g, false) < 0
-		    || g->data_len == 0 || g->data[0] != 'm') {
-		ret = -1;
-		goto end;
-	}
-	if (!(list = r_list_new ())) {
-		ret = -1;
-		goto end;
-	}
-	while (1) {
-		g->data[g->data_len] = '\0';
-		ptr = g->data + 1;
-		while (ptr) {
-			if (++nids > GDBR_THREADS_MAX) {
-				ret = -1;
+	RList *list = r_list_newf (remote_thread_free);
+	bool ok = false;
+	char *exec_file = NULL;
+	if (list) {
+		if (g->stub_features.qXfer_threads_read) {
+			if (read_threads_xml (g, list, pid)) {
+				ok = true;
 				goto end;
 			}
-			if ((ptr2 = strchr (ptr, ','))) {
-				*ptr2 = '\0';
-				ptr2++;
-			}
-			if (read_thread_id (ptr, &tpid, &ttid,
-				    g->stub_features.multiprocess) < 0) {
-				ptr = ptr2;
-				continue;
-			}
-			if (g->stub_features.multiprocess && tpid != pid) {
-				ptr = ptr2;
-				continue;
-			}
-			dpid = R_NEW0 (RDebugPid);
-			if (!(dpid->path = strdup (exec_file))) {
-				ret = -1;
-				goto end;
-			}
-			dpid->uid = dpid->gid = -1; // TODO
-			dpid->pid = ttid;
-			dpid->runnable = true;
-			dpid->status = R_DBG_PROC_STOP;
-			if (g->non_stop) {
-				bool found;
-				ut64 generation = ht_uu_find (g->stopped_threads, nonstop_thread_key (g, tpid, ttid), &found);
-				dpid->status = found && generation == g->thread_stop_generation? R_DBG_PROC_STOP: R_DBG_PROC_RUN;
-			}
-			r_list_append (list, dpid);
-			dpid = NULL;
-			ptr = ptr2;
+			r_list_purge (list);
 		}
-		if (send_msg (g, "qsThreadInfo") < 0 || read_packet (g, false) < 0
-			    || g->data_len == 0
-			    || (g->data[0] != 'm' && g->data[0] != 'l')) {
-			ret = -1;
-			goto end;
+		if (g->stub_features.qXfer_exec_file_read) {
+			exec_file = gdbr_exec_file_read (g, pid);
 		}
-		if (g->data[0] == 'l') {
-			break;
+		const char *packet = "qfThreadInfo";
+		size_t seen = 0;
+		while (send_msg (g, packet) >= 0 && read_packet (g, false) >= 0) {
+			if (g->data_len == 1 && g->data[0] == 'l') {
+				ok = true;
+				break;
+	free (exec_file);
+			}
+			if (g->data_len < 2 || g->data[0] != 'm') {
+				break;
+			}
+			char *save = NULL;
+			char *id = r_str_tok_r (g->data + 1, ",", &save);
+			if (!id) {
+				break;
+			}
+			for (; id; id = r_str_tok_r (NULL, ",", &save)) {
+				if (++seen > GDBR_THREADS_MAX || !append_remote_thread (g, list, id, pid, exec_file)) {
+					goto end;
+				}
+			}
+			packet = "qsThreadInfo";
 		}
 	}
-
-	ret = 0;
 end:
 	gdbr_lock_leave (g);
-	if (ret != 0) {
-		if (dpid) {
-			free (dpid->path);
-			free (dpid);
-		}
-		// We can't use r_debug_pid_free here
-		if (list) {
-			r_list_foreach (list, iter, dpid) {
-				free (dpid->path);
-				free (dpid);
-			}
-			r_list_free (list);
-		}
+	if (!ok) {
+		r_list_free (list);
 		return NULL;
 	}
 	return list;

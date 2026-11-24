@@ -187,28 +187,52 @@ static int server_set_thread(libgdbr_t *g, gdbr_server_cmd_cb cb, void *user, in
 	return send_msg (g, "OK");
 }
 
-static int _server_handle_qfThreadInfo(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	char *buf;
-	int ret;
-	size_t buf_len = g->stub_features.pkt_sz;
-	if (!(buf = malloc (buf_len))) {
-		return -1;
-	}
-	if ((ret = cmd_cb (g, core_ptr, "dpt", buf, buf_len)) < 0) {
-		free (buf);
-		return -1;
-	}
-	ret = send_msg (g, buf);
-	free (buf);
-	return ret;
-}
+typedef struct {
+	char *ids;
+	size_t length;
+	size_t offset;
+} ServerThreads;
 
-static int _server_handle_qsThreadInfo(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	// TODO handle overflow from qfThreadInfo. Otherwise this won't work with programs with many threads
-	if (send_msg (g, "l") < 0) {
-		return -1;
+static int server_threads(libgdbr_t *g, gdbr_server_cmd_cb cb, void *user, ServerThreads *threads, bool first) {
+	if (first) {
+		R_FREE (threads->ids);
+		threads->length = threads->offset = 0;
+		const size_t cap = 2 + GDBR_THREADS_MAX * 9;
+		threads->ids = malloc (cap);
+		if (!threads->ids) {
+			return send_msg (g, "E01");
+		}
+		int length = cb (g, user, "dpt", threads->ids, cap);
+		if (length < 1 || length >= cap) {
+			R_FREE (threads->ids);
+			return send_msg (g, "E01");
+		}
+		threads->length = length;
+		threads->offset = 1;
 	}
-	return 0;
+	if (threads->offset >= threads->length) {
+		return send_msg (g, "l");
+	}
+	const char *start = threads->ids + threads->offset;
+	const size_t remaining = threads->length - threads->offset;
+	const size_t limit = R_MIN ((size_t)g->send_max - 6, g->stub_features.pkt_sz - 1);
+	size_t count = R_MIN (remaining, limit);
+	if (count < remaining) {
+		while (count && start[count] != ',') {
+			count--;
+		}
+	}
+	if (!count) {
+		return send_msg (g, "E01");
+	}
+	RStrBuf response;
+	r_strbuf_init (&response);
+	r_strbuf_set (&response, "m");
+	bool ok = r_strbuf_append_n (&response, start, count);
+	int ret = send_msg (g, ok? r_strbuf_get (&response): "E01");
+	r_strbuf_fini (&response);
+	threads->offset += count + (count < remaining);
+	return ret;
 }
 
 static int server_read_registers(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr, const char *cmd, size_t size) {
@@ -337,8 +361,7 @@ static int _server_handle_P(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 	return send_msg (g, "OK");
 }
 
-int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	R_RETURN_VAL_IF_FAIL (g, -1);
+static int server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr, ServerThreads *threads) {
 	int ret = -1;
 	int continue_tid = 0;
 	for (;;) {
@@ -386,13 +409,13 @@ int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 			continue;
 		}
 		if (r_str_startswith (g->data, "qfThreadInfo")) {
-			if ((ret = _server_handle_qfThreadInfo (g, cmd_cb, core_ptr)) < 0) {
+			if ((ret = server_threads (g, cmd_cb, core_ptr, threads, true)) < 0) {
 				return ret;
 			}
 			continue;
 		}
 		if (r_str_startswith (g->data, "qsThreadInfo")) {
-			if ((ret = _server_handle_qsThreadInfo (g, cmd_cb, core_ptr)) < 0) {
+			if ((ret = server_threads (g, cmd_cb, core_ptr, threads, false)) < 0) {
 				return ret;
 			}
 			continue;
@@ -462,6 +485,14 @@ int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 			if ((ret = _server_handle_p (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
+
+int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
+	R_RETURN_VAL_IF_FAIL (g && cmd_cb, -1);
+	ServerThreads threads = {0};
+	int ret = server_serve (g, cmd_cb, core_ptr, &threads);
+	free (threads.ids);
+	return ret;
+}
 			continue;
 		}
 		if (r_str_startswith (g->data, "qXfer:exec-file:read:")) {
