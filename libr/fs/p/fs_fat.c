@@ -682,7 +682,7 @@ static int fat_ranges(RFSRoot *root, ut32 flags, RFSRangeCb cb, void *user) {
 	FatFS *fat = root->ptr;
 	ut32 states = R_FS_RANGE_FREE | R_FS_RANGE_ALLOCATED | R_FS_RANGE_ORPHAN | R_FS_RANGE_BAD | R_FS_RANGE_UNKNOWN;
 	if (!flags || (flags & ~states)) {
-		return R_FS_WALK_ERROR;
+		return R_FS_WALK_UNSUPPORTED;
 	}
 	RBitmap *used = flags & R_FS_RANGE_ORPHAN? fat_owners (fat): NULL;
 	if ((flags & R_FS_RANGE_ORPHAN) && !used) {

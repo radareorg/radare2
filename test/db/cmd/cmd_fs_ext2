@@ -621,3 +621,32 @@ Live ext4 file
 EOF2
 EXPECT_ERR=
 RUN
+
+NAME=ext4 search.in=fs.unwritten finds stale bytes under preallocated extents
+FILE=gzip://bins/fs/ext4-unwritten/unwritten.img.gz
+CMDS=<<EOF2
+e search.verbose=false
+e fs.cwd=/root
+mfu /root unwritten
+mie /root/prealloc
+e search.in=fs.unwritten
+/xj 4c6976652065787434
+e search.maxhits=1
+/xj 5374616c6520736563726574
+e search.in=fs.free
+/xj 5374616c6520736563726574
+e search.in=fs.allocated
+/xj 4c6976652065787434
+EOF2
+EXPECT=<<EOF2
+0x00004800 0x00004800 1024 0x82
+0x00005000 0x00005000 3072 0x82
+0x00000000 0x00004800 1024 0x82
+0x00000400 0x00005000 3072 0x82
+[]
+[{"addr":18432,"type":"hexpair","data":"5374616c6520736563726574"}]
+[]
+[{"addr":17408,"type":"hexpair","data":"4c6976652065787434"}]
+EOF2
+EXPECT_ERR=
+RUN

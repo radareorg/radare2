@@ -55,7 +55,7 @@ static RCoreHelpMessage help_msg_mf = {
 	"Usage:", "mf[no] [...]", "search files matching name or offset",
 	"mfn", " /foo *.c", "search files by name in /foo path",
 	"mfo", " /foo 0x5e91", "find files containing a disk offset",
-	"mfu", "[j] /mount [state]", "allocation ranges: free (default), allocated, orphan, bad, unknown, all",
+	"mfu", "[j] /mount [state]", "allocation ranges: free (default), allocated, orphan, bad, unknown, unwritten, all",
 	NULL
 };
 
@@ -805,13 +805,13 @@ static bool mount_ranges(RCmdContext *ctx) {
 			return false;
 		}
 	} else if (state) {
-		const char *names[] = { "free", "allocated", "orphan", "bad", "unknown", "all" };
-		ut32 masks[] = { R_FS_RANGE_FREE, R_FS_RANGE_ALLOCATED, R_FS_RANGE_ORPHAN, R_FS_RANGE_BAD, R_FS_RANGE_UNKNOWN, 31 };
+		const char *names[] = { "free", "allocated", "orphan", "bad", "unknown", "unwritten", "all" };
+		ut32 masks[] = { R_FS_RANGE_FREE, R_FS_RANGE_ALLOCATED, R_FS_RANGE_ORPHAN, R_FS_RANGE_BAD, R_FS_RANGE_UNKNOWN, R_FS_RANGE_UNWRITTEN, 31 };
 		int i;
 		for (i = 0; i < R_ARRAY_SIZE (names) && strcmp (state, names[i]); i++) {
 		}
 		if (i == R_ARRAY_SIZE (names)) {
-			R_LOG_ERROR ("Expected free, allocated, orphan, bad, unknown or all");
+			R_LOG_ERROR ("Expected free, allocated, orphan, bad, unknown, unwritten or all");
 			pj_free (output.pj);
 			return false;
 		}
@@ -1079,8 +1079,8 @@ static bool r_core_cmd_mount_init(RCmd *cmd) {
 		{ "mf", mount_help_mf, "[no] [path] [name|offset]", help_msg_mf, 0, 0 },
 		{ "mfn", mount_find, " [path] [pattern]", NULL, 2, 2 },
 		{ "mfo", mount_find, " [path] [offset]", NULL, 2, 2 },
-		{ "mfu", mount_ranges, " /mount [free|allocated|orphan|bad|unknown|all]", NULL, 1, 2 },
-		{ "mfuj", mount_ranges, " /mount [free|allocated|orphan|bad|unknown|all]", NULL, 1, 2 },
+		{ "mfu", mount_ranges, " /mount [free|allocated|orphan|bad|unknown|unwritten|all]", NULL, 1, 2 },
+		{ "mfuj", mount_ranges, " /mount [free|allocated|orphan|bad|unknown|unwritten|all]", NULL, 1, 2 },
 		{ "mg", mount_get, " [filename] [offset [size]]", NULL, 1, 3 },
 		{ "mgx", mount_recover, " /mount id output|- [chain|contiguous]", NULL, 3, 4 },
 		{ "mi", mount_info, " [path|offset] [entry-id]", NULL, 1, 2 },

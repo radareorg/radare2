@@ -986,3 +986,16 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=FAT reports fs.unwritten as unsupported
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF2
+e fs.cwd=/root
+e search.in=fs.unwritten
+/x 00
+EOF2
+EXPECT=
+EXPECT_ERR=<<EOF2
+ERROR: Cannot enumerate fs.unwritten in /root (unsupported)
+EOF2
+RUN

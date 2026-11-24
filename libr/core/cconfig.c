@@ -3487,6 +3487,7 @@ static bool cb_searchin(void *user, void *data) {
 						"fs.allocated       search allocated ranges, including orphans (fs.cwd)\n"
 						"fs.bad             search bad filesystem ranges (fs.cwd)\n"
 						"fs.unknown         search filesystem ranges with unknown allocation state (fs.cwd)\n"
+						"fs.unwritten       search stale bytes in preallocated but unwritten extents (fs.cwd)\n"
 						"flag               find boundaries in ranges defined by flags larger than 1 byte\n"
 						"flag:[glob]        find boundaries in flags matching given glob and larger than 1 byte\n"
 						"block              search in the current block\n"
@@ -5089,7 +5090,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("search.from", -1, "search start address");
 	n = NODECB ("search.in", "io.maps", &cb_searchin);
 	SETDESC (n, "specify search boundaries");
-	SETOPTIONS (n, "fs.free", "fs.lost", "fs.allocated", "fs.bad", "fs.unknown", "raw", "flag", "flag:", "block",
+	SETOPTIONS (n, "fs.free", "fs.lost", "fs.allocated", "fs.bad", "fs.unknown", "fs.unwritten", "raw", "flag", "flag:", "block",
 		"bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
 		"io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x",
 		"dbg.stack", "dbg.heap", "dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x",

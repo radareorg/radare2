@@ -805,6 +805,29 @@ static RBitset *ext2_owners(Ext2Geometry *g) {
 	return used;
 }
 
+static int ext2_unwritten_block(ut64 block, ut64 logical, ut64 size, unsigned depth, ut32 flags, void *user) {
+	if (!block || depth || !(flags & R_FS_RANGE_UNWRITTEN) || r_bitset_test (user, block)) {
+		return R_FS_WALK_COMPLETE;
+	}
+	return r_bitset_set (user, block)? R_FS_WALK_COMPLETE: R_FS_WALK_ERROR;
+}
+
+static bool ext2_unwritten_inode(Ext2Geometry *g, ut32 id, const ut8 *inode, bool allocated, void *user) {
+	if (!allocated || !(r_read_le32 (inode + 32) & 0x80000)) {
+		return true;
+	}
+	return ext2_walk_inode (g, inode, id, ext2_capacity (g, inode), ext2_unwritten_block, user) == R_FS_WALK_COMPLETE;
+}
+
+static RBitset *ext2_unwritten(Ext2Geometry *g) {
+	RBitset *unwritten = r_bitset_new ();
+	if (unwritten && !ext2_scan_inodes (g, ext2_unwritten_inode, unwritten)) {
+		r_bitset_free (unwritten);
+		return NULL;
+	}
+	return unwritten;
+}
+
 static int ext2_count_block(ut64 block, ut64 logical, ut64 size, unsigned depth, ut32 flags, void *user) {
 	if (block) {
 		(*(ut64 *)user)++;
@@ -1354,11 +1377,16 @@ static int FSP(_forensic_ranges)(RFSRoot *root, ut32 flags, RFSRangeCb cb, void 
 	if (!ext2_geometry (root, &g)) {
 		return R_FS_WALK_UNSUPPORTED;
 	}
-	if (!flags || (flags & ~(R_FS_RANGE_FREE | R_FS_RANGE_ALLOCATED | R_FS_RANGE_ORPHAN | R_FS_RANGE_BAD | R_FS_RANGE_UNKNOWN))) {
+	if (!flags || (flags & ~(R_FS_RANGE_FREE | R_FS_RANGE_ALLOCATED | R_FS_RANGE_ORPHAN | R_FS_RANGE_BAD | R_FS_RANGE_UNKNOWN | R_FS_RANGE_UNWRITTEN))) {
 		return R_FS_WALK_UNSUPPORTED;
 	}
 	RBitset *owners = flags & R_FS_RANGE_ORPHAN? ext2_owners (&g): NULL;
 	if ((flags & R_FS_RANGE_ORPHAN) && !owners) {
+		return R_FS_WALK_ERROR;
+	}
+	RBitset *unwritten = flags & R_FS_RANGE_UNWRITTEN? ext2_unwritten (&g): NULL;
+	if ((flags & R_FS_RANGE_UNWRITTEN) && !unwritten) {
+		r_bitset_free (owners);
 		return R_FS_WALK_ERROR;
 	}
 	RBitset *bad = NULL;
@@ -1370,6 +1398,7 @@ static int FSP(_forensic_ranges)(RFSRoot *root, ut32 flags, RFSRangeCb cb, void 
 	ut8 *bitmap = malloc (g.block_size);
 	if (!bitmap) {
 		r_bitset_free (owners);
+		r_bitset_free (unwritten);
 		r_bitset_free (bad);
 		return R_FS_WALK_ERROR;
 	}
@@ -1393,6 +1422,9 @@ static int FSP(_forensic_ranges)(RFSRoot *root, ut32 flags, RFSRangeCb cb, void 
 			}
 			if (owners && state == R_FS_RANGE_ALLOCATED && !r_bitset_test (owners, first + i)) {
 				state |= R_FS_RANGE_ORPHAN;
+			}
+			if (unwritten && state == R_FS_RANGE_ALLOCATED && r_bitset_test (unwritten, first + i)) {
+				state |= R_FS_RANGE_UNWRITTEN;
 			}
 			ut64 offset = (first + i) * g.block_size;
 			if (run.size && (!(flags & state) || run.flags != state)) {
@@ -1419,6 +1451,7 @@ static int FSP(_forensic_ranges)(RFSRoot *root, ut32 flags, RFSRangeCb cb, void 
 	r_bitset_free (cache.metadata);
 	r_bitset_free (bad);
 	r_bitset_free (owners);
+	r_bitset_free (unwritten);
 	free (bitmap);
 	return status;
 }

@@ -934,6 +934,7 @@ static ut32 fs_search_flags(const char *state) {
 		{ "allocated", R_FS_RANGE_ALLOCATED },
 		{ "bad", R_FS_RANGE_BAD },
 		{ "unknown", R_FS_RANGE_UNKNOWN },
+		{ "unwritten", R_FS_RANGE_UNWRITTEN },
 	};
 	size_t i;
 	for (i = 0; i < R_ARRAY_SIZE (modes); i++) {
