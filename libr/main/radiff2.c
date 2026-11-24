@@ -183,16 +183,16 @@ static int cb_xpatch(RDiff *d, void *user, RDiffOp *op) {
 	r_cons_printf (ro->cons, "@@ u8,u8,%%2x -0x%08" PFMT64x ",%d, +0x%08" PFMT64x ",%d @@\n",
 		op->a_off + ro->baddr, op->a_len,
 		op->b_off + ro->baddr, op->b_len);
-	r_cons_printf (ro->cons, "- ");
+	r_cons_print (ro->cons, "- '");
 	for (i = 0; i < op->a_len; i++) {
 		r_cons_printf (ro->cons, "%02x", op->a_buf[i]);
 	}
-	r_cons_printf (ro->cons, "\n+ ");
+	r_cons_print (ro->cons, "'\n+ '");
 	for (i = 0; i < op->b_len; i++) {
 		r_cons_printf (ro->cons, "%02x", op->b_buf[i]);
 	}
-	r_cons_newline (ro->cons);
-	return 0;
+	r_cons_print (ro->cons, "'\n");
+	return 1;
 }
 
 static ut64 disasm_address(RadiffOptions *ro, RadiffDisasm *dis, ut64 off) {

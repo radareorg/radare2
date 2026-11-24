@@ -5,10 +5,13 @@
 #include <r_core.h>
 #include <r_main.h>
 
+#include "rapatch2_binary.inc.c"
+
 static int show_help(int v) {
-	printf ("Usage: rapatch2 [-p N] [-sv] [-R] [patchfile] ([targetfile])\n");
+	printf ("Usage: rapatch2 [-B] [-p N] [-sv] [-R] [patchfile] ([targetfile])\n");
 	if (v) {
 		printf (
+			"  -B         apply data-only binary patch to an explicit file\n"
 			"  -p N       patch level, skip N directories\n"
 			"  -R         reverse patch\n"
 			"  -s         sandbox mode, disable scripts and r2 command execution\n"
@@ -19,6 +22,7 @@ static int show_help(int v) {
 }
 
 typedef struct {
+	bool binary;
 	bool sandbox;
 	bool quiet;
 	bool reverse;
@@ -80,9 +84,12 @@ R_API int r_main_rapatch2(int argc, const char **argv) {
 	int o;
 	RapatchOptions ro = { 0 };
 
-	r_getopt_init (&opt, argc, argv, "hRvsp:");
+	r_getopt_init (&opt, argc, argv, "BhRvsp:");
 	while ((o = r_getopt_next (&opt)) != -1) {
 		switch (o) {
+		case 'B':
+			ro.binary = true;
+			break;
 		case 'h':
 			return show_help (1);
 		case 's':
@@ -114,6 +121,13 @@ R_API int r_main_rapatch2(int argc, const char **argv) {
 	if (R_STR_ISEMPTY (patchfile)) {
 		R_LOG_ERROR ("Missing patchfile");
 		return 1;
+	}
+	if (ro.binary) {
+		if (ro.reverse || ro.level) {
+			R_LOG_ERROR ("Binary patch mode does not take a patch level or reverse option");
+			return 1;
+		}
+		return rapatch_binary (patchfile, target);
 	}
 	ro.core = r_core_new ();
 	int rc = 0;

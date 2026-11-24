@@ -494,3 +494,18 @@ EXPECT=<<EOF2
 {"offset_a":2,"offset_b":1,"size_a":1,"size_b":2,"rows":[{"offset":0,"left":"22","right":"2233"}]}
 EOF2
 RUN
+
+NAME=radiff2 unified binary patch contains all delta hunks
+FILE=-
+CMDS=!radiff2 -dX hex://6162630a73616d650a6465660a hex://4142430a73616d650a4445460a
+EXPECT=<<EOF2
+--- hex://6162630a73616d650a6465660a
++++ hex://4142430a73616d650a4445460a
+@@ u8,u8,%2x -0x00000000,4, +0x00000000,4 @@
+- '6162630a'
++ '4142430a'
+@@ u8,u8,%2x -0x00000009,4, +0x00000009,4 @@
+- '6465660a'
++ '4445460a'
+EOF2
+RUN

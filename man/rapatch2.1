@@ -5,7 +5,7 @@
 .Nd binary patching utility
 .Sh SYNOPSIS
 .Nm rapatch2
-.Op Fl psRqv
+.Op Fl BpsRqv
 .Op Ar patchfile
 .Op Ar targetfile
 .Sh DESCRIPTION
@@ -24,6 +24,15 @@ OFFSET : assembly
 .Ed
 .Sh OPTIONS
 .Bl -tag -width Fl
+.It Fl B
+Apply a data-only patch to an explicit local target file using file offsets.
+Accept unified binary patches from
+.Nm radiff2 Fl X ,
+write scripts from
+.Nm radiff2 Fl r ,
+and plain offset and hex byte records.
+Unified patch headers serve as labels and the removed bytes are checked.
+The target is updated in place. Apply to a copy to keep the original intact.
 .It Fl p Ar N
 Patch level, skip N directories
 .It Fl R
