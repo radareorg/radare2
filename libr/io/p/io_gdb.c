@@ -5,7 +5,7 @@
 #define IRAPI static inline
 #include <libgdbr.h>
 #include <gdbclient/commands.h>
-#include <gdbclient/responses.h>
+#include <gdbclient/core.h>
 
 typedef struct {
 	libgdbr_t desc;
@@ -265,55 +265,19 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (r_str_startswith (cmd, "rd")) {
 		PJ *pj = pj_new ();
 		pj_o (pj);
-		pj_kb (pj, "reverse-continue", desc->stub_features.ReverseStep);
-		pj_kb (pj, "reverse-step", desc->stub_features.ReverseContinue);
+		pj_kb (pj, "reverse-continue", desc->stub_features.ReverseContinue);
+		pj_kb (pj, "reverse-step", desc->stub_features.ReverseStep);
 		pj_end (pj);
 		return pj_drain (pj);
 	}
-	if (r_str_startswith (cmd, "dsb")) {
-		if (!desc->stub_features.ReverseStep) {
-			R_LOG_ERROR ("Stepping backwards is not supported in this gdbserver implementation");
-			return NULL;
+	const bool reverse_step = !strcmp (cmd, "dsb");
+	if (reverse_step || !strcmp (cmd, "dcb")) {
+		bool supported = reverse_step? desc->stub_features.ReverseStep: desc->stub_features.ReverseContinue;
+		if (!supported) {
+			R_LOG_ERROR ("Reverse %s is not supported by the GDB stub", reverse_step? "step": "continue");
+		} else if (send_vcont (desc, reverse_step? "bs": "bc", NULL) < 0) {
+			R_LOG_ERROR ("Reverse %s failed", reverse_step? "step": "continue");
 		}
-		gdbr_lock_enter (desc);
-		if (send_msg (desc, "bs") >= 0) {
-			(void)read_packet (desc, false);
-			desc->data[desc->data_len] = '\0';
-			if (!desc->no_ack) {
-				R_LOG_INFO ("waiting for ack");
-			} else {
-				handle_stop_reason (desc);
-				if (desc->stop_reason.is_valid == false) {
-					R_LOG_INFO ("Thread (%d) stopped for an invalid reason: %d",
-						desc->stop_reason.thread.tid, desc->stop_reason.reason);
-				}
-			}
-			gdbr_invalidate_reg_cache (desc);
-		}
-		gdbr_lock_leave (desc);
-		return NULL;
-	}
-	if (r_str_startswith (cmd, "dcb")) {
-		if (!desc->stub_features.ReverseContinue) {
-			R_LOG_ERROR ("Continue backwards is not supported in this gdbserver implementation");
-			return NULL;
-		}
-		gdbr_lock_enter (desc);
-		if (send_msg (desc, "bc") >= 0) {
-			(void)read_packet (desc, false);
-			desc->data[desc->data_len] = '\0';
-			if (!desc->no_ack) {
-				R_LOG_INFO ("waiting for the ACK");
-			} else {
-				handle_stop_reason (desc);
-				if (desc->stop_reason.is_valid == false) {
-					R_LOG_INFO ("Thread (%d) stopped for an invalid reason: %d",
-						desc->stop_reason.thread.tid, desc->stop_reason.reason);
-				}
-			}
-			gdbr_invalidate_reg_cache (desc);
-		}
-		gdbr_lock_leave (desc);
 		return NULL;
 	}
 	if (r_str_startswith (cmd, "pid")) {
