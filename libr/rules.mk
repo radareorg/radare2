@@ -89,7 +89,7 @@ prelib-build: $(EXTRA_TARGETS)
 ifeq ($(WITH_LIBS),1)
 
 $(LIBSO): prelib-build ${SHARED_OBJ}
-	@for a in ${OBJS} ${SHARED_OBJ} ${SRC}; do \
+	@for a in ${OBJS} ${SHARED_OBJ} ${SRC} $(filter %.$(EXT_AR),$(LINK) $(LDFLAGS)); do \
 	  do=0; [ ! -e "${LIBSO}" ] && do=1 ; \
 	  test "$$a" -nt "${LIBSO}" && do=1 ; \
 	  if [ $$do = 1 ]; then \
