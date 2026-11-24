@@ -24,7 +24,8 @@ struct parse_ctx {
 };
 
 static bool append(libgdbr_t *g, const char ch) {
-	if (!gdbr_data_reserve (g, g->data_len + 1)) {
+	const size_t limit = g->is_server? g->read_max - 1: GDBR_XFER_MAX;
+	if ((size_t)g->data_len >= limit || !gdbr_data_reserve (g, g->data_len + 1)) {
 		R_LOG_ERROR ("%s: Failed to reallocate buffer", __func__);
 		return false;
 	}

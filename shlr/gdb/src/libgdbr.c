@@ -19,7 +19,8 @@ int gdbr_init(libgdbr_t *g, bool is_server) {
 	g->caps.p = GDBR_CAP_UNKNOWN;
 	g->remote_file_fd = -1;
 	g->is_server = is_server;
-	g->send_max = 2500;
+	g->read_max = 4096;
+	g->send_max = is_server? g->read_max + 4: 2500;
 	g->send_buff = (char *) calloc (g->send_max, 1);
 	g->page_size = 4096;
 	g->num_retries = 40; // safe number, should be ~10 seconds
@@ -27,7 +28,6 @@ int gdbr_init(libgdbr_t *g, bool is_server) {
 		return -1;
 	}
 	g->send_len = 0;
-	g->read_max = 4096;
 	g->read_buff = (char *) calloc (g->read_max, 1);
 	if (!g->read_buff) {
 		R_FREE (g->send_buff);

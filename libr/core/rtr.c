@@ -4,6 +4,7 @@
 #include "r_socket.h"
 #include "gdb/include/libgdbr.h"
 #include "gdb/include/gdbserver/core.h"
+#include "gdb/include/utils.h"
 #include <r_vec.h>
 
 #if HAVE_LIBUV
@@ -265,22 +266,39 @@ static const char *rtr_proto_tostring(int proto) {
 
 #include "rtr_gdb.inc.c"
 
-// Handle the gdb 'm' (read memory) command: "m<addr>,<len>".
-// The client-requested length is clamped to the output buffer size to avoid
-// a heap buffer overflow (see issue #26255). Returns the number of bytes read
-// into out_buf, or -1 on error.
-static int gdb_cmd_read_memory(RCore *core, const char *cmd, char *out_buf, size_t max_len) {
-	ut64 addr = 0, len = 0;
-	if (sscanf (cmd + 1, "%"PFMT64x",%"PFMT64x, &addr, &len) != 2) {
+static int gdb_cmd_memory(RCore *core, const char *cmd, char *out_buf, size_t max_len) {
+	ut64 addr, len;
+	const char *end = gdbr_parse_hex_value (cmd + 1, &addr);
+	if (!end || *end != ',') {
 		return -1;
 	}
-	if (len > max_len) {
-		len = max_len;
-	}
-	if (len == 0 || !r_io_read_at (core->io, addr, (ut8 *)out_buf, (int)len)) {
+	end = gdbr_parse_hex_value (end + 1, &len);
+	if (!end || !len || len > INT_MAX || UT64_MAX - addr < len - 1) {
 		return -1;
 	}
-	return (int)len;
+	if (*cmd == 'm') {
+		return !*end && out_buf && len <= max_len && r_io_read_at (core->io, addr, (ut8 *)out_buf, len)? (int)len: -1;
+	}
+	if (*end != ':' || strlen (end + 1) != len * 2) {
+		return -1;
+	}
+	const char *hex = end + 1;
+	ut8 *bytes = malloc (len);
+	if (!bytes) {
+		return -1;
+	}
+	size_t i;
+	for (i = 0; i < len; i++) {
+		int high = hex2int (hex[2 * i]);
+		int low = hex2int (hex[2 * i + 1]);
+		if (high < 0 || low < 0) {
+			break;
+		}
+		bytes[i] = (high << 4) | low;
+	}
+	bool ok = i == len && r_io_write_at (core->io, addr, bytes, len);
+	free (bytes);
+	return ok? 0: -1;
 }
 
 static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
@@ -397,7 +415,10 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 		}
 		break;
 	case 'm':
-		return gdb_cmd_read_memory (core, cmd, out_buf, max_len);
+	case 'M':
+		return gdb_cmd_memory (core, cmd, out_buf, max_len);
+	case 'D':
+		return r_debug_detach (dbg, g->pid)? 0: -1;
 	default:
 		return r_core_cmd (core, cmd, 0);
 	}
