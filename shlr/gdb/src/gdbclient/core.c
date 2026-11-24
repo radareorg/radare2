@@ -404,7 +404,6 @@ end:
 }
 
 int gdbr_disconnect(libgdbr_t *g) {
-	// TODO Disconnect maybe send something to gdbserver
 	if (!g || !g->sock) {
 		return -1;
 	}
@@ -435,26 +434,17 @@ int gdbr_select(libgdbr_t *g, int pid, int tid) {
 	if (!gdbr_lock_enter (g)) {
 		goto end;
 	}
+	strcpy (cmd, "Hg");
+	if (write_thread_id (cmd + 2, sizeof (cmd) - 2, pid, tid, g->stub_features.multiprocess) < 0
+	    || send_msg (g, cmd) < 0 || read_packet (g, false) < 0
+	    || g->data_len != 2 || memcmp (g->data, "OK", 2)) {
+		goto end;
+	}
 	if (g->pid != pid || g->tid != tid) {
 		gdbr_regs_invalidate (g);
+		g->pid = pid;
+		g->tid = tid;
 	}
-	g->pid = pid;
-	g->tid = tid;
-	strcpy (cmd, "Hg");
-	if ((ret = write_thread_id (cmd + 2, sizeof (cmd) - 3, pid, tid,
-		    g->stub_features.multiprocess)) < 0) {
-		goto end;
-	}
-	g->stop_reason.is_valid = false;
-	if (send_msg (g, cmd) < 0 || read_packet (g, false) < 0) {
-		ret = -1;
-		goto end;
-	}
-	if (strcmp (g->data, "OK")) {
-		ret = -1;
-		goto end;
-	}
-
 	ret = 0;
 end:
 	gdbr_lock_leave (g);
@@ -844,155 +834,55 @@ end:
 }
 
 int gdbr_detach(libgdbr_t *g) {
-	int ret = -1;
-
 	if (!g || !g->sock) {
 		return -1;
 	}
-
-	if (!gdbr_lock_enter (g)) {
-		goto end;
+	int ret = -1;
+	if (gdbr_lock_enter (g) && send_query_ok (g, "D")) {
+		ret = gdbr_disconnect (g);
 	}
+	gdbr_lock_leave (g);
+	return ret;
+}
 
-	gdbr_regs_invalidate (g);
-	g->stop_reason.is_valid = false;
-	ret = send_msg (g, "D");
-	if (ret < 0) {
-		ret = -1;
-		goto end;
+static int gdbr_process_command(libgdbr_t *g, const char *command, int pid) {
+	if (!g || !g->stub_features.multiprocess || pid <= 0) {
+		return -1;
 	}
-	// Disconnect
-	ret = gdbr_disconnect (g);
-end:
+	int ret = -1;
+	if (gdbr_lock_enter (g)) {
+		r_strf_var (packet, 32, "%s%x", command, (unsigned int)pid);
+		if (send_query_ok (g, packet)) {
+			gdbr_regs_invalidate (g);
+			g->stop_reason.is_valid = false;
+			ret = 0;
+		}
+	}
 	gdbr_lock_leave (g);
 	return ret;
 }
 
 int gdbr_detach_pid(libgdbr_t *g, int pid) {
-	char *cmd = NULL;
-	int ret = -1;
-	size_t buffer_size;
-
-	if (!g || !g->sock || !g->stub_features.multiprocess) {
-		return -1;
-	}
-
-	if (!gdbr_lock_enter (g)) {
-		goto end;
-	}
-
-	gdbr_regs_invalidate (g);
-	g->stop_reason.is_valid = false;
-
-	buffer_size = strlen (CMD_DETACH_MP) + (sizeof (pid) * 2) + 1;
-	cmd = calloc (buffer_size, sizeof (char));
-	if (!cmd) {
-		ret = -1;
-		goto end;
-	}
-
-	if ((snprintf (cmd, buffer_size, "%s%x", CMD_DETACH_MP, g->pid)) < 0) {
-		ret = -1;
-		goto end;
-	}
-
-	ret = send_msg (g, cmd);
-	if (ret < 0) {
-		goto end;
-	}
-
-	if ((ret = read_packet (g, false)) < 0) {
-		goto end;
-	}
-
-	if (strncmp (g->data, "OK", 2)) {
-		ret = -1;
-		goto end;
-	}
-
-	ret = 0;
-end:
-	free (cmd);
-	gdbr_lock_leave (g);
-	return ret;
+	return gdbr_process_command (g, CMD_DETACH_MP, pid);
 }
 
 int gdbr_kill(libgdbr_t *g) {
-	int ret = -1;
-
 	if (!g || !g->sock) {
 		return -1;
 	}
-
-	if (!gdbr_lock_enter (g)) {
-		goto end;
-	}
-
-	gdbr_regs_invalidate (g);
-	g->stop_reason.is_valid = false;
-
 	if (g->stub_features.multiprocess) {
-		if (g->pid <= 0) {
-			ret = -1;
-			goto end;
-		}
-		ret = gdbr_kill_pid (g, g->pid);
-		goto end;
+		return gdbr_kill_pid (g, g->pid);
 	}
-
-	if ((ret = send_msg (g, "k")) < 0) {
-		goto end;
+	int ret = -1;
+	if (gdbr_lock_enter (g) && send_msg (g, "k") >= 0) {
+		ret = gdbr_disconnect (g);
 	}
-
-	ret = 0;
-end:
 	gdbr_lock_leave (g);
 	return ret;
 }
 
 int gdbr_kill_pid(libgdbr_t *g, int pid) {
-	char *cmd = NULL;
-	int ret = -1;
-	size_t buffer_size;
-
-	if (!g || !g->sock || !g->stub_features.multiprocess) {
-		return -1;
-	}
-
-	if (!gdbr_lock_enter (g)) {
-		goto end;
-	}
-
-	gdbr_regs_invalidate (g);
-	g->stop_reason.is_valid = false;
-
-	buffer_size = strlen (CMD_KILL_MP) + (sizeof (pid) * 2) + 1;
-	cmd = calloc (buffer_size, sizeof (char));
-	if (!cmd) {
-		ret = -1;
-		goto end;
-	}
-
-	if ((snprintf (cmd, buffer_size, "%s%x", CMD_KILL_MP, g->pid)) < 0) {
-		ret = -1;
-		goto end;
-	}
-	if ((ret = send_msg (g, cmd)) < 0) {
-		goto end;
-	}
-
-	if ((ret = read_packet (g, false)) < 0) {
-		goto end;
-	}
-	if (strncmp (g->data, "OK", 2)) {
-		ret = -1;
-		goto end;
-	}
-
-end:
-	free (cmd);
-	gdbr_lock_leave (g);
-	return ret;
+	return gdbr_process_command (g, CMD_KILL_MP, pid);
 }
 
 // 1 when the stub refused 'g', 0 once its block is cached
