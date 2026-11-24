@@ -27,8 +27,6 @@
 #include <signal.h>
 #endif
 
-#define QSUPPORTED_MAX_RETRIES 5
-
 extern char hex2char (char *hex);
 
 #if 0
@@ -270,7 +268,6 @@ void gdbr_lock_leave(libgdbr_t *g) {
 
 int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	const char *message = "qSupported:multiprocess+;xmlRegisters=i386";
-	int i;
 	int ret = -1;
 	void *bed = NULL;
 
@@ -321,22 +318,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	read_packet (g, true); // vcont=true lets us skip if we get no reply
 	g->connected = 1;
 	bed = r_cons_sleep_begin (cons);
-	// TODO add config possibility here
-	for (i = 0; i < QSUPPORTED_MAX_RETRIES && !g->isbreaked; i++) {
-		ret = send_msg (g, message);
-		if (ret < 0) {
-			continue;
-		}
-		ret = read_packet (g, false);
-		if (ret < 0) {
-			continue;
-		}
-		ret = handle_qSupported (g);
-		if (ret < 0) {
-			continue;
-		}
-		break;
-	}
+	ret = send_msg (g, message) < 0 || read_packet (g, false) < 0? -1: handle_qSupported (g);
 	r_cons_sleep_end (cons, bed);
 	if (g->isbreaked) {
 		g->isbreaked = false;
@@ -1405,7 +1387,7 @@ end:
 }
 
 static int change_breakpoint(libgdbr_t *g, bool set, ut64 address, enum Breakpoint type, int size) {
-	if (!g || type < BREAKPOINT || type > ACCESS_WATCHPOINT || size < 1) {
+	if (!g || type < BREAKPOINT || type > ACCESS_WATCHPOINT || size < 0 || (!size && type >= WRITE_WATCHPOINT)) {
 		return -1;
 	}
 	int ret = -1;
@@ -1967,7 +1949,6 @@ RList *gdbr_threads_list(libgdbr_t *g, int pid) {
 			if (g->data_len == 1 && g->data[0] == 'l') {
 				ok = true;
 				break;
-	free (exec_file);
 			}
 			if (g->data_len < 2 || g->data[0] != 'm') {
 				break;
@@ -1986,6 +1967,7 @@ RList *gdbr_threads_list(libgdbr_t *g, int pid) {
 		}
 	}
 end:
+	free (exec_file);
 	gdbr_lock_leave (g);
 	if (!ok) {
 		r_list_free (list);
