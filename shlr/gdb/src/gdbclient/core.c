@@ -917,135 +917,39 @@ int gdbr_read_registers(libgdbr_t *g) {
 	return ret;
 }
 
-static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) {
-	char command[128] = {0};
-	int last, ret_len, pkt;
-	ret_len = 0;
-
-	if (!g) {
+int gdbr_read_memory(libgdbr_t *g, ut64 address, ut8 *buf, int len) {
+	if (!g || (!buf && len) || len < 0) {
 		return -1;
 	}
-	if (len < 1) {
-		return len;
+	if (!len) {
+		return 0;
 	}
-
+	if (UT64_MAX - address < (ut64)len - 1) {
+		return -1;
+	}
 	if (!gdbr_lock_enter (g)) {
-		goto end;
+		gdbr_lock_leave (g);
+		return -1;
 	}
-
-	int data_sz = g->stub_features.pkt_sz / 2;
-	if (!data_sz) {
-		ret_len = -1;
-		goto end;
-	}
-	int num_pkts = len / data_sz;
-	last = len % data_sz;
-	ret_len = 0;
-	for (pkt = 0; pkt < num_pkts; pkt++) {
-		if (snprintf (command, sizeof (command) - 1,
-			    "%s%"PFMT64x ",%"PFMT64x, CMD_READMEM,
-			    (ut64)address + (pkt * data_sz),
-			    (ut64)data_sz) < 0) {
-			ret_len = -1;
-			goto end;
+	int total = 0;
+	const int limit = R_MIN (g->stub_features.pkt_sz, (ut32)(g->data_max - 1)) / 2;
+	const int page = g->page_size;
+	while (total < len && limit > 0 && page > 0) {
+		ut64 offset = address + total;
+		int chunk = R_MIN (len - total, page - (int)(offset % page));
+		chunk = R_MIN (chunk, limit);
+		r_strf_var (command, 64, "%s%"PFMT64x",%x", CMD_READMEM, offset, chunk);
+		if (send_msg (g, command) < 0 || read_packet (g, false) < 0 || handle_m (g, chunk) < 0) {
+			break;
 		}
-		if (send_msg (g, command) < 0) {
-			ret_len = -1;
-			goto end;
-		}
-		if (read_packet (g, false) < 0) {
-			ret_len = -1;
-			goto end;
-		}
-		if (handle_m (g) < 0) {
-			ret_len = -1;
-			goto end;
-		}
-		int delta = (pkt * data_sz);
-		int left = R_MIN (g->data_len, data_sz);
-		if (left > 0) {
-			memcpy (buf + delta, g->data, left);
-			ret_len += left;
+		memcpy (buf + total, g->data, g->data_len);
+		total += g->data_len;
+		if (g->data_len < chunk) {
+			break;
 		}
 	}
-	if (last) {
-		if (snprintf (command, sizeof (command) - 1,
-			    "%s%016"PFMT64x ",%"PFMT64x, CMD_READMEM,
-			    (ut64)(address + (num_pkts * data_sz)),
-			    (ut64)last) < 0) {
-			ret_len = -1;
-			goto end;
-		}
-		if (send_msg (g, command) < 0) {
-			ret_len = -1;
-			goto end;
-		}
-		if (read_packet (g, false) < 0) {
-			ret_len = -1;
-			goto end;
-		}
-		if (handle_m (g) < 0) {
-			ret_len = -1;
-			goto end;
-		}
-		int delta = num_pkts * data_sz;
-		int left = R_MIN (g->data_len, len - delta);
-		if (left > 0) {
-			memcpy (buf + delta, g->data, left);
-			ret_len += left;
-		}
-	}
-end:
 	gdbr_lock_leave (g);
-	return ret_len;
-}
-
-int gdbr_read_memory(libgdbr_t *g, ut64 address, ut8 *buf, int len) {
-	int ret_len, ret, tmp;
-	int page_size = g->page_size;
-	ret_len = 0;
-
-	if (!gdbr_lock_enter (g)) {
-		goto end;
-	}
-
-	// Read and round up to page size
-	tmp = page_size - (address & (page_size - 1));
-	if (tmp >= len) {
-		ret_len = gdbr_read_memory_page (g, address, buf, len);
-		goto end;
-	}
-	if ((ret = gdbr_read_memory_page (g, address, buf, tmp)) != tmp) {
-		ret_len = ret;
-		goto end;
-	}
-	len -= tmp;
-	address += tmp;
-	buf += tmp;
-	ret_len += ret;
-	// Read complete pages
-	while (len > page_size) {
-		if ((ret = gdbr_read_memory_page (g, address, buf, page_size)) != page_size) {
-			if (ret < 1) {
-				goto end;
-			}
-			ret_len += ret;
-			goto end;
-		}
-		len -= page_size;
-		address += page_size;
-		buf += page_size;
-		ret_len += page_size;
-	}
-	// Read left-overs
-	if ((ret = gdbr_read_memory_page (g, address, buf, len)) < 0) {
-		goto end;
-	}
-
-	ret_len += ret;
-end:
-	gdbr_lock_leave (g);
-	return ret_len;
+	return total? total: -1;
 }
 
 int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len) {
