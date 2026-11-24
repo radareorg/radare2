@@ -1,4 +1,4 @@
-#include <r_debug.h>
+#include <r_core.h>
 #include <gdbclient/commands.h>
 #include <gdbclient/responses.h>
 #include <gdbclient/xml.h>
@@ -314,6 +314,41 @@ static bool session_open(libgdbr_t *g, int fds[2], int remote_type) {
 	g->remote_type = remote_type;
 	g->pid = g->tid = 0x1c03;
 	return !gdbr_set_reg_profile (g, PROFILE);
+}
+
+static bool test_gdb_debug_execution_failures(void) {
+	RCore *core = r_core_new ();
+	libgdbr_t g;
+	int fds[2];
+	mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open debugger session");
+	// The debugger's attach callback takes the libgdbr session from the IO descriptor.
+	RIOPlugin io_plugin = { .meta.name = "gdb" };
+	RIODesc io_desc = { .plugin = &io_plugin, .data = &g };
+	core->io->desc = &io_desc;
+	RDebug *dbg = core->dbg;
+	mu_assert_true (r_debug_use (dbg, "gdb"), "select the GDB debugger");
+	RDebugPlugin *plugin = dbg->current->plugin;
+	mu_assert_streq (plugin->meta.name, "gdb", "use the GDB callbacks");
+	const char *replies[] = { "S05", "E01", "S02", "T0z", NULL };
+	Stub stub;
+	RThread *th = stub_start (&stub, fds[1], -1, replies);
+	mu_assert_true (plugin->step (dbg), "valid step succeeds");
+	mu_assert_eq (plugin->wait (dbg, dbg->pid), R_DEBUG_REASON_BREAKPOINT, "report valid step stop");
+	mu_assert_false (plugin->step (dbg), "remote error fails step");
+	mu_assert_eq (dbg->reason.type, R_DEBUG_REASON_ERROR, "step clears previous stop");
+	mu_assert_eq (dbg->reason.signum, 0, "step clears previous signal");
+	mu_assert_true (plugin->cont (dbg, dbg->pid, dbg->tid, 0), "valid continue succeeds");
+	mu_assert_eq (plugin->wait (dbg, dbg->pid), R_DEBUG_REASON_SIGNAL, "report valid continue stop");
+	mu_assert_false (plugin->cont (dbg, dbg->pid, dbg->tid, 0), "malformed stop fails continue");
+	mu_assert_eq (dbg->reason.type, R_DEBUG_REASON_ERROR, "continue clears previous stop");
+	mu_assert_false (g.stop_reason.is_valid, "failed commands invalidate stop cache");
+	shutdown (fds[1], SHUT_WR);
+	mu_assert_false (plugin->step (dbg), "disconnect fails step");
+	mu_assert_streq_free (stub_finish (&stub, th, fds[0]), "s\ns\nc\nc\ns\n", "execution commands sent");
+	core->io->desc = NULL;
+	r_core_free (core);
+	gdbr_cleanup (&g);
+	mu_end;
 }
 
 static bool test_gdb_memory_read_replies(void) {
@@ -1489,6 +1524,7 @@ int main(int argc, char **argv) {
 	mu_run_test (test_gdb_memory_packet_sizes);
 	mu_run_test (test_gdb_memory_packet_failures);
 	mu_run_test (test_gdb_memory_read_replies);
+	mu_run_test (test_gdb_debug_execution_failures);
 	mu_run_test (test_gdb_runtime_console_flows);
 	mu_run_test (test_gdb_console_terminal_replies);
 	mu_run_test (test_gdb_console_rejections);

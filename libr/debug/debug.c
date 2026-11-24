@@ -1294,7 +1294,10 @@ repeat:
 			return 0;
 		}
 		/* tell the inferior to go! */
-		ret = plugin->cont (dbg, dbg->pid, dbg->tid, sig);
+		if (!plugin->cont (dbg, dbg->pid, dbg->tid, sig)) {
+			r_bp_restore (dbg->bp, false);
+			return 0;
+		}
 		//XXX(jjd): why? //dbg->reason.signum = 0;
 		reason = r_debug_wait (dbg, &bp);
 	} else {

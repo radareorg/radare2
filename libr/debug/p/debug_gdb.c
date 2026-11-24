@@ -43,6 +43,14 @@ static void check_connection(RDebug *dbg) {
 	}
 }
 
+static bool execution_failed(RDebug *dbg, libgdbr_t *desc) {
+	if (desc) {
+		desc->stop_reason.is_valid = false;
+	}
+	dbg->reason = (RDebugReason){ .type = R_DEBUG_REASON_ERROR };
+	return false;
+}
+
 static bool r_debug_gdb_step(RDebug *dbg) {
 	PluginData *pd = R_UNWRAP3 (dbg, current, plugin_data);
 	if (!pd) {
@@ -50,10 +58,9 @@ static bool r_debug_gdb_step(RDebug *dbg) {
 	}
 
 	check_connection (dbg);
-	if (!pd->desc) {
-		return false;
+	if (!pd->desc || gdbr_step (pd->desc, dbg->tid) < 0) {
+		return execution_failed (dbg, pd->desc);
 	}
-	gdbr_step (pd->desc, dbg->tid);
 	return true;
 }
 
@@ -401,14 +408,10 @@ static bool r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
 	}
 
 	check_connection (dbg);
-	if (!pd->desc) {
-		return false;
+	if (!pd->desc || gdbr_continue (pd->desc, pid, -1, sig) < 0) {
+		return execution_failed (dbg, pd->desc);
 	}
-	gdbr_continue (pd->desc, pid, -1, sig); // Continue all threads
 	if (pd->desc->stop_reason.is_valid && pd->desc->stop_reason.thread.present) {
-		//if (pd->desc->tid != pd->desc->stop_reason.thread.tid) {
-		//	eprintf ("thread id (%d) in reason differs from current thread id (%d)\n", dbg->pid, dbg->tid);
-		//}
 		pd->desc->tid = pd->desc->stop_reason.thread.tid;
 	}
 	dbg->tid = pd->desc->tid;
