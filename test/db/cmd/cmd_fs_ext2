@@ -669,21 +669,27 @@ EXPECT_ERR=
 RUN
 
 NAME=ext2 fs.deleted salvages retained blocks past a reused block
-FILE=gzip://bins/fs/ext2-reuse/reuse.img.gz
+FILE=gzip://bins/fs/ext2-forensic/recovery.img.gz
 CMDS=<<EOF2
+e io.cache=true
+# Point the first direct block of deleted inode 13 at block 26, owned by /live.
+wv4 26 @ 0x1a28
 e search.verbose=false
 e fs.cwd=/root
 mdxr /root
 miej /root 13
 e search.in=fs.deleted
-/xj 4f6c6420626c6f636b
-/xj 4e6577206c697665
+e search.align=1024
+e search.from=0x6800
+e search.to=0x7c00
+/xj ..
+/xj 4c6976652065787432
 miej /root 13
 EOF2
 EXPECT=<<EOF2
-0xd f 4096 /root/old
+0xd f 18432 /root/vanished
 {"ranges":[],"status":"error","flags":13}
-[{"addr":28672,"type":"hexpair","data":"4f6c6420626c6f636b"},{"addr":29696,"type":"hexpair","data":"4f6c6420626c6f636b"},{"addr":30720,"type":"hexpair","data":"4f6c6420626c6f636b"}]
+[{"addr":28672,"type":"hexpair","data":"61"},{"addr":29696,"type":"hexpair","data":"61"},{"addr":30720,"type":"hexpair","data":"20"}]
 []
 {"ranges":[],"status":"error","flags":13}
 EOF2

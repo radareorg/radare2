@@ -96,8 +96,11 @@ EXPECT_ERR=
 RUN
 
 NAME=NTFS fs.deleted salvages runs past a reused cluster while recovery keeps the prefix
-FILE=gzip://bins/fs/ntfs-forensic/reuse.img.gz
+FILE=gzip://bins/fs/ntfs-forensic/recovery.img.gz
 CMDS=<<EOF2
+e io.cache=true
+# Mark the cluster at 0x167e00 allocated in $Bitmap.
+woo 80 @ 0x106b67!1
 e search.verbose=false
 e fs.cwd=/root
 mie /root 65

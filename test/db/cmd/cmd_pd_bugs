@@ -609,6 +609,7 @@ RUN
 
 NAME=pd without a loaded arch plugin does not crash
 FILE=malloc://8
+ARGS=-a x86
 CMDS=<<EOF
 e asm.arch=nonexistent
 e asm.ucase=true
