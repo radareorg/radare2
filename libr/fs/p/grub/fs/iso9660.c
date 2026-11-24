@@ -786,6 +786,9 @@ grub_iso9660_open(struct grub_file *file, const char *name) {
 	file->data = data;
 	file->size = foundnode->size;
 	file->offset = 0;
+	if (foundnode != &rootnode) {
+		grub_free (foundnode);
+	}
 
 	return 0;
 
