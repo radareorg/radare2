@@ -119,6 +119,19 @@ scripts/palette.r2
 EOF
 RUN
 
+NAME=radare2 -E skips existing command lines
+FILE=-
+ENV=R2_RCFILE=scripts/no-nl-at-eof.r2;HOME=scripts/no-nl-at-eof.r2;USERPROFILE=scripts/no-nl-at-eof.r2;EDITOR=r2-no-such-editor;VISUAL=r2-no-such-editor
+CMDS=<<EOF
+r2 -E "!!rahash2 -v~commit?" "!!rahash2 -v~commit?"
+ed*
+EOF
+EXPECT=<<EOF
+!!rahash2 -v~commit?
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=radare2 batch startup detects redirected streams
 FILE=-
 CMDS=<<EOF

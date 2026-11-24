@@ -294,7 +294,8 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 static int main_help(int line) {
 	if (line < 2) {
 		printf ("Usage: r2 [-ACdfjLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-c cmd]\n"
-		"          [-s addr] [-B baddr] [-m maddr] [-i script] [-e k=v] file|pid|-|--|=\n");
+		"          [-s addr] [-B baddr] [-m maddr] [-i script] [-e k=v] file|pid|-|--|=\n"
+		"       r2 -E [cmd ...]\n");
 	}
 	if (line != 1) {
 		printf (
@@ -314,7 +315,7 @@ static int main_help(int line) {
 			" -d           debug the executable 'file' or running process 'pid'\n"
 			" -D [backend] enable debug mode (e cfg.debug=true)\n"
 			" -e k=v       evaluate config var\n"
-			" -E           open cfg.editor with the user rc file\n"
+			" -E [cmd ...] append missing command lines to the user rc file; no args: edit\n"
 			" -f           block size = file size\n"
 			" -F [binplug] force to use that rbin plugin\n"
 			" -h, -hh      show help message, -hh for long\n"
@@ -413,6 +414,64 @@ static int main_help(int line) {
 		}
 	}
 	return 0;
+}
+
+static bool main_rc_has_line(const char *script, const char *command) {
+	size_t length = strlen (command);
+	const char *line = script;
+	while ((line = strstr (line, command))) {
+		const char *end = line + length;
+		if ((line == script || line[-1] == '\n')
+				&& (!*end || *end == '\n' || (*end == '\r' && end[1] == '\n'))) {
+			return true;
+		}
+		if (!*line) {
+			break;
+		}
+		line++;
+	}
+	return false;
+}
+
+static int main_rc_append(int argc, const char **argv) {
+	char *rcfile = r_sys_getenv ("R2_RCFILE");
+	if (R_STR_ISEMPTY (rcfile)) {
+		free (rcfile);
+		rcfile = r_file_home (".radare2rc");
+	}
+	if (!rcfile) {
+		return 1;
+	}
+	size_t size = 0;
+	char *script = r_file_slurp (rcfile, &size);
+	if (!script && r_file_exists (rcfile)) {
+		R_LOG_ERROR ("Cannot read '%s'", rcfile);
+		free (rcfile);
+		return 1;
+	}
+	RStrBuf *append = r_strbuf_new ("");
+	bool ok = true;
+	int i;
+	for (i = 0; i < argc; i++) {
+		if (main_rc_has_line (r_str_get (script), argv[i])
+				|| main_rc_has_line (r_strbuf_get (append), argv[i])) {
+			continue;
+		}
+		if (!r_strbuf_length (append) && size && script[size - 1] != '\n') {
+			ok = r_strbuf_append (append, "\n");
+		}
+		if (!ok || !r_strbuf_append (append, argv[i]) || !r_strbuf_append (append, "\n")) {
+			ok = false;
+			break;
+		}
+	}
+	if (ok && r_strbuf_length (append)) {
+		ok = r_file_dump (rcfile, (const ut8 *)r_strbuf_get (append), r_strbuf_length (append), true);
+	}
+	r_strbuf_free (append);
+	free (script);
+	free (rcfile);
+	return ok? 0: 1;
 }
 
 static int main_print_var(const char *var_name) {
@@ -1066,7 +1125,11 @@ static int main_radare2(int argc, const char **argv, bool standalone) {
 			r_config_set_b (r->config, "bin.usextr", false);
 			break;
 		case 'E':
-			ret = r_core_call (r, "ed!");
+			if (R_STR_ISEMPTY (opt.place) && opt.ind < argc && argv[opt.ind][0] != '-') {
+				ret = main_rc_append (argc - opt.ind, argv + opt.ind)? R_CMD_RC_FAILURE: R_CMD_RC_SUCCESS;
+			} else {
+				ret = r_core_call (r, "ed!");
+			}
 			mainr2_fini (&mr);
 			return ret == R_CMD_RC_SUCCESS? 0: 1;
 		case 'c':
