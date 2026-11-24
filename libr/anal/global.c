@@ -20,20 +20,22 @@ R_API bool r_anal_global_add(RAnal *anal, ut64 addr, const char *type_name, cons
 	R_RETURN_VAL_IF_FAIL (anal && anal->flb.f && R_STR_ISNOTEMPTY (name), false);
 	RFlag *flags = anal->flb.f;
 	char *filtered_name = NULL;
-	if (!r_name_check (name)) {
+	if (!r_name_check_utf8 (name, flags->utf8)) {
 		filtered_name = strdup (name);
 		if (!filtered_name) {
 			return false;
 		}
 		r_str_trim (filtered_name);
-		r_name_filter (filtered_name, 0);
+		r_flag_name_filter (flags, filtered_name);
 	}
 	RFlagItem *named = r_flag_get (flags, filtered_name? filtered_name: name);
 	ut64 flag_addr = (flags->mask? addr & flags->mask: addr) + flags->base;
 	RFlagItem *global = r_anal_global_get (anal, flag_addr);
+	// A typed global can lose its space through fs-*.
+	RFlagItemMeta *meta = named && !named->space? r_flag_get_meta (flags, named->id): NULL;
 	bool collision = (global && global != named)
 		|| (named && (named->addr != flag_addr
-			|| (named->space && strcmp (named->space->name, GLOBAL_FLAGSPACE))));
+			|| (named->space? strcmp (named->space->name, GLOBAL_FLAGSPACE): !(meta && meta->type))));
 	free (filtered_name);
 	if (collision) {
 		R_LOG_ERROR ("Global name or address is already occupied: %s", name);

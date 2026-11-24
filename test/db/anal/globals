@@ -59,6 +59,26 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Global registration preserves UTF-8 and unscoped flag names
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e log.level=0 -e asm.flags.utf8=true
+CMDS=<<EOF
+f unscoped 1 @ 0x30
+avg int unscoped @ 0x30
+fs symbols
+f café 4 @ 0x10
+avg int café @ 0x20
+"avg int ca	fé" @ 0x20
+fs *
+fj
+avgj
+EOF
+EXPECT=<<EOF
+[{"name":"café","size":4,"addr":16},{"name":"unscoped","size":1,"addr":48}]
+[]
+EOF
+RUN
+
 NAME=Global registration preserves existing address metadata and allows retyping
 FILE=malloc://256
 ARGS=-a x86 -b 64 -e log.level=0
