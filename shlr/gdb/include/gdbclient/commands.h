@@ -143,6 +143,7 @@ char* gdbr_exec_file_read(libgdbr_t *g, int pid);
 char *gdbr_read_xfer(libgdbr_t *g, const char *object, const char *annex, size_t limit, size_t *size);
 bool gdbr_get_tls_addr(libgdbr_t *g, ut64 module, ut64 offset, ut64 *address);
 bool gdbr_get_tib_addr(libgdbr_t *g, ut64 *address);
+bool gdbr_catch_syscalls(libgdbr_t *g, bool enable, const ut32 *numbers, size_t count);
 
 /*!
  * Get offset of lowest segment returned by 'qOffsets'

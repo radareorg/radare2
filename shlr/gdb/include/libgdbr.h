@@ -130,7 +130,7 @@ typedef struct libgdbr_stop_reason {
 	int core;
 	int reason;
 	bool exited_normally;
-	bool syscall;
+	ut32 syscall_number;
 	bool library;
 	bool swbreak;
 	bool hwbreak;

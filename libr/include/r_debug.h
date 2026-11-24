@@ -123,6 +123,8 @@ typedef enum {
 	R_DEBUG_REASON_WATCHPOINT_WRITE,
 	R_DEBUG_REASON_WATCHPOINT_READ,
 	R_DEBUG_REASON_WATCHPOINT_ACCESS,
+	R_DEBUG_REASON_SYSCALL_ENTRY,
+	R_DEBUG_REASON_SYSCALL_RETURN,
 } RDebugReasonType;
 
 /* TODO: move to r_anal */
@@ -142,6 +144,7 @@ typedef struct r_debug_reason_t {
 	ut64 addr;
 	union {
 		ut64 ptr;
+		ut32 syscall_number;
 		struct {
 			ut32 exit_code;
 			bool exited_normally;
