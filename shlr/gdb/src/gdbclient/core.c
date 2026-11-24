@@ -134,9 +134,11 @@ static bool regs_span(libgdbr_t *g, const gdb_reg_t *reg, size_t *off, size_t *s
 	return true;
 }
 
-// Record the value the stub stated for the register at index, hex in target byte order.
-// A value wider than the register is refused: the stub and the profile disagree on the layout.
-static bool regs_store_at(libgdbr_t *g, size_t index, const char *hex, size_t hexlen) {
+static bool unavailable_byte(const char *pair) {
+	return pair[0] == 'x' && pair[1] == 'x';
+}
+
+static bool regs_store_at(libgdbr_t *g, size_t index, const char *hex, size_t hexlen, bool allow_unavailable) {
 	size_t off, size, i;
 	if (!regs_span (g, &g->registers[index], &off, &size)) {
 		return false;
@@ -145,16 +147,20 @@ static bool regs_store_at(libgdbr_t *g, size_t index, const char *hex, size_t he
 	if (!n || (hexlen & 1) || n > size) {
 		return false;
 	}
-	for (i = 0; i < hexlen; i++) {
-		if (hex2int (hex[i]) < 0) {
+	for (i = 0; i < hexlen; i += 2) {
+		if ((hex2int (hex[i]) < 0 || hex2int (hex[i + 1]) < 0)
+		    && !(allow_unavailable && unavailable_byte (hex + i))) {
 			return false;
 		}
 	}
 	for (i = 0; i < n; i++) {
-		g->regs.buf[off + i] = (ut8)((hex2int (hex[2 * i]) << 4) | hex2int (hex[2 * i + 1]));
+		const char *pair = hex + 2 * i;
+		const bool known = !unavailable_byte (pair);
+		g->regs.buf[off + i] = known? (hex2int (pair[0]) << 4) | hex2int (pair[1]): 0;
+		g->regs.known[off + i] = known;
 	}
 	memset (g->regs.buf + off + n, 0, size - n);
-	memset (g->regs.known + off, 1, size);
+	memset (g->regs.known + off + n, 0, size - n);
 	return true;
 }
 
@@ -173,7 +179,7 @@ static bool regs_index(libgdbr_t *g, ut64 regnum, size_t *index) {
 
 bool gdbr_regs_store(libgdbr_t *g, ut64 regnum, const char *hex, size_t hexlen) {
 	size_t i;
-	return regs_prepare (g) && regs_index (g, regnum, &i) && regs_store_at (g, i, hex, hexlen);
+	return regs_prepare (g) && regs_index (g, regnum, &i) && regs_store_at (g, i, hex, hexlen, false);
 }
 
 static bool regs_known(libgdbr_t *g, const gdb_reg_t *reg) {
@@ -834,11 +840,24 @@ static int read_registers_g(libgdbr_t *g) {
 	if (reply_refused (g)) {
 		return 1;
 	}
-	if (handle_g (g) < 0 || !regs_reserve (g, g->data_len)) {
+	const size_t len = g->data_len / 2;
+	if (!len || (g->data_len & 1) || len > GDBR_REGS_MAX || !regs_reserve (g, len)) {
 		return -1;
 	}
-	memcpy (g->regs.buf, g->data, g->data_len);
-	g->regs.len = g->data_len;
+	size_t i;
+	for (i = 0; i < len; i++) {
+		const char *pair = g->data + 2 * i;
+		const int high = hex2int (pair[0]);
+		const int low = hex2int (pair[1]);
+		bool known = high >= 0 && low >= 0;
+		if (!known && !unavailable_byte (pair)) {
+			gdbr_regs_invalidate (g);
+			return -1;
+		}
+		g->regs.buf[i] = known? (high << 4) | low: 0;
+		g->regs.known[i] = known;
+	}
+	g->regs.len = len;
 	g->regs.valid = true;
 	return 0;
 }
@@ -862,7 +881,7 @@ static int read_registers_p(libgdbr_t *g) {
 			g->caps.p = 0;
 			return 1;
 		}
-		if (reply_refused (g) || !regs_store_at (g, i, g->data, g->data_len)) {
+		if (reply_refused (g) || !regs_store_at (g, i, g->data, g->data_len, true)) {
 			R_LOG_DEBUG ("%s: register %s: %s", __func__, g->registers[i].name, g->data);
 			return 1;
 		}
@@ -1163,7 +1182,7 @@ int gdbr_write_reg(libgdbr_t *g, const char *name, char *value, int len) {
 			goto end;
 		}
 	}
-	if (gdbr_read_registers (g) < 0) {
+	if (gdbr_read_registers (g) < 0 || memchr (g->regs.known, 0, g->regs.len)) {
 		ret = -1;
 		goto end;
 	}
@@ -1198,7 +1217,7 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 		goto end;
 	}
 
-	if (gdbr_read_registers (g) < 0) {
+	if (gdbr_read_registers (g) < 0 || memchr (g->regs.known, 0, g->regs.len)) {
 		goto end;
 	}
 	gdbr_regs_invalidate (g);
@@ -1652,6 +1671,35 @@ char *gdbr_exec_file_read(libgdbr_t *g, int pid) {
 		snprintf (annex, sizeof (annex), "%x", (unsigned int)pid);
 	}
 	return gdbr_read_xfer (g, "exec-file", annex, GDBR_PATH_MAX, NULL);
+}
+
+static bool query_thread_address(libgdbr_t *g, const char *query, const char *suffix, ut64 *address) {
+	bool ok = false;
+	if (gdbr_lock_enter (g)) {
+		char thread[32];
+		if (g->tid > 0 && write_thread_id (thread, sizeof (thread), g->pid, g->tid, g->stub_features.multiprocess) >= 0) {
+			r_strf_var (packet, 96, "%s:%s%s", query, thread, suffix);
+			if (send_msg (g, packet) >= 0 && read_packet (g, false) >= 0 && !reply_refused (g)) {
+				ut64 value;
+				const char *end = gdbr_parse_hex_value (g->data, &value);
+				if (end == g->data + g->data_len) {
+					*address = value;
+					ok = true;
+				}
+			}
+		}
+	}
+	gdbr_lock_leave (g);
+	return ok;
+}
+
+bool gdbr_get_tls_addr(libgdbr_t *g, ut64 module, ut64 offset, ut64 *address) {
+	r_strf_var (suffix, 36, ",%"PFMT64x",%"PFMT64x, offset, module);
+	return query_thread_address (g, "qGetTLSAddr", suffix, address);
+}
+
+bool gdbr_get_tib_addr(libgdbr_t *g, ut64 *address) {
+	return query_thread_address (g, "qGetTIBAddr", "", address);
 }
 
 bool gdbr_is_thread_dead(libgdbr_t *g, int pid, int tid) {

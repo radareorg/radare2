@@ -7,14 +7,6 @@
 #include "r_util/r_str.h"
 #include "r_util/r_log.h"
 
-int handle_g(libgdbr_t *g) {
-	if (unpack_hex (g->data, g->data_len, g->data) < 0) {
-		return -1;
-	}
-	g->data_len = g->data_len / 2;
-	return 0;
-}
-
 static int handle_ok(libgdbr_t *g) {
 	return g->data_len == 2 && !memcmp (g->data, "OK", 2)? 0: -1;
 }
@@ -191,24 +183,9 @@ static bool stop_reason_register(libgdbr_t *g, const char *tok) {
 	return true;
 }
 
-static const char *parse_hex_value(const char *digits, ut64 *result) {
-	const char *end = digits;
-	ut64 value = 0;
-	int digit;
-	while ((digit = hex2int (*end)) >= 0) {
-		if (value > (UT64_MAX >> 4)) {
-			return NULL;
-		}
-		value = (value << 4) | digit;
-		end++;
-	}
-	*result = value;
-	return end == digits? NULL: end;
-}
-
 static int stop_reason_death(libgdbr_t *g, bool is_signal) {
 	ut64 value, pid = g->pid;
-	const char *end = parse_hex_value (g->data + 1, &value);
+	const char *end = gdbr_parse_hex_value (g->data + 1, &value);
 	if (!end || value > (is_signal? UT8_MAX: UT32_MAX)) {
 		return -1;
 	}
@@ -218,7 +195,7 @@ static int stop_reason_death(libgdbr_t *g, bool is_signal) {
 		if (!g->stub_features.multiprocess || !r_str_startswith (end, prefix)) {
 			return -1;
 		}
-		end = parse_hex_value (end + strlen (prefix), &pid);
+		end = gdbr_parse_hex_value (end + strlen (prefix), &pid);
 		if (!end || (*end && strcmp (end, ";")) || pid == 0 || pid > INT_MAX) {
 			return -1;
 		}
@@ -253,7 +230,7 @@ static bool parse_watch_stop(libgdbr_stop_reason_t *reason, const char *field) {
 		return false;
 	}
 	ut64 address;
-	const char *end = parse_hex_value (strchr (field, ':') + 1, &address);
+	const char *end = gdbr_parse_hex_value (strchr (field, ':') + 1, &address);
 	if (!end || *end) {
 		return false;
 	}

@@ -207,6 +207,9 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (cmd[0] == '?' || !strcmp (cmd, "help")) {
 		eprintf ("Usage: :cmd args\n"
 			 " :pid             - show targeted pid\n"
+			 " :osabi           - show the target XML OS ABI\n"
+			 " :tls lm offset   - resolve TLS for the selected thread and load module\n"
+			 " :tib             - resolve the selected Windows thread's TIB address\n"
 			 " :pkt s           - send packet 's'\n"
 			 " :rd              - show reverse debugging availability\n"
 			 " :dsb             - step backwards\n"
@@ -250,14 +253,8 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	}
 	if (r_str_startswith (cmd, "pkt ")) {
 		char *res = NULL;
-		gdbr_lock_enter (desc);
-		if (send_msg (desc, cmd + 4) >= 0) {
-			(void)read_packet (desc, false);
-			desc->data[desc->data_len] = '\0';
+		if (gdbr_lock_enter (desc) && send_msg (desc, cmd + 4) >= 0 && read_packet (desc, false) >= 0) {
 			res = r_str_newf ("reply:\n%s\n", desc->data);
-			if (!desc->no_ack) {
-				R_LOG_INFO ("waiting for the ack");
-			}
 		}
 		gdbr_lock_leave (desc);
 		return res;
@@ -282,6 +279,39 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	}
 	if (r_str_startswith (cmd, "pid")) {
 		return r_str_newf ("%d\n", desc->pid);
+	}
+	if (!strcmp (cmd, "osabi")) {
+		return r_str_newf ("%s\n", r_str_get_fail (desc->target.osabi, "unknown"));
+	}
+	if (!strcmp (cmd, "tib")) {
+		ut64 address;
+		if (gdbr_get_tib_addr (desc, &address)) {
+			return r_str_newf ("0x%"PFMT64x"\n", address);
+		}
+		R_LOG_ERROR ("The GDB stub did not provide a TIB address");
+		return NULL;
+	}
+	if (!strcmp (cmd, "tls") || r_str_startswith (cmd, "tls ")) {
+		int argc;
+		char **argv = r_str_argv (cmd, &argc);
+		const char *module_error = NULL, *offset_error = NULL;
+		ut64 module = 0, offset = 0;
+		if (argv && argc == 3) {
+			module = r_num_math_err (NULL, argv[1], &module_error);
+			offset = r_num_math_err (NULL, argv[2], &offset_error);
+		}
+		bool valid = argv && argc == 3 && !module_error && !offset_error;
+		r_str_argv_free (argv);
+		if (!valid) {
+			R_LOG_ERROR ("Usage: :tls lm offset");
+			return NULL;
+		}
+		ut64 address;
+		if (gdbr_get_tls_addr (desc, module, offset, &address)) {
+			return r_str_newf ("0x%"PFMT64x"\n", address);
+		}
+		R_LOG_ERROR ("The GDB stub did not resolve the TLS address");
+		return NULL;
 	}
 	if (r_str_startswith (cmd, "monitor")) {
 		const char *qrcmd = cmd + 8;

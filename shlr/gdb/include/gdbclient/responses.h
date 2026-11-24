@@ -13,7 +13,6 @@
 #include "libgdbr.h"
 #include "utils.h"
 
-int handle_g(libgdbr_t* g);
 int handle_G(libgdbr_t* g);
 int handle_m(libgdbr_t *g, int requested);
 int handle_M(libgdbr_t* g);

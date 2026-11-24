@@ -1183,6 +1183,28 @@ static bool test_gdb_gdbserver_reads_g(void) {
 	mu_end;
 }
 
+static bool test_gdb_unavailable_registers(void) {
+	RCons *cons = r_cons_new ();
+	libgdbr_t g;
+	int fds[2];
+	mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open register session");
+	g.stub_features.P = false;
+	const char *replies[] = { "0102030405060708xxxxxxxxaabb", "0102030405060708xxxxxxxxaabb", NULL };
+	Stub stub;
+	RThread *th = stub_start (&stub, fds[1], -1, replies);
+	mu_assert_eq (gdbr_read_registers (&g), 0, "read registers with unavailable bytes");
+	mu_assert_eq (g.data_len, 14, "unavailable bytes keep their offsets");
+	mu_assert_eq ((ut8)g.data[12], 0xaa, "read registers after an unavailable value");
+	mu_assert_eq (g.regs.known[7], 1, "keep available bytes marked");
+	mu_assert_eq (g.regs.known[8], 0, "keep unavailable bytes marked");
+	char value[] = { 1, 2 };
+	mu_assert_eq (gdbr_write_reg (&g, "c", value, sizeof (value)), -1, "refuse rewriting an incomplete block");
+	mu_assert_streq_free (stub_finish (&stub, th, fds[0]), "g\ng\n", "do not replace unavailable registers");
+	gdbr_cleanup (&g);
+	r_cons_free (cons);
+	mu_end;
+}
+
 static bool test_gdb_lldb_reads_g_with_thread(void) {
 	RCons *cons = r_cons_new ();
 	libgdbr_t g;
@@ -1714,6 +1736,10 @@ static bool test_gdb_io_monitor_output(void) {
 	size_t len;
 	r_cons_get_buffer (cons, &len);
 	mu_assert_eq (len, 0, "IO returns output without printing it");
+	mu_assert_true (send_response (stub.fd, "7fff0123"), "provide the thread-local address");
+	mu_assert_streq_free (r_io_system (io, "tls 0x1234 0x10"), "0x7fff0123\n", "resolve TLS");
+	mu_assert_true (send_response (stub.fd, ""), "report that the TIB query is unavailable");
+	mu_assert_null (r_io_system (io, "tib"), "unsupported optional query does not affect the connection");
 	libgdbr_t *g = desc->data;
 	g->stub_features.ReverseStep = true;
 	mu_assert_streq_free (r_io_system (io, "rd"), "{\"reverse-continue\":false,\"reverse-step\":true}", "step capability");
@@ -1738,7 +1764,8 @@ static bool test_gdb_io_monitor_output(void) {
 	r_io_free (io);
 	r_th_wait (th);
 	r_th_free (th);
-	mu_assert_true (r_str_endswith (r_strbuf_get (stub.sent), "bs\nbc\n"), "send reverse step and continue packets");
+	mu_assert_true (r_str_endswith (r_strbuf_get (stub.sent), "qGetTLSAddr:1,10,1234\nqGetTIBAddr:1\nbs\nbc\n"),
+		"send thread metadata and reverse execution packets");
 	close (stub.fd);
 	close (lfd);
 	r_strbuf_free (stub.sent);
@@ -1775,6 +1802,7 @@ int main(int argc, char **argv) {
 	mu_run_test (test_gdb_invalid_stop_signals);
 	mu_run_test (test_gdb_short_execution_stops);
 	mu_run_test (test_gdb_gdbserver_reads_g);
+	mu_run_test (test_gdb_unavailable_registers);
 	mu_run_test (test_gdb_lldb_reads_g_with_thread);
 	mu_run_test (test_gdb_lldb_reads_p);
 	mu_run_test (test_gdb_stop_reply_of_another_thread);

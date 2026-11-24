@@ -70,6 +70,21 @@ int hex2int(int ch) {
 	return -1;
 }
 
+const char *gdbr_parse_hex_value(const char *digits, ut64 *result) {
+	const char *end = digits;
+	ut64 value = 0;
+	int digit;
+	while ((digit = hex2int (*end)) >= 0) {
+		if (value > (UT64_MAX >> 4)) {
+			return NULL;
+		}
+		value = (value << 4) | digit;
+		end++;
+	}
+	*result = value;
+	return end == digits? NULL: end;
+}
+
 /**
  * Converts a given nibble (4bit) into its hex representation
  * @returns hex char or -1 on error
