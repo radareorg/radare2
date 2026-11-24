@@ -443,7 +443,15 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 		return -1;
 	}
 	libgdbr_t *g = R_NEW0 (libgdbr_t);
-	gdbr_init (g, true);
+	if (gdbr_init (g, true) < 0) {
+		gdbr_cleanup (g);
+		free (g);
+		free (file);
+		r_socket_free (sock);
+		return -1;
+	}
+	r_socket_free (g->sock);
+	g->sock = NULL;
 	g->pid = core->dbg->pid;
 	int arch = r_sys_arch_id (r_config_get (core->config, "asm.arch"));
 	int bits = r_config_get_i (core->config, "asm.bits");
@@ -456,9 +464,13 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 		if (!(g->sock = r_socket_accept (sock))) {
 			break;
 		}
+		g->no_ack = false;
+		g->ack_retries = -1;
+		g->read_len = 0;
 		g->connected = 1;
 		int ret = gdbr_server_serve (g, r_core_rtr_gdb_cb, (void*) core);
-		r_socket_close (g->sock);
+		r_socket_free (g->sock);
+		g->sock = NULL;
 		g->connected = 0;
 		if (ret < 0) {
 			break;
