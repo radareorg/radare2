@@ -1802,16 +1802,15 @@ static bool stdiffunc(void *p, const char *k, const char *v) {
 	return !strcmp (v, "func");
 }
 
-static bool sdbdeletelink(void *p, const char *k, const char *v) {
-	RCore *core = (RCore *)p;
-	if (r_str_startswith (k, "link.")) {
-		r_type_del (core->anal->sdb_types, k);
-	}
-	return true;
-}
-
 static bool stdiflink(void *p, const char *k, const char *v) {
 	return r_str_startswith (k, "link.");
+}
+
+static bool delete_type_link(void *p, const char *k, const char *v) {
+	if (stdiflink (p, k, v) || r_str_startswith (k, "range.")) {
+		sdb_unset (p, k, 0);
+	}
+	return true;
 }
 
 static bool print_link_cb(void *p, const char *k, const char *v) {
@@ -1845,6 +1844,7 @@ static bool print_link_readable_cb(void *p, const char *k, const char *v) {
 	r_cons_printf (ctx->cons, "(%s)\n", v);
 	ut64 at = (ut64)strtoull (k + strlen ("link."), NULL, 16);
 	r_core_callf_at (core, at, "pf %s", fmt);
+	free (fmt);
 	return true;
 }
 
@@ -2940,6 +2940,9 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case ' ': {
 			char *type = strdup (input + 2);
+			if (!type) {
+				break;
+			}
 			char *ptr = strchr (type, '=');
 			ut64 addr = core->addr;
 
@@ -2955,9 +2958,7 @@ static int cmd_type(void *data, const char *input) {
 				}
 			}
 			r_str_trim (type);
-			char *tmp = sdb_get (TDB, type, 0);
-			if (R_STR_ISNOTEMPTY (tmp)) {
-				r_anal_types_set_link (core->anal, type, addr);
+			if (R_STR_ISNOTEMPTY (type) && r_anal_types_set_link (core->anal, type, addr)) {
 				RList *fcns = r_anal_get_functions_in (core->anal, core->addr);
 				if (r_list_length (fcns) > 1) {
 					R_LOG_ERROR ("Multiple functions found in here");
@@ -2968,7 +2969,6 @@ static int cmd_type(void *data, const char *input) {
 					R_LOG_ERROR ("Cannot find any function here");
 				}
 				r_list_free (fcns);
-				free (tmp);
 			} else {
 				R_LOG_ERROR ("unknown type %s", type);
 			}
@@ -2976,22 +2976,23 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		case 's': {
-			char *ptr = r_str_trim_dup (input + 2);
-			ut64 addr = r_num_math (NULL, ptr);
-			char *query = r_str_newf ("link.%08" PFMT64x, addr);
+			const char *err = NULL;
+			ut64 addr = r_num_math_err (core->num, r_str_trim_head_ro (input + 2), &err);
+			if (err) {
+				break;
+			}
+			r_strf_var (query, 32, "link.%08" PFMT64x, addr);
 			const char *link = sdb_const_get (TDB, query, 0);
 			if (link) {
 				TypePrintCtx ctx = { .core = core, .cons = core->cons };
 				print_link_readable_cb (&ctx, query, link);
 			}
-			free (ptr);
-			free (query);
 			break;
 		}
 		case '-':
 			switch (input[2]) {
 			case '*':
-				sdb_foreach (TDB, sdbdeletelink, core);
+				sdb_foreach (TDB, delete_type_link, TDB);
 				break;
 			case ' ': {
 				const char *ptr = input + 3;

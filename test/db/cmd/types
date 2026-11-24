@@ -247,6 +247,42 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Type link commands share global and compound type links
+FILE=malloc://256
+ARGS=-a x86 -b 64 -e log.level=0
+CMDS=<<EOF
+avg int counter @ 0x20
+tl uint16_t[2] = 0x30
+tlj
+tl*
+tls counter
+tl- 0x20
+tlj
+avg int counter @ 0x20
+tk offset.00000020=int
+tk calllink.00000020=prototype
+tl-*
+tlj
+tk~range.0~?
+tk offset.00000020
+tk calllink.00000020
+avg. @ 0x20
+EOF
+EXPECT=<<EOF
+{"types":[{"0x00000020":"int"},{"0x00000030":"uint16_t[2]"}]}
+tl int = 0x00000020
+tl uint16_t[2] = 0x00000030
+(int)
+0x00000020 = 0x00000000
+{"types":[{"0x00000030":"uint16_t[2]"}]}
+{"types":[]}
+0
+int
+prototype
+int
+EOF
+RUN
+
 NAME=jni and SoP
 FILE=bins/elf/libverifyPass.so
 CMDS=<<EOF
