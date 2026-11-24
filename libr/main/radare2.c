@@ -416,23 +416,6 @@ static int main_help(int line) {
 	return 0;
 }
 
-static bool main_rc_has_line(const char *script, const char *command) {
-	size_t length = strlen (command);
-	const char *line = script;
-	while ((line = strstr (line, command))) {
-		const char *end = line + length;
-		if ((line == script || line[-1] == '\n')
-				&& (!*end || *end == '\n' || (*end == '\r' && end[1] == '\n'))) {
-			return true;
-		}
-		if (!*line) {
-			break;
-		}
-		line++;
-	}
-	return false;
-}
-
 static int main_rc_append(int argc, const char **argv) {
 	char *rcfile = r_sys_getenv ("R2_RCFILE");
 	if (R_STR_ISEMPTY (rcfile)) {
@@ -449,26 +432,27 @@ static int main_rc_append(int argc, const char **argv) {
 		free (rcfile);
 		return 1;
 	}
-	RStrBuf *append = r_strbuf_new ("");
-	bool ok = true;
+	bool needs_newline = size && script[size - 1] != '\n';
+	if (script) {
+		r_str_normalize_newlines (script);
+	}
+	RStrBuf *lines = r_strbuf_new ("");
+	bool ok = r_strbuf_appendf (lines, "\n%s\n", r_str_get (script));
 	int i;
-	for (i = 0; i < argc; i++) {
-		if (main_rc_has_line (r_str_get (script), argv[i])
-				|| main_rc_has_line (r_strbuf_get (append), argv[i])) {
-			continue;
-		}
-		if (!r_strbuf_length (append) && size && script[size - 1] != '\n') {
-			ok = r_strbuf_append (append, "\n");
-		}
-		if (!ok || !r_strbuf_append (append, argv[i]) || !r_strbuf_append (append, "\n")) {
+	for (i = 0; ok && i < argc; i++) {
+		char *line = r_str_newf ("\n%s\n", argv[i]);
+		if (!line) {
 			ok = false;
 			break;
 		}
+		if (!strstr (r_strbuf_get (lines), line)) {
+			ok = r_strbuf_append (lines, line + 1)
+				&& r_file_dump (rcfile, (const ut8 *)(needs_newline? line: line + 1), -1, true);
+			needs_newline = false;
+		}
+		free (line);
 	}
-	if (ok && r_strbuf_length (append)) {
-		ok = r_file_dump (rcfile, (const ut8 *)r_strbuf_get (append), r_strbuf_length (append), true);
-	}
-	r_strbuf_free (append);
+	r_strbuf_free (lines);
 	free (script);
 	free (rcfile);
 	return ok? 0: 1;
