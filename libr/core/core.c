@@ -2974,6 +2974,10 @@ R_API void r_core_fini(RCore *c) {
 	r_lib_free (c->lib);
 	c->lib = NULL;
 	r_core_plugins_fini (c->rcmd);
+	if (c->cons && c->cons->user == c) {
+		c->cons->cb_sleep_begin = NULL;
+		c->cons->cb_sleep_end = NULL;
+	}
 	r_muta_free (c->muta);
 	r_th_lock_free (c->lock);
 	// update_sdb (c);
