@@ -294,12 +294,12 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 static int main_help(int line) {
 	if (line < 2) {
 		printf ("Usage: r2 [-ACdfjLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-c cmd]\n"
-		"          [-s addr] [-B baddr] [-m maddr] [-i script] [-e k=v] file|pid|-|--|=\n"
+		"          [-s addr] [-B baddr] [-m maddr] [-i script] [-e k=v] [--] file|pid|-|--|=\n"
 		"       r2 -E [cmd ...]\n");
 	}
 	if (line != 1) {
 		printf (
-			" --           run radare2 without opening any file\n"
+			" --           end option parsing (start without a file if nothing follows)\n"
 			" -            same as 'r2 malloc://512'\n"
 			" =            read file from stdin (use -i and -c to run cmds)\n"
 			" -=           perform !=! command to run all commands remotely\n"
@@ -1571,7 +1571,7 @@ static int main_radare2(int argc, const char **argv, bool standalone) {
 			mainr2_fini (&mr);
 			return 1;
 		}
-	} else if (strcmp (argv[opt.ind - 1], "--") && !mr.project_name) {
+	} else if (!mr.project_name && (opt.ind < argc || strcmp (argv[opt.ind - 1], "--"))) {
 		if (mr.asmarch) {
 			r_config_set (r->config, "asm.arch", mr.asmarch);
 		}

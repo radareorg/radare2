@@ -6,6 +6,27 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=r2 -- opens the following file
+FILE=<<EOF
+--
+bins/elf/bomb
+EOF
+CMDS=s main;s
+EXPECT=<<EOF
+0x400da0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=r2 -- starts without an open file
+FILE=--
+CMDS=o;?e ready
+EXPECT=<<EOF
+ready
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=r2 minushache
 FILE=-
 CMDS=<<EOF
