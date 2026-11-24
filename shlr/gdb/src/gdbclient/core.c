@@ -1702,6 +1702,27 @@ bool gdbr_get_tib_addr(libgdbr_t *g, ut64 *address) {
 	return query_thread_address (g, "qGetTIBAddr", "", address);
 }
 
+bool gdbr_catch_syscalls(libgdbr_t *g, bool enable, const ut32 *numbers, size_t count) {
+	if (!g || !g->stub_features.QCatchSyscalls || (count && (!enable || !numbers))
+	    || count > g->stub_features.pkt_sz / 2) {
+		return false;
+	}
+	RStrBuf packet;
+	r_strbuf_init (&packet);
+	size_t i;
+	bool ok = r_strbuf_append (&packet, enable? "QCatchSyscalls:1": "QCatchSyscalls:0");
+	for (i = 0; ok && i < count; i++) {
+		ok = r_strbuf_appendf (&packet, ";%"PFMT32x, numbers[i]);
+	}
+	if (ok) {
+		ok = gdbr_lock_enter (g) && send_msg (g, r_strbuf_get (&packet)) >= 0 && read_packet (g, false) >= 0
+			&& g->data_len == 2 && !memcmp (g->data, "OK", 2);
+		gdbr_lock_leave (g);
+	}
+	r_strbuf_fini (&packet);
+	return ok;
+}
+
 bool gdbr_is_thread_dead(libgdbr_t *g, int pid, int tid) {
 	bool ret = false;
 

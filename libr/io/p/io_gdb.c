@@ -199,6 +199,36 @@ static int __gettid(RIODesc *fd) {
 extern int send_msg(libgdbr_t *g, const char *command);
 extern int read_packet(libgdbr_t *instance, bool vcont);
 
+static bool set_syscall_catchpoints(libgdbr_t *desc, const char *args) {
+	int argc = 0;
+	char **argv = r_str_argv (args, &argc);
+	if (!argv || argc < 1 || (ut32)argc > desc->stub_features.pkt_sz / 2) {
+		r_str_argv_free (argv);
+		return false;
+	}
+	bool ok = false;
+	if (argc == 1 && (!strcmp (argv[0], "all") || !strcmp (argv[0], "off"))) {
+		ok = gdbr_catch_syscalls (desc, !strcmp (argv[0], "all"), NULL, 0);
+	} else {
+		ut32 *numbers = R_NEWS (ut32, argc);
+		if (numbers) {
+			int i;
+			for (i = 0; i < argc; i++) {
+				const char *error = NULL;
+				ut64 value = r_num_math_err (NULL, argv[i], &error);
+				if (error || value > UT32_MAX) {
+					break;
+				}
+				numbers[i] = value;
+			}
+			ok = i == argc && gdbr_catch_syscalls (desc, true, numbers, argc);
+			free (numbers);
+		}
+	}
+	r_str_argv_free (argv);
+	return ok;
+}
+
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	libgdbr_t *desc = get_desc_from_fd (fd);
 	if (!desc || !*cmd) {
@@ -210,6 +240,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			 " :osabi           - show the target XML OS ABI\n"
 			 " :tls lm offset   - resolve TLS for the selected thread and load module\n"
 			 " :tib             - resolve the selected Windows thread's TIB address\n"
+			 " :catch-syscalls <all|off|number ...> - configure remote syscall stops\n"
 			 " :pkt s           - send packet 's'\n"
 			 " :rd              - show reverse debugging availability\n"
 			 " :dsb             - step backwards\n"
@@ -282,6 +313,13 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	}
 	if (!strcmp (cmd, "osabi")) {
 		return r_str_newf ("%s\n", r_str_get_fail (desc->target.osabi, "unknown"));
+	}
+	if (!strcmp (cmd, "catch-syscalls") || r_str_startswith (cmd, "catch-syscalls ")) {
+		if (!set_syscall_catchpoints (desc, r_str_trim_head_ro (cmd + strlen ("catch-syscalls")))) {
+			R_LOG_ERROR ("Cannot configure syscall stops. Usage: :catch-syscalls <all|off|number ...>");
+			return NULL;
+		}
+		return strdup ("OK\n");
 	}
 	if (!strcmp (cmd, "tib")) {
 		ut64 address;

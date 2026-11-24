@@ -291,6 +291,18 @@ int handle_stop_reason(libgdbr_t *g) {
 			continue;
 		}
 		if (g->stop_reason.signum == 5) {
+			const bool entry = r_str_startswith (ptr1, "syscall_entry:");
+			if (entry || r_str_startswith (ptr1, "syscall_return:")) {
+				ut64 number;
+				const char *end = gdbr_parse_hex_value (strchr (ptr1, ':') + 1, &number);
+				if (!end || *end || number > UT32_MAX) {
+					g->stop_reason.is_valid = false;
+					return -1;
+				}
+				g->stop_reason.syscall_number = number;
+				g->stop_reason.reason = entry? R_DEBUG_REASON_SYSCALL_ENTRY: R_DEBUG_REASON_SYSCALL_RETURN;
+				continue;
+			}
 			if (parse_watch_stop (&g->stop_reason, ptr1)) {
 				continue;
 			}

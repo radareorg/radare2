@@ -733,6 +733,8 @@ R_API const char *r_debug_reason_tostring(int type) {
 	case R_DEBUG_REASON_STOPPED: return "stopped";
 	case R_DEBUG_REASON_TERMINATED: return "terminated";
 	case R_DEBUG_REASON_SWI: return "software-interrupt";
+	case R_DEBUG_REASON_SYSCALL_ENTRY: return "syscall-entry";
+	case R_DEBUG_REASON_SYSCALL_RETURN: return "syscall-return";
 	case R_DEBUG_REASON_TRACEPOINT: return "tracepoint";
 	case R_DEBUG_REASON_TRAP: return "trap";
 	case R_DEBUG_REASON_UNKNOWN: return "unknown";
@@ -1098,7 +1100,9 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 		dbg->steps++;
 		if (dbg->reason.type == R_DEBUG_REASON_WATCHPOINT_WRITE
 		    || dbg->reason.type == R_DEBUG_REASON_WATCHPOINT_READ
-		    || dbg->reason.type == R_DEBUG_REASON_WATCHPOINT_ACCESS) {
+		    || dbg->reason.type == R_DEBUG_REASON_WATCHPOINT_ACCESS
+		    || dbg->reason.type == R_DEBUG_REASON_SYSCALL_ENTRY
+		    || dbg->reason.type == R_DEBUG_REASON_SYSCALL_RETURN) {
 			return steps_taken + 1;
 		}
 		dbg->reason.type = R_DEBUG_REASON_STEP;

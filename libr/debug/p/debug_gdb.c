@@ -605,6 +605,9 @@ static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
 	dbg->reason.addr = stop->watchpoint.present? stop->watchpoint.addr: 0;
 	dbg->reason.signum = stop->signum;
 	dbg->reason.type = stop->reason;
+	if (stop->reason == R_DEBUG_REASON_SYSCALL_ENTRY || stop->reason == R_DEBUG_REASON_SYSCALL_RETURN) {
+		dbg->reason.syscall_number = stop->syscall_number;
+	}
 	if (stop->reason == R_DEBUG_REASON_DEAD) {
 		dbg->reason.tid = stop->thread.tid;
 		dbg->reason.exit_code = stop->exit_code;
@@ -726,7 +729,6 @@ static bool r_debug_gdb_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set
 		}
 		break;
 	}
-	// TODO handle size (area of watch in upper layer and then bpsize. For the moment watches are set on exact on byte
 	case R_PERM_W: {
 		if (set) {
 			ret = gdbr_set_hww (pd->desc, b->addr, "", size);

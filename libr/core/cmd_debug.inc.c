@@ -6710,6 +6710,9 @@ static int cmd_debug(void *data, const char *input) {
 						}
 						P ("stopreason=%s\n", r_debug_reason_tostring (stop));
 					}
+					if (stop == R_DEBUG_REASON_SYSCALL_ENTRY || stop == R_DEBUG_REASON_SYSCALL_RETURN) {
+						P ("syscall=%"PFMT32u"\n", core->dbg->reason.syscall_number);
+					}
 					if (rdi) {
 						const char *s = r_signal_tostring (core->dbg->reason.signum);
 						P ("type=%s\n", r_debug_reason_tostring (core->dbg->reason.type));
@@ -6798,6 +6801,9 @@ static int cmd_debug(void *data, const char *input) {
 					PJ *pj = r_core_pj_new (core);
 					pj_o (pj);
 					pj_ks (pj, "stopreason", r_debug_reason_tostring (stop));
+					if (stop == R_DEBUG_REASON_SYSCALL_ENTRY || stop == R_DEBUG_REASON_SYSCALL_RETURN) {
+						pj_kn (pj, "syscall", core->dbg->reason.syscall_number);
+					}
 				if (rdi) {
 					const char *s = r_signal_tostring (core->dbg->reason.signum);
 					pj_ks (pj, "type", r_debug_reason_tostring (core->dbg->reason.type));

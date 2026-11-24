@@ -425,6 +425,7 @@ static bool test_gdb_debug_watchpoints(void) {
 	RDebugPlugin *plugin = dbg->current->plugin;
 	const char *replies[] = {
 		"OK", "OK", "T05watch:1234;", "OK", "OK", "T05rwatch:1235;", "OK", "OK", "T05awatch:ffffffffffffffff;",
+		"OK", "T05syscall_entry:3c;", "T05syscall_return:3c;", "OK",
 		"W0;process:10", "Xb;process:10", "W2a", NULL
 	};
 	const struct {
@@ -447,6 +448,16 @@ static bool test_gdb_debug_watchpoints(void) {
 		mu_assert_eq (plugin->wait (dbg, dbg->pid), cases[i].reason, "report watchpoint access type");
 		mu_assert_eq (dbg->reason.addr, cases[i].addr, "report watched address");
 	}
+	const ut32 filter[] = { 1, 60 };
+	mu_assert_false (gdbr_catch_syscalls (&g, true, filter, R_ARRAY_SIZE (filter)), "require syscall capability");
+	g.stub_features.QCatchSyscalls = true;
+	mu_assert_true (gdbr_catch_syscalls (&g, true, filter, R_ARRAY_SIZE (filter)), "enable filtered syscall stops");
+	mu_assert_true (plugin->cont (dbg, dbg->pid, dbg->tid, 0), "continue to syscall entry");
+	mu_assert_eq (plugin->wait (dbg, dbg->pid), R_DEBUG_REASON_SYSCALL_ENTRY, "distinguish syscall entry");
+	mu_assert_eq (dbg->reason.syscall_number, 60, "report the syscall number");
+	mu_assert_true (plugin->cont (dbg, dbg->pid, dbg->tid, 0), "continue to syscall return");
+	mu_assert_eq (plugin->wait (dbg, dbg->pid), R_DEBUG_REASON_SYSCALL_RETURN, "distinguish syscall return");
+	mu_assert_true (gdbr_catch_syscalls (&g, false, NULL, 0), "disable syscall stops");
 	g.stub_features.multiprocess = true;
 	g.connected = 1;
 	mu_assert_true (plugin->cont (dbg, dbg->pid, dbg->tid, 0), "continue to successful exit");
@@ -466,7 +477,8 @@ static bool test_gdb_debug_watchpoints(void) {
 	mu_assert_eq (dbg->reason.exit_code, 0x2a, "report nonzero exit code");
 	mu_assert_eq (dbg->reason.signum, 0, "normal exit clears prior signal");
 	mu_assert_streq_free (stub_finish (&stub, th, fds[0]),
-		"Z2,1234,10\nz2,1234,10\nc\nZ3,1234,10\nz3,1234,10\nc\nZ4,1234,10\nz4,1234,10\nc\nc\nc\nc\n",
+		"Z2,1234,10\nz2,1234,10\nc\nZ3,1234,10\nz3,1234,10\nc\nZ4,1234,10\nz4,1234,10\nc\n"
+		"QCatchSyscalls:1;1;3c\nc\nc\nQCatchSyscalls:0\nc\nc\nc\n",
 		"watchpoint packets use the same hexadecimal length for insertion and removal");
 	core->io->desc = NULL;
 	r_core_free (core);
@@ -1083,7 +1095,7 @@ static bool test_gdb_short_stop_replies(void) {
 		mu_assert_eq (g.stop_reason.hwbreak, short_stop.hwbreak, "Sxx and empty Txx agree on hwbreak");
 		mu_assert_eq (g.stop_reason.create, short_stop.create, "Sxx and empty Txx agree on create");
 		mu_assert_eq (g.stop_reason.vforkdone, short_stop.vforkdone, "Sxx and empty Txx agree on vforkdone");
-		mu_assert_eq (g.stop_reason.syscall, short_stop.syscall, "Sxx and empty Txx agree on syscall");
+		mu_assert_eq (g.stop_reason.syscall_number, short_stop.syscall_number, "Sxx and empty Txx agree on syscall");
 		mu_assert_eq (g.stop_reason.fork.present, short_stop.fork.present, "Sxx and empty Txx agree on fork.present");
 		mu_assert_eq (g.stop_reason.vfork.present, short_stop.vfork.present, "Sxx and empty Txx agree on vfork.present");
 	}
