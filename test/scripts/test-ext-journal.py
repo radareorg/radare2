@@ -190,3 +190,201 @@ with tempfile.TemporaryDirectory(prefix='r2-journal-') as directory:
     assert run(path, 'm:ext2 journal-recover /root 100 13 -',
                expected_warning=b'Damaged ext3/ext4 directory metadata') == b'Deleted through the journal\n'
     print('PASS: journal recovery remains available with a damaged ext4 root directory')
+    for name in ('ext3-metadata', 'ext4-metadata'):
+        path = FIXTURES / (name + '.img.gz')
+        command = 'm:ext2 journal-recover /root 100 13 -'
+        assert run(path, command) == b''
+        assert run(path, command + ' journal') == b''
+        assert run(path, 'e log.level=3;' + command + ' free',
+                   expected_warning=b'Heuristic recovery uses current free-space bytes') == b'Deleted through the journal\n'
+        destination = temp / 'recovered-file'
+        run(path, f'm:ext2 journal-recover /root 100 13 {destination} free')
+        assert destination.read_bytes() == b'Deleted through the journal\n'
+        print('PASS:', name, 'combines historical inode metadata with unowned free data')
+
+    info = MANIFEST['ext4-v3']
+    source = gzip.decompress((FIXTURES / 'ext4-metadata.img.gz').read_bytes())
+    inode_size = info['inode_size']
+    current_inode = info['inode_offset']
+    historical_inode = info['journal']['5'] * 1024 + current_inode % 1024
+    victim = info['victim_block']
+    filesystem_uuid = source[1128:1144]
+    inode_table = current_inode - 12 * inode_size
+
+    def fs_inode_checksum(image, offset, number=13):
+        struct.pack_into('<H', image, offset + 124, 0)
+        struct.pack_into('<H', image, offset + 130, 0)
+        checksum = crc32c(filesystem_uuid + struct.pack('<I', number) + image[offset + 100:offset + 104] + image[offset:offset + inode_size])
+        struct.pack_into('<H', image, offset + 124, checksum & 65535)
+        struct.pack_into('<H', image, offset + 130, checksum >> 16)
+
+    def historical_checksum(image):
+        fs_inode_checksum(image, historical_inode)
+        payload = info['journal']['5'] * 1024
+        descriptor = info['journal']['4'] * 1024
+        value = crc32c(filesystem_uuid + struct.pack('>I', 100) + image[payload:payload + 1024])
+        struct.pack_into('>I', image, descriptor + 24, value)
+        recompute(image, info, 4)
+
+    def fs_bitmap_set(image, number, is_inode=False):
+        descriptor = 2048
+        bitmap = struct.unpack_from('<I', image, descriptor + (4 if is_inode else 0))[0] * 1024
+        index = number - 1
+        image[bitmap + index // 8] |= 1 << (index % 8)
+        size = struct.unpack_from('<I', image, 1064 if is_inode else 1056)[0] // 8
+        checksum = crc32c(filesystem_uuid + image[bitmap:bitmap + size])
+        struct.pack_into('<H', image, descriptor + (26 if is_inode else 24), checksum & 65535)
+        struct.pack_into('<H', image, descriptor + (58 if is_inode else 56), checksum >> 16)
+        struct.pack_into('<H', image, descriptor + 30, 0)
+        struct.pack_into('<H', image, descriptor + 30, crc32c(filesystem_uuid + bytes(4) + image[descriptor:descriptor + 64]) & 65535)
+
+    def check_free(label, image, expected=b'', sequence=100, delta=0):
+        path = temp / 'free-space.img.gz'
+        path.write_bytes(gzip.compress(bytes(delta) + image, mtime=0))
+        prefix = f'm /journal ext2 {delta};' if delta else ''
+        mountpoint = '/journal' if delta else '/root'
+        command = prefix + f'm:ext2 journal-recover {mountpoint} {sequence} 13 - free'
+        assert run(path, command) == expected, label
+        print('PASS:', label)
+
+    image = bytearray(source)
+    fs_bitmap_set(image, victim)
+    check_free('allocated current data is never substituted', image)
+
+    image = bytearray(source)
+    fs_bitmap_set(image, 13, is_inode=True)
+    check_free('allocated current inode excludes free-space fallback', image)
+
+    image = bytearray(source)
+    struct.pack_into('<I', image, current_inode + 100, 1)
+    fs_inode_checksum(image, current_inode)
+    check_free('inode generation changes exclude free-space fallback', image)
+
+    image = bytearray(source)
+    live_inode = inode_table + 11 * inode_size
+    struct.pack_into('<I', image, live_inode + 60, victim)
+    fs_inode_checksum(image, live_inode, 12)
+    check_free('live ownership overrides a cleared current block bit', image)
+
+    image = bytearray(source)
+    bitmap = struct.unpack_from('<I', image, 2048)[0] * 1024
+    image[bitmap] ^= 1
+    check_free('bad allocation checksum cannot authorize free-space reads', image)
+
+    image = bytearray(source)
+    image[historical_inode + 4] ^= 1
+    # Keep the journal transaction valid while breaking the ext4 inode checksum.
+    payload = info['journal']['5'] * 1024
+    descriptor = info['journal']['4'] * 1024
+    struct.pack_into('>I', image, descriptor + 24,
+                     crc32c(filesystem_uuid + struct.pack('>I', 100) + image[payload:payload + 1024]))
+    recompute(image, info, 4)
+    check_free('bad historical inode checksum prevents reconstruction', image)
+
+    image = bytearray(source)
+    descriptor = info['journal']['7'] * 1024
+    struct.pack_into('>I', image, descriptor + 12, victim)
+    recompute(image, info, 7)
+    check_free('later committed writes exclude current free bytes', image)
+
+    image = bytearray(source)
+    revoke = info['journal']['12'] * 1024
+    struct.pack_into('>Q', image, revoke + 16, victim)
+    recompute(image, info, 12)
+    check_free('later revocations exclude current free bytes', image)
+    check_free('revoked versions are never replaced with current free bytes', image, sequence=102)
+
+    def lengthen(image, count):
+        struct.pack_into('<I', image, historical_inode + 4, count * 1024)
+        struct.pack_into('<I', image, historical_inode + 28, count * 2)
+        struct.pack_into('<H', image, historical_inode + 56, count)
+        historical_checksum(image)
+
+    image = bytearray(gzip.decompress((FIXTURES / 'ext4-v3.img.gz').read_bytes()))
+    lengthen(image, 2)
+    fs_bitmap_set(image, victim)
+    image[victim * 1024:(victim + 1) * 1024] = b'X' * 1024
+    image[(victim + 1) * 1024:(victim + 2) * 1024] = b'Z' * 1024
+    check_free('journal bytes take precedence when free bytes fill missing file blocks', image,
+               b'Deleted through the journal\n' + bytes(996) + b'Z' * 1024)
+
+    image = bytearray(source)
+    lengthen(image, 3)
+    fs_bitmap_set(image, victim + 1)
+    check_free('reused later blocks preserve the verified recovered prefix', image,
+               b'Deleted through the journal\n' + bytes(996))
+
+    destination = temp / 'partial-recovery'
+    run(temp / 'free-space.img.gz', f'm:ext2 journal-recover /root 100 13 {destination} free')
+    assert destination.read_bytes() == b'Deleted through the journal\n' + bytes(996)
+    print('PASS: partial file output retains only its verified readable prefix')
+
+    tree_block = 3490
+    image = bytearray(source)
+    image[historical_inode + 40:historical_inode + 100] = bytes(60)
+    struct.pack_into('<HHHHI', image, historical_inode + 40, 0xf30a, 1, 4, 1, 0)
+    struct.pack_into('<IIHH', image, historical_inode + 52, 0, tree_block, 0, 0)
+    struct.pack_into('<I', image, historical_inode + 28, 4)
+    node = bytearray(1024)
+    struct.pack_into('<HHHHI', node, 0, 0xf30a, 1, 84, 0, 0)
+    struct.pack_into('<IHHI', node, 12, 0, 1, 0, victim)
+    generation = image[historical_inode + 100:historical_inode + 104]
+    struct.pack_into('<I', node, 1020, crc32c(filesystem_uuid + struct.pack('<I', 13) + generation + node[:1020]))
+    image[tree_block * 1024:(tree_block + 1) * 1024] = node
+    historical_checksum(image)
+    check_free('surviving free extent leaves reconstruct historical inode maps', image, b'Deleted through the journal\n')
+    check_free('free extent reconstruction honors mount offsets', image, b'Deleted through the journal\n', delta=4096)
+
+    allocated_tree = bytearray(image)
+    fs_bitmap_set(allocated_tree, tree_block)
+    check_free('allocated extent leaves are not treated as historical metadata', allocated_tree)
+    damaged_tree = bytearray(image)
+    damaged_tree[tree_block * 1024 + 20] ^= 1
+    check_free('extent node checksums bind free metadata to its historical inode', damaged_tree)
+
+    image = bytearray(source)
+    struct.pack_into('<H', image, historical_inode + 56, 0x8001)
+    historical_checksum(image)
+    fs_bitmap_set(image, victim)
+    check_free('historical unwritten extents yield zeros without reading current data', image, bytes(28))
+
+    info3 = MANIFEST['ext3']
+    image = bytearray(gzip.decompress((FIXTURES / 'ext3-metadata.img.gz').read_bytes()))
+    inode3 = info3['journal']['5'] * 1024 + info3['inode_offset'] % 1024
+    image[inode3 + 40:inode3 + 100] = bytes(60)
+    struct.pack_into('<I', image, inode3 + 4, 13 * 1024)
+    struct.pack_into('<I', image, inode3 + 28, 4)
+    struct.pack_into('<I', image, inode3 + 88, tree_block)
+    image[tree_block * 1024:(tree_block + 1) * 1024] = bytes(1024)
+    struct.pack_into('<I', image, tree_block * 1024, info3['victim_block'])
+    check_free('ext3 free indirect maps retain proven sparse holes', image,
+               bytes(12 * 1024) + b'Deleted through the journal\n' + bytes(996))
+
+    image = bytearray(source)
+    # Mark the current allocation layout as requiring journal replay.
+    struct.pack_into('<I', image, 1120, struct.unpack_from('<I', image, 1120)[0] | 4)
+    struct.pack_into('<I', image, 2044, crc32c(image[1024:2044]))
+    check_free('uncheckpointed allocation maps cannot authorize free-space recovery', image)
+
+    image = bytearray(source)
+    # Later transaction 101 becomes sequence 0 after the selected 0xffffffff.
+    for descriptor_logical, payload_logical, commit_logical, sequence in ((4, 5, 6, 0xffffffff), (7, 8, 9, 0)):
+        descriptor_offset = info['journal'][str(descriptor_logical)] * 1024
+        payload_offset = info['journal'][str(payload_logical)] * 1024
+        commit_offset = info['journal'][str(commit_logical)] * 1024
+        struct.pack_into('>I', image, descriptor_offset + 8, sequence)
+        if not sequence:
+            struct.pack_into('>I', image, descriptor_offset + 12, victim)
+        checksum = crc32c(filesystem_uuid + struct.pack('>I', sequence) + image[payload_offset:payload_offset + 1024])
+        struct.pack_into('>I', image, descriptor_offset + 24, checksum)
+        recompute(image, info, descriptor_logical)
+        struct.pack_into('>I', image, commit_offset + 8, sequence)
+        recompute(image, info, commit_logical, commit=True)
+    check_free('later writes across sequence wraparound exclude current free data', image, sequence=0xffffffff)
+
+    image = bytearray(source)
+    super_offset = info['journal']['0'] * 1024
+    struct.pack_into('>I', image, super_offset + 28, 4)
+    struct.pack_into('>I', image, super_offset + 252, 0)
+    struct.pack_into('>I', image, super_offset + 252, crc32c(image[super_offset:super_offset + 1024]))
+    check_free('active journal logs exclude free-space reads even with a clean filesystem flag', image)

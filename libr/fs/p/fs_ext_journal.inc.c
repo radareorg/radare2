@@ -22,6 +22,7 @@ typedef struct {
 	RConsBind *console;
 	bool stopped;
 	bool report_invalid;
+	bool active;
 } ExtJournal;
 
 typedef bool (*ExtJournalCb)(ExtJournal *journal, ut32 sequence, ut32 start, const ExtJournalTag *tag, void *user);
@@ -87,6 +88,7 @@ static bool ext_journal_open(RFSRoot *root, ExtJournal *j) {
 	}
 	j->length = r_read_be32 (super + 16);
 	j->first = r_read_be32 (super + 20);
+	j->active = r_read_be32 (super + 28) != 0;
 	if (!j->first || j->first >= j->length || j->length > j->file->file->size / j->block_size) {
 		goto fail;
 	}
@@ -638,6 +640,11 @@ typedef struct {
 	ut32 sequence, count;
 	bool selected, reading, failed;
 	ut8 *data;
+	Ext2Geometry *current;
+	RBitset *owners, *later;
+	ut64 inode_id;
+	ut32 generation;
+	bool eligible, checked, used_current;
 } ExtJournalHistory;
 
 static void ext_journal_version_free(HtUPKv *kv) {
@@ -648,6 +655,11 @@ static bool ext_journal_version(ExtJournal *j, ut32 sequence, ut32 start, const 
 	ExtJournalHistory *history = user;
 	ut32 age = history->sequence - sequence;
 	if (age > INT_MAX) {
+		if (history->later && !r_bitset_test (history->later, tag->block)
+				&& (age == 0x80000000U || history->count++ >= EXT_JOURNAL_LIMIT || !r_bitset_set (history->later, tag->block))) {
+			history->failed = true;
+			return false;
+		}
 		return true;
 	}
 	if (!age) {
@@ -681,6 +693,22 @@ static bool ext_journal_version(ExtJournal *j, ut32 sequence, ut32 start, const 
 	return true;
 }
 
+static bool ext_journal_current_block(ExtJournalHistory *history, ut64 block) {
+	Ext2Geometry *g = history->current;
+	if (!g || !history->eligible || r_bitset_test (history->later, block)) {
+		return false;
+	}
+	if (!history->checked) {
+		history->checked = true;
+		ut8 inode[128];
+		if (ext2_allocated (g, history->inode_id, true) == 0 && ext2_inode (g, history->inode_id, inode)
+				&& r_read_le32 (inode + 100) == history->generation) {
+			history->owners = ext2_owners (g);
+		}
+	}
+	return history->owners && !r_bitset_test (history->owners, block) && ext2_allocated (g, block, false) == 0;
+}
+
 static int ext_journal_history_read(RIO *io, ut64 address, ut8 *buf, int len) {
 	ExtJournalHistory *history = (ExtJournalHistory *)io;
 	ExtJournal *j = history->journal;
@@ -696,8 +724,16 @@ static int ext_journal_history_read(RIO *io, ut64 address, ut8 *buf, int len) {
 		ut64 block = relative / j->block_size;
 		ut32 offset = relative % j->block_size;
 		ExtJournalVersion *version = ht_up_find (history->versions, block, NULL);
-		if (!version || !ext_journal_payload (j, &version->tag, history->data)) {
-			return -1;
+		if (version) {
+			if (!ext_journal_payload (j, &version->tag, history->data)) {
+				return -1;
+			}
+		} else {
+			if (!ext_journal_current_block (history, block)
+					|| !ext2_disk (history->current, block * j->block_size, history->data, j->block_size)) {
+				return -1;
+			}
+			history->used_current = true;
 		}
 		int chunk = R_MIN (len - done, j->block_size - offset);
 		memcpy (buf + done, history->data + offset, chunk);
@@ -707,15 +743,97 @@ static int ext_journal_history_read(RIO *io, ut64 address, ut8 *buf, int len) {
 	return done;
 }
 
-static bool ext_journal_recover(RFS *fs, ExtJournal *j, ut32 sequence, ut64 id, const char *output) {
+typedef struct {
+	RFS *fs;
+	Ext2Geometry *geometry;
+	const char *output;
+	ut8 *data;
+	ut64 written;
+	bool sparse_known;
+} ExtJournalRecovery;
+
+static int ext_journal_recover_block(ut64 block, ut64 logical, ut64 size, unsigned depth, ut32 flags, void *user) {
+	ExtJournalRecovery *recovery = user;
+	if (depth) {
+		return R_FS_WALK_COMPLETE;
+	}
+	if (logical != recovery->written || (!block && !recovery->sparse_known)) {
+		return R_FS_WALK_ERROR;
+	}
+	RFS *fs = recovery->fs;
+	ut64 done = 0;
+	while (done < size) {
+		if (fs->csb.is_breaked && fs->csb.is_breaked (fs->csb.cons)) {
+			return R_FS_WALK_STOPPED;
+		}
+		int chunk = R_MIN ((ut64)recovery->geometry->block_size, size - done);
+		if (block && !(flags & R_FS_RANGE_UNWRITTEN)) {
+			if (!ext2_disk (recovery->geometry, block * recovery->geometry->block_size, recovery->data, chunk)) {
+				return R_FS_WALK_ERROR;
+			}
+		} else {
+			memset (recovery->data, 0, chunk);
+		}
+		bool ok = !strcmp (recovery->output, "-")?
+			fs->csb.cb_write (fs->csb.cons, (const char *)recovery->data, chunk): r_file_dump (recovery->output, recovery->data, chunk, true);
+		if (!ok) {
+			return R_FS_WALK_ERROR;
+		}
+		done += chunk;
+		recovery->written += chunk;
+	}
+	return R_FS_WALK_COMPLETE;
+}
+
+static bool ext_journal_recover_free(RFS *fs, ExtJournalHistory *history, ut8 *inode, ut32 inode_size, ut64 id, const char *output, ut8 *data, ut64 *written) {
+	Ext2Geometry current;
+	ExtJournal *j = history->journal;
+	if (!ext2_geometry (j->root, &current) || current.block_size != j->block_size || current.inode_size != inode_size
+			|| !ext2_inode_valid (&current, id, inode)) {
+		R_LOG_ERROR ("Cannot validate the historical inode and current allocation layout");
+		return false;
+	}
+	Ext2BitmapCache cache = {0};
+	current.cache = &cache;
+	history->current = &current;
+	history->inode_id = id;
+	history->generation = r_read_le32 (inode + 100);
+	history->eligible = !j->active && !(current.incompat & 4) && !r_read_le32 (inode + 20) && r_read_le16 (inode + 26);
+	RFSRoot overlay = *j->root;
+	overlay.iob.io = (RIO *)history;
+	overlay.iob.read_at = ext_journal_history_read;
+	Ext2Geometry historical = current;
+	historical.root = &overlay;
+	historical.cache = NULL;
+	history->reading = true;
+	ut64 size = ext2_size (inode);
+	ExtJournalRecovery recovery = { .fs = fs, .geometry = &historical, .output = output, .data = data };
+	bool inline_link = ext2_inline_link (&historical, inode);
+	recovery.sparse_known = inline_link || ext2_sparse_known (&historical, inode, id);
+	bool ok = !strcmp (output, "-") || r_file_dump (output, NULL, 0, false);
+	if (ok && inline_link) {
+		ok = !strcmp (output, "-")? fs->csb.cb_write (fs->csb.cons, (const char *)inode + 40, size): r_file_dump (output, inode + 40, size, true);
+		recovery.written = ok? size: 0;
+	} else if (ok) {
+		ok = ext2_walk_inode (&historical, inode, id, size, ext_journal_recover_block, &recovery) == R_FS_WALK_COMPLETE;
+	}
+	*written = recovery.written;
+	history->current = NULL;
+	free (cache.data);
+	r_bitset_free (cache.metadata);
+	return ok && *written == size;
+}
+
+static bool ext_journal_recover(RFS *fs, ExtJournal *j, ut32 sequence, ut64 id, const char *output, bool free_space) {
 	ExtJournalHistory history = { .journal = j, .sequence = sequence };
 	history.versions = ht_up_new (NULL, ext_journal_version_free, NULL);
 	history.data = malloc (j->block_size);
+	history.later = free_space? r_bitset_new (): NULL;
 	ut8 *inode = NULL, *data = NULL;
 	GrubFS *file = NULL;
 	ut64 written = 0, size = 0;
 	bool ok = false, opened = false;
-	if (!history.versions || !history.data) {
+	if (!history.versions || !history.data || (free_space && !history.later)) {
 		goto done;
 	}
 	if (!ext_journal_scan (j, ext_journal_version, &history) || history.failed || !history.selected) {
@@ -742,6 +860,10 @@ static bool ext_journal_recover(RFS *fs, ExtJournal *j, ut32 sequence, ut64 id, 
 	ut16 mode = r_read_le16 (inode) & 0xf000;
 	if ((mode != 0x8000 && mode != 0xa000) || (r_read_le32 (inode + 32) & (0x10000000 | 4))) {
 		R_LOG_ERROR ("Journal file recovery requires a regular file or symlink inode");
+		goto done;
+	}
+	if (free_space) {
+		ok = ext_journal_recover_free (fs, &history, inode, inode_size, id, output, data, &written);
 		goto done;
 	}
 	bool standard_output = !strcmp (output, "-");
@@ -788,13 +910,19 @@ static bool ext_journal_recover(RFS *fs, ExtJournal *j, ut32 sequence, ut64 id, 
 	ok = written == size;
  done:
 	if (!ok) {
-		R_LOG_WARN ("Partial journal recovery: %"PFMT64u" of %"PFMT64u" bytes; missing blocks are not read from the current image", written, size);
+		R_LOG_WARN ("Partial journal recovery: %"PFMT64u" of %"PFMT64u" bytes; %s", written, size,
+			free_space? "missing, reused or unverifiable blocks stop recovery": "missing blocks are not read from the current image");
+	}
+	if (history.used_current) {
+		R_LOG_WARN ("Heuristic recovery uses current free-space bytes; their original contents cannot be verified");
 	}
 	if (opened) {
 		file->file->fs->close (file->file);
 	}
 	grubfs_free (file);
 	ht_up_free (history.versions);
+	r_bitset_free (history.owners);
+	r_bitset_free (history.later);
 	free (history.data);
 	free (inode);
 	free (data);
@@ -816,15 +944,20 @@ static bool ext_journal_command(RFS *fs, const char *cmd) {
 	}
 	bool inodes = argc > 1 && (!strcmp (argv[1], "journal-inodes") || !strcmp (argv[1], "journal-inodesj"));
 	bool recover = argc > 1 && !strcmp (argv[1], "journal-recover");
+	bool free_space = recover && argc == 7 && !strcmp (argv[6], "free");
 	bool inode = recover || (argc > 1 && (!strcmp (argv[1], "journal-inode") || !strcmp (argv[1], "journal-inodej")));
 	bool json = argc > 1 && (!strcmp (argv[1], "journalj") || !strcmp (argv[1], "journal-inodej") || !strcmp (argv[1], "journal-inodesj"));
 	if (argc < 3 || (strcmp (argv[1], "journal") && !json && !inode && !inodes)
-			|| (recover && argc != 6) || (inodes? (argc != 3 && argc != 4): inode? (argc != 5 && argc != 6): (argc != 3 && argc != 6))) {
+			|| (recover && argc != 6 && argc != 7) || (recover && argc == 7 && !free_space && strcmp (argv[6], "journal"))
+			|| (!recover && (inodes? (argc != 3 && argc != 4): inode? (argc != 5 && argc != 6): (argc != 3 && argc != 6)))) {
 		fs->csb.cb_printf (fs->csb.cons, "Usage: m:ext2 journal[j] /mount [sequence block output|-]\n"
 			"       m:ext2 journal-inodes[j] /mount [sequence]\n"
 			"       m:ext2 journal-inode[j] /mount sequence inode [output|-]\n"
-			"       m:ext2 journal-recover /mount sequence inode output|-\n"
+			"       m:ext2 journal-recover /mount sequence inode output|- [journal|free]\n"
 			"List committed journal versions or recover journal-resident blocks, inodes, and file data.\n"
+			"Recovery defaults to journal bytes; free mode also reads unowned free blocks when the inode generation matches.\n"
+			"Current free-space bytes are heuristic; retained later writes and revocations exclude them.\n"
+			"Free-space fallback requires allocation metadata that does not need journal replay.\n"
 			"Checkpointed transactions are scanned; incomplete or corrupt transactions are skipped.\n");
 		r_str_argv_free (argv);
 		return true;
@@ -870,7 +1003,7 @@ static bool ext_journal_command(RFS *fs, const char *cmd) {
 	}
 	ut64 inode_id = output.block;
 	if (recover) {
-		ext_journal_recover (fs, &journal, output.sequence, inode_id, argv[5]);
+		ext_journal_recover (fs, &journal, output.sequence, inode_id, argv[5], free_space);
 		ext_journal_close (&journal);
 		goto done;
 	}

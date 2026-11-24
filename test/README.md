@@ -43,7 +43,7 @@ compiler and does not load a kernel module or access kernel memory.
    `python3 test/scripts/test-ext2-io.py` after building.
  * To check ext4 extent recovery, checksums, lazy allocation bitmaps and 64-bit
    block addresses, run `python3 test/scripts/test-ext4-io.py` after building.
- * To check ext3/ext4 journal checksums, retained inode versions and file recovery,
+ * To check ext3/ext4 journal checksums, retained inode versions and guarded free-space recovery,
    run `python3 test/scripts/test-ext-journal.py` after building.
  * To check HTTP sandbox enforcement on a local server, use `make http-sandbox`
    after building and installing this checkout. This requires Python 3 and

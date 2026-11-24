@@ -224,6 +224,7 @@ m:ext2 journal /root 100 1234 recovered-block
 m:ext2 journal-inodej /root 100 13
 m:ext2 journal-inode /root 100 13 recovered-inode
 m:ext2 journal-recover /root 100 13 recovered-file
+m:ext2 journal-recover /root 100 13 recovered-file free
 .Ed
 The first command lists retained block versions with transaction sequence,
 filesystem block, journal block, revocation and checksum information. The next
@@ -236,11 +237,22 @@ that transaction must itself be present and committed. Missing metadata or data
 stops recovery and retains the verified prefix. Symlinks are recovered as target
 text, and sparse or unwritten extents read as zeros.
 .Pp
-File recovery reads data only from the journal. Default ordered/writeback
+File recovery defaults to journal bytes. Default ordered/writeback
 journals normally contain metadata, so finding an older inode does not guarantee
-that its file contents can be recovered. Current image bytes are not substituted
-for missing historical data. Unsupported external journals and fast commits are
-reported explicitly. Use m:ext2? for command help.
+that its file contents can be recovered. The optional free mode supplements
+historical metadata with current disk bytes only when the inode is currently
+free with the same generation, the block is free and has no live or metadata
+owner, and no retained later write or revocation names the block. A revoked or
+unreadable retained version is never replaced with current disk bytes.
+Allocation and metadata checksums are validated where available. Unknown
+allocation or missing metadata stops recovery and preserves its readable prefix.
+Free-space fallback is disabled when the filesystem requires journal replay;
+its current allocation metadata may be stale.
+Current free-space bytes are reported as heuristic: blocks reused and freed
+again may contain unrelated data even when these checks pass. The journal mode
+can be specified explicitly to retain the default behavior.
+Unsupported external journals and fast commits are reported explicitly.
+Use m:ext2? for command help.
 .Sh SHELL
 .Ft bool
 .Fn r_fs_shell "RFSShell *shell" "RFS *fs" "const char *root"

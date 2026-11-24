@@ -812,6 +812,17 @@ static int ext2_count_block(ut64 block, ut64 logical, ut64 size, unsigned depth,
 	return R_FS_WALK_COMPLETE;
 }
 
+static bool ext2_sparse_known(Ext2Geometry *g, const ut8 *inode, ut64 id) {
+	ut64 blocks = ext2_acl (g, inode)? 1: 0;
+	ut64 stored = r_read_le32 (inode + 28);
+	if (g->ro_compat & 8) {
+		stored |= (ut64)r_read_le16 (inode + 116) << 32;
+	}
+	ut32 units = (g->ro_compat & 8) && (r_read_le32 (inode + 32) & 0x40000)? 1: g->block_size / 512;
+	int status = ext2_walk_inode (g, inode, id, ext2_capacity (g, inode), ext2_count_block, &blocks);
+	return status == R_FS_WALK_COMPLETE && blocks <= UT64_MAX / units && blocks * units == stored;
+}
+
 static bool ext2_recovery_owners(Ext2Geometry *g, Ext2File *entry, ut64 id) {
 	if (!entry->recovery) {
 		return true;
@@ -819,15 +830,7 @@ static bool ext2_recovery_owners(Ext2Geometry *g, Ext2File *entry, ut64 id) {
 	if (!entry->checked) {
 		entry->owners = ext2_owners (g);
 		entry->checked = true;
-		ut64 blocks = ext2_acl (g, entry->inode)? 1: 0;
-		ut64 stored = r_read_le32 (entry->inode + 28);
-		if (g->ro_compat & 8) {
-			stored |= (ut64)r_read_le16 (entry->inode + 116) << 32;
-		}
-		ut32 units = (g->ro_compat & 8) && (r_read_le32 (entry->inode + 32) & 0x40000)? 1: g->block_size / 512;
-		int status = ext2_walk_inode (g, entry->inode, id, ext2_capacity (g, entry->inode), ext2_count_block, &blocks);
-		entry->sparse_known = status == R_FS_WALK_COMPLETE
-			&& blocks <= UT64_MAX / units && blocks * units == stored;
+		entry->sparse_known = ext2_sparse_known (g, entry->inode, id);
 	}
 	return entry->owners != NULL;
 }

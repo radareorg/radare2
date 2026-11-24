@@ -130,3 +130,53 @@ EXPECT=<<EOF2
 EOF2
 EXPECT_ERR=
 RUN
+
+NAME=ext3 journal metadata recovers surviving unowned free data
+FILE=gzip://bins/fs/ext-journal/ext3-metadata.img.gz
+CMDS=<<EOF2
+e log.level=0
+m:ext2 journal-recover /root 100 13 -
+m:ext2 journal-recover /root 100 13 - journal
+m:ext2 journal-recover /root 100 13 - free
+EOF2
+EXPECT=<<EOF2
+Deleted through the journal
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=ext4 journal metadata recovers surviving unowned free extent data
+FILE=gzip://bins/fs/ext-journal/ext4-metadata.img.gz
+CMDS=<<EOF2
+e log.level=0
+m:ext2 journal-recover /root 100 13 - free
+EOF2
+EXPECT=<<EOF2
+Deleted through the journal
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=free-space journal recovery requires a committed selected transaction
+FILE=gzip://bins/fs/ext-journal/ext4-metadata.img.gz
+CMDS=<<EOF2
+e log.level=0
+m:ext2 journal-recover /root 103 13 - free
+echo done
+EOF2
+EXPECT=<<EOF2
+done
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=journal recovery help documents its free-space mode
+FILE=gzip://bins/fs/ext-journal/ext4-metadata.img.gz
+CMDS=<<EOF2
+m:ext2?~free mode
+EOF2
+EXPECT=<<EOF2
+Recovery defaults to journal bytes; free mode also reads unowned free blocks when the inode generation matches.
+EOF2
+EXPECT_ERR=
+RUN
