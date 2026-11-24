@@ -189,7 +189,7 @@ typedef struct libgdbr_t {
 	// is already handled (i.e. already send or ...)
 	RSocket *sock;
 	int connected;
-	int acks;
+	int ack_retries; // -1 when no outgoing frame is awaiting acknowledgment
 	char *data;
 	ssize_t data_len;
 	ssize_t data_max;

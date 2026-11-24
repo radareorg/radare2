@@ -276,6 +276,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	}
 	g->connected = 0;
 	g->no_ack = false;
+	g->ack_retries = -1;
 	g->read_len = 0;
 	g->stub_features = (libgdbr_stub_features_t){ .pkt_sz = 64, .P = true, .extended_mode = -1 };
 	g->remote_type = GDB_REMOTE_TYPE_GDB;
@@ -342,7 +343,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	}
 	// If no-ack supported, enable no-ack mode (should speed up things)
 	if (g->stub_features.QStartNoAckMode) {
-		if (send_msg (g, "QStartNoAckMode") < 0 || read_packet (g, false) < 0 || send_ack (g) < 0) {
+		if (send_msg (g, "QStartNoAckMode") < 0 || read_packet (g, false) < 0) {
 			ret = -1;
 			goto end;
 		}
@@ -351,7 +352,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	// A stub advertising lldb's extensions takes the thread of a register packet in
 	// the packet once asked to, and from then on refuses a register packet without it
 	if (g->remote_type == GDB_REMOTE_TYPE_LLDB && send_msg (g, "QThreadSuffixSupported") >= 0
-	    && read_packet (g, false) >= 0 && send_ack (g) >= 0) {
+	    && read_packet (g, false) >= 0) {
 		g->caps.thread_suffix = !strcmp (g->data, "OK");
 	}
 	// Query the thread / process id
@@ -374,8 +375,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if ((ret = send_msg (g, "Hc-1")) < 0) {
 		goto end;
 	}
-	read_packet (g, false);
-	ret = send_ack (g);
+	ret = read_packet (g, false);
 	if (ret < 0) {
 		goto end;
 	}
@@ -437,7 +437,7 @@ int gdbr_select(libgdbr_t *g, int pid, int tid) {
 		goto end;
 	}
 	g->stop_reason.is_valid = false;
-	if (send_msg (g, cmd) < 0 || read_packet (g, false) < 0 || send_ack (g) < 0) {
+	if (send_msg (g, cmd) < 0 || read_packet (g, false) < 0) {
 		ret = -1;
 		goto end;
 	}
@@ -464,7 +464,7 @@ int gdbr_check_vcont(libgdbr_t *g) {
 	if (!gdbr_lock_enter (g)) {
 		goto end;
 	}
-	if (send_msg (g, "vCont?") < 0 || read_packet (g, false) < 0 || send_ack (g) < 0) {
+	if (send_msg (g, "vCont?") < 0 || read_packet (g, false) < 0) {
 		ret = -1;
 		goto end;
 	}
@@ -540,9 +540,6 @@ static int read_stop_reply(libgdbr_t *g, bool attaching, bool running) {
 		}
 		const bool attach_ok = attaching && g->data_len == 2 && !memcmp (g->data, "OK", 2);
 		if (g->data_len && g->data[0] == 'O' && !attach_ok) {
-			if (send_ack (g) < 0) {
-				return -1;
-			}
 			size_t length;
 			if (!decode_console_output (g, &length)) {
 				return -1;
@@ -570,7 +567,7 @@ static int read_stop_reply(libgdbr_t *g, bool attaching, bool running) {
 			return handle_attach (g);
 		}
 		if (attaching && !g->data_len) {
-			return send_ack (g) < 0? -1: -2;
+			return -2;
 		}
 		return handle_stop_reason (g);
 	}
@@ -605,8 +602,7 @@ int gdbr_check_extended_mode(libgdbr_t *g) {
 		g->stub_features.extended_mode = 0;
 		goto end;
 	}
-	read_packet (g, false);
-	ret = send_ack (g);
+	ret = read_packet (g, false);
 	if (ret < 0) {
 		g->stub_features.extended_mode = 0;
 		goto end;
@@ -735,8 +731,7 @@ int gdbr_detach_pid(libgdbr_t *g, int pid) {
 		goto end;
 	}
 
-	read_packet (g, false);
-	if ((ret = send_ack (g)) < 0) {
+	if ((ret = read_packet (g, false)) < 0) {
 		goto end;
 	}
 
@@ -816,8 +811,7 @@ int gdbr_kill_pid(libgdbr_t *g, int pid) {
 		goto end;
 	}
 
-	read_packet (g, false);
-	if ((ret = send_ack (g)) < 0) {
+	if ((ret = read_packet (g, false)) < 0) {
 		goto end;
 	}
 	if (strncmp (g->data, "OK", 2)) {
@@ -837,7 +831,6 @@ static int read_registers_g(libgdbr_t *g) {
 		return -1;
 	}
 	if (reply_refused (g)) {
-		send_ack (g);
 		return 1;
 	}
 	if (handle_g (g) < 0 || !regs_reserve (g, g->data_len)) {
@@ -861,7 +854,7 @@ static int read_registers_p(libgdbr_t *g) {
 			continue;
 		}
 		r_strf_var (cmd, 32, "%s%x", CMD_READREG, (unsigned int)g->registers[i].regnum);
-		if (send_reg_msg (g, cmd) < 0 || read_packet (g, false) < 0 || send_ack (g) < 0) {
+		if (send_reg_msg (g, cmd) < 0 || read_packet (g, false) < 0) {
 			return -1;
 		}
 		if (!g->data_len) {
@@ -1665,9 +1658,6 @@ int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, RStrBuf *output) {
 		goto end;
 	}
 	while (1) {
-		if ((ret = send_ack (g)) < 0) {
-			goto end;
-		}
 		if (g->data_len == 0) {
 			ret = -1;
 			goto end;
@@ -1724,7 +1714,7 @@ char* gdbr_exec_file_read(libgdbr_t *g, int pid) {
 			goto end;
 		}
 		if (send_msg (g, msg) < 0 || read_packet (g, false) < 0
-			    || send_ack (g) < 0 || g->data_len == 0) {
+			    || g->data_len == 0) {
 			ret = -1;
 			goto end;
 		}
@@ -1784,7 +1774,7 @@ bool gdbr_is_thread_dead(libgdbr_t *g, int pid, int tid) {
 	if (snprintf (msg, sizeof (msg) - 1, "T%s", thread_id) < 0) {
 		goto end;
 	}
-	if (send_msg (g, msg) < 0 || read_packet (g, false) < 0 || send_ack (g) < 0) {
+	if (send_msg (g, msg) < 0 || read_packet (g, false) < 0) {
 		goto end;
 	}
 	ret = (g->data_len == 3 && g->data[0] == 'E');
@@ -1829,7 +1819,7 @@ RList* gdbr_pids_list(libgdbr_t *g, int pid) {
 		    || !(exec_file = gdbr_exec_file_read (g, pid))) {
 		exec_file = "";
 	}
-	if (send_msg (g, "qfThreadInfo") < 0 || read_packet (g, false) < 0 || send_ack (g) < 0
+	if (send_msg (g, "qfThreadInfo") < 0 || read_packet (g, false) < 0
 		    || g->data_len == 0 || g->data[0] != 'm') {
 		ret = -1;
 		goto end;
@@ -1874,7 +1864,7 @@ RList* gdbr_pids_list(libgdbr_t *g, int pid) {
 			ptr = ptr2;
 		}
 		if (send_msg (g, "qsThreadInfo") < 0 || read_packet (g, false) < 0
-			    || send_ack (g) < 0 || g->data_len == 0
+			    || g->data_len == 0
 			    || (g->data[0] != 'm' && g->data[0] != 'l')) {
 			ret = -1;
 			goto end;
@@ -1929,7 +1919,7 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 		// XML thread description is supported
 		// TODO: Handle this case
 	}
-	if (send_msg (g, "qfThreadInfo") < 0 || read_packet (g, false) < 0 || send_ack (g) < 0
+	if (send_msg (g, "qfThreadInfo") < 0 || read_packet (g, false) < 0
 		    || g->data_len == 0 || g->data[0] != 'm') {
 		ret = -1;
 		goto end;
@@ -1976,7 +1966,7 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 			ptr = ptr2;
 		}
 		if (send_msg (g, "qsThreadInfo") < 0 || read_packet (g, false) < 0
-			    || send_ack (g) < 0 || g->data_len == 0
+			    || g->data_len == 0
 			    || (g->data[0] != 'm' && g->data[0] != 'l')) {
 			ret = -1;
 			goto end;
@@ -2024,7 +2014,7 @@ ut64 gdbr_get_baddr(libgdbr_t *g) {
 		goto end;
 	}
 	if (send_msg (g, "qOffsets") < 0 || read_packet (g, false) < 0
-		    || send_ack (g) < 0 || g->data_len == 0) {
+		    || g->data_len == 0) {
 		min = UT64_MAX;
 		goto end;
 	}

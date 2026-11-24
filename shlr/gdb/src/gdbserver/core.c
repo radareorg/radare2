@@ -22,21 +22,14 @@ static int _server_handle_qSupported(libgdbr_t *g) {
 }
 
 static int _server_handle_qTStatus(libgdbr_t *g) {
-	int ret;
 	// TODO Handle proper reporting of trace status
 	const char *message = "";
-	if ((ret = send_ack (g)) < 0) {
-		return -1;
-	}
 	return send_msg (g, message);
 }
 
 static int _server_handle_qOffsets(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char buf[64], *ptr;
 	ptr = buf + snprintf (buf, sizeof (buf), "TextSeg=");
-	if (send_ack (g) < 0) {
-		return -1;
-	}
 	if (cmd_cb (g, core_ptr, "dm", ptr, sizeof (buf) - (ptr - buf) - 1) < 0) {
 		send_msg (g, "");
 		return -1;
@@ -49,9 +42,6 @@ static int _server_handle_exec_file_read(libgdbr_t *g, gdbr_server_cmd_cb cb,
 	char *buf, *ptr, cmd[64] = {0};
 	size_t buflen = 512;
 	int ret;
-	if (send_ack (g) < 0) {
-		return -1;
-	}
 	ptr = g->data + strlen ("qXfer:exec-file:read:");
 	if (*ptr != ':') {
 		int pid;
@@ -78,9 +68,6 @@ static int _server_handle_exec_file_read(libgdbr_t *g, gdbr_server_cmd_cb cb,
 }
 
 static int _server_handle_M(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	if (send_ack (g) < 0) {
-		return -1;
-	}
 	char *memstr, *buf;
 	ut64 memlen, memlen2, addr;
 	g->data[g->data_len] = '\0';
@@ -110,9 +97,6 @@ static int _server_handle_M(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 
 static int _server_handle_s(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char message[64];
-	if (send_ack (g) < 0) {
-		return -1;
-	}
 	if (g->data_len > 1) {
 		// We don't handle s[addr] packet
 		return send_msg (g, "E01");
@@ -130,9 +114,6 @@ static int _server_handle_s(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 
 static int _server_handle_c(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char message[64];
-	if (send_ack (g) < 0) {
-		return -1;
-	}
 	if (g->data_len > 1) {
 		// We don't handle s[addr] packet
 		return send_msg (g, "E01");
@@ -150,9 +131,6 @@ static int _server_handle_c(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 
 static int _server_handle_ques(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char message[64] = {0};
-	if (send_ack (g) < 0) {
-		return -1;
-	}
 	if (cmd_cb (g, core_ptr, "?", message, sizeof (message)) < 0) {
 		send_msg (g, "");
 		return -1;
@@ -164,9 +142,6 @@ static int _server_handle_qC(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core
 	char *buf;
 	int ret;
 	size_t buf_len = 80;
-	if ((ret = send_ack (g)) < 0) {
-		return -1;
-	}
 	if (!(buf = malloc (buf_len))) {
 		return -1;
 	}
@@ -179,24 +154,13 @@ static int _server_handle_qC(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core
 	return ret;
 }
 
-static int _server_handle_k(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	send_ack (g);
-	return -1;
-}
-
 static int _server_handle_vKill(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	if (send_ack (g) < 0) {
-		return -1;
-	}
 	// TODO handle killing of pid
 	send_msg (g, "OK");
 	return -1;
 }
 
 static int _server_handle_z(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	if (send_ack (g) < 0) {
-		return -1;
-	}
 	char set; // Z = set, z = remove
 	int type;
 	ut64 addr;
@@ -230,9 +194,6 @@ static int _server_handle_z(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 static int _server_handle_vCont(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char *action = NULL;
 	char *save_ptr = NULL;
-	if (send_ack (g) < 0) {
-		return -1;
-	}
 	g->data[g->data_len] = '\0';
 	if (g->data[5] == '?') {
 		// Query about everything we support
@@ -267,9 +228,6 @@ static int _server_handle_vCont(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *c
 }
 
 static int _server_handle_qAttached(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	if (send_ack (g) < 0) {
-		return -1;
-	}
 	// TODO check if process was attached or created
 	// Right now, says that process was created
 	return send_msg (g, "0");
@@ -283,9 +241,6 @@ static int _server_handle_Hg(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core
 	// send error
 	char cmd[32];
 	unsigned int tid;
-	if (send_ack (g) < 0) {
-		return -1;
-	}
 	if (g->data_len <= 2 || isalpha ((ut8)g->data[2])) {
 		return send_msg (g, "E01");
 	}
@@ -310,9 +265,6 @@ static int _server_handle_Hc(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core
 	// Usually this is only sent with Hc-1. Still. Set the threads for next operations
 	char cmd[32];
 	unsigned int tid;
-	if (send_ack (g) < 0) {
-		return -1;
-	}
 	if (g->data_len <= 2 || isalpha ((ut8)g->data[2])) {
 		return send_msg (g, "E01");
 	}
@@ -336,9 +288,6 @@ static int _server_handle_qfThreadInfo(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, 
 	char *buf;
 	int ret;
 	size_t buf_len = g->stub_features.pkt_sz;
-	if ((ret = send_ack (g)) < 0) {
-		return -1;
-	}
 	if (!(buf = malloc (buf_len))) {
 		return -1;
 	}
@@ -353,7 +302,7 @@ static int _server_handle_qfThreadInfo(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, 
 
 static int _server_handle_qsThreadInfo(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	// TODO handle overflow from qfThreadInfo. Otherwise this won't work with programs with many threads
-	if (send_ack (g) < 0 || send_msg (g, "l") < 0) {
+	if (send_msg (g, "l") < 0) {
 		return -1;
 	}
 	return 0;
@@ -382,9 +331,6 @@ static int server_read_registers(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *
 }
 
 static int _server_handle_g(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	if (send_ack (g) < 0) {
-		return -1;
-	}
 	if (!g->registers) {
 		return send_msg (g, "E01");
 	}
@@ -401,9 +347,6 @@ static int _server_handle_g(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 
 static int _server_handle_m(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	int length;
-	if (send_ack (g) < 0) {
-		return -1;
-	}
 	g->data[g->data_len] = 0;
 	char *cmd = strdup (g->data);
 	char *buf = malloc (g->data_max / 2);
@@ -429,9 +372,6 @@ static int _server_handle_m(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 static int _server_handle_p(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char cmd[128];
 	int regnum, i;
-	if (send_ack (g) < 0) {
-		return -1;
-	}
 	if (!isxdigit ((ut8)g->data[1]) || !g->registers) {
 		return send_msg (g, "E01");
 	}
@@ -460,9 +400,6 @@ static int _server_handle_p(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 static int _server_handle_P(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char *ptr, *end, *cmd;
 	int regnum, i;
-	if (send_ack (g) < 0) {
-		return -1;
-	}
 	if (g->data_len < 4 || !g->registers || !isxdigit ((ut8)g->data[1])) {
 		return send_msg (g, "E01");
 	}
@@ -506,17 +443,11 @@ static int _server_handle_P(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 }
 
 static int _server_handle_vMustReplyEmpty(libgdbr_t *g) {
-	if (send_ack (g) < 0) {
-		return -1;
-	}
 	return send_msg (g, "");
 }
 
 static int _server_handle_qTfV(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	// TODO
-	if (send_ack (g) < 0) {
-		return -1;
-	}
 	return send_msg (g, "");
 }
 
@@ -526,13 +457,12 @@ int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	for (;;) {
 		if (read_packet (g, false) < 0) {
 			break;
-			// continue;
 		}
 		if (g->data_len == 0) {
 			continue;
 		}
 		if (r_str_startswith (g->data, "k")) {
-			return _server_handle_k (g, cmd_cb, core_ptr);
+			return -1;
 		}
 		if (r_str_startswith (g->data, "vKill")) {
 			return _server_handle_vKill (g, cmd_cb, core_ptr);
@@ -669,21 +599,14 @@ int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "QStartNoAckMode")) {
-			if (send_ack (g) < 0) {
-				return -1;
-			}
-			g->no_ack = true;
-			R_LOG_DEBUG ("[noack mode enabled]");
+		if (!strcmp (g->data, "QStartNoAckMode")) {
 			if (send_msg (g, "OK") < 0) {
 				return -1;
 			}
+			g->no_ack = true;
 			continue;
 		}
-		// Unrecognized packet
-		if (send_ack (g) < 0 || send_msg (g, "") < 0) {
-			g->data[g->data_len] = '\0';
-			R_LOG_ERROR ("%s: Unknown packet: %s", __func__, g->data);
+		if (send_msg (g, "") < 0) {
 			return -1;
 		}
 	};
