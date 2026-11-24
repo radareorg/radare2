@@ -443,6 +443,7 @@ static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
 			gdbr_select (pd->desc, dbg->pid, dbg->tid);
 		}
 	}
+	dbg->reason.addr = pd->desc->stop_reason.watchpoint.present? pd->desc->stop_reason.watchpoint.addr: 0;
 	dbg->reason.signum = pd->desc->stop_reason.signum;
 	dbg->reason.type = pd->desc->stop_reason.reason;
 	return pd->desc->stop_reason.reason;
@@ -530,50 +531,54 @@ static int r_debug_gdb_set_reg_profile(RDebug *dbg, const char *str) {
 }
 
 static bool r_debug_gdb_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
-	int ret = 0, bpsize;
+	int ret;
 	RDebug *dbg = bp->user;
 	PluginData *pd = R_UNWRAP3 (dbg, current, plugin_data);
-	if (!pd || !b) {
+	if (!pd || !pd->desc || !b) {
 		return false;
 	}
-	bpsize = b->size;
-	// TODO handle conditions
+	const int size = b->size;
+	// The debugger evaluates breakpoint conditions locally.
 	switch (b->perm) {
 	case R_BP_PROT_EXEC : {
 		if (set) {
 			ret = b->hw?
-				gdbr_set_hwbp (pd->desc, b->addr, "", bpsize):
-				gdbr_set_bp (pd->desc, b->addr, "", bpsize);
+				gdbr_set_hwbp (pd->desc, b->addr, "", size):
+				gdbr_set_bp (pd->desc, b->addr, "", size);
 		} else {
-			ret = b->hw ? gdbr_remove_hwbp (pd->desc, b->addr, bpsize) : gdbr_remove_bp (pd->desc, b->addr, bpsize);
+			ret = b->hw ? gdbr_remove_hwbp (pd->desc, b->addr, size) : gdbr_remove_bp (pd->desc, b->addr, size);
 		}
 		break;
 	}
 	// TODO handle size (area of watch in upper layer and then bpsize. For the moment watches are set on exact on byte
 	case R_PERM_W: {
 		if (set) {
-			ret = gdbr_set_hww (pd->desc, b->addr, "", 1);
+			ret = gdbr_set_hww (pd->desc, b->addr, "", size);
 		} else {
-			ret = gdbr_remove_hww (pd->desc, b->addr, 1);
+			ret = gdbr_remove_hww (pd->desc, b->addr, size);
 		}
 		break;
 	}
 	case R_PERM_R: {
 		if (set) {
-			ret = gdbr_set_hwr (pd->desc, b->addr, "", 1);
+			ret = gdbr_set_hwr (pd->desc, b->addr, "", size);
 		} else {
-			ret = gdbr_remove_hwr (pd->desc, b->addr, 1);
+			ret = gdbr_remove_hwr (pd->desc, b->addr, size);
 		}
 		break;
 	}
-	case R_PERM_ACCESS: {
+	case R_BP_PROT_ACCESS:
+	case R_PERM_ACCESS:
+	case R_PERM_RW: {
 		if (set) {
-			ret = gdbr_set_hwa (pd->desc, b->addr, "", 1);
+			ret = gdbr_set_hwa (pd->desc, b->addr, "", size);
 		} else {
-			ret = gdbr_remove_hwa (pd->desc, b->addr, 1);
+			ret = gdbr_remove_hwa (pd->desc, b->addr, size);
 		}
 		break;
 	}
+	default:
+		return false;
 	}
 	return !ret;
 }

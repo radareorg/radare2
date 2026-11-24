@@ -98,10 +98,6 @@ int handle_setbp(libgdbr_t *g) {
 	return handle_ok (g);
 }
 
-int handle_removebp(libgdbr_t *g) {
-	return handle_ok (g);
-}
-
 int handle_attach(libgdbr_t *g) {
 	if (g->data_len > 0 && g->data[0] == 'E') {
 		return -1;
@@ -223,6 +219,36 @@ static int stop_reason_death(libgdbr_t *g, bool is_signal) {
 	return ret;
 }
 
+static bool parse_watch_stop(libgdbr_stop_reason_t *reason, const char *field) {
+	int type;
+	if (r_str_startswith (field, "watch:")) {
+		type = R_DEBUG_REASON_WATCHPOINT_WRITE;
+	} else if (r_str_startswith (field, "rwatch:")) {
+		type = R_DEBUG_REASON_WATCHPOINT_READ;
+	} else if (r_str_startswith (field, "awatch:")) {
+		type = R_DEBUG_REASON_WATCHPOINT_ACCESS;
+	} else {
+		return false;
+	}
+	const char *value = strchr (field, ':') + 1;
+	ut64 address = 0;
+	int digits = 0;
+	for (; *value; value++) {
+		int digit = hex2int (*value);
+		if (digit < 0 || ++digits > 16) {
+			return false;
+		}
+		address = (address << 4) | digit;
+	}
+	if (!digits) {
+		return false;
+	}
+	reason->watchpoint.addr = address;
+	reason->watchpoint.present = true;
+	reason->reason = type;
+	return true;
+}
+
 int handle_stop_reason(libgdbr_t *g) {
 	if (g->data_len < 3) {
 		return -1;
@@ -274,18 +300,7 @@ int handle_stop_reason(libgdbr_t *g) {
 			continue;
 		}
 		if (g->stop_reason.signum == 5) {
-			if (r_str_startswith (ptr1, "watch")
-			    || r_str_startswith (ptr1, "rwatch")
-			    || r_str_startswith (ptr1, "awatch")) {
-				if (!(ptr2 = strchr (ptr1, ':'))) {
-					continue;
-				}
-				ptr2++;
-				if (!isxdigit ((ut8)*ptr2)) {
-					continue;
-				}
-				g->stop_reason.watchpoint.addr = strtoll (ptr2, NULL, 16);
-				g->stop_reason.watchpoint.present = true;
+			if (parse_watch_stop (&g->stop_reason, ptr1)) {
 				continue;
 			}
 			if (r_str_startswith (ptr1, "exec") && !g->stop_reason.exec.present) {
