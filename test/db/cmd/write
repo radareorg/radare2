@@ -456,7 +456,7 @@ RUN
 
 # see bug #503
 NAME=wt
-FILE=-
+FILE=malloc://512
 #bins/pe/b.exe
 CMDS=<<EOF
 wt a_piece_of_ls_saved_to_PWD 0x400
@@ -472,7 +472,7 @@ EOF
 RUN
 
 NAME=endian tests: wv
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=false
 e asm.bits=32
@@ -749,7 +749,7 @@ EOF
 RUN
 
 NAME=wz esc seqs
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e str.escbslash=true
 wz \a\b\t\n\v\f\r\e\\\x40\7\15\176
@@ -763,7 +763,7 @@ EOF
 RUN
 
 NAME=wao recj on arm64
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b64
 CMDS=<<EOF
 e io.cache=true
@@ -786,7 +786,7 @@ EOF
 RUN
 
 NAME=wao+
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 3wao+nop
@@ -802,7 +802,7 @@ RUN
 
 NAME=wao+2
 # BROKEN=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 3(;wao+nop)()
@@ -816,7 +816,7 @@ EOF
 RUN
 
 NAME=wao+3
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 3wao+nop

@@ -1,6 +1,6 @@
 NAME=r2pm -r Windows passes shell metacharacters literally
 REQUIRE=windows
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 %R2PM_LITERAL_TEST=expanded
 r2pm -r rax2 -S "a&echo" "a|echo" "%R2PM_LITERAL_TEST%"
@@ -15,7 +15,7 @@ RUN
 
 NAME=r2pm -r Windows preserves argument boundaries
 REQUIRE=windows
-FILE=-
+FILE=malloc://512
 CMDS=r2pm -r rax2 -S "one two" "" "a\"b" "C:\\one two\\"
 EXPECT=<<EOF
 6f6e652074776f
@@ -28,7 +28,7 @@ RUN
 
 NAME=r2pm -r Windows batch command string with spaces
 REQUIRE=windows
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 r2pm -r '"scripts/r2pm/run probe.cmd" "one two"'
 ?vi $?
@@ -45,7 +45,7 @@ RUN
 
 NAME=r2pm Windows hooks preserve native syntax and failure status
 REQUIRE=windows
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 rmrf r2pm-win-batch-r2r
 %R2PM_DBDIR=scripts/r2pm/radare2-pm/db

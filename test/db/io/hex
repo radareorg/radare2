@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=tmpblock hexfile test
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 x@xc:?e 4141
 x@x:4141

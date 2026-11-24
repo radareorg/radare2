@@ -1,5 +1,5 @@
 NAME=test $alias
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 $foo=?e hello
 $foo
@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=test $alias quotes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 "$foo=?e hello;?e world"
 $foo
@@ -22,7 +22,7 @@ EOF
 RUN
 
 NAME=test $alias args
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 $foo=!echo hello
 $foo world
@@ -33,7 +33,7 @@ EOF
 RUN
 
 NAME=list $alias
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 $foo=a
 $bar=b
@@ -46,7 +46,7 @@ EOF
 RUN
 
 NAME=delete $alias
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 $foo=a
 $bar=b
@@ -59,7 +59,7 @@ EOF
 RUN
 
 NAME=grep $alias
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 9090909090
 pd 5~?
@@ -73,7 +73,7 @@ EOF
 RUN
 
 NAME=cat $alias
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 echo test data >$a
 cat $a
@@ -84,7 +84,7 @@ EOF
 RUN
 
 NAME=$alias types, setting, and printing
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 4141414100
 ps >$str_redirect_alias
@@ -118,7 +118,7 @@ EOF
 RUN
 
 NAME=dont append to cmd $alias
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 $a=af
 $*
@@ -132,7 +132,7 @@ EOF
 RUN
 
 NAME=show commands $aliases
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 $a=pd
 $b=pD
@@ -148,7 +148,7 @@ EOF
 RUN
 
 NAME=fail for alias len 0
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 $=$A
 $*

@@ -262,7 +262,7 @@ EOF
 RUN
 
 NAME=command byte 0xff after a macro loop does not crash
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ?e x @@ a b c
 ÿx
@@ -325,7 +325,7 @@ EOF
 RUN
 
 NAME=macro with empty body and blank lines
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 (empty;)
 .(empty)

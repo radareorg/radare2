@@ -1,5 +1,5 @@
 NAME=ands (opcode) triggers zf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -15,7 +15,7 @@ EOF
 RUN
 
 NAME=ands (opcode) triggers zf off
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -31,7 +31,7 @@ EOF
 RUN
 
 NAME=ands triggers zf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -47,7 +47,7 @@ EOF
 RUN
 
 NAME=ands triggers zf off
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -63,7 +63,7 @@ EOF
 RUN
 
 NAME=and (no s flag) does not trigger zf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -79,7 +79,7 @@ EOF
 RUN
 
 NAME=and (no s flag) does not trigger zf off
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -95,7 +95,7 @@ EOF
 RUN
 
 NAME=orrs triggers zf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -111,7 +111,7 @@ EOF
 RUN
 
 NAME=orrs triggers zf off
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -127,7 +127,7 @@ EOF
 RUN
 
 NAME=orrs (opcode) triggers zf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -143,7 +143,7 @@ EOF
 RUN
 
 NAME=orrs (opcode) triggers zf off
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -159,7 +159,7 @@ EOF
 RUN
 
 NAME=orr (no s flag) does not trigger zf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -175,7 +175,7 @@ EOF
 RUN
 
 NAME=orr (no s flag) does not trigger zf off
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -191,7 +191,7 @@ EOF
 RUN
 
 NAME=adds triggers zf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -207,7 +207,7 @@ EOF
 RUN
 
 NAME=adds triggers zf off
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -224,7 +224,7 @@ EOF
 RUN
 
 NAME=add (no s flag) does not trigger zf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -240,7 +240,7 @@ EOF
 RUN
 
 NAME=add (no s flag) does not trigger zf off
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -257,7 +257,7 @@ EOF
 RUN
 
 NAME=eors (opcode) triggers zf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -273,7 +273,7 @@ EOF
 RUN
 
 NAME=eors (opcode) triggers zf off
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -290,7 +290,7 @@ EOF
 RUN
 
 NAME=eors triggers zf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -306,7 +306,7 @@ EOF
 RUN
 
 NAME=eors triggers zf off
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -323,7 +323,7 @@ EOF
 RUN
 
 NAME=eor (no s flag) does not trigger zf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -339,7 +339,7 @@ EOF
 RUN
 
 NAME=eor (no s flag) does not trigger zf off
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -356,7 +356,7 @@ EOF
 RUN
 
 NAME=subs triggers zf and cf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -372,7 +372,7 @@ EOF
 RUN
 
 NAME=subs triggers cf and zf off
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -388,7 +388,7 @@ EOF
 RUN
 
 NAME=sub (no s flag) does not trigger zf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -404,7 +404,7 @@ EOF
 RUN
 
 NAME=sub (no s flag) does not trigger zf off
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -496,7 +496,7 @@ EOF
 RUN
 
 NAME=tst nz
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2802,7 +2802,7 @@ EOF
 RUN
 
 NAME=stmib no writeback
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2821,7 +2821,7 @@ EOF
 RUN
 
 NAME=stmda writeback
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2840,7 +2840,7 @@ EOF
 RUN
 
 NAME=stmdb no writeback
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2926,7 +2926,7 @@ EOF
 RUN
 
 NAME=ldmda no writeback
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2947,7 +2947,7 @@ EOF
 RUN
 
 NAME=ldmdb writeback
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2968,7 +2968,7 @@ EOF
 RUN
 
 NAME=ldm no writeback
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2989,7 +2989,7 @@ EOF
 RUN
 
 NAME=ldmib writeback
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32

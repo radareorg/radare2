@@ -1,5 +1,5 @@
 NAME=.- (edit, source tmp file)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.editor=/bin/true
 .-
@@ -9,7 +9,7 @@ EOF
 RUN
 
 NAME=interpret dollar file
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ?e ?e hello > $cmd
 . $cmd
@@ -30,7 +30,7 @@ EOF
 RUN
 
 NAME=.spp
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 . bins/src/r2test.spp
 EOF
@@ -43,7 +43,7 @@ EOF
 RUN
 
 NAME=interpret dollar file with grep
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ?e ?e hello > $cmd
 . $cmd~ll
@@ -54,7 +54,7 @@ EOF
 RUN
 
 NAME=.spp with grep
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 . bins/src/r2test.spp~world
 EOF
@@ -64,7 +64,7 @@ EOF
 RUN
 
 NAME=$foo=#!pipe
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 #!pipe echo hello
 $foo=#!pipe echo hello

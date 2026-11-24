@@ -700,7 +700,7 @@ RUN
 
 NAME=aoj f0ff2194
 REQUIRE=cs5
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -750,7 +750,7 @@ RUN
 
 NAME=aoj f0ff2194 (cs6)
 REQUIRE=cs6
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -799,7 +799,7 @@ EOF
 RUN
 
 NAME=ppc positive-condition branch is cjmp with edges
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -821,7 +821,7 @@ RUN
 
 NAME=ppc isel classified as cmov
 REQUIRE=cs5
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -843,7 +843,7 @@ RUN
 
 NAME=ppc isel classified as cmov (cs6)
 REQUIRE=cs6
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -864,7 +864,7 @@ EOF
 RUN
 
 NAME=ppc bctr/bctrl typed (cs6 BCCTR/BCCTRL alias coverage)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -887,7 +887,7 @@ RUN
 # Conditional trap family (tw/twi/td/tdi + extended mnemonics) must type as trap.
 # Type-only assert: capstone gives extended forms version-dependent ids.
 NAME=ppc conditional traps typed
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -914,7 +914,7 @@ RUN
 
 # Return-from-interrupt terminates the basic block (type-only assert).
 NAME=ppc return-from-interrupt typed as ret
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -938,7 +938,7 @@ RUN
 
 # Integer ALU forms that previously fell through to type: null.
 NAME=ppc integer alu classified
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -971,7 +971,7 @@ RUN
 
 # Load/store multiple and string word.
 NAME=ppc load-store multiple classified
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -989,7 +989,7 @@ RUN
 
 # Scalar floating point: stores, arith, compare, convert, abs, move.
 NAME=ppc scalar fp classified
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -1041,7 +1041,7 @@ RUN
 # cs6 decodes them as the base rldicr/rldicl, so their op-type differs by
 # capstone version and is not safe to pin in a test.
 NAME=ppc64 op type/esil completeness
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -1149,7 +1149,7 @@ RUN
 # string). Covers the dword shifts and the arithmetic-shift sign extension
 # (sradi via ASR). Only real, cs-version-stable instructions are used.
 NAME=ppc64 esil emulation: dword + arithmetic shifts
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 e asm.arch=ppc
 e asm.bits=64
@@ -1200,7 +1200,7 @@ EOF2
 RUN
 
 NAME=array stack var shadows interior phantom slots
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -1216,7 +1216,7 @@ EOF
 RUN
 
 NAME=multidim array stack var shadows interior slots
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -1232,7 +1232,7 @@ EOF
 RUN
 
 NAME=scalar stack var keeps neighbour slots
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -1302,7 +1302,7 @@ EOF2
 RUN
 
 NAME=ppc64 esil emulation: ld does not update the base register
-FILE=-
+FILE=malloc://512
 ARGS=-a ppc -b 64 -e cfg.bigendian=true
 CMDS=<<EOF2
 aei

@@ -111,7 +111,7 @@ EOF
 RUN
 
 NAME=r-infloop
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 r- 304 @@s:0x0800 0x022b97a0 2048
 ?e ok
@@ -123,7 +123,7 @@ EXPECT_ERR=
 RUN
 
 NAME=rapatch2 main from the REPL without PATH
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 r?~rapatch2?
 env PATH=
@@ -137,7 +137,7 @@ EXPECT_ERR=
 RUN
 
 NAME=REPL r2 JavaScript shortcut
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=r2.cmd("?e shortcut").trim()
 EXPECT=<<EOF
@@ -147,7 +147,7 @@ EXPECT_ERR=
 RUN
 
 NAME=REPL missing plugin diagnostics
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 r2mcp ignored
@@ -185,7 +185,7 @@ EOF
 RUN
 
 NAME=rasm2 main from the REPL without PATH
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -204,7 +204,7 @@ EXPECT_ERR=
 RUN
 
 NAME=rasm2 REPL output uses console filters and aliases
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -231,7 +231,7 @@ EXPECT_ERR=
 RUN
 
 NAME=rasm2 REPL binary output preserves NUL bytes
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -247,7 +247,7 @@ EXPECT_ERR=
 RUN
 
 NAME=rasm2 REPL keeps the passed console environment
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -272,7 +272,7 @@ EXPECT_ERR=
 RUN
 
 NAME=ragg2 main from the REPL without PATH
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -293,7 +293,7 @@ EXPECT_ERR=
 RUN
 
 NAME=ragg2 REPL output uses console filters and aliases
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -328,7 +328,7 @@ EXPECT_ERR=
 RUN
 
 NAME=ragg2 REPL code formats use console output
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -351,7 +351,7 @@ EXPECT_ERR=
 RUN
 
 NAME=ragg2 REPL binary output preserves NUL bytes
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -367,7 +367,7 @@ EXPECT_ERR=
 RUN
 
 NAME=ragg2 REPL restores include paths after success and errors
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -409,7 +409,7 @@ EXPECT_ERR=
 RUN
 
 NAME=in-process radiff2 keeps the session console alive
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 radiff2 malloc://8 malloc://8
 radiff2 malloc://8 malloc://8
@@ -421,7 +421,7 @@ EOF
 RUN
 
 NAME=rahash2 main from the REPL without PATH
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -442,7 +442,7 @@ EXPECT_ERR=
 RUN
 
 NAME=rahash2 REPL output uses console filters and aliases
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -470,7 +470,7 @@ EXPECT_ERR=
 RUN
 
 NAME=rahash2 REPL hashes files and blocks
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -490,7 +490,7 @@ EXPECT_ERR=
 RUN
 
 NAME=rahash2 REPL binary output preserves NUL bytes
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -513,7 +513,7 @@ EXPECT_ERR=
 RUN
 
 NAME=rahash2 REPL reports failures and remains usable
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -549,7 +549,7 @@ EOF
 RUN
 
 NAME=rahash2 REPL keeps options local to each invocation
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -572,7 +572,7 @@ EXPECT_ERR=
 RUN
 
 NAME=rahash2 streaming preserves filters and captures
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -603,7 +603,7 @@ EXPECT_ERR=
 RUN
 
 NAME=rahash2 streaming keeps JSON and binary captures intact
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -667,7 +667,7 @@ EXPECT_ERR=
 RUN
 
 NAME=rahash2 plot failures leave the shell usable
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -697,7 +697,7 @@ EOF
 RUN
 
 NAME=rafind2 main from the REPL without PATH
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -725,7 +725,7 @@ EXPECT_ERR=
 RUN
 
 NAME=rafind2 REPL output uses console filters and aliases
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -756,7 +756,7 @@ EXPECT_ERR=
 RUN
 
 NAME=rafind2 REPL captures hexdumps
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -776,7 +776,7 @@ EXPECT_ERR=
 RUN
 
 NAME=rafind2 REPL reports failures and remains usable
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -814,7 +814,7 @@ EOF
 RUN
 
 NAME=rafind2 streaming preserves filters and captures
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=
@@ -893,7 +893,7 @@ EOF
 RUN
 
 NAME=rafind2 restores the environment after core open failures
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 env PATH=caller-path
@@ -945,7 +945,7 @@ EXPECT_ERR=
 RUN
 
 NAME=nested r2 quick exits preserve sandboxed sessions
-FILE=-
+FILE=malloc://512
 ARGS=-NN
 CMDS=<<EOF
 e cfg.sandbox.grain=none

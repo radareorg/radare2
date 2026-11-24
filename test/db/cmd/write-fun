@@ -1,6 +1,6 @@
 
 NAME=Automatically reanalyze function control flow after a write
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64 -e anal.onchange=true
 CMDS=<<EOF
 wa jne 6 @ 2
@@ -58,7 +58,7 @@ EOF
 RUN
 
 NAME=Write misaligns jump instruction, control flow is reanalyzed
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64 -e anal.onchange=true
 CMDS=<<EOF
 wx e80200000075020000c3
@@ -104,7 +104,7 @@ EOF
 RUN
 
 NAME=Write reanalysis keeps already unreachable block
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64 -e anal.onchange=true
 CMDS=<<EOF
 wx 0000c300c3
@@ -131,7 +131,7 @@ EOF
 RUN
 
 NAME=Write reanalysis of child of non-modified block
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64 -e anal.onchange=true
 CMDS=<<EOF
 wx eb020000000075fac3
@@ -177,7 +177,7 @@ EOF
 RUN
 
 NAME=Write reanalysis repeatedly merges and recreates consecutive blocks
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64 -e anal.onchange=true
 CMDS=<<EOF
 wx 750231c0c3

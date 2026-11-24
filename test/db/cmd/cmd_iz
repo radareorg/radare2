@@ -1,5 +1,5 @@
 NAME=iz le32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx+6b00 0000 f500 0000 5500 0000 6401 0000
 wx+4a01 0000 9a01 0000 bc00 0000 8500 0000
@@ -214,7 +214,7 @@ EOF
 RUN
 
 NAME=izzzj
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w abcd\00012345\0efghi\0
 izzzj
@@ -225,7 +225,7 @@ EOF
 RUN
 
 NAME=izzzqj quiet JSON
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w abcd\00012345\0efghi\0
 izzqj
@@ -348,7 +348,7 @@ EOF
 RUN
 
 NAME=izz escaping backslash
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wz QUVWXWYZ[\\]^_R
 px 16
@@ -374,7 +374,7 @@ EOF
 RUN
 
 NAME=izz and bin.str.enc
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wz k\0i\0abcdefgh
 (izzenc enc; e bin.str.enc=$0; izz~:2..)
@@ -406,7 +406,7 @@ EOF
 RUN
 
 NAME=izz utf16le surrogate pairs
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 4100420043003dd800de3dd801de3dd802de3dd803de0000
 e bin.str.enc=utf16le
@@ -654,7 +654,7 @@ EOF
 RUN
 
 NAME=izz libcap (#298)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 7500 6900 3d25 7325 7325 7300 2573 2c00 2b25 7325 7325 7300 2d25 7325 7325 7300 6361 705f 6368 6f77 6e00 6361 705f 6461
 izz~^0

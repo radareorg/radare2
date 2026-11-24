@@ -1,5 +1,5 @@
 NAME=dh esil
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 aei

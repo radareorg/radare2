@@ -1,5 +1,5 @@
 NAME=swift demangling trylib false
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 %RABIN2_DEMANGLE_TRYLIB=0
 !!rabin2 -D swift _TFC4test7MyClass9calculatefS0_FT1xSi_Si
@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=swift demangling trylib true
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 %RABIN2_DEMANGLE_TRYLIB=1
 !!rabin2 -D swift _TFC4test7MyClass9calculatefS0_FT1xSi_Si
@@ -21,7 +21,7 @@ EOF
 RUN
 
 NAME=swift demangling config var internal
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -e bin.demangle.trylib=false
 iD swift _TFC4test7MyClass9calculatefS0_FT1xSi_Si
@@ -32,7 +32,7 @@ EOF
 RUN
 
 NAME=swift demangling config var system library
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -e bin.demangle.trylib=true
 iD swift _TFC4test7MyClass9calculatefS0_FT1xSi_Si

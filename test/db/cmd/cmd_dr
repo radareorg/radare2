@@ -1,5 +1,5 @@
 NAME=drrj color
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32 -m 0x10000
 CMDS=<<EOF
 e scr.color=1
@@ -12,7 +12,7 @@ EOF
 RUN
 
 NAME=register profile JSON preserves hardwired-register offset sentinels
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=v850
 arpj~{reg_info[0].offset}

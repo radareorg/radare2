@@ -293,7 +293,7 @@ EOF
 RUN
 
 NAME=from/to /v
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -311,7 +311,7 @@ EOF
 RUN
 
 NAME=from/to /v not in range
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 01
 e cmd.hit = pi 1
@@ -325,7 +325,7 @@ EOF
 RUN
 
 NAME=from/to /V
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 05
 e cmd.hit = ?e hit-command-ran
@@ -344,7 +344,7 @@ EOF
 RUN
 
 NAME=from/to /V across a huge unmapped gap
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 on malloc://0x1000 0x1000
 on malloc://0x1000 0xf0000000
@@ -365,7 +365,7 @@ EOF
 RUN
 
 NAME=from/to /V not in range
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 05
 e cmd.hit = pi 1

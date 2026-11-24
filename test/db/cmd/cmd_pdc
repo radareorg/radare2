@@ -555,7 +555,7 @@ EOF
 RUN
 
 NAME=pdc suppress switch table goto
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e pdc.optimize=false
 e asm.arch=x86
@@ -578,7 +578,7 @@ EOF
 RUN
 
 NAME=movk pseudo
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a arm
 -b 64
@@ -1801,7 +1801,7 @@ EOF
 RUN
 
 NAME=pdca structured places the switch header after the dispatching block
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64 -e pdc.structured=1
 CMDS=<<EOF
 e pdc.optimize=false
@@ -1826,7 +1826,7 @@ EOF
 RUN
 
 NAME=pdca case labels carry no asm column
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 e pdc.optimize=false
@@ -2699,7 +2699,7 @@ EOF
 RUN
 
 NAME=pdc routes to the cmd.pdc command, pd:g and its modes print the install hint
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pd:g
 pd:gj

@@ -1,5 +1,5 @@
 NAME=load word and zero ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -14,7 +14,7 @@ EOF
 RUN
 
 NAME=load byte and zero ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -29,7 +29,7 @@ EOF
 RUN
 
 NAME=load word and zero with update ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -44,7 +44,7 @@ EOF
 RUN
 
 NAME=load byte and zero with update ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -59,7 +59,7 @@ EOF
 RUN
 
 NAME=load with update ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -74,7 +74,7 @@ EOF
 RUN
 
 NAME=store with update ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -90,7 +90,7 @@ RUN
 
 NAME=long ESIL ppc-32
 REQUIRE=cs5
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -106,7 +106,7 @@ RUN
 
 NAME=long ESIL ppc-32 (cs6)
 REQUIRE=cs6
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -121,7 +121,7 @@ EOF
 RUN
 
 NAME=addis with positive number ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -136,7 +136,7 @@ EOF
 RUN
 
 NAME=addis with negative number ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -151,7 +151,7 @@ EOF
 RUN
 
 NAME=load word byte-reverse indexed ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -166,7 +166,7 @@ EOF
 RUN
 
 NAME=load word byte-reverse indexed with base reg ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -181,7 +181,7 @@ EOF
 RUN
 
 NAME=load halfword byte-reverse indexed ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -196,7 +196,7 @@ EOF
 RUN
 
 NAME=store word byte-reverse indexed ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -211,7 +211,7 @@ EOF
 RUN
 
 NAME=store halfword byte-reverse indexed ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -343,7 +343,7 @@ EOF
 RUN
 
 NAME=negate ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -359,7 +359,7 @@ RUN
 
 NAME=subtract from carrying ppc-32
 REQUIRE=cs5
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -375,7 +375,7 @@ RUN
 
 NAME=subtract from carrying ppc-32 (cs6)
 REQUIRE=cs6
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -390,7 +390,7 @@ EOF
 RUN
 
 NAME=and with complement ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -405,7 +405,7 @@ EOF
 RUN
 
 NAME=or with complement ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -420,7 +420,7 @@ EOF
 RUN
 
 NAME=equivalence ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -436,7 +436,7 @@ RUN
 
 NAME=nor bitwise complement ppc-32
 REQUIRE=cs5
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -452,7 +452,7 @@ RUN
 
 NAME=nor bitwise complement ppc-32 (cs6)
 REQUIRE=cs6
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -467,7 +467,7 @@ EOF
 RUN
 
 NAME=nand bitwise complement ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -482,7 +482,7 @@ EOF
 RUN
 
 NAME=rotate left word ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -497,7 +497,7 @@ EOF
 RUN
 
 NAME=rotate left word then mask ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -512,7 +512,7 @@ EOF
 RUN
 
 NAME=signed modulo word ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -527,7 +527,7 @@ EOF
 RUN
 
 NAME=return from interrupt restores pc ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -542,7 +542,7 @@ EOF
 RUN
 
 NAME=subtract from zero extended carrying ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -668,7 +668,7 @@ EOF
 RUN
 
 NAME=fadd esil string ppc-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32

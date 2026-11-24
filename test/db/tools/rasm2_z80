@@ -1,5 +1,5 @@
 NAME=Z80 forward labels and data directives
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a z80 ".ascii \"TMR SEGA\"; .uint16 done; jp done; done:; ret"
 !rasm2 -a z80 ".equ VALUE=0x1234; .uint16 VALUE; .byte 1,2,3"
@@ -13,7 +13,7 @@ EOF
 RUN
 
 NAME=Z80 labels keep relative branches at their real PC
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a z80 -s 0x100 "jp next; next:; jr next"
 !rasm2 -a z80 "jr forward; .fill 1000,1,0; forward:; jr backward; backward:; ret"
@@ -27,7 +27,7 @@ EOF
 RUN
 
 NAME=Assembler endian directives return success
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a z80 ".endian 0; .uint16 0x1234; .big_endian; .uint16 0x1234; .lil_endian; .uint16 0x5678"
 EOF
@@ -37,7 +37,7 @@ EOF
 RUN
 
 NAME=Z80 rejects undefined and malformed immediate operands
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a z80 "ld hl, missing"
 !rasm2 -a z80 "jr missing"
@@ -51,7 +51,7 @@ EOF
 RUN
 
 NAME=Assembler strings are literal even when matching a label
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a z80 ".ascii \"message\"; message:; ret"
 EOF
@@ -61,7 +61,7 @@ EOF
 RUN
 
 NAME=Assembler nested equates and token boundaries
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a z80 ".equ name=0x12; .equ name_more=0x34; .equ alias=name+1; ld a, alias; ld b, name_more; ld hl, forward; forward:; ret"
 EOF

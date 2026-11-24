@@ -1,5 +1,5 @@
 NAME=pvj JSON indent - crash
-FILE=-
+FILE=malloc://512
 CMDS=pvj ~{
 EXPECT=<<EOF
 [{"value":0,"string":"","address":0}]

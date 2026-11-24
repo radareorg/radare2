@@ -1,5 +1,5 @@
 NAME=fv get set and delete character and numeric keys
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 fvj
 fv a 0x10
@@ -26,7 +26,7 @@ EOF
 RUN
 
 NAME=fv byte boundaries and script roundtrip
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 fv 0x00 0
 fv 0x01 1
@@ -61,7 +61,7 @@ EOF
 RUN
 
 NAME=fv whitespace and literal digit keys
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 fv   a   0x10 + 2
 fv	b	0x20	+	2
@@ -81,7 +81,7 @@ EOF
 RUN
 
 NAME=fv JSON escaping
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 fv 0x22 1
 fv 0x5c 2
@@ -94,7 +94,7 @@ EOF
 RUN
 
 NAME=fv invalid commands do not alter marks
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 fv 0x00 7
 fv a 0x10
@@ -180,7 +180,7 @@ EOF
 RUN
 
 NAME=fv legacy project commands remain readable
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 fV 49 0x400410
 fV 50 0x400412
@@ -196,7 +196,7 @@ EOF
 RUN
 
 NAME=fv command return codes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 fvj && ?e EMPTY
 fv a 0x10 && ?e SET
@@ -225,7 +225,7 @@ EOF
 RUN
 
 NAME=fvv empty listing is noninteractive
-FILE=-
+FILE=malloc://512
 CMDS=fvv
 EXPECT=<<EOF
   .-----[ vmarks ]-------------------------------------------------.
@@ -234,7 +234,7 @@ EOF
 RUN
 
 NAME=fvv descriptions and fixed width for 64-bit addresses
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 f demo @ 0x10
 CC comment @ 0x10

@@ -1093,7 +1093,7 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 #if 0
 capstone bug
 ------------
-	$ r2 -a mips -e cfg.bigendian=1 -c "wx 0083001b" -
+	$ r2 -a mips -e cfg.bigendian=1 -c "wx 0083001b" malloc://512
 	// should be 3 regs, right?
 	[0x00000000]> aoj~{}
 	[

@@ -1,5 +1,5 @@
 NAME=add 1 + 2
-FILE=-
+FILE=malloc://512
 CMDS="ae 2,1,+"
 EXPECT=<<EOF
 0x3
@@ -7,7 +7,7 @@ EOF
 RUN
 
 NAME=add 2 + 1
-FILE=-
+FILE=malloc://512
 CMDS="ae 1,2,+"
 EXPECT=<<EOF
 0x3
@@ -15,7 +15,7 @@ EOF
 RUN
 
 NAME=sub 2 - 3
-FILE=-
+FILE=malloc://512
 CMDS="ae 3,2,-"
 EXPECT=<<EOF
 0xffffffffffffffff
@@ -23,7 +23,7 @@ EOF
 RUN
 
 NAME=sub 3 - 2
-FILE=-
+FILE=malloc://512
 CMDS="ae 2,3,-"
 EXPECT=<<EOF
 0x1
@@ -31,7 +31,7 @@ EOF
 RUN
 
 NAME=sub 3 - 3
-FILE=-
+FILE=malloc://512
 CMDS="ae 3,3,-"
 EXPECT=<<EOF
 0
@@ -39,7 +39,7 @@ EOF
 RUN
 
 NAME=mul 3 6502 8051 apple arm-16 arm-32 arm-64 brainfuck cmd_aae cmd_aea cmd_aetr cmd_aex cmd_pae cmp cond debug_esil esil flag_tests intreg math mips sh step step-back step-over syscall x86-32 x86-64 xtensa 2
-FILE=-
+FILE=malloc://512
 CMDS="ae 2,3,*"
 EXPECT=<<EOF
 0x6
@@ -47,7 +47,7 @@ EOF
 RUN
 
 NAME=mul 2 6502 8051 apple arm-16 arm-32 arm-64 brainfuck cmd_aae cmd_aea cmd_aetr cmd_aex cmd_pae cmp cond debug_esil esil flag_tests intreg math mips sh step step-back step-over syscall x86-32 x86-64 xtensa 3
-FILE=-
+FILE=malloc://512
 CMDS="ae 3,2,*"
 EXPECT=<<EOF
 0x6
@@ -55,7 +55,7 @@ EOF
 RUN
 
 NAME=div 6 / 3
-FILE=-
+FILE=malloc://512
 CMDS="ae 3,6,/"
 EXPECT=<<EOF
 0x2
@@ -63,7 +63,7 @@ EOF
 RUN
 
 NAME=div 3 / 6
-FILE=-
+FILE=malloc://512
 CMDS="ae 6,3,/"
 EXPECT=<<EOF
 0
@@ -71,7 +71,7 @@ EOF
 RUN
 
 NAME=div by zero 0 / 3
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ae 0,3,/
 ae*
@@ -84,7 +84,7 @@ EOF
 RUN
 
 NAME=div by zero 3 / 0
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ae 3,0,/
 ae*
@@ -97,7 +97,7 @@ EOF
 RUN
 
 NAME=float div 1.0 / 1.0
-FILE=-
+FILE=malloc://512
 CMDS="ae 0x3ff0000000000000,0x3ff0000000000000,F/"
 EXPECT=<<EOF
 0x3ff0000000000000
@@ -105,7 +105,7 @@ EOF
 RUN
 
 NAME=float mul 1.0 * 1.0
-FILE=-
+FILE=malloc://512
 CMDS="ae 0x3ff0000000000000,0x3ff0000000000000,F*"
 EXPECT=<<EOF
 0x3ff0000000000000
@@ -113,7 +113,7 @@ EOF
 RUN
 
 NAME=float add 1.0 + 1.0
-FILE=-
+FILE=malloc://512
 CMDS="ae 0x3ff0000000000000,0x3ff0000000000000,F+"
 EXPECT=<<EOF
 0x4000000000000000
@@ -121,7 +121,7 @@ EOF
 RUN
 
 NAME=float sub 1.0 - 1.0
-FILE=-
+FILE=malloc://512
 CMDS="ae 0x3ff0000000000000,0x3ff0000000000000,F-"
 EXPECT=<<EOF
 0
@@ -157,7 +157,7 @@ EOF
 RUN
 
 NAME=float overflow rounds to signed infinity
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ae 0x7fe0000000000000,0x7fe0000000000000,F+
 ae 0x7fe0000000000000,0xffe0000000000000,F-
@@ -175,7 +175,7 @@ EOF
 RUN
 
 NAME=float base-2 logarithm
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ae 1,I2D,LOG2
 ae 8,I2D,LOG2
@@ -191,7 +191,7 @@ EOF
 RUN
 
 NAME=float base-2 exponentiation
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ae 0,I2D,EXP2
 ae 3,I2D,EXP2
@@ -207,7 +207,7 @@ EOF
 RUN
 
 NAME=float base-2 logarithm special values
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ae 0,LOG2
 ae 0x8000000000000000,LOG2
@@ -229,7 +229,7 @@ EOF
 RUN
 
 NAME=float base-2 exponentiation special values
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ae 0x8000000000000000,EXP2
 ae 0x7ff0000000000000,EXP2
@@ -251,7 +251,7 @@ EOF
 RUN
 
 NAME=float integer conversion with register scale
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 ae 0x3fe00000,eax,=,3,rcx,=
@@ -280,7 +280,7 @@ EOF
 RUN
 
 NAME=double to unsigned integer
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ae 32,0x40600000,F2D,D2U
 ae 0x43e0000000000000,D2U
@@ -306,7 +306,7 @@ EOF
 RUN
 
 NAME=double to signed integer lower boundary
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ae 0xc3e0000000000000,D2I
 ae 0x43e0000000000000,D2I
@@ -318,7 +318,7 @@ EOF
 RUN
 
 NAME=saturating float to integer conversions honor the destination width
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ae 128,I2D,8,D2IS
 ae -129,I2D,8,D2IS
@@ -344,7 +344,7 @@ EOF
 RUN
 
 NAME=float base-2 one-plus logarithm
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ae 3,I2D,LOG2P1
 ae 7,I2D,LOG2P1
@@ -372,7 +372,7 @@ EOF
 RUN
 
 NAME=float base-2 exponentiation minus one
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ae 3,I2D,EXP2M1
 ae 52,I2D,EXP2M1
@@ -396,7 +396,7 @@ EOF
 RUN
 
 NAME=float scaling finite and special exponents
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ae 1024,I2D,0x0170000000000000,FSCALE
 ae -1080,I2D,0x7e70000000000000,FSCALE

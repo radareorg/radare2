@@ -1,5 +1,5 @@
 NAME=global functions
-FILE=-
+FILE=malloc://512
 CMDS="!rabin2 -D msvc \"?Func@@YAXH@Z\""
 EXPECT=<<EOF
 void __cdecl Func(int)
@@ -7,7 +7,7 @@ EOF
 RUN
 
 NAME=msvc integer type names
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '?f@@YAXFGJK_J_K@Z'
 !rabin2 -D msvc '??0DName@@QAE@PAVUnDecorator@@_J@Z'
@@ -19,7 +19,7 @@ EOF
 RUN
 
 NAME=msvc x64 names without __ptr64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '?process@@YAXPEBD@Z'
 !rabin2 -D msvc '?getValue@Counter@@QEBAHXZ'
@@ -33,7 +33,7 @@ EOF
 RUN
 
 NAME=Namespaced / Class Methods
-FILE=-
+FILE=malloc://512
 CMDS="!rabin2 -D msvc \"?DoWork@Worker@@QAEXH@Z\""
 EXPECT=<<EOF
 public: void __thiscall Worker::DoWork(int)
@@ -41,7 +41,7 @@ EOF
 RUN
 
 NAME=Constructors / Destructors
-FILE=-
+FILE=malloc://512
 CMDS="!rabin2 -D msvc \"??0Foo@@QAE@XZ\""
 EXPECT=<<EOF
 public: __thiscall Foo::Foo(void)
@@ -49,7 +49,7 @@ EOF
 RUN
 
 NAME=const methods returning by value
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc "??HVector2D@@QBE?AV0@ABV0@@Z"
 !rabin2 -D msvc "?f@X@@QAE?BVY@@XZ"
@@ -61,7 +61,7 @@ EOF
 RUN
 
 NAME=msvc const and volatile member functions
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '?getValue@Counter@@QBEHXZ'
 !rabin2 -D msvc '?show@?$Container@H@@UBEXXZ'
@@ -77,7 +77,7 @@ EOF
 RUN
 
 NAME=Static Class Methods
-FILE=-
+FILE=malloc://512
 CMDS="!rabin2 -D msvc \"?create@Factory@@SA?AVProduct@@XZ\""
 EXPECT=<<EOF
 public: static class Product __cdecl Factory::create(void)
@@ -85,7 +85,7 @@ EOF
 RUN
 
 NAME=NAME=Templates Methods
-FILE=-
+FILE=malloc://512
 CMDS="!rabin2 -D msvc \"?instance@Singleton@@0V1@A\""
 EXPECT=<<EOF
 private: static class Singleton Singleton::instance
@@ -93,7 +93,7 @@ EOF
 RUN
 
 NAME=msvc static data members
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '?instances@Counter@@0HA'
 !rabin2 -D msvc '?x@A@@1HB'
@@ -109,7 +109,7 @@ EOF
 RUN
 
 NAME=NAME=RTTI metadata
-FILE=-
+FILE=malloc://512
 CMDS="!rabin2 -D msvc \"N8CryptoPP19TF_CryptoSystemBaseINS_12PK_DecryptorENS_7TF_BaseINS_23TrapdoorFunctionInverseENS_34PK_EncryptionMessageEncodingMethodEEEEE\""
 EXPECT=<<EOF
 CryptoPP::TF_CryptoSystemBase<CryptoPP::PK_Decryptor,CryptoPP::TF_Base<CryptoPP::TrapdoorFunctionInverse,CryptoPP::PK_EncryptionMessageEncodingMethod>>
@@ -118,7 +118,7 @@ RUN
 
 
 NAME=msvc args overflow past 64K
-FILE=-
+FILE=malloc://512
 CMDS="!rabin2 -D msvc \"?f@@YAXVAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA@@P6AX00000000000000000000@Z111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111@Z\""
 EXPECT=<<EOF
 ?f@@YAXVAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA@@P6AX00000000000000000000@Z111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111@Z
@@ -126,7 +126,7 @@ EOF
 RUN
 
 NAME=msvc function overflow past 64K
-FILE=-
+FILE=malloc://512
 CMDS="!rabin2 -D msvc \"?f@@YAXVAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA@@P6AX00000000000000000000@Z1111111111111111111111111111111111111111@Z\""
 EXPECT=<<EOF
 ?f@@YAXVAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA@@P6AX00000000000000000000@Z1111111111111111111111111111111111111111@Z
@@ -134,7 +134,7 @@ EOF
 RUN
 
 NAME=msvc RTTI base class descriptor
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc "??_R10000A@@8"
 !rabin2 -D msvc '??$?_R10000@@YAXXZ'
@@ -146,7 +146,7 @@ EOF
 RUN
 
 NAME=msvc invalid symbols
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc "?f@@YAXH"
 !rabin2 -D msvc "?f@@W4ZAEXXZ"
@@ -162,7 +162,7 @@ EOF
 RUN
 
 NAME=msvc special member functions
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc "??_GFoo@@UAEPAXI@Z"
 !rabin2 -D msvc "??_EFoo@@UAEPAXI@Z"
@@ -180,7 +180,7 @@ EOF
 RUN
 
 NAME=msvc RTTI descriptors
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc "??_R2Ex5@@8"
 !rabin2 -D msvc "??_R3Ex5@@8"
@@ -194,7 +194,7 @@ EOF
 RUN
 
 NAME=msvc virtual tables
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '??_7Animal@@6B@'
 !rabin2 -D msvc '??_8Dog@@7B@'
@@ -208,7 +208,7 @@ EOF
 RUN
 
 NAME=msvc negative numbers
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc "??_R1A@?0A@EA@Ex5@@8"
 !rabin2 -D msvc '??$f@$0?L@@@YAXXZ'
@@ -222,7 +222,7 @@ EOF
 RUN
 
 NAME=msvc virtual member functions and their thunks
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '?speak@Animal@@UAEXXZ'
 !rabin2 -D msvc '?f@A@@MAEXXZ'
@@ -240,7 +240,7 @@ EOF
 RUN
 
 NAME=msvc vtordisp thunks
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '?sound@Dog@@$4PPPPPPPM@A@BEXXZ'
 !rabin2 -D msvc '?f@A@@$1PPPPPPPM@3AEXXZ'
@@ -254,7 +254,7 @@ EOF
 RUN
 
 NAME=msvc template constructors
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '??$?0H@Foo@@QAE@H@Z'
 !rabin2 -D msvc '??$?0ABV?$allocator@H@std@@$0A@@?$_Hash_vec@H@std@@QAE@ABV?$allocator@H@1@@Z'
@@ -266,7 +266,7 @@ EOF
 RUN
 
 NAME=msvc cv-qualified template arguments
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '??$f@$$CBH@@YAXXZ'
 !rabin2 -D msvc '??$_Find_elem@D$0BL@@std@@YAIAAY0BL@$$CBDD@Z'
@@ -278,7 +278,7 @@ EOF
 RUN
 
 NAME=msvc empty template parameter packs
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '??$_Construct_in_place@UBig@@$$V@std@@YAXAAUBig@@@Z'
 !rabin2 -D msvc '??$f@$$V@@YAXXZ'
@@ -292,7 +292,7 @@ EOF
 RUN
 
 NAME=msvc auto and charN_t types
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '?f@@YA?A_TXZ'
 !rabin2 -D msvc '?f@@YA?A_PXZ'
@@ -308,7 +308,7 @@ EOF
 RUN
 
 NAME=msvc pointer qualifiers are not repeated
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '?x@@3PAHB'
 !rabin2 -D msvc '?x@@3QAHB'
@@ -326,7 +326,7 @@ EOF
 RUN
 
 NAME=msvc cv-qualified array pointers and references
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '?a@@3PEAY01$$CBHEB'
 !rabin2 -D msvc '?b@@3PEAY01$$CCHEC'
@@ -352,7 +352,7 @@ EOF
 RUN
 
 NAME=msvc pointer spacing
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '??$_Adl_verify_range@PAPADPAPAD@std@@YAXABQAPAD0@Z'
 !rabin2 -D msvc '?__construct_from_string_literal@__non_rtti_object@std@@SA?AV12@QBD@Z'
@@ -368,7 +368,7 @@ EOF
 RUN
 
 NAME=msvc const volatile function pointers
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '?p@@3S6AXXZEA'
 !rabin2 -D msvc '?f@@YAXS6AXXZ@Z'
@@ -390,7 +390,7 @@ EOF
 RUN
 
 NAME=msvc string literals
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '??_C@_0BH@ADHIKLDE@?5?5is?5a?5Dog?0?5and?5says?3?5@'
 !rabin2 -D msvc '??_C@_02IMAAIBEM@E?6@'
@@ -408,7 +408,7 @@ EOF
 RUN
 
 NAME=msvc back references of the template arguments
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '??$f@P6AXPAH@Z@@YAXPAD0@Z'
 EOF
@@ -418,7 +418,7 @@ EOF
 RUN
 
 NAME=msvc RTTI type descriptors of types that are not classes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '??_R0H@8'
 !rabin2 -D msvc '??_R0PAD@8'
@@ -434,7 +434,7 @@ EOF
 RUN
 
 NAME=msvc SIMD unions and their back references
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '?compare_equals@?$__crt_simd_traits@$0A@E@@SA?AT__m128i@@T2@0@Z'
 !rabin2 -D msvc '?f@@YAXU__m128d@@@Z'
@@ -446,7 +446,7 @@ EOF
 RUN
 
 NAME=msvc function types
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '??1?$function@$$A6AHH@Z@std@@QAE@XZ'
 EOF
@@ -456,7 +456,7 @@ EOF
 RUN
 
 NAME=msvc vcall thunks
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '??_9WithVirtual@@$BA@AE'
 !rabin2 -D msvc '??_9WithVirtual@@$B7AA'
@@ -468,7 +468,7 @@ EOF
 RUN
 
 NAME=msvc literal operators
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '??__K_l@@YA?AUStringLiteral@@PBDI@Z'
 EOF
@@ -478,7 +478,7 @@ EOF
 RUN
 
 NAME=msvc static variables of extern C functions
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '?_OptionsStorage@?1??__local_stdio_printf_options@@9@4_KA'
 EOF
@@ -488,7 +488,7 @@ EOF
 RUN
 
 NAME=msvc pointers and references to function pointers
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '??$?0P6AXPAH@Z$0A@@?$unique_ptr@HP6AXPAH@Z@std@@QAE@PAH$$QAP6AX0@Z@Z'
 !rabin2 -D msvc '??$?RP6AXXZ@__crt_internal_free_policy@@QBEXQBQ6AXXZ@Z'
@@ -500,7 +500,7 @@ EOF
 RUN
 
 NAME=msvc recursive function pointer declarators
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -D msvc '?f@@YAXPEAPEAP6AXXZ@Z'
 !rabin2 -D msvc '?p3@@YAXPAPAPAP6AXPAH@Z@Z'

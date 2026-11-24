@@ -1,5 +1,5 @@
 NAME=Sort Params
-FILE=-
+FILE=malloc://512
 CMDS=sort bins/other/test_file
 EXPECT=<<EOF
 0 one
@@ -13,14 +13,14 @@ EOF
 RUN
 
 NAME=Missing Sort Params
-FILE=-
+FILE=malloc://512
 CMDS=sort 
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=Uniq command
-FILE=-
+FILE=malloc://512
 CMDS=uniq bins/other/test_file
 EXPECT=<<EOF
 1 one
@@ -33,14 +33,14 @@ EOF
 RUN
 
 NAME=Missing Uniq Params
-FILE=-
+FILE=malloc://512
 CMDS=uniq 
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=Join command
-FILE=-
+FILE=malloc://512
 CMDS=join bins/other/test_file bins/other/test_file2
 EXPECT=<<EOF
 1 one great
@@ -51,7 +51,7 @@ EOF
 RUN
 
 NAME=Missing join Params
-FILE=-
+FILE=malloc://512
 CMDS=join bins/other/test_file
 EXPECT=<<EOF
 EOF

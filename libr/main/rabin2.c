@@ -34,9 +34,9 @@ static Rabin2Env env[] = {
 	{ "RABIN2_PREFIX", "e bin.prefix          # prefix symbols/sections/relocs with a specific string" },
 	{ "RABIN2_RESRAW", "e bin.resraw          # extract resources without decoding their contents" },
 	{ "RABIN2_STRFILTER", "e bin.str.filter      # r2 -qc 'e bin.str.filter=?"
-			"?' -" },
+			"?' malloc://512" },
 	{ "RABIN2_STRPURGE", "e bin.str.purge       # try to purge false positives" },
-	//	{ "RABIN2_STR_FILTER",			"e bin.str.filter      # r2 -qc 'e bin.str.filter=?" "?' -" },
+	//	{ "RABIN2_STR_FILTER",			"e bin.str.filter      # r2 -qc 'e bin.str.filter=?" "?' malloc://512" },
 	//	{ "RABIN2_STR_PURGE",			"e bin.str.purge       # try to purge false positives" },"
 	{ "RABIN2_SYMSTORE", "e pdb.symstore        # path to downstream symbol store" },
 	{ "RABIN2_VERBOSE", "e bin.verbose         # show debugging messages from the parser" },

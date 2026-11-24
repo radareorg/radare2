@@ -1,5 +1,5 @@
 NAME=env FOO
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 env FOO=BAR
 env FOO
@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=int/str values
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e log.level=1
 e log.level
@@ -45,7 +45,7 @@ EOF
 RUN
 
 NAME=invalid eval prefix
-FILE=-
+FILE=malloc://512
 CMDS=e fuck.
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -54,7 +54,7 @@ EOF
 RUN
 
 NAME=env with spaces
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 env AAA   =    BBB
 env AAA

@@ -1,5 +1,5 @@
 NAME=aea 5
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b64
 CMDS=wx 4889e5b8ffff000089c2c1ea1f01d0;aea 5
 EXPECT=<<EOF
@@ -13,7 +13,7 @@ EOF
 RUN
 
 NAME=aeaj 5
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b64
 CMDS=wx 4889e5b8ffff000089c2c1ea1f01d0;aeaj 5~{}
 EXPECT=<<EOF
@@ -68,7 +68,7 @@ EOF
 RUN
 
 NAME=aeA 15
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b64
 CMDS=wx 4889e5b8ffff000089c2c1ea1f01d0;aeA 15
 EXPECT=<<EOF
@@ -156,7 +156,7 @@ EOF
 RUN
 
 NAME=aea keeps the effects after an access to unmapped memory
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b64
 CMDS=<<EOF
 wx 53
@@ -173,7 +173,7 @@ EOF
 RUN
 
 NAME=aea reads both registers of an arm64 stp to unmapped memory
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b64
 CMDS=<<EOF
 wx fd7bbfa9
@@ -190,7 +190,7 @@ EOF
 RUN
 
 NAME=aea reads unmapped memory as io fills it, with or without esil.nonull
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b64
 CMDS=<<EOF
 wx 5b

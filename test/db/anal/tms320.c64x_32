@@ -217,7 +217,7 @@ RUN
 
 NAME=320c64 register branches
 REQUIRE=cs5
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=tms320
 e asm.cpu=c64x

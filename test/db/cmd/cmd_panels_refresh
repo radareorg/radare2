@@ -1,5 +1,5 @@
 NAME=panels clean uncached command is reused while navigating another panel
-FILE=-
+FILE=malloc://512
 TIMEOUT=10
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
@@ -20,7 +20,7 @@ EOF
 RUN
 
 NAME=panels menu navigation reuses uncached command output
-FILE=-
+FILE=malloc://512
 TIMEOUT=10
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
@@ -39,7 +39,7 @@ EOF
 RUN
 
 NAME=panels disassembly navigation leaves pinned commands unchanged
-FILE=-
+FILE=malloc://512
 TIMEOUT=10
 ARGS=-a x86 -b 64
 CMDS=<<EOF
@@ -61,7 +61,7 @@ EOF
 RUN
 
 NAME=panels disassembly navigation refreshes other synchronized commands
-FILE=-
+FILE=malloc://512
 TIMEOUT=10
 ARGS=-a x86 -b 64
 CMDS=<<EOF
@@ -81,7 +81,7 @@ EOF
 RUN
 
 NAME=panels seek invalidates synchronized uncached commands
-FILE=-
+FILE=malloc://512
 TIMEOUT=10
 ARGS=-a x86 -b 64
 CMDS=<<EOF

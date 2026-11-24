@@ -1,5 +1,5 @@
 NAME=!
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ?e fuck
 ?e yeah
@@ -15,7 +15,7 @@ EOF
 RUN
 
 NAME=system shell owns conditional operators
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !echo LEFT && echo RIGHT
 !false || echo RECOVERED
@@ -30,7 +30,7 @@ EOF
 RUN
 
 NAME=system commands keep r2 preprocessing
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !!printf 'alpha\nbeta\n'~alpha
 !printf '%s\n' $(!printf nested)
@@ -42,14 +42,14 @@ EOF
 RUN
 
 NAME=!| grep
-FILE=-
+FILE=malloc://512
 CMDS=!echo fuck|grep bob
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=!| sed
-FILE=-
+FILE=malloc://512
 CMDS=!echo fuck|sed -e s,fuck,yeah,
 EXPECT=<<EOF
 yeah
@@ -57,7 +57,7 @@ EOF
 RUN
 
 NAME=?e|
-FILE=-
+FILE=malloc://512
 CMDS=?e fuck|sed -e s,fuck,yeah,
 EXPECT=<<EOF
 yeah
@@ -65,7 +65,7 @@ EOF
 RUN
 
 NAME=p8 `?e 3`
-FILE=-
+FILE=malloc://512
 CMDS=p8 `?e 3`
 EXPECT=<<EOF
 000000
@@ -73,7 +73,7 @@ EOF
 RUN
 
 NAME=p8 `!echo 3`
-FILE=-
+FILE=malloc://512
 CMDS=p8 `!echo 3`
 EXPECT=<<EOF
 000000
@@ -81,7 +81,7 @@ EOF
 RUN
 
 NAME=!echo "test"
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !echo test
 "!echo test"
@@ -93,7 +93,7 @@ EOF
 RUN
 
 NAME=%ENV=33 !echo "${ENV}"
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 %ENV=World
 !echo ${ENV}

@@ -195,7 +195,7 @@ EOF
 RUN
 
 NAME=iw edits require a selected binary
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ob-*
 iw+ 0 1 2 3
@@ -211,7 +211,7 @@ EOF
 RUN
 
 NAME=iw edit help is available without a binary
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 iw?~append an exception
 iw+?~finally is a funclet
@@ -241,7 +241,7 @@ EOF
 RUN
 
 NAME=iw script definitions in a raw binary
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 iw+ 0 1 2 3 type=Error
 iwj
@@ -259,7 +259,7 @@ EOF
 RUN
 
 NAME=iw compact forms use current source and positional metadata
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s 0x100
 iwc $$+0x10 $$+0x20 0x130 "Example Error" 7
@@ -278,7 +278,7 @@ EOF
 RUN
 
 NAME=iw compact forms reject invalid edits atomically
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 iwc 1 2
 iwc 1 2 3 Error 1 extra
@@ -316,7 +316,7 @@ EOF
 RUN
 
 NAME=iw compact help and missing binary
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ob-*
 iwc?~owning function

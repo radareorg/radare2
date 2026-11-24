@@ -1,6 +1,6 @@
 #!/usr/bin/r2 - -qi
 # Usage:
-#   r2 -qi all68k - > all68k.txt
+#   r2 -qi all68k.r2 malloc://512 > all68k.txt
 #
 
 e scr.color=0

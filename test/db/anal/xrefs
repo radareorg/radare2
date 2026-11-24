@@ -1,5 +1,5 @@
 NAME=aar scans the range tail and preserves instruction alignment across chunks
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 o malloc://128 0x20000 rw
@@ -48,7 +48,7 @@ EXPECT_ERR=
 RUN
 
 NAME=aarr uses executable maps without binary sections
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 o malloc://512 0x10000 rw

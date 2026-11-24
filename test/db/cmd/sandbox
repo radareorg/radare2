@@ -1,5 +1,5 @@
 NAME=sandbox disable
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox=true
 e cfg.sandbox=false
@@ -11,7 +11,7 @@ EOF
 RUN
 
 NAME=sandbox open
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox=true
 o~[4]
@@ -23,7 +23,7 @@ EOF
 RUN
 
 NAME=sandbox grain default is all
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain
 EOF
@@ -33,7 +33,7 @@ EOF
 RUN
 
 NAME=sandbox grain=none blocks exec
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=none
 e cfg.sandbox=true
@@ -44,7 +44,7 @@ EOF
 RUN
 
 NAME=sandbox without exec blocks pid modifiers and thread iteration
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e dbg.backend=null
 e cfg.sandbox.grain=all,!exec
@@ -69,7 +69,7 @@ EOF
 RUN
 
 NAME=sandbox exec permits pid modifiers and thread iteration
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e dbg.backend=null
 ?vi $P @p:7
@@ -90,7 +90,7 @@ EXPECT_ERR=
 RUN
 
 NAME=sandbox grain=none blocks shell subcommands
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=none
 e cfg.sandbox=true
@@ -105,7 +105,7 @@ EOF
 RUN
 
 NAME=sandbox grain=none blocks backtick shell subcommands
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=none
 e cfg.sandbox=true
@@ -120,7 +120,7 @@ EOF
 RUN
 
 NAME=sandbox grain=exec allows exec
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=exec
 e cfg.sandbox=true
@@ -136,7 +136,7 @@ EOF
 RUN
 
 NAME=sandbox grain=all allows exec
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=all
 e cfg.sandbox=true
@@ -148,7 +148,7 @@ EOF
 RUN
 
 NAME=sandbox grain order does not matter
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox=true
 e cfg.sandbox.grain=exec
@@ -160,7 +160,7 @@ EOF
 RUN
 
 NAME=sandbox grain=none blocks oc
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=none
 e cfg.sandbox=true
@@ -173,7 +173,7 @@ EOF
 RUN
 
 NAME=sandbox grain=environ allows environ
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=environ
 e cfg.sandbox=true
@@ -194,7 +194,7 @@ EOF
 RUN
 
 NAME=sandbox grain=disk,exec combined
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=disk,exec
 e cfg.sandbox=true
@@ -206,7 +206,7 @@ EOF
 RUN
 
 NAME=sandbox grain persist after enable
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=exec
 e cfg.sandbox=true
@@ -218,7 +218,7 @@ EOF
 RUN
 
 NAME=sandbox grain=hidden option
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=hidden
 e cfg.sandbox.grain
@@ -229,7 +229,7 @@ EOF
 RUN
 
 NAME=sandbox grain cannot grant additional permissions
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=environ
 e cfg.sandbox=true
@@ -246,7 +246,7 @@ EOF
 RUN
 
 NAME=sandbox configuration cannot be reset
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=none
 e cfg.sandbox=true
@@ -261,7 +261,7 @@ EOF
 RUN
 
 NAME=sandbox grain exclusions block environment access
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 %R2_GRAIN_TEST=visible
 e cfg.sandbox.grain=!disk,!exec
@@ -280,7 +280,7 @@ EOF
 RUN
 
 NAME=HTTP sandbox grain is independent of local sandbox
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e http.sandbox.grain
 e cfg.sandbox.grain=environ
@@ -298,7 +298,7 @@ EOF
 RUN
 
 NAME=HTTP sandbox grain rejects malformed values without side effects
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e http.sandbox.grain=environ
 e http.sandbox.grain=exec,
@@ -323,7 +323,7 @@ EOF
 RUN
 
 NAME=HTTP sandbox grain assignment does not change active local permissions
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=none
 e cfg.sandbox=true
@@ -441,7 +441,7 @@ EOF2
 RUN
 
 NAME=sandbox blocks r2k:// regardless of grain
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=all
 e cfg.sandbox=true
@@ -455,7 +455,7 @@ EOF
 RUN
 
 NAME=sandbox grain none blocks localhost connections
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=none
 e cfg.sandbox=true
@@ -468,7 +468,7 @@ EOF
 RUN
 
 NAME=sandbox grain socket allows localhost only
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=socket
 e cfg.sandbox=true
@@ -483,7 +483,7 @@ EOF
 RUN
 
 NAME=sandbox grain network allows localhost
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=network
 e cfg.sandbox=true
@@ -496,7 +496,7 @@ EOF
 RUN
 
 NAME=sandbox blocks mktemp
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=none
 e cfg.sandbox=true
@@ -511,7 +511,7 @@ EOF
 RUN
 
 NAME=sandbox blocks zip archives outside the allowed paths
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox=true
 o zip:///etc/../etc/hosts.zip//inner

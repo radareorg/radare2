@@ -1,5 +1,5 @@
 NAME=a8
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -11,7 +11,7 @@ EOF
 RUN
 
 NAME=aos reject huge count
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 aos 268435456
 EOF
@@ -22,7 +22,7 @@ EOF
 RUN
 
 NAME=anal.mask
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 7f2303d5
@@ -115,7 +115,7 @@ EOF
 RUN
 
 NAME=aob
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a arm
 -b 64
@@ -130,7 +130,7 @@ EOF
 RUN
 
 NAME=aob json
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a arm
 -b 64
@@ -145,7 +145,7 @@ EOF
 RUN
 
 NAME=aobV more than 4 bytes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a wasm
 wx 418080808000
@@ -157,7 +157,7 @@ EOF
 RUN
 
 NAME=aob instruction longer than 8 bytes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a x86
 -b 64
@@ -174,7 +174,7 @@ EOF
 RUN
 
 NAME=aom-6502.cs
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=6502.cs
 e asm.bits=8
@@ -188,7 +188,7 @@ EOF
 RUN
 
 NAME=aom-arm
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
@@ -209,7 +209,7 @@ RUN
 
 NAME=aom-evm for capstone
 REQUIRE=cs5
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=evm
 e asm.bits=32
@@ -224,7 +224,7 @@ RUN
 
 NAME=aom-evm for capstone (cs6)
 REQUIRE=cs6
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=evm
 e asm.bits=32
@@ -239,7 +239,7 @@ RUN
 
 NAME=aom-m680x
 REQUIRE=cs5
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=m680x
 aom
@@ -253,7 +253,7 @@ RUN
 
 NAME=aom-m680x (cs6)
 REQUIRE=cs6
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=m680x
 aom
@@ -266,7 +266,7 @@ EOF
 RUN
 
 NAME=aom-m68k
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=m68k
 aom
@@ -280,7 +280,7 @@ RUN
 
 NAME=aom-mips
 REQUIRE=cs5
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=64
@@ -301,7 +301,7 @@ RUN
 
 NAME=aom-mips (cs6)
 REQUIRE=cs6
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=64
@@ -322,7 +322,7 @@ RUN
 
 NAME=aom-ppc
 REQUIRE=cs5
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 aom
@@ -336,7 +336,7 @@ RUN
 
 NAME=aom-ppc (cs6)
 REQUIRE=cs6
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 aom
@@ -350,7 +350,7 @@ RUN
 
 NAME=aom-riscv
 REQUIRE=cs5
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=riscv.cs
 e asm.bits=64
@@ -372,7 +372,7 @@ RUN
 
 NAME=aom-riscv (cs6)
 REQUIRE=cs6
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=riscv.cs
 e asm.bits=64
@@ -394,7 +394,7 @@ RUN
 
 NAME=aom-sparc
 REQUIRE=cs5
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=sparc
 e cfg.bigendian=true
@@ -409,7 +409,7 @@ RUN
 
 NAME=aom-sparc (cs6)
 REQUIRE=cs6
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=sparc
 e cfg.bigendian=true
@@ -424,7 +424,7 @@ RUN
 
 NAME=aom-s390
 REQUIRE=cs5
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=s390
 e cfg.bigendian=true
@@ -440,7 +440,7 @@ RUN
 
 NAME=aom-s390 (cs6)
 REQUIRE=cs6
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=s390
 e cfg.bigendian=true
@@ -455,7 +455,7 @@ EOF
 RUN
 
 NAME=aom-x86
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -475,7 +475,7 @@ EOF
 RUN
 
 NAME=aom-xcore
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=xcore
 aom
@@ -488,7 +488,7 @@ EOF
 RUN
 
 NAME=aof
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -503,7 +503,7 @@ EOF
 RUN
 
 NAME=ao_aoj
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -586,7 +586,7 @@ EOF
 RUN
 
 NAME=aojvals-z80
-FILE=-
+FILE=malloc://512
 ARGS=-a z80 -b 8
 CMDS=<<EOF
 wx ceed
@@ -620,7 +620,7 @@ EOF
 RUN
 
 NAME=aojvals-gb
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 8
 CMDS=<<EOF
 # hack because there's no parse plugin for gb

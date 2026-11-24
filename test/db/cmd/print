@@ -12,7 +12,7 @@ const unsigned char cstr[256] = ""\
 EOF
 RUN
 NAME=endian tests: pv4
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=false
 e asm.bits=32
@@ -28,7 +28,7 @@ EOF
 RUN
 
 NAME=endian tests: pv2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=false
 e asm.bits=32
@@ -44,7 +44,7 @@ EOF
 RUN
 
 NAME=endian tests: pv8
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=false
 e asm.bits=32
@@ -60,7 +60,7 @@ EOF
 RUN
 
 NAME=endian tests: ?v
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=false
 e asm.bits=32

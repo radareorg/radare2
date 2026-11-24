@@ -1,5 +1,5 @@
 NAME=wfx
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w hello
 w world @ 0x20

@@ -112,7 +112,7 @@ typedef struct r_egg_t {
 /* XXX: this may fail in different arches */
 #if 0
 // XXX should be a ph subcommand to hash strings. ?h must be removed
-r2 -q - <<EOF
+r2 -q malloc://512 <<EOF
 ?e #define R_EGG_OS_LINUX \`?h linux\`
 ?e #define R_EGG_OS_OSX \`?h osx\`
 ?e #define R_EGG_OS_DARWIN \`?h darwin\`

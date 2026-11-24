@@ -1,5 +1,5 @@
 NAME=dmh crash without arena/heap map
-FILE=-
+FILE=malloc://512
 ARGS=
 CMDS=<<EOF
 dmh

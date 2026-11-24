@@ -25,7 +25,7 @@ EOF
 RUN
 
 NAME=append to file
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 echo Hello > .r2-append-to-file.test
 echo World >> .r2-append-to-file.test

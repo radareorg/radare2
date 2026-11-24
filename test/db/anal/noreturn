@@ -37,7 +37,7 @@ EOF
 RUN
 
 NAME=unwinder resume calls do not return
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx fd7bbfa9fd0300913e000094fd7bbea9fd030091fd7bc2a8c0035fd6
@@ -164,7 +164,7 @@ RUN
 
 NAME=Noreturn propagation preserves a MIPS call delay slot
 ARGS=-a mips -b 32 -e cfg.bigendian=true
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 0c0000082404ffff03e0000800000000
 wx 03e0000800000000 @ 0x20

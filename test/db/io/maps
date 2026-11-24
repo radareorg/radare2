@@ -62,7 +62,7 @@ EOF
 RUN
 
 NAME=om 0x100;x@0xff
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=false
 om `o~[0]` 0x100
@@ -75,7 +75,7 @@ EOF
 RUN
 
 NAME=o - 0x9000;x@0x8f00
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 o malloc://128 0x9000 > /dev/null
 e io.va=true
@@ -89,7 +89,7 @@ EOF
 RUN
 
 NAME=ompg all rwx
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.null=true
 o malloc://32 0x400
@@ -105,7 +105,7 @@ EOF
 RUN
 
 NAME=Opening a new map doesnt set io.a to false
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va
 e scr.null=true
@@ -120,7 +120,7 @@ EOF
 RUN
 
 NAME=omp one mapping
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 omp 1 rwx
 om~rwx~?
@@ -244,7 +244,7 @@ EOF
 RUN
 
 NAME=map names cannot carry commands into om* and om**
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'omn 0 a;s 1#`x`
 om*

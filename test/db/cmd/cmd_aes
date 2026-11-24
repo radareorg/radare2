@@ -33,7 +33,7 @@ EOF
 RUN
 
 NAME=aes help changing seek
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 55
 e asm.arch=x86
@@ -48,7 +48,7 @@ EOF
 RUN
 
 NAME=cmd.esil.intr unset
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx b8010000000f34b801000000cd80ebfe
 10aes
@@ -58,7 +58,7 @@ EOF
 RUN
 
 NAME=aes without initialize
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -72,7 +72,7 @@ EOF
 RUN
 
 NAME=aes with pin
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx bb10000000bb10000000bb10000000 
 aeim
@@ -89,7 +89,7 @@ EOF
 RUN
 
 NAME=aes with pin after aeim
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx bb10000000bb10000000bb10000000 
 e asm.arch=x86
@@ -160,7 +160,7 @@ EOF
 RUN
 
 NAME=esil soft pin deleting the function
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 wx 554889e5c3
@@ -180,7 +180,7 @@ EOF
 RUN
 
 NAME=esil soft pin resizing the disassembly block
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 wx 90909090c3c3

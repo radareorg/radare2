@@ -1,5 +1,5 @@
 NAME=pf register without name
-FILE=-
+FILE=malloc://512
 CMDS=pf r
 EXPECT=<<EOF
 
@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=pf QeQ
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 256
 woe 0x11
@@ -30,7 +30,7 @@ EOF
 RUN
 
 NAME=pf.-x
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pf.foo xxd
 pf.
@@ -43,7 +43,7 @@ EOF
 RUN
 
 NAME=pf.-*
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pf.foo xxd
 pf.
@@ -56,7 +56,7 @@ EOF
 RUN
 
 NAME=pf i foo @x:0x01
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=pf i foo @x:0x01
 EXPECT=<<EOF
@@ -65,7 +65,7 @@ EOF
 RUN
 
 NAME=pf [3]ub
-FILE=-
+FILE=malloc://512
 CMDS=pf [3]ub
 EXPECT=<<EOF
 0x00000000 = [ 0, 0, 0 ]
@@ -87,7 +87,7 @@ RUN
 
 # Cf without a format reports its usage
 NAME=Cf missing format
-FILE=-
+FILE=malloc://512
 CMDS=Cf main;C*
 EXPECT=<<EOF
 | Cf[?][-] [sz] [0|cnt][fmt] [a0 a1...] [@addr]  format memory (see pf?)
@@ -95,7 +95,7 @@ EOF
 RUN
 
 NAME=Cf 1 main
-FILE=-
+FILE=malloc://512
 CMDS=Cf 1 main;C*
 EXPECT=<<EOF
 EOF
@@ -979,7 +979,7 @@ EOF
 RUN
 
 NAME=pf z, scr.strconv and str.escbslash
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wz \x7fabc\\123\n
 (print strconv escbslash; e scr.strconv=$0; e str.escbslash=$1; pf z)
@@ -997,7 +997,7 @@ EOF
 RUN
 
 NAME=pfj and triply-nested struct
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wv2 0x1234
 wv4 0x56789abc @ 0x2
@@ -1056,7 +1056,7 @@ EOF
 RUN
 
 NAME=pfj and Matryoshka dolls
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 7f
 wv8 0xdef0123456789abc @ 0x1
@@ -1160,7 +1160,7 @@ EOF
 RUN
 
 NAME=pfp printf format string to pf (64bit)
-FILE=-
+FILE=malloc://512
 ARGS=-e asm.bits=64
 CMDS=pfp %s%d%f%x
 EXPECT=<<EOF2
@@ -1169,7 +1169,7 @@ EOF2
 RUN
 
 NAME=pfp printf format string to pf (32bit)
-FILE=-
+FILE=malloc://512
 ARGS=-e asm.bits=32
 CMDS=pfp %ld%s
 EXPECT=<<EOF2
@@ -1178,7 +1178,7 @@ EOF2
 RUN
 
 NAME=pfp rejects unsupported format
-FILE=-
+FILE=malloc://512
 CMDS=pfp %1$s
 EXPECT=<<EOF2
 EOF2

@@ -215,7 +215,7 @@ RUN
 
 NAME=pde dont pollute
 ARGS=-a x86 -b 32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 31c0c700ffff0000ffe0
 pdeqq
@@ -234,7 +234,7 @@ RUN
 
 NAME=pde use cache but dont pollute it
 ARGS=-a x86 -b 32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.cache=1
 wx 20 @ 0x30
@@ -264,7 +264,7 @@ RUN
 
 NAME=pde with invalid instruction
 ARGS=-a x86 -b 32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 31c0ffc00000ffff90
 aei

@@ -1,5 +1,5 @@
 NAME=one node
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn title1 body1
 aggk~nodes=
@@ -16,7 +16,7 @@ EOF
 RUN
 
 NAME=two nodes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn "Title with super long text and space" body1
 agn title2 "SuperLongBodyWithALot Of text and spaces"
@@ -40,7 +40,7 @@ EOF
 RUN
 
 NAME=base64 body
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn title1 base64:aGVsbG8gd29ybGQ=
 aggk~nodes.title1.body=
@@ -51,7 +51,7 @@ EOF
 RUN
 
 NAME=utf8 base64 body
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.utf8=true
 agn "Phi" base64:zqY=
@@ -63,7 +63,7 @@ EOF
 RUN
 
 NAME=long base64 body
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn title1 base64:dGhpcyBpcyBhIHZlcnkgbG9uZyB0ZXh0IHRoYXQgd2hlbiBlbmNvZGVkIHdpbGwgY2F1c2UgYSAKIGluIHRoZSBiYXNlNjQ=
 aggk~nodes.title1.body=
@@ -74,7 +74,7 @@ EOF
 RUN
 
 NAME=two nodes same title
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn title1 body1
 agn title1 "Super long body with something"
@@ -91,7 +91,7 @@ EOF
 RUN
 
 NAME=remove node
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn title1 body1
 agn- title1
@@ -103,7 +103,7 @@ EOF
 RUN
 
 NAME=remove node with title that contain spaces
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn "Title with spaces" body1
 agn- "Title with spaces"
@@ -115,7 +115,7 @@ EOF
 RUN
 
 NAME=remove non-existent node
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn "Title with spaces" body1
 agn- NotValid
@@ -129,7 +129,7 @@ EOF
 RUN
 
 NAME=remove edge
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn "Title with spaces" body1
 agn "Title with spaces 2" body2
@@ -154,7 +154,7 @@ EOF
 RUN
 
 NAME=no selected node in non-interactive
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn title1 body1
 agg
@@ -168,7 +168,7 @@ EOF
 RUN
 
 NAME=agf one
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -190,7 +190,7 @@ EOF
 RUN
 
 NAME=agg one
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn 0x0 base64:cHVzaCBlYnAKbW92IGVicCwgZXNwCnBvcCBlYnAKcmV0
 agg
@@ -207,7 +207,7 @@ EOF
 RUN
 
 NAME=graph size
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 aggk~agraph.w=
 aggk~agraph.h=
@@ -224,7 +224,7 @@ EOF
 RUN
 
 NAME=graph size with edges
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn title1 body1
 agn title2 "body2 long body with a lot of spaces and dots...."
@@ -241,7 +241,7 @@ EOF
 RUN
 
 NAME=graph size with self-referenced bb
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn title1 body1
 age title1 title1
@@ -253,7 +253,7 @@ EOF
 RUN
 
 NAME=graph title
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn title1 body1
 e graph.title=This is the graph title
@@ -269,7 +269,7 @@ EOF
 RUN
 
 NAME=print r2 commands to create graph
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn title1 body1
 agn title2 body2
@@ -288,7 +288,7 @@ EOF
 RUN
 
 NAME=graph self-ref block
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn title1 body1
 age title1 title1
@@ -364,7 +364,7 @@ EOF
 RUN
 
 NAME=highlight edge
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn "0x123" body1
 agn "0x456" body2
@@ -389,7 +389,7 @@ EOF
 RUN
 
 NAME=highlight edge management
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ageh 0x123 0x456
 ageh
@@ -414,7 +414,7 @@ EOF
 RUN
 
 NAME=crossing sweeps with shared destinations and high fan-in
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn p0
 agn p1
@@ -501,7 +501,7 @@ EOF
 RUN
 
 NAME=visual graph scroll keeps edges whose endpoints are offscreen
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.utf8=false
 e scr.color=0
@@ -526,7 +526,7 @@ EOF
 RUN
 
 NAME=visual horizontal scroll keeps a back-edge channel with offscreen endpoints
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.utf8=true
 e scr.color=0
@@ -553,7 +553,7 @@ EOF
 RUN
 
 NAME=aggb and agfb without output do not crash
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 aggb
 agfb
@@ -617,7 +617,7 @@ EOF
 RUN
 
 NAME=graph escaping preserves paths and unknown backslash escapes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'agn C:\tmp\file "body\text\next"
 'agn C:\\tmp\\ "body\\text\\"
@@ -635,7 +635,7 @@ EOF
 RUN
 
 NAME=agg node body ending in an unterminated ANSI escape
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn a base64:V1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXVwpRUVFRG1s=
 agg~QQQQ
@@ -695,7 +695,7 @@ EOF
 RUN
 
 NAME=fanout nodes in the same layer use separate bend lanes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.utf8=false
 e scr.color=0

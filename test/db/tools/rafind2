@@ -48,7 +48,7 @@ EOF
 RUN
 
 NAME=rafind2 -X -s
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -cX -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x58f
@@ -61,7 +61,7 @@ EOF
 RUN
 
 NAME=rafind2 -r -X -s
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -r -X -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 f hit0_0 = 0x0000058f # bins/elf/ioli/crackme0x00
@@ -69,7 +69,7 @@ EOF
 RUN
 
 NAME=rafind2 -f 0x00000000 -t 0x00000590 -r -X -s
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -f 0x00000000 -t 0x00001000 -r -X -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 f hit0_0 = 0x0000058f # bins/elf/ioli/crackme0x00
@@ -77,14 +77,14 @@ EOF
 RUN
 
 NAME=rafind2 -f 0x00010000 -t 0x00020000 -X -s
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -f 0x00010000 -t 0x00020000 -r -X -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=rafind2 -r -X -x
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -r -X -x 323530333832 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 f hit0_0 = 0x0000058f # bins/elf/ioli/crackme0x00
@@ -92,7 +92,7 @@ EOF
 RUN
 
 NAME=rafind2 -r -X -x with nibbles masked
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -r -X -x caf.bab. bins/java/Hello.class
 EXPECT=<<EOF
 f hit0_0 = 0x00000000 # bins/java/Hello.class
@@ -100,7 +100,7 @@ EOF
 RUN
 
 NAME=rafind2 -r -X -x with bin mask
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -r -X -x caf3bab3 -M fff0fff0 bins/java/Hello.class
 EXPECT=<<EOF
 f hit0_0 = 0x00000000 # bins/java/Hello.class
@@ -108,7 +108,7 @@ EOF
 RUN
 
 NAME=rafind2 -h
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -h | grep -c Usage
 EXPECT=<<EOF
 1
@@ -116,7 +116,7 @@ EOF
 RUN
 
 NAME=rafind2 -v
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -v | grep -c birth
 EXPECT=<<EOF
 1
@@ -124,7 +124,7 @@ EOF
 RUN
 
 NAME=rafind2 can't open
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -n  -f 0x00010000 -t 0x00020000 -r -X -s 250382 incorrect_file | grep incorrect_file
 EXPECT_ERR=<<EOF
 ERROR: Cannot open file 'incorrect_file'
@@ -132,7 +132,7 @@ EOF
 RUN
 
 NAME=rafind2 -a
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -a -X -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x58f
@@ -140,7 +140,7 @@ EOF
 RUN
 
 NAME=rafind2 -i
-FILE=-
+FILE=malloc://512
 CMDS=!!rafind2 -i bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x00000000 0 ELF 32-bit LSB executable, Intel 80386, version 1
@@ -148,7 +148,7 @@ EOF
 RUN
 
 NAME=rafind2 -I filter match
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -I "x86 elf 32" -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x58f
@@ -156,14 +156,14 @@ EOF
 RUN
 
 NAME=rafind2 -I filter no match
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -I "arm elf" -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=rafind2 -m
-FILE=-
+FILE=malloc://512
 CMDS=!!rafind2 -m bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x00000000 0 hit0_0 ELF 32-bit LSB executable, Intel 80386, version 1
@@ -171,7 +171,7 @@ EOF
 RUN
 
 NAME=rafind2 -e
-FILE=-
+FILE=malloc://512
 CMDS=!!rafind2 -e "/2503[0-9]2/i" bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x58f
@@ -179,7 +179,7 @@ EOF
 RUN
 
 NAME=rafind2 -E
-FILE=-
+FILE=malloc://512
 BROKEN=1
 CMDS=!rafind2 -E "134513440,eip,4,esp,-=,esp,=[],eip,=" bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
@@ -188,7 +188,7 @@ EOF
 RUN
 
 NAME=rafind2 -b 0xa
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2  -a -X -s  250382 -b 0xa bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x58f
@@ -196,7 +196,7 @@ EOF
 RUN
 
 NAME=rafind2 hexdump across small blocks
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -cX -s 250382 -b 0x3 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x58f
@@ -206,7 +206,7 @@ EOF
 RUN
 
 NAME=rafind2 -q
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -q -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x58f
@@ -214,7 +214,7 @@ EOF
 RUN
 
 NAME=rafind2 -z 250382
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -z -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x58f
@@ -222,7 +222,7 @@ EOF
 RUN
 
 NAME=rafind2 -S ascii
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -S wide bins/pe/testapp-msvc64.exe
 EXPECT=<<EOF
 0x1481a
@@ -231,7 +231,7 @@ EOF
 RUN
 
 NAME=rafind2 -S U+00ff < utf8 < U+10000
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -S واسع bins/pe/testapp-msvc64.exe
 EXPECT=<<EOF
 0x14864
@@ -239,7 +239,7 @@ EOF
 RUN
 
 NAME=rafind2 -S utf8 >= U+10000
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -S 𐍈 bins/elf/strenc
 EXPECT=<<EOF
 0x22ac
@@ -247,7 +247,7 @@ EOF
 RUN
 
 NAME=rafind2 -Z
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -Z -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x58f 250382
@@ -255,7 +255,7 @@ EOF
 RUN
 
 NAME=rafind2 multiple files
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -s README bins/arm/README bins/arm/README
 EXPECT=<<EOF
 bins/arm/README: 0x0
@@ -264,7 +264,7 @@ EOF
 RUN
 
 NAME=rafind2 recursive
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -q -s README bins/arm
 EXPECT=<<EOF
 0x0
@@ -272,7 +272,7 @@ EOF
 RUN
 
 NAME=rafind2 json
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -j -s README bins/arm/README
 EXPECT=<<EOF
 [{"file":"bins/arm/README","offset":0,"type":"string","data":"README"}]
@@ -280,7 +280,7 @@ EOF
 RUN
 
 NAME=rafind2 regexp
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -e /R.A..E/ bins/arm/README
 EXPECT=<<EOF
 0x0
@@ -288,7 +288,7 @@ EOF
 RUN
 
 NAME=rafind2 regexp json
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -j -e /R.A..E/ bins/arm/README
 EXPECT=<<EOF
 [{"file":"bins/arm/README","offset":0,"type":"string","data":"README"}]
@@ -296,7 +296,7 @@ EOF
 RUN
 
 NAME=rafind2 multiple strings
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -s README -s This bins/arm/README
 EXPECT=<<EOF
 0x0
@@ -305,7 +305,7 @@ EOF
 RUN
 
 NAME=rafind2 multiple strings json
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -j -s README -s This bins/arm/README
 EXPECT=<<EOF
 [{"file":"bins/arm/README","offset":0,"type":"string","data":"README"},{"file":"bins/arm/README","offset":15,"type":"string","data":"This directory contains binaries for tests on the arm architecture. So far the"}]
@@ -313,7 +313,7 @@ EOF
 RUN
 
 NAME=rafind2 multiple regexps
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -e /R....E/ -e /Th.s/ bins/arm/README
 EXPECT=<<EOF
 0x0
@@ -322,7 +322,7 @@ EOF
 RUN
 
 NAME=rafind2 multiple regexps json
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -j -e /R....E/ -e /Th.s/ bins/arm/README
 EXPECT=<<EOF
 [{"file":"bins/arm/README","offset":0,"type":"string","data":"README"},{"file":"bins/arm/README","offset":15,"type":"string","data":"This directory contains binaries for tests on the arm architecture. So far the"}]
@@ -330,7 +330,7 @@ EOF
 RUN
 
 NAME=rafind2 regexp without slashes
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -e R.A..E -e /Th.s/ bins/arm/README
 EXPECT=<<EOF
 0xf
@@ -341,7 +341,7 @@ EOF
 RUN
 
 NAME=rafind2 ""
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 ""
 EXPECT_ERR=<<EOF
 ERROR: Cannot open empty path
@@ -349,7 +349,7 @@ EOF
 RUN
 
 NAME=rafind2 -F
-FILE=-
+FILE=malloc://512
 CMDS=!rafind2 -F bins/src/keyword bins/mach0/FileDP
 EXPECT=<<EOF
 0x4e9

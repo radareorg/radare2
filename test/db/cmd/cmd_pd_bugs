@@ -1,5 +1,5 @@
 NAME=Relative global substitution preserves a following immediate
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 o malloc://128 0x2000 rw
@@ -175,7 +175,7 @@ EOF
 RUN
 
 NAME=pd arm cortex 0
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 16
 CMDS=wx 80f30988; pi 1
 EXPECT=<<EOF
@@ -184,7 +184,7 @@ EOF
 RUN
 
 NAME=pd arm cortex 1
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 16 -e asm.cpu=cortex
 CMDS=wx 80f30988;pi 1
 EXPECT=<<EOF
@@ -193,7 +193,7 @@ EOF
 RUN
 
 NAME=pd arm cortex 2
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 16
 CMDS=e asm.cpu=cortex;wx 80f30988;pi 1
 EXPECT=<<EOF
@@ -333,7 +333,7 @@ EOF
 RUN
 
 NAME=indent asm.lines.fcn=0, asm.lines.jmp=1 for issue 9316
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -350,7 +350,7 @@ EOF
 RUN
 
 NAME=indent asm.lines.fcn=1, asm.lines.jmp=0 for issue 9316
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64

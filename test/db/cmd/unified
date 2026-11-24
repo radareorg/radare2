@@ -1,5 +1,5 @@
 NAME=unified diff and patch
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 16
 wow 41

@@ -43,7 +43,14 @@ The options are:
 End option parsing.
 If no file follows, start radare2 without opening a file.
 .It Fl
-Equivalent of 'r2 malloc://512'
+Read standard input through EOF into a seekable buffer, like
+.Pa stdin:// .
+Use
+.Pa malloc://512
+for a 512-byte scratch buffer.
+.It Li =
+On Unix, read standard input through EOF and reopen the console on
+.Pa /dev/tty .
 .It Fl 0
 Print \\x00 after initialization and after every command executed
 .It Fl 1

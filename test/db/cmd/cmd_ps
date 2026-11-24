@@ -51,7 +51,7 @@ EOF
 RUN
 
 NAME=psj ascii (#9064)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 "wz ...\"..����..."
 psj 13
@@ -62,7 +62,7 @@ EOF
 RUN
 
 NAME=psx escapes newlines (#10037)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wz abc\n123\n
 psx 9
@@ -73,7 +73,7 @@ EOF
 RUN
 
 NAME=ps N and initial nulls (#10037)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ps 1
 ps 2
@@ -91,7 +91,7 @@ EOF
 RUN
 
 NAME=ps+ libc++ 16bit error
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16
@@ -104,7 +104,7 @@ EOF
 RUN
 
 NAME=pswj
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 680065006c006c006f000000
 psw

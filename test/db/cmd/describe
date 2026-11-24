@@ -1,5 +1,5 @@
 NAME=asm.describe alignment with memory access
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e anal.arch=x86
@@ -14,7 +14,7 @@ EOF
 RUN
 
 NAME=asm.describe alignment
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64

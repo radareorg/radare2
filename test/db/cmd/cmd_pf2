@@ -271,7 +271,7 @@ EOF
 RUN
 
 NAME=pf *z (64bit addr)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.cache=true
 e asm.bits=64
@@ -294,7 +294,7 @@ EOF
 RUN
 
 NAME=pf F max precision (#13027)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wv8 0x400921fb54442d18
 pf F
@@ -312,7 +312,7 @@ EOF
 RUN
 
 NAME=pf f max precision
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wv4 0x40490fdb
 pf f
@@ -323,7 +323,7 @@ EOF
 RUN
 
 NAME=pfj z not-at-start fix
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 46
 wz ABCDE @ 0x1
@@ -338,7 +338,7 @@ EOF
 RUN
 
 NAME=pf/pfj z with size
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wz ABCDE
 (pf2 format; pf $0; pfj $0)
@@ -490,7 +490,7 @@ EOF
 RUN
 
 NAME=pf?
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pfo elf32.r2
 pf?elf_header
@@ -503,7 +503,7 @@ EOF
 RUN
 
 NAME=pf? struct not defined
-FILE=-
+FILE=malloc://512
 CMDS=pf?cat_sat_on_keyboard
 EXPECT_ERR=<<EOF
 ERROR: Struct cat_sat_on_keyboard is not defined
@@ -541,7 +541,7 @@ EOF
 RUN
 
 NAME=pfc N# and n#
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 (wneg num size; wv$1 -$0; s+ $1)

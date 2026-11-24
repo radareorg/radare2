@@ -1,5 +1,5 @@
 NAME=leak md on a posix mount
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 m /host posix
 md /host`pwd`/db~leak

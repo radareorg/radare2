@@ -1,5 +1,5 @@
 NAME=wox le 8-bit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=false
 w helloworld
@@ -12,7 +12,7 @@ EOF
 RUN
 
 NAME=wox le 16-bit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=false
 w helloworld
@@ -25,7 +25,7 @@ EOF
 RUN
 
 NAME=wox le 24-bit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=false
 w helloworld
@@ -41,7 +41,7 @@ EOF
 RUN
 
 NAME=wox le 32-bit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=false
 w helloworld
@@ -54,7 +54,7 @@ EOF
 RUN
 
 NAME=wox le 40-bit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=false
 w helloworld
@@ -70,7 +70,7 @@ EOF
 RUN
 
 NAME=wox le 48-bit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=false
 w helloworld
@@ -86,7 +86,7 @@ EOF
 RUN
 
 NAME=wox le 56-bit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=false
 w helloworld
@@ -102,7 +102,7 @@ EOF
 RUN
 
 NAME=wox le 64-bit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=false
 w helloworld
@@ -115,7 +115,7 @@ EOF
 RUN
 
 NAME=wox invalid key size
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=false
 w helloworld
@@ -132,7 +132,7 @@ EOF
 RUN
 
 NAME=wox be 8-bit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=true
 w helloworld
@@ -145,7 +145,7 @@ EOF
 RUN
 
 NAME=wox be 16-bit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=true
 w helloworld
@@ -158,7 +158,7 @@ EOF
 RUN
 
 NAME=wox be 24-bit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=true
 w helloworld
@@ -171,7 +171,7 @@ EOF
 RUN
 
 NAME=wox be 32-bit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=true
 w helloworld
@@ -184,7 +184,7 @@ EOF
 RUN
 
 NAME=wox be 40-bit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=true
 w helloworld
@@ -197,7 +197,7 @@ EOF
 RUN
 
 NAME=wox be 48-bit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=true
 w helloworld
@@ -210,7 +210,7 @@ EOF
 RUN
 
 NAME=wox be 56-bit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=true
 w helloworld
@@ -223,7 +223,7 @@ EOF
 RUN
 
 NAME=wox be 64-bit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=true
 w helloworld
@@ -236,7 +236,7 @@ EOF
 RUN
 
 NAME=wo2 on woe
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 32
 woe 1

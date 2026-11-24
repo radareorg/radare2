@@ -1,5 +1,5 @@
 NAME=list syscalls
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a arm
 -b 32
@@ -19,7 +19,7 @@ EXPECT_ERR=
 RUN
 
 NAME=list ppc syscalls
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a ppc
 -b 32
@@ -36,7 +36,7 @@ EXPECT_ERR=
 RUN
 
 NAME=as <num> honors user argument
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a x86
 -b 64
@@ -58,7 +58,7 @@ EXPECT_ERR=
 RUN
 
 NAME=syscall names resolve x86_64 numbers
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a x86
 -b 64
@@ -76,7 +76,7 @@ EXPECT_ERR=
 RUN
 
 NAME=syscall JSON exposes arity and argument formats
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a x86
 -b 64
@@ -94,7 +94,7 @@ EXPECT_ERR=
 RUN
 
 NAME=Linux x86 32 syscall register convention
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a x86
 -b 32
@@ -108,7 +108,7 @@ EXPECT_ERR=
 RUN
 
 NAME=Linux arm 32 syscall register convention
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a arm
 -b 32
@@ -122,7 +122,7 @@ EXPECT_ERR=
 RUN
 
 NAME=Linux arm 64 syscall register convention
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a arm
 -b 64
@@ -136,7 +136,7 @@ EXPECT_ERR=
 RUN
 
 NAME=Linux mips 32 syscall register convention
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a mips
 -b 32
@@ -150,7 +150,7 @@ EXPECT_ERR=
 RUN
 
 NAME=MIPS o32 syscall numbers and networking metadata
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a mips
 -b 32
@@ -184,7 +184,7 @@ EXPECT_ERR=
 RUN
 
 NAME=Linux syscall clobbers differ from C caller-saved registers
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a x86
 -b 64
@@ -204,7 +204,7 @@ EXPECT_ERR=
 RUN
 
 NAME=i386 old mmap takes an argument-structure pointer
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a x86
 -b 32

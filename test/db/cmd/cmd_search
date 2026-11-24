@@ -1,5 +1,5 @@
 NAME=trailing comment
-FILE=-
+FILE=malloc://512
 ARGS=-n
 CMDS=<<EOF
 / #
@@ -883,7 +883,7 @@ EOF
 RUN
 
 NAME=/as x86_64 syscall number before local window
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -899,7 +899,7 @@ EOF
 RUN
 
 NAME=/as x86_64 syscall search repeatability
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -927,7 +927,7 @@ EOF
 RUN
 
 NAME=/as x86_64 syscall narrow register write
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -941,7 +941,7 @@ EOF
 RUN
 
 NAME=/as x86_64 function unknown skips linear fallback
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -955,7 +955,7 @@ EOF
 RUN
 
 NAME=/v4 search 4 byte
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 0x12345678aabbccddeeff12345678
 /v4 0x78563412
@@ -967,7 +967,7 @@ EOF
 RUN
 
 NAME=/v4j search 4 byte with json output
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 0x12345678aabbccddeeff12345678
 /v4j 0x78563412
@@ -978,7 +978,7 @@ EOF
 RUN
 
 NAME=/v4 search 8 byte
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 0x12345678aabbccddeeff12345678
 /v4 0x78563412 0xddccbbaa
@@ -989,7 +989,7 @@ EOF
 RUN
 
 NAME=/V4j search 4 byte with json
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 0x12345678aabbccddeeff12345678
 /V4j 0x78563412 0x78563420
@@ -1000,7 +1000,7 @@ EOF
 RUN
 
 NAME=/V4j search 4 byte with json (cfg.json.num=hex)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.json.num=hex
 wx 0x12345678aabbccddeeff12345678
@@ -1328,7 +1328,7 @@ EOF
 RUN
 
 NAME=search by rest of file
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 210a @ 0x10
 /F bins/elf/analysis/hello.raw 48
@@ -1339,7 +1339,7 @@ EOF
 RUN
 
 NAME=search by rest of file dec/dec
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 0e @ 0x10
 /F bins/elf/analysis/hello.raw 1 1
@@ -1350,7 +1350,7 @@ EOF
 RUN
 
 NAME=search by part of file dec/hex
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 8048 @ 0x10
 /F bins/elf/analysis/hello.raw 0x1c 0x2
@@ -1456,7 +1456,7 @@ EOF
 RUN
 
 NAME=/k at start
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w AAABAAABAAA
 /k AAABAAA
@@ -1467,7 +1467,7 @@ EOF
 RUN
 
 NAME=/kj at start
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w AAABAAABAAA
 /kj AAABAAA
@@ -1478,7 +1478,7 @@ EOF
 RUN
 
 NAME=/k with overlap, middle
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w ZAAABAAABAAA
 /k AAABAAA
@@ -1489,7 +1489,7 @@ EOF
 RUN
 
 NAME=/kj with overlap, middle
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w ZAAABAAABAAA
 /kj AAABAAA
@@ -1500,7 +1500,7 @@ EOF
 RUN
 
 NAME=/k at end
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w ZZZZAAABAAA
 /k AAABAAA
@@ -1511,7 +1511,7 @@ EOF
 RUN
 
 NAME=/kj at end
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w ZZZZAAABAAA
 /kj AAABAAA
@@ -2203,7 +2203,7 @@ EOF_ERR
 RUN
 
 NAME=repeat empty search
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 /
 //

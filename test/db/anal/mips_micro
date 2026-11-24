@@ -1,5 +1,5 @@
 NAME=micromips on gnu
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 rasm2 -a mips.gnu -b32 -d 22fdd018
 rasm2 -a mips.gnu -b32 -c micro -d 22fdd018
@@ -11,7 +11,7 @@ EOF
 RUN
 
 NAME=micromips on cs
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 rasm2 -a mips -b32 -d 22fdd018
 ?e --
@@ -33,7 +33,7 @@ EOF
 RUN
 
 NAME=micromips code block CAPSTONE
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 rasm2 -a mips -b16 -c micro -D 4fe522fdd01840e40007ae920e2541a49860cc0630847090
 EOF
@@ -51,7 +51,7 @@ EOF
 RUN
 
 NAME=micromips code block and endian test GNU
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 rasm2 -a mips.gnu -b16 -c micro -D 4fe522fdd01840e40007ae920e2541a49860cc0630847090
 ?e --
@@ -81,7 +81,7 @@ RUN
 
 NAME=both
 REQUIRE=cs5
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 rasm2 -a mips -b16 -c micro -D 4fe522fdd01840e40007ae920e2541a49860cc0630847090
 ?e gnu
@@ -156,7 +156,7 @@ RUN
 
 NAME=both (cs6)
 REQUIRE=cs6
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 rasm2 -a mips -b16 -c micro -D 4fe522fdd01840e40007ae920e2541a49860cc0630847090
 ?e gnu
@@ -230,7 +230,7 @@ EOF
 RUN
 
 NAME=micromips align
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a mips
 -e asm.cpu=micro
@@ -254,7 +254,7 @@ EOF
 RUN
 
 NAME=micromips align
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a mips.gnu
 -e asm.cpu=micro
@@ -462,7 +462,7 @@ EOF
 RUN
 
 NAME=micromips rejects truncated instructions and keeps alignment checks
-FILE=-
+FILE=malloc://512
 ARGS=-a mips.gnu -b 32 -e asm.cpu=micro -e cfg.bigendian=true
 CMDS=<<EOF
 pad 4fe5
@@ -509,7 +509,7 @@ EOF
 RUN
 
 NAME=micromips truncated slti cannot invent its immediate in either backend
-FILE=-
+FILE=malloc://512
 ARGS=-a mips.gnu -b 32 -e asm.cpu=micro
 CMDS=<<EOF
 b 2
@@ -538,7 +538,7 @@ EOF
 RUN
 
 NAME=mips GNU and Capstone distinguish code and data alignment
-FILE=-
+FILE=malloc://512
 ARGS=-a mips.gnu -b 32
 CMDS=<<EOF
 e asm.cpu=mips32

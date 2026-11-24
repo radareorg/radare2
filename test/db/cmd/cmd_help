@@ -235,7 +235,7 @@ EOF
 RUN
 
 NAME="base help"
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ?~print~?
 EOF
@@ -245,7 +245,7 @@ EOF
 RUN
 
 NAME="println"
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 print hello;print world;println
 EOF
@@ -255,7 +255,7 @@ EOF
 RUN
 
 NAME="binary shift"
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 "?b 1<<1"
 "?b 1 << 1"
@@ -269,7 +269,7 @@ EOF
 RUN
 
 NAME="comparison operators"
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 "?v 1<1"
 "?v 1<2"

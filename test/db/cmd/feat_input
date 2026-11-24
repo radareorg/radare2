@@ -118,7 +118,7 @@ EOF
 RUN
 
 NAME='>' in cmd: agn "sh->fu"
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn "sh->fu"
 agg
@@ -131,7 +131,7 @@ EOF
 RUN
 
 NAME=multiple '>' in cmd line: ?e abc > def>ghi
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ?e abc > def>ghi  # should not hang
 "rm ./def>ghi"
@@ -142,7 +142,7 @@ EOF
 RUN
 
 NAME=hash+space in quoted string
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 agn "Process form A# B# in cloud"
 agg
@@ -155,7 +155,7 @@ EOF
 RUN
 
 NAME=cmd outputting trailing space
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 # do not convert test to base64
 ?e aaa

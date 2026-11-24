@@ -1,5 +1,5 @@
 NAME=t/backtickgrep
-FILE=-
+FILE=malloc://512
 CMDS=?v `i~size[1]`-$s;?! ?e works
 EXPECT=<<EOF
 0x0

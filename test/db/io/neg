@@ -1,5 +1,5 @@
 NAME=io/neg
-FILE=-
+FILE=malloc://512
 CMDS=p8 4 @ 0-2
 EXPECT=<<EOF
 ffff0000
@@ -7,7 +7,7 @@ EOF
 RUN
 
 NAME=io/neg 2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s- 1000
 ? $o~?0x0

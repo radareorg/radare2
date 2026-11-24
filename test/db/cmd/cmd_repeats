@@ -1,5 +1,5 @@
 NAME=repeat-foreach
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b64
 CMDS=<<EOF
 3wa+nop@@= 0 0x20 0x40
@@ -30,7 +30,7 @@ EOF
 RUN
 
 NAME=repeat-help
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 @@?~?
 @@@?~?
@@ -42,7 +42,7 @@ EOF
 RUN
 
 NAME=repeat registers
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -55,7 +55,7 @@ EOF
 RUN
 
 NAME=repeat comments
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 CC aero@0x42
 CC pause@0x43
@@ -69,7 +69,7 @@ EOF
 RUN
 
 NAME=3p8
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 3p8 1
 ?e hi
@@ -83,7 +83,7 @@ EOF
 RUN
 
 NAME=3p8;?e hi
-FILE=-
+FILE=malloc://512
 CMDS=3p8 1;?e hi
 EXPECT=<<EOF
 00
@@ -94,7 +94,7 @@ EOF
 RUN
 
 NAME=2p8 1;?e hi
-FILE=-
+FILE=malloc://512
 CMDS=2p8 1;?e hi
 EXPECT=<<EOF
 00
@@ -104,7 +104,7 @@ EOF
 RUN
 
 NAME=3p8 1 && 2p8 4
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 4
 wx 0000ffff

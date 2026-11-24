@@ -24,7 +24,7 @@ EOF
 RUN
 
 NAME=aav reports every hit once when the ranges overlap
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64

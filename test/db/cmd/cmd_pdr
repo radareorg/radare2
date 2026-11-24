@@ -34,7 +34,7 @@ EOF
 RUN
 
 NAME=pdr ignores asm.bbmiddle while walking blocks
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -78,7 +78,7 @@ EOF
 RUN
 
 NAME=pdrj and pirj ignore asm.bbmiddle
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64

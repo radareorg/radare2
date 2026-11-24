@@ -1,6 +1,6 @@
 # x86.nz no longer have access to RFlag/RNum
 NAME=asm/callflag
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 f eax=33
@@ -15,7 +15,7 @@ EOF
 RUN
 
 NAME=asm.assembler
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 pa call eax
@@ -31,7 +31,7 @@ EOF
 RUN
 
 NAME=Invalid x86 out assembly
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -44,7 +44,7 @@ EOF
 RUN
 
 NAME=Invalid x86 32bit push assembly
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -57,7 +57,7 @@ EOF
 RUN
 
 NAME=Invalid x86 32bit mov assembly
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -70,7 +70,7 @@ EOF
 RUN
 
 NAME=Invalid x86 64bit not with a displacement over 32 bits
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -83,7 +83,7 @@ EOF
 RUN
 
 NAME=Invalid x86 64bit not with a 64-bit address over a signed disp32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -96,7 +96,7 @@ EOF
 RUN
 
 NAME=x86 lock needs a lockable instruction with a memory destination
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -111,7 +111,7 @@ EOF
 RUN
 
 NAME=Invalid x86 64bit inc with a 64-bit address over a signed disp32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -238,7 +238,7 @@ EOF2
 RUN
 
 NAME=x86.nz segment override after too many register terms
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -258,7 +258,7 @@ EOF
 RUN
 
 NAME=pa z80 data directives bounded by the encoder buffer
-FILE=-
+FILE=malloc://512
 ARGS=-a z80
 TIMEOUT=10
 CMDS=<<EOF
@@ -342,7 +342,7 @@ EOF
 RUN
 
 NAME=Invalid x86 32bit bit test operands
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -365,7 +365,7 @@ EOF
 RUN
 
 NAME=Invalid x86 64bit bit test operands
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -392,7 +392,7 @@ EOF
 RUN
 
 NAME=Invalid x86 64bit movzx and movsx operands
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -415,7 +415,7 @@ EOF
 RUN
 
 NAME=pa arm64 reject out of range add and sub operands
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
@@ -448,7 +448,7 @@ EOF
 RUN
 
 NAME=pa arm64 reject invalid neg and negs operands
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
@@ -511,7 +511,7 @@ EOF
 RUN
 
 NAME=pa arm64 reject out of range bitfield widths
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
@@ -538,7 +538,7 @@ EOF
 RUN
 
 NAME=pa arm64 reject invalid logical shift operands
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
@@ -607,7 +607,7 @@ EOF
 RUN
 
 NAME=pa arm64 reject invalid asr and ror operands
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
@@ -634,7 +634,7 @@ EOF
 RUN
 
 NAME=pa arm64 reject stack pointer bitfield operands
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
@@ -688,7 +688,7 @@ EOF
 RUN
 
 NAME=pa z80 expression nesting limit and INT_MIN division
-FILE=-
+FILE=malloc://512
 ARGS=-a z80
 CMDS=<<EOF
 pa ld b, ((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((1))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))
@@ -711,7 +711,7 @@ EOF
 RUN
 
 NAME=pa z80 rejects invalid ld a and bit operands
-FILE=-
+FILE=malloc://512
 ARGS=-a z80
 CMDS=<<EOF
 pa ld a, (1 n
@@ -732,7 +732,7 @@ EOF
 RUN
 
 NAME=pa wasm rejects bad immediates
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=wasm
 pa call -1
@@ -756,7 +756,7 @@ EOF
 RUN
 
 NAME=pa thumb rejects out of range shift amounts
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
@@ -781,7 +781,7 @@ EOF
 RUN
 
 NAME=pa thumb rejects oversized sub sp immediates
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
@@ -796,7 +796,7 @@ EOF
 RUN
 
 NAME=pa thumb rejects ldm writeback into a loaded register
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
@@ -811,7 +811,7 @@ EOF
 RUN
 
 NAME=pa avr rejects out of range immediates
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
 pa ldi r16, 256
@@ -845,7 +845,7 @@ EOF
 RUN
 
 NAME=pa avr rejects malformed and oversized numbers
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
 s 4
@@ -910,7 +910,7 @@ EOF
 RUN
 
 NAME=pa avr rejects misaligned and out of range branches
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
 s 4
@@ -963,7 +963,7 @@ EOF
 RUN
 
 NAME=pa avr rejects invalid registers and extra tokens
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
 s 4
@@ -1018,7 +1018,7 @@ EOF
 RUN
 
 NAME=pa avr rejects absolute branch targets outside range at a nonzero origin
-FILE=-
+FILE=malloc://512
 ARGS=-a avr
 CMDS=<<EOF
 s 0x1004
@@ -1041,7 +1041,7 @@ EOF
 RUN
 
 NAME=pa arm32 rejects invalid halfword and doubleword transfers
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1084,7 +1084,7 @@ EOF
 RUN
 
 NAME=pa avr rejects malformed and invalid register pairs
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
 pa movw r3, r1
@@ -1136,7 +1136,7 @@ EOF
 RUN
 
 NAME=pa gb rejects memory operands where an immediate goes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=gb
 pa ld b, [0x1234]
@@ -1154,7 +1154,7 @@ EOF
 RUN
 
 NAME=pa gb validates complete operands
-FILE=-
+FILE=malloc://512
 ARGS=-a gb
 CMDS=<<EOF
 pa ld a, [0xff01+c]
@@ -1288,7 +1288,7 @@ EOF
 RUN
 
 NAME=pa arm64 ldpsw rejects w and fp registers
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
@@ -1305,7 +1305,7 @@ EOF
 RUN
 
 NAME=pa riscv rejects out of range lui and auipc values and register numbers
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=riscv
 e asm.bits=64
@@ -1328,7 +1328,7 @@ EOF
 RUN
 
 NAME=any.as with an empty assembler override
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e log.level=1
 %R2_PPC_AS=
@@ -1347,7 +1347,7 @@ EOF
 RUN
 
 NAME=arm64 HINT operands are checked
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 pa hint
@@ -1405,7 +1405,7 @@ EOF
 RUN
 
 NAME=lua: pa does not keep the fields of the previous instruction
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=lua
 pa call 1 2 3
@@ -1420,7 +1420,7 @@ EOF
 RUN
 
 NAME=lua: pa rejects operands that do not fit their field
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e log.level=1
 e asm.arch=lua
@@ -1439,7 +1439,7 @@ EOF
 RUN
 
 NAME=lua: pa reads K, Kst and KPROTO only where the disassembler prints them
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e log.level=1
 e asm.arch=lua

@@ -1,5 +1,5 @@
 NAME=t/bug_backtick
-FILE=-
+FILE=malloc://512
 CMDS=p8 3`~`
 EXPECT=<<EOF
 000000

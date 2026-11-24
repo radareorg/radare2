@@ -1,5 +1,5 @@
 NAME=sm5xx pc/sp regs
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a sm5xx
 dr=
@@ -39,7 +39,7 @@ EOF
 RUN
 
 NAME=arpg
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 arpg bins/src/gdb-reg-profile.txt > $a
 ?v $?
@@ -57,7 +57,7 @@ EOF
 RUN
 
 NAME=arp reg profile
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -89,7 +89,7 @@ EOF
 RUN
 
 NAME=arpi reg profile
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -440,7 +440,7 @@ EOF
 RUN
 
 NAME=bad regprofile log test
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e log.origin=true
 e asm.arch=x86
@@ -461,7 +461,7 @@ EXPECT_ERR=
 RUN
 
 NAME=bad regprofile
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -481,7 +481,7 @@ EXPECT_ERR=
 RUN
 
 NAME=bad regprofile 2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -643,7 +643,7 @@ EOF
 RUN
 
 NAME=bad regprofile 2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e log.origin=true
 e asm.arch=x86
@@ -667,7 +667,7 @@ EOF
 RUN
 
 NAME=ar 1bit register on a shrunk arena stays inside the arena
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -689,7 +689,7 @@ EOF
 RUN
 
 NAME=ar 4bit register on a shrunk arena stays inside the arena
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -707,7 +707,7 @@ EOF
 RUN
 
 NAME=arp rejects offsets and sizes that do not fit the register arena
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64

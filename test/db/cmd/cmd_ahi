@@ -1,5 +1,5 @@
 NAME=ahi s + endian
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx b8410d4300
 e asm.arch=x86
@@ -16,7 +16,7 @@ EOF
 RUN
 
 NAME=ahi s + endian 2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx b841424300
 e asm.arch=x86
@@ -34,7 +34,7 @@ EOF
 RUN
 
 NAME=1: ahi none
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -47,7 +47,7 @@ EOF
 RUN
 
 NAME=ahi with colors
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -64,7 +64,7 @@ EOF
 RUN
 
 NAME=ahi 0x41 -> 'A'
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -81,7 +81,7 @@ EOF
 RUN
 
 NAME=ahi 0xe -> 1
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -98,7 +98,7 @@ EOF
 RUN
 
 NAME=ahi 4 -> 1
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -115,7 +115,7 @@ EOF
 RUN
 
 NAME=2: ahi none
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -128,7 +128,7 @@ EOF
 RUN
 
 NAME=3: ahi none
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -142,7 +142,7 @@ EOF
 RUN
 
 NAME=1: ahi 10
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -156,7 +156,7 @@ EOF
 RUN
 
 NAME=ahi 8
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -170,7 +170,7 @@ EOF
 RUN
 
 NAME=1: ahi 2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -184,7 +184,7 @@ EOF
 RUN
 
 NAME=ahi 2 - pi
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -266,7 +266,7 @@ EOF
 RUN
 
 NAME=64bit ahi 10
-FILE=-
+FILE=malloc://512
 ARGS=-m 0x100001000
 CMDS=<<EOF
 e io.va
@@ -289,7 +289,7 @@ EOF
 RUN
 
 NAME=2: ahi s
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -305,7 +305,7 @@ EOF
 RUN
 
 NAME=ahi s 2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx b868584d56
 e asm.arch=x86
@@ -319,7 +319,7 @@ EOF
 RUN
 
 NAME=ahi s - pd with colors
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bytes=false
 e asm.comments=false
@@ -339,7 +339,7 @@ EOF
 RUN
 
 NAME=ahi nword
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -361,7 +361,7 @@ RUN
 
 NAME=ahi 10 and 10u imm (x86_32)
 ARGS=-a x86 -b 32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bytes=false
 "wa cmp eax, -1"
@@ -380,7 +380,7 @@ RUN
 
 NAME=ahi 10 and 10u imm (x86_64)
 ARGS=-a x86 -b 64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bytes=false
 "wa cmp eax, -1"
@@ -411,7 +411,7 @@ RUN
 
 NAME=ahi 31 small integer
 ARGS=-a arm -b 64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx fd430191
 pd 1
@@ -426,7 +426,7 @@ RUN
 
 NAME=ahie enum immediate
 ARGS=-a x86 -b 64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bytes=false
 'td enum E { SEVEN=7, EIGHT=8, WORD=0xffc643 };
@@ -466,7 +466,7 @@ RUN
 
 NAME=Immediate base hints are exposed in instruction JSON without changing ESIL
 ARGS=-a x86 -b 64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx bfffffffffc3
 af
@@ -498,7 +498,7 @@ EOF
 RUN
 
 NAME=ahi numeric IPv4 base matches its letter alias
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ahi 32
 ahi

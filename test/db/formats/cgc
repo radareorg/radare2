@@ -7,7 +7,7 @@ EOF
 RUN
 
 NAME=CGC: Create
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 rm ./cgc.cgc____
 !rabin2 -C elf64:cc -a x86 -b 64 ./cgc.cgc____

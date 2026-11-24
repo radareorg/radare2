@@ -1,5 +1,5 @@
 NAME=Cf. crash
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 Cf.
 EOF
@@ -154,7 +154,7 @@ EOF
 RUN
 
 NAME=Csp
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wv2 12;w hello world @ $$ + 2
 Csp2
@@ -287,7 +287,7 @@ EOF
 RUN
 
 NAME=CL FAIL if no rbinfile
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 CL $$ foo:0
 CL.
@@ -312,7 +312,7 @@ EOF
 RUN
 
 NAME=CC.
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 CC hello @ 10
 CC.

@@ -1,5 +1,5 @@
 NAME=to
-FILE=-
+FILE=malloc://512
 CMDS=to bins/headers/s1.h;t S1
 EXPECT=<<EOF
 'pf ddd x y z
@@ -7,7 +7,7 @@ EOF
 RUN
 
 NAME=to
-FILE=-
+FILE=malloc://512
 CMDS=to bins/headers/s2.h; t S1
 EXPECT=<<EOF
 'pf ddd x test z
@@ -15,7 +15,7 @@ EOF
 RUN
 
 NAME=to
-FILE=-
+FILE=malloc://512
 CMDS=to bins/headers/s1.h; to bins/headers/s2.h; t S1
 EXPECT=<<EOF
 'pf ddd x test z
@@ -23,7 +23,7 @@ EOF
 RUN
 
 NAME=to perturbated
-FILE=-
+FILE=malloc://512
 CMDS=to bins/headers/s1.h; to bins/headers/s4.h; t S1
 EXPECT=<<EOF
 'pf ddd x test z
@@ -31,7 +31,7 @@ EOF
 RUN
 
 NAME=to arrays
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 to bins/headers/s3.h
 t S1
@@ -52,7 +52,7 @@ EOF
 RUN
 
 NAME=to typedefs
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 to bins/headers/t1.h
 tk~easy,humans,days,tokyo,dangerous

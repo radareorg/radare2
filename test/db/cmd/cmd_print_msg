@@ -1,5 +1,5 @@
 NAME=print escapes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 print "hello\n\nworld\n"
 EOF
@@ -11,7 +11,7 @@ EOF
 RUN
 
 NAME=printf formatting
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 printf "%x %d %s" 10 20 hello;println
 EOF
@@ -21,7 +21,7 @@ EOF
 RUN
 
 NAME=printf r2 expression
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 2a @ 0x0
 printf "%d" [0x0];println
@@ -32,7 +32,7 @@ EOF
 RUN
 
 NAME=printfln formatting
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 printfln "%x:%s" 0x2a test
 EOF

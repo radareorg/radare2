@@ -1,5 +1,5 @@
 NAME=xtensa blt
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
@@ -56,7 +56,7 @@ EOF
 RUN
 
 NAME=xtensa pseudo parser
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.pseudo=true

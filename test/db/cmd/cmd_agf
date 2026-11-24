@@ -12,7 +12,7 @@ EOF
 RUN
 
 NAME=agfJ
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -27,7 +27,7 @@ EOF
 RUN
 
 NAME=agfdm correct jump tables
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -293,7 +293,7 @@ EOF
 RUN
 
 NAME=agft renders once without interactive mode
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 e scr.interactive=false

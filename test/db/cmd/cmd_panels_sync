@@ -1,5 +1,5 @@
 NAME=panels pinned cached command refreshes at its own address and rejoins seek
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
 "$probe=?v $$+0xabc00000"
@@ -29,7 +29,7 @@ EOF
 RUN
 
 NAME=panels pinned hexdump ignores global seek and permits local navigation
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
 e scr.wheel=false
@@ -58,7 +58,7 @@ EOF
 RUN
 
 NAME=panels pinned disassembly scrolls locally after a global seek
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
@@ -91,7 +91,7 @@ EOF
 RUN
 
 NAME=panels pinned graph keeps its function across seek and explicit refresh
-FILE=-
+FILE=malloc://512
 TIMEOUT=10
 ARGS=-a x86 -b 64
 CMDS=<<EOF

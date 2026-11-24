@@ -75,7 +75,7 @@ EOF
 RUN
 
 NAME=ir does not patch once a debug target is opened later
-FILE=-
+FILE=malloc://512
 ARGS=-e bin.relocs.apply=true
 REQUIRE=linux
 CMDS=<<EOF

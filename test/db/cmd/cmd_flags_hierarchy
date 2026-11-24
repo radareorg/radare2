@@ -1,5 +1,5 @@
 NAME=flag hierarchy output modes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 fs fh_test
 f bar 1 @ 0x100
@@ -27,7 +27,7 @@ EOF
 RUN
 
 NAME=flag that is also a hierarchy parent in JSON
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 fs fh_test
 f sym.foo 1 @ 8

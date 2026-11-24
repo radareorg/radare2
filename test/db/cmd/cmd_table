@@ -1,5 +1,5 @@
 NAME=comma html
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e,key/str/color.op,:html
 EOF

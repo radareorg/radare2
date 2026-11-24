@@ -1,5 +1,5 @@
 NAME=pxj
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w hello world # ascii string
 psa
@@ -31,7 +31,7 @@ EOF
 RUN
 
 NAME=Raw string after a rejected Unicode candidate
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 61c3a9cea9d096e4b8ad005445535400
 izzj
@@ -42,7 +42,7 @@ EOF
 RUN
 
 NAME=Raw strings preserve accepted escapes with nofp
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e bin.str.nofp=true
 wx 48656c6c6f09776f726c640a706174685c6e616d6500
@@ -54,7 +54,7 @@ EOF
 RUN
 
 NAME=Raw strings reject bell with nofp
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e bin.str.nofp=true
 wx 48656c6c6f07776f726c6400
@@ -66,7 +66,7 @@ EOF
 RUN
 
 NAME=psa null byte with odd block size
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w \x00
 b 1
@@ -77,7 +77,7 @@ EOF
 RUN
 
 NAME=psa null byte with 3-byte block
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w \x00A\x00
 b 3

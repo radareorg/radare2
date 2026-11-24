@@ -1,5 +1,5 @@
 NAME=wa+
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b64
 CMDS=<<EOF
 3wa+nop
@@ -16,7 +16,7 @@ EOF
 RUN
 
 NAME=wv4
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wv4 1 2 3 4
 p8 16
@@ -33,7 +33,7 @@ EOF
 RUN
 
 NAME=wan
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 554889e54157415641554154534881ec180600004989f74189fe488d85c0fdff
 e asm.arch=x86
@@ -51,7 +51,7 @@ EOF
 RUN
 
 NAME=wai
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 554889e54157415641554154534881ec180600004989f74189fe488d85c0fdff
 e asm.arch=x86
@@ -69,7 +69,7 @@ EOF
 RUN
 
 NAME=wa
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 554889e54157415641554154534881ec180600004989f74189fe488d85c0fdff
 e asm.arch=x86
@@ -87,7 +87,7 @@ EOF
 RUN
 
 NAME=wB
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wB 0x55
 pv1
@@ -107,7 +107,7 @@ EOF
 RUN
 
 NAME=w0
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 0x112233
 p8 3
@@ -124,7 +124,7 @@ EOF
 RUN
 
 NAME=w[1234]
-FILE=-
+FILE=malloc://512
 ARGS=-e cfg.bigendian=false
 CMDS=<<EOF
 wx 0022
@@ -141,7 +141,7 @@ EOF
 RUN
 
 NAME=w6x
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w6d ESIz
 p8 3
@@ -155,7 +155,7 @@ EOF
 RUN
 
 NAME=w6e
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w6d ESIz
 p8 3
@@ -171,7 +171,7 @@ EOF
 RUN
 
 NAME=wh
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wh radare2~?
 EOF
@@ -181,7 +181,7 @@ EOF
 RUN
 
 NAME=we
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 i~size[1]
 wen 10
@@ -194,7 +194,7 @@ EOF
 RUN
 
 NAME=wp
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 echo 0x10 '"hello"' > .r2-wp.test
 echo 0x20 01020304 >> .r2-wp.test
@@ -213,7 +213,7 @@ EOF
 RUN
 
 NAME=wu
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 EOF
 EXPECT=<<EOF
@@ -221,7 +221,7 @@ EOF
 RUN
 
 NAME=wr
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wr 4
 pv4~0x00000000
@@ -231,7 +231,7 @@ EOF
 RUN
 
 NAME=wA
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 EOF
 EXPECT=<<EOF
@@ -239,7 +239,7 @@ EOF
 RUN
 
 NAME=wc
-FILE=-
+FILE=malloc://512
 ARGS=-e io.cache=true
 CMDS=<<EOF
 wx 010203
@@ -295,7 +295,7 @@ EOF
 RUN
 
 NAME=w
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 555555555555
 w hello
@@ -309,7 +309,7 @@ EOF
 RUN
 
 NAME=wz
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 555555555555
 wz hello
@@ -323,7 +323,7 @@ EOF
 RUN
 
 NAME=wt
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 01020304
 wt .r2-wt.test 4
@@ -380,7 +380,7 @@ EOF
 RUN
 
 NAME=wf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 0102030405060708
 wfx 4 2
@@ -392,7 +392,7 @@ EOF
 RUN
 
 NAME=ww
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ww hello
 psw
@@ -403,7 +403,7 @@ EOF
 RUN
 
 NAME=wx
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 553344
 p8 3
@@ -421,7 +421,7 @@ EOF
 RUN
 
 NAME=wa
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -436,7 +436,7 @@ EOF
 RUN
 
 NAME=wX
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wX 0102 @!20
 p8 20
@@ -447,7 +447,7 @@ EOF
 RUN
 
 NAME=wm
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wm f0ff
 wX 010203 @!20
@@ -459,7 +459,7 @@ EOF
 RUN
 
 NAME=wv
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wv1 0x55
 pv4
@@ -476,7 +476,7 @@ EOF
 RUN
 
 NAME=wo
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 10
 woo 0x55
@@ -491,7 +491,7 @@ EOF
 RUN
 
 NAME=wd
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 010203 @ 0x10
 p8 2
@@ -505,7 +505,7 @@ EOF
 RUN
 
 NAME=ws
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ws hello
 p8 6
@@ -519,7 +519,7 @@ EOF
 RUN
 
 NAME=ws2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ws hello
 p8 16
@@ -539,7 +539,7 @@ EOF
 RUN
 
 NAME=w+
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e hex.header=false
 w+hello

@@ -1,5 +1,5 @@
 NAME=aii
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 aii pigs
 aii pigs
@@ -17,7 +17,7 @@ EOF
 RUN
 
 NAME=aii-
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 aii pigs
 aii dogs

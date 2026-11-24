@@ -48,7 +48,7 @@ EOF
 RUN
 
 NAME=pFa BIT_STRING with number of unused bits
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 030801016e500dc00000
 pFa
@@ -61,7 +61,7 @@ EOF
 RUN
 
 NAME=pFa BIT_STRING at the end of the block
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.utf8=true
 wx 3004030200ff41
@@ -84,7 +84,7 @@ EOF
 RUN
 
 NAME=pFa BOOLEAN with empty and valid content
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 018100ff
 b 3
@@ -102,7 +102,7 @@ EOF
 RUN
 
 NAME=pFa on Ed25519 OID
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 06032b6570
 pFa
@@ -115,7 +115,7 @@ EOF
 RUN
 
 NAME=pFa OCTET_STRING
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 3009040265210403650065
 pFa
@@ -130,7 +130,7 @@ EOF
 RUN
 
 NAME=pFa OCTET_STRING with utf8 ignores the bytes after it
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 6
 wx 0402c3a90000

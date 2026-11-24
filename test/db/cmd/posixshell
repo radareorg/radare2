@@ -1,5 +1,5 @@
 NAME=internal rabin2 preserves pushd stack
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 cd /
 pushd /dev
@@ -19,7 +19,7 @@ EOF
 RUN
 
 NAME=pushd;popd
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 cd /
 pushd dev
@@ -47,7 +47,7 @@ EOF
 RUN
 
 NAME=mkdir; ls
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 mkdir .tmp
 rm .tmp/blah/bleh
@@ -64,7 +64,7 @@ EOF
 RUN
 
 NAME=mkdir -p (without specifying directory)
-FILE=-
+FILE=malloc://512
 CMDS=mkdir -p
 EXPECT_ERR=<<EOF
 INFO: Usage: mkdir [-p] [directory]
@@ -72,7 +72,7 @@ EOF
 RUN
 
 NAME=mkdir -p
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 rm /tmp/foo/bar/foo/fooz
 rm /tmp/foo/bar/foo
@@ -93,7 +93,7 @@ EXPECT_ERR=
 RUN
 
 NAME=cd looks up CDPATH
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 cd /
 %CDPATH=/nonexistent:/usr
@@ -121,7 +121,7 @@ EOF
 RUN
 
 NAME=sh mktemp without arguments reports usage and keeps running
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 sh mktemp
 ?e alive
@@ -135,7 +135,7 @@ EOF
 RUN
 
 NAME=pa .extern without the exec grain
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=none
 e cfg.sandbox=true

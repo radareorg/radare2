@@ -1,5 +1,5 @@
 NAME=LAq lists tp analysis plugin
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 LAq~tp
 EOF
@@ -9,7 +9,7 @@ EOF
 RUN
 
 NAME=LA shows tp analysis plugin table
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 LA~tp
 EOF
@@ -19,7 +19,7 @@ EOF
 RUN
 
 NAME=LAj first plugin has score and eligible fields
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 LAj~{0}
 EOF
@@ -29,7 +29,7 @@ EOF
 RUN
 
 NAME=LAf does not crash
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 LAf
 ?e ok
@@ -64,7 +64,7 @@ EOF
 RUN
 
 NAME=anal.plugins.vars config exists
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e anal.plugins.vars
 EOF
@@ -74,7 +74,7 @@ EOF
 RUN
 
 NAME=anal.plugins.post config exists
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e anal.plugins.post
 EOF

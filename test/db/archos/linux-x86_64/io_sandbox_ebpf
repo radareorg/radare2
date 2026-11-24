@@ -1,5 +1,5 @@
 NAME=sandbox blocks ebpf:// regardless of grain
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=all
 e cfg.sandbox=true

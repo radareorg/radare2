@@ -132,7 +132,7 @@ RUN
 
 NAME=x86 zydis movsx zero-extends to rax
 REQUIRE=zydis
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86.zydis
@@ -156,7 +156,7 @@ RUN
 
 NAME=x86 zydis rep movsb esil execution
 REQUIRE=zydis
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86.zydis
@@ -187,7 +187,7 @@ RUN
 
 NAME=x86 zydis zero-count rep cmpsb/scasb
 REQUIRE=zydis
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86.zydis

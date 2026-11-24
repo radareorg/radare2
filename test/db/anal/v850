@@ -423,7 +423,7 @@ RUN
 
 # somehow the CI cant disasm with those plugins, while it runs in local and the plugin is there
 NAME=v850.np r0ref
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -a?~v850
 e asm.bits=32
@@ -479,7 +479,7 @@ EOF
 RUN
 
 NAME=v850 stack adjustments
-FILE=-
+FILE=malloc://512
 ARGS=-a v850 -e asm.bytes=false -e asm.stackptr=true
 CMDS=<<EOF
 wx 031ee0ff03360024061e1000a619581a631e10007f00
@@ -498,7 +498,7 @@ EOF
 RUN
 
 NAME=v850e0 stack adjustments
-FILE=-
+FILE=malloc://512
 ARGS=-a v850 -e asm.bytes=false -e asm.stackptr=true
 CMDS=<<EOF
 e asm.cpu=e0

@@ -1,5 +1,5 @@
 NAME=INC dword [0x4945b8] - op->ptr set
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -12,7 +12,7 @@ EOF
 RUN
 
 NAME=DEC dword [0x4945b8] - op->ptr set
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -25,7 +25,7 @@ EOF
 RUN
 
 NAME=NEG dword [0x4945b8] - op->ptr set
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -38,7 +38,7 @@ EOF
 RUN
 
 NAME=NOT dword [0x4945b8] - op->ptr set
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -51,7 +51,7 @@ EOF
 RUN
 
 NAME=MOV ecx,[0x4945b8] - op1_memimmhandle ptr set
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -64,7 +64,7 @@ EOF
 RUN
 
 NAME=MOV [0x4945b8],ecx - op0_memimmhandle ptr set
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -77,7 +77,7 @@ EOF
 RUN
 
 NAME=TEST [0x4945b8],ecx - op0_memimmhandle ptr set
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -90,7 +90,7 @@ EOF
 RUN
 
 NAME=DIV dword [0x4945b8] - op0_memimmhandle ptr set
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -103,7 +103,7 @@ EOF
 RUN
 
 NAME=IMUL dword [0x4945b8] - op0_memimmhandle ptr set
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -116,7 +116,7 @@ EOF
 RUN
 
 NAME=CMP dword [0x4945b8],1 - op0_memimmhandle ptr set
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -129,7 +129,7 @@ EOF
 RUN
 
 NAME=ADD dword [0x4945b8],eax - op0_memimmhandle ptr set
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -142,7 +142,7 @@ EOF
 RUN
 
 NAME=SUB dword [0x4945b8],eax - op0_memimmhandle ptr set
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -155,7 +155,7 @@ EOF
 RUN
 
 NAME=AND dword [0x4945b8],eax - op0_memimmhandle ptr set
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -168,7 +168,7 @@ EOF
 RUN
 
 NAME=OR dword [0x4945b8],eax - op0_memimmhandle ptr set
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -181,7 +181,7 @@ EOF
 RUN
 
 NAME=XOR dword [0x4945b8],eax - op0_memimmhandle ptr set
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -194,7 +194,7 @@ EOF
 RUN
 
 NAME=ROL dword [0x4945b8],cl - op0_memimmhandle ptr set
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -207,7 +207,7 @@ EOF
 RUN
 
 NAME=SHR dword [0x4945b8],cl - op0_memimmhandle ptr set
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32

@@ -51,7 +51,7 @@ EOF
 RUN
 
 NAME=IHEX: the EOF record does not rewrite the last data record
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ?e :020000040800F2 > .tmp_ihex_eof.hex
 ?e :0400000001020304F2 >> .tmp_ihex_eof.hex
@@ -129,7 +129,7 @@ EOF
 RUN
 
 NAME=IHEX: unknown record types are rejected
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 o ihex://bins/ihex/unknown-record-type.hex
 EOF
@@ -142,7 +142,7 @@ EOF
 RUN
 
 NAME=IHEX: the checksum of the last record is checked
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 o ihex://bins/ihex/bad-checksum-last-record.hex
 EOF

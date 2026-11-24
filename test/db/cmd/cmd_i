@@ -3601,7 +3601,7 @@ EOF
 RUN
 
 NAME=iu help
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 iu?~iux
 iu?~overwritten
@@ -3613,7 +3613,7 @@ EOF
 RUN
 
 NAME=iu subcommand help
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 iu,?
 iu*?
@@ -3633,7 +3633,7 @@ EOF
 RUN
 
 NAME=iu invalid subcommand
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 iuy
 s 0
@@ -3644,7 +3644,7 @@ EOF
 RUN
 
 NAME=ix help
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ix?~extract all
 iS?~extract all
@@ -3816,7 +3816,7 @@ EOF
 RUN
 
 NAME=it
-FILE=-
+FILE=malloc://512
 ARGS=-w
 CMDS=it ; wx 0x90 ; it
 EXPECT=<<EOF
@@ -3956,7 +3956,7 @@ EOF
 RUN
 
 NAME=ii respects bin.limit after open (elf)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e bin.relocs=false
 e bin.limit=2
@@ -3972,7 +3972,7 @@ EOF
 RUN
 
 NAME=mach0 listings respect bin.limit after open
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e bin.relocs=false
 e bin.limit=3
@@ -4001,7 +4001,7 @@ EOF
 RUN
 
 NAME=pe listings respect bin.limit after open
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e bin.relocs=false
 e bin.limit=3
@@ -4031,7 +4031,7 @@ EOF
 RUN
 
 NAME=dex listings respect bin.limit after open
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e bin.relocs=false
 e bin.limit=3
@@ -4094,7 +4094,7 @@ EOF
 RUN
 
 NAME=iL plugin details preserve exact and prefix lookup
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 iL elf
 iL elf64
@@ -4135,7 +4135,7 @@ EOF
 RUN
 
 NAME=iLj plugin details use shared JSON metadata
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 iLj elf
 iLj elf64
@@ -4155,7 +4155,7 @@ EOF
 RUN
 
 NAME=iL unknown plugin reports an error
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 iL aitodo_missing_plugin
 EOF
@@ -4167,7 +4167,7 @@ EOF
 RUN
 
 NAME=iD msvc with unknown operator codes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 "iD msvc ??_!A@@YAXXZ"
 "iD msvc ??_R1A@@"
@@ -4183,7 +4183,7 @@ EOF
 RUN
 
 NAME=iD msvc with a quoted or escaped symbol
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 iD msvc "??$f@H@@YAXH@Z"
 iD msvc '?f@A@@QAEXXZ'

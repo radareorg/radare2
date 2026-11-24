@@ -12,7 +12,7 @@ EOF
 RUN
 
 NAME=-a bug
-FILE=-
+FILE=malloc://512
 ARGS=-a ppc -b32
 CMDS=<<EOF
 -a

@@ -1,5 +1,5 @@
 NAME=f_123
-FILE=-
+FILE=malloc://512
 ARGS=-1
 CMDS=<<EOF
 f _foo=123
@@ -32,7 +32,7 @@ EXPECT_ERR=
 RUN
 
 NAME=f?flag
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 f foo=123
 f?foo;?? ?e hello
@@ -44,7 +44,7 @@ EOF
 RUN
 
 NAME=fs-fd-flags-visibility
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 fs jeje
 f hidden
@@ -60,7 +60,7 @@ EOF
 RUN
 
 NAME=f command with space
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 f  foobar=0x1000
 f
@@ -71,14 +71,14 @@ EOF
 RUN
 
 NAME=no flags
-FILE=-
+FILE=malloc://512
 CMDS=f
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=no flags*
-FILE=-
+FILE=malloc://512
 CMDS=f*
 EXPECT=<<EOF
 EOF
@@ -491,7 +491,7 @@ EOF
 RUN
 
 NAME=Set/get
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 f cat
 f rimmer 12
@@ -510,7 +510,7 @@ EOF
 RUN
 
 NAME=flags (JSON)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 # Add flags.
 f cat
@@ -526,7 +526,7 @@ EOF
 RUN
 
 NAME=flag alias
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 fa foo=bar+3
 f bar=3
@@ -538,7 +538,7 @@ EOF
 RUN
 
 NAME=flag alias 2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 fa foo bar+3
 f bar=3
@@ -550,7 +550,7 @@ EOF
 RUN
 
 NAME=flag alias infinite check
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 fa foo=foo+3
 ?v foo
@@ -561,7 +561,7 @@ EOF
 RUN
 
 NAME=flag prefix dump
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 f jiji=1
 f jojo=2
@@ -591,7 +591,7 @@ EOF
 RUN
 
 NAME=f+
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 f+foo=10
 f+bar=20
@@ -697,7 +697,7 @@ EOF
 RUN
 
 NAME=fss keeps pushed space names after deleting the space
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 fs foo
 fs+bar

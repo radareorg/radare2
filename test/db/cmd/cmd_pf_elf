@@ -390,7 +390,7 @@ EOF
 RUN
 
 NAME=pf elf_header times fix
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pfo elf32.r2
 pf? elf_header

@@ -230,7 +230,7 @@ EOF
 RUN
 
 NAME=abpe does not recurse forever through a self calling function
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 TIMEOUT=10
 CMDS=<<EOF

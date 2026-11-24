@@ -1,5 +1,5 @@
 NAME=p== output lines
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 00112233445566778899aabbccddeeff
 p== 16~?
@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=p== value ruler
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.utf8=false
 e scr.color=0
@@ -36,7 +36,7 @@ EOF
 RUN
 
 NAME=p== keeps an isolated peak when squeezing
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.color=0
 e scr.hist.block=false
@@ -51,7 +51,7 @@ EOF
 RUN
 
 NAME=p== bar reaches the row matching its value
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.color=0
 e scr.hist.block=false
@@ -68,7 +68,7 @@ EOF
 RUN
 
 NAME=p== zero input draws only the baseline
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.color=0
 e scr.hist.block=false
@@ -85,7 +85,7 @@ EOF
 RUN
 
 NAME=p== ruler needs one plot column
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.color=0
 e scr.hist.block=false
@@ -103,7 +103,7 @@ EOF
 RUN
 
 NAME=p== ruler needs one plot column with utf8
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.color=0
 e scr.hist.block=false
@@ -141,7 +141,7 @@ EOF
 RUN
 
 NAME=p==b output lines
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 00112233445566778899aabbccddeeff
 p==b 16~?
@@ -152,7 +152,7 @@ EOF
 RUN
 
 NAME=p==e output lines
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 00000000111111112222222233333333
 p==e 16~?
@@ -163,7 +163,7 @@ EOF
 RUN
 
 NAME=p==p output lines
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w helloworld12345
 p==p 16~?
@@ -174,7 +174,7 @@ EOF
 RUN
 
 NAME=p==0 output lines
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 00000000112233440000000055667788
 p==0 16~?
@@ -185,7 +185,7 @@ EOF
 RUN
 
 NAME=p==f output lines
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx ffffffff00000000ffffffff00000000
 p==f 16~?
@@ -196,7 +196,7 @@ EOF
 RUN
 
 NAME=p== not crash with empty
-FILE=-
+FILE=malloc://512
 CMDS=p==~?
 EXPECT=<<EOF
 14
@@ -204,7 +204,7 @@ EOF
 RUN
 
 NAME=p=F counts 0xff bytes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 2
 wx 0xff
@@ -217,7 +217,7 @@ EOF
 RUN
 
 NAME=p=b 0xff 0x00
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 2
 wx 0xff
@@ -231,7 +231,7 @@ EOF
 RUN
 
 NAME=p= - crash
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e zoom.in = block
 p=p" 1 " 1 EN
@@ -336,7 +336,7 @@ EOF
 RUN
 
 NAME=p=e hex.addr=0
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e hex.addr=0
 e scr.color=0
@@ -381,7 +381,7 @@ RUN
 
 
 NAME=p-j analysis metadata json keeps offsets
-FILE=-
+FILE=malloc://512
 CMDS=o--;e hex.cols=4;e search.in=range;e search.from=0;e search.to=16;af+ 0 16 fcn_test;p-j 4~{ranges[0]};p-j 4~{blocks[0]};p-j 4~{blocks[3]}
 EXPECT=<<EOF
 {"from":0,"to":16}
@@ -391,7 +391,7 @@ EOF
 RUN
 
 NAME=p= p- and p-j raw json ranges
-FILE=-
+FILE=malloc://512
 CMDS=wx 00112233445566778899aabbccddeeff;e hex.cols=1;e zoom.in=raw;p=ej 1~{entropy[0].value};e search.in=raw;p-ej 1~{entropy[0].value};af+ 0 16 fcn_test;p-j 1~{ranges[0]};p-j 1~{blocks[0].perm}
 EXPECT=<<EOF
 9

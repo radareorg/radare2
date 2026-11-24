@@ -12,7 +12,7 @@ EOF
 RUN
 
 NAME=x86-16 static calling convention stack pop
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e anal.arch=x86
@@ -37,7 +37,7 @@ EOF
 RUN
 
 NAME=lcall offset (#12284)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16
@@ -50,7 +50,7 @@ EOF
 RUN
 
 NAME=ljmp offset (#12284)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16
@@ -63,7 +63,7 @@ EOF1
 RUN
 
 NAME=aoj pushf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16
@@ -142,7 +142,7 @@ EOF
 RUN
 
 NAME=x86-16 les,lds arg anal
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16
@@ -163,7 +163,7 @@ EOF
 RUN
 
 NAME=x86-16 seg:off call addr replace with analysed func name
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16
@@ -184,7 +184,7 @@ RUN
 
 
 NAME=x86-16 seg:off lcall addr replace with non-analysed func
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16
@@ -197,7 +197,7 @@ EOF
 RUN
 
 NAME=x86-16 seg:off ljmp addr replace with non-analysed func
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16
@@ -210,7 +210,7 @@ EOF
 RUN
 
 NAME=x86-16 seg:off ljmp addr replace with analysed func
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16

@@ -29,7 +29,7 @@ EOF
 RUN
 
 NAME=Cr 10 px after C* replay
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b32
 CMDS=<<EOF
 wx 90909090c3c3
@@ -50,7 +50,7 @@ EOF
 RUN
 
 NAME=Cr 10 px after Cr* replay
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b32
 CMDS=<<EOF
 wx 90909090c3c3
@@ -70,7 +70,7 @@ EOF
 RUN
 
 NAME=Cr commands survive repeated C* and Cr* replay
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 '@0x10'Cr 2 ?e "hello" \path
 Cr. @ 0x10
@@ -92,7 +92,7 @@ EOF
 RUN
 
 NAME=Cr replay preserves operators without substitutions
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 '@0x20'Cr 1 ?e @ # | $(f subst_ran=1) `f backtick_ran=1`
 .C*
@@ -109,7 +109,7 @@ EOF
 RUN
 
 NAME=Cr replay stores commands until disassembly
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b32
 CMDS=<<EOF
 wx 90 @ 0x10
@@ -131,7 +131,7 @@ EOF
 RUN
 
 NAME=Cr replay keeps control bytes encoded
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 Cr 2 base64:P2UgY29udHJvbApmIG5ld2xpbmVfcmFuPTENCRs= @ 0x30
 Cr*
@@ -150,7 +150,7 @@ EOF
 RUN
 
 NAME=Cr replay preserves commands longer than the metadata name buffer
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 '@0x40'Cr 2 ?e 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 .C*
@@ -165,7 +165,7 @@ EOF
 RUN
 
 NAME=Cr rejects invalid base64, NUL and empty commands
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 Cr 2 ?e original @ 0x10
 '@0x10'Cr 2 base64:???
@@ -192,7 +192,7 @@ EOF
 RUN
 
 NAME=Cr 10 pd
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b32
 CMDS=<<EOF
 wx 90909090c3c3
@@ -218,7 +218,7 @@ EOF
 RUN
 
 NAME=Cr px with asm.meta=false
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b32
 CMDS=<<EOF
 wx 90909090c3c3
@@ -238,7 +238,7 @@ EOF
 RUN
 
 NAME=Cr deleting itself
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b32
 CMDS=<<EOF
 wx 90909090c3c3
@@ -263,7 +263,7 @@ EOF
 RUN
 
 NAME=Cr deleting the function being disassembled
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 wx 554889e5c3
@@ -283,7 +283,7 @@ EOF
 RUN
 
 NAME=Cr is not run under sandbox without exec
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 wx 90909090c3c3
@@ -301,7 +301,7 @@ EOF
 RUN
 
 NAME=Cr restores seek and block size across repeated callbacks
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 wx 90909090c3c3
@@ -343,7 +343,7 @@ EOF
 RUN
 
 NAME=Cr refreshes borrowed configuration strings
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 wx 90909090c3c3
@@ -372,7 +372,7 @@ EOF
 RUN
 
 NAME=Cr deleting the cached symbol name
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64 -e asm.symbol=true
 CMDS=<<EOF
 wx 554889e5c3
@@ -391,7 +391,7 @@ EOF
 RUN
 
 NAME=Cr deleting the function stops pdf
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 wx 554889e5c3
@@ -674,14 +674,14 @@ EOF
 RUN
 
 NAME=Cf should be silent
-FILE=-
+FILE=malloc://512
 CMDS=Cf 32 2xx
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=format memory metadata
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 41424344
 Cf 4 x
@@ -1059,7 +1059,7 @@ EOF
 RUN
 
 NAME=Cd- <size> <repeat>
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s 0x100
 Cd 4 5
@@ -1088,7 +1088,7 @@ EOF
 RUN
 
 NAME=delete specific type of metadata from addr
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s 0x100
 w abcd
@@ -1112,7 +1112,7 @@ EOF
 RUN
 
 NAME=C-
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s 0x100
 w abcd
@@ -1133,7 +1133,7 @@ EOF
 RUN
 
 NAME=Cd- and C- in issue #8648
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s 0x100
 Cd 4 1
@@ -1164,7 +1164,7 @@ EOF
 RUN
 
 NAME=Cd. (#10856)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s 0x50
 Cd 4 2
@@ -1179,7 +1179,7 @@ EOF
 RUN
 
 NAME=Cd4
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64

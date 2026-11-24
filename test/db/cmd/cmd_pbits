@@ -1,5 +1,5 @@
 NAME=pB 0xff
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 0xff
 pB 2
@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=pb 0x12
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 0x12
 pb 8
@@ -25,7 +25,7 @@ EOF
 RUN
 
 NAME=pxb 8
-FILE=-
+FILE=malloc://512
 CMDS=pxb 8
 EXPECT=<<EOF
 0x00000000 0000_0000  0000_0000  0000_0000  0000_0000  0x00000000  ....
@@ -34,7 +34,7 @@ EOF
 RUN
 
 NAME=pxB 8
-FILE=-
+FILE=malloc://512
 CMDS=pxB 8
 EXPECT=<<EOF
 0x00000000 ...._....  ...._....  ...._....  ...._....  0x00000000  ....

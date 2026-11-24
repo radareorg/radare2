@@ -1009,7 +1009,7 @@ EOF
 RUN
 
 NAME=rabin2 -O bad op
-FILE=-
+FILE=malloc://512
 CMDS=!rabin2 -O bad_op -
 EXPECT_ERR=<<EOF
 ERROR: Unknown operation. use -O help
@@ -1017,7 +1017,7 @@ EOF
 RUN
 
 NAME=rabin2 -v
-FILE=-
+FILE=malloc://512
 CMDS=!rabin2 -v | grep -c birth
 EXPECT=<<EOF
 1
@@ -1025,7 +1025,7 @@ EOF
 RUN
 
 NAME=rabin2 -L
-FILE=-
+FILE=malloc://512
 CMDS=!rabin2 -L | grep -c null
 EXPECT=<<EOF
 1
@@ -1033,7 +1033,7 @@ EOF
 RUN
 
 NAME=rabin2 -Lq
-FILE=-
+FILE=malloc://512
 CMDS=!rabin2 -Lq | grep -c null
 EXPECT=<<EOF
 1
@@ -1041,7 +1041,7 @@ EOF
 RUN
 
 NAME=rabin2 -Lj
-FILE=-
+FILE=malloc://512
 CMDS=!rabin2 -Lj | grep -c null
 EXPECT=<<EOF
 1
@@ -1049,7 +1049,7 @@ EOF
 RUN
 
 NAME=rabin2 -L lists demanglers
-FILE=-
+FILE=malloc://512
 CMDS=!rabin2 -L | grep -c '^dem  c++'
 EXPECT=<<EOF
 1
@@ -1057,7 +1057,7 @@ EOF
 RUN
 
 NAME=rabin2 -Lj lists demanglers
-FILE=-
+FILE=malloc://512
 CMDS=!rabin2 -Lj | grep -c '"dem":'
 EXPECT=<<EOF
 1
@@ -1065,7 +1065,7 @@ EOF
 RUN
 
 NAME=rabin2 -Lj null
-FILE=-
+FILE=malloc://512
 CMDS=!rabin2 -Lj null | grep -c Dummy
 EXPECT=<<EOF
 1
@@ -1073,7 +1073,7 @@ EOF
 RUN
 
 NAME=rabin2 -L elf
-FILE=-
+FILE=malloc://512
 CMDS=!rabin2 -L elf
 EXPECT=<<EOF
 Name: elf
@@ -1084,7 +1084,7 @@ EOF
 RUN
 
 NAME=rabin2 -L elf64
-FILE=-
+FILE=malloc://512
 CMDS=!rabin2 -L elf64
 EXPECT=<<EOF
 Name: elf64
@@ -1424,7 +1424,7 @@ EOF
 RUN
 
 NAME=rabin2 -S ""
-FILE=-
+FILE=malloc://512
 CMDS=!rabin2 -S ""
 EXPECT_ERR=<<EOF
 ERROR: Cannot open empty path
@@ -1432,7 +1432,7 @@ EOF
 RUN
 
 NAME=rabin2 lists RABIN2_RESRAW
-FILE=-
+FILE=malloc://512
 CMDS=!rabin2 -J | grep '^RABIN2_RESRAW='
 EXPECT=<<EOF
 RABIN2_RESRAW=

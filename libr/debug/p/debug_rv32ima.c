@@ -1,5 +1,5 @@
 /* radare - LGPL - Copyright 2023 pancake */
-// r2 -a riscv -b 32 -Drv32ima -
+// r2 -a riscv -b 32 -Drv32ima malloc://512
 // wx b700000037a10000b711000037803e001300000013000000130000001300000013000000e39420fe
 // ds / drp / pd
 

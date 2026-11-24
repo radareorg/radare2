@@ -248,7 +248,7 @@ EOF
 RUN
 
 NAME=pd bits hint
-FILE=-
+FILE=malloc://512
 ARGS=-a snes
 CMDS=<<EOF
 wx a97e00
@@ -1057,7 +1057,7 @@ EOF
 RUN
 
 NAME=bin.str.enc error handling
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 (test_str.enc enc; e bin.str.enc=$0; e bin.str.enc)
 .(test_str.enc UTF-32LE)
@@ -1415,7 +1415,7 @@ EOF
 RUN
 
 NAME=pdJ asm.xrefs.fold asm.xrefs.max
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s 0
 e asm.arch=x86
@@ -1491,7 +1491,7 @@ EOF
 RUN
 
 NAME=pd0~{} - crash
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.null =true
 pd0~{}
@@ -1501,7 +1501,7 @@ EOF
 RUN
 
 NAME=pI - crash
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.null =true
 pI 0x200
@@ -1511,7 +1511,7 @@ EOF
 RUN
 
 NAME=pC - crash
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.null =true
 pC 0x200
@@ -1616,7 +1616,7 @@ EOF
 RUN
 
 NAME=pd @B
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.functions=false
 e asm.lines.jmp=false
@@ -1916,7 +1916,7 @@ EOF
 RUN
 
 NAME=pdJ with backslashes, quotation marks, str.escbslash and bin.str.enc
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.cache=true
 e asm.arch=x86

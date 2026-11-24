@@ -7,7 +7,7 @@ EOF
 RUN
 
 NAME=sidbug2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e search.from=0
 e search.to=10

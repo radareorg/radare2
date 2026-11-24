@@ -18,7 +18,8 @@ flags.
 ### radare2
 
 ```sh
-r2 -       # same as r2 malloc://4096; "the playground"
+r2 -nqc 'p8 4' - < sample.bin # inspect raw bytes from stdin
+r2 malloc://512 # open a 512-byte scratch buffer
 r2 /bin/ls # standard way to run r2
 r2 -w ls   # open in read-write
 r2 -d ls   # start debugging the ls in PATH
@@ -79,7 +80,7 @@ r2.quit()
 
 ### HTTP commands
 
-Start the HTTP server with `r2 -e http.port=9999 -c '=h' -`. These requests
+Start the HTTP server with `r2 -e http.port=9999 -c '=h' malloc://512`. These requests
 all execute `echo hello`:
 
 ```sh

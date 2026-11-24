@@ -115,7 +115,7 @@ EOF
 RUN
 
 NAME=typelinks
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -143,7 +143,7 @@ EOF
 RUN
 
 NAME=typelinks 2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -172,7 +172,7 @@ EOF
 RUN
 
 NAME=exact function type link overrides name lookup
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -352,7 +352,7 @@ EOF
 RUN
 
 NAME=t
-FILE=-
+FILE=malloc://512
 CMDS=t~char,double,float,int,long,short,size,uid,void # basic universal types
 EXPECT=<<EOF
 char
@@ -380,7 +380,7 @@ EOF
 RUN
 
 NAME=t <type>
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 t int
 t-*
@@ -396,7 +396,7 @@ EOF
 RUN
 
 NAME=t-enum
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 td enum pe_machine { IMAGE_FILE_MACHINE_IA64=0x200, IMAGE_FILE_MACHINE_I386=0x14c };
 te~?pe_machine
@@ -410,7 +410,7 @@ EOF
 RUN
 
 NAME=t-struct
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 t-*
 'td struct three_elements{int x; char y; float z;}
@@ -423,7 +423,7 @@ EOF
 RUN
 
 NAME=t-union
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td union xoo{int x; int y; int z;}
 tk*~union
@@ -439,7 +439,7 @@ EOF
 RUN
 
 NAME=typedef
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td typedef int Abracadabra
 t-Abracadabra
@@ -451,7 +451,7 @@ EOF
 RUN
 
 NAME=t-*
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 td enum pe_machine { IMAGE_FILE_MACHINE_IA64=0x200, IMAGE_FILE_MACHINE_I386=0x14c };
 t-*
@@ -462,7 +462,7 @@ EOF
 RUN
 
 NAME=teb
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 td enum pe_machine { IMAGE_FILE_MACHINE_IA64=0x200, IMAGE_FILE_MACHINE_I386=0x14c };
 teb pe_machine IMAGE_FILE_MACHINE_I386
@@ -473,7 +473,7 @@ EOF
 RUN
 
 NAME=te
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 td enum pe_machine { IMAGE_FILE_MACHINE_IA64=0x200, IMAGE_FILE_MACHINE_I386=0x14c };
 te pe_machine 0x14c
@@ -484,7 +484,7 @@ EOF
 RUN
 
 NAME=tt
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 td typedef char FILE_NAME;
 tt FILE_NAME
@@ -498,7 +498,7 @@ EOF
 RUN
 
 NAME=td struct
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 t-*
 'td struct test_struct{int x;int y;};
@@ -510,7 +510,7 @@ EOF
 RUN
 
 NAME=tsn <size>
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td struct One { int a; };
 'td struct Two { int a; int b; };
@@ -528,7 +528,7 @@ EOF
 RUN
 
 NAME=enum32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td enum v { t=0x123, p=0x321 };
 te~?
@@ -545,7 +545,7 @@ EOF
 RUN
 
 NAME=enum64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td enum v { t=0x8000000000000001, p=0x8000000000000008 };
 te~?
@@ -560,7 +560,7 @@ EOF
 RUN
 
 NAME=to error.h
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 to bins/other/error.h
 t~char,double,float,int,long,short,size,uid,void # basic universal types
@@ -600,7 +600,7 @@ EOF
 RUN
 
 NAME=to test.h
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 to bins/other/test.h
 t~char,double,float,int,long,short,size,uid,void # basic universal types
@@ -642,7 +642,7 @@ EOF
 RUN
 
 NAME=t*
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 t-*
 tk a=b
@@ -654,7 +654,7 @@ EOF
 RUN
 
 NAME=tp
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td struct person { int age; char name[10]; }
 s 4
@@ -670,7 +670,7 @@ EOF
 RUN
 
 NAME=unions
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td union x{float a;int b;}
 tu
@@ -681,7 +681,7 @@ EOF
 RUN
 
 NAME=Types not reloaded when arch is the same
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e anal.arch=x86
@@ -699,7 +699,7 @@ EOF
 RUN
 
 NAME=td twice
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td int foo(int bar);
 'td int foo(int bar);
@@ -717,7 +717,7 @@ EOF
 RUN
 
 NAME=struct of struct with ts and pf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td struct bar { int a; int b; };
 'td struct foo { int x; struct bar moo; };
@@ -735,7 +735,7 @@ EOF
 RUN
 
 NAME=Array of struct with ts
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td struct bar { int a; int b; };
 'td struct foo { int x; struct bar moo[2]; };
@@ -759,7 +759,7 @@ EOF
 RUN
 
 NAME=te <enum>
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td enum Foo {COW=1,BAR=2};
 te
@@ -773,7 +773,7 @@ EOF
 RUN
 
 NAME=te <enum> <value>
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td enum Foo {COW=1,BAR=2};
 te Foo 1
@@ -784,7 +784,7 @@ EOF
 RUN
 
 NAME=teb <enum> <name>
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td enum Foo {COW=1,BAR=2};
 teb Foo COW
@@ -795,7 +795,7 @@ EOF
 RUN
 
 NAME=ten <value>
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td enum Alpha {ONE=1,TWO=2};
 'td enum Beta {UNO=2,DOS=3};
@@ -848,7 +848,7 @@ EOF
 RUN
 
 NAME=truncated tp
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td struct foobar{uint32_t a; uint32_t b; uint32_t c; uint32_t d;}
 b 64
@@ -890,7 +890,7 @@ EOF
 RUN
 
 NAME=tpx test
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td struct foo {char* a; int b;}
 tpx foo 41414141441414141414420010000000
@@ -902,7 +902,7 @@ EOF
 RUN
 
 NAME=tpv accepts safe formats and rejects command separators
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 tpv int32_t @ 42
 'tk type.int32_t="d;?e TYPE_FORMAT_MARKER"
@@ -916,7 +916,7 @@ EXPECT_ERR=
 RUN
 
 NAME=aht and arm
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch = arm
 e asm.bits = 32
@@ -935,7 +935,7 @@ EOF
 RUN
 
 NAME=aht and mips
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=mips
 wx 08007fac040053800800538c
@@ -969,7 +969,7 @@ EOF
 RUN
 
 NAME=struct offset for dst operand with aht
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -992,7 +992,7 @@ EOF
 RUN
 
 NAME=struct offset propagate via tl
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -1014,7 +1014,7 @@ EOF
 RUN
 
 NAME=aat with single struct
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -1037,7 +1037,7 @@ EOF
 RUN
 
 NAME=aat with multiple struct
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -1237,7 +1237,7 @@ EOF
 RUN
 
 NAME=ts function pointer test
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bits=64
 ws hello @ 0x10
@@ -1254,7 +1254,7 @@ EOF
 RUN
 
 NAME=ts general pointers test
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td struct normal {int a;char b;};
 'td struct pointer {char *y;struct normal *obj;};
@@ -1266,7 +1266,7 @@ EOF
 RUN
 
 NAME=tsc test
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td struct three_elements{int x; char y; float z;}
 tsc three_elements
@@ -1281,7 +1281,7 @@ EOF
 RUN
 
 NAME=tsc with array
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td struct with_array{int x; char y[50]; float z;}
 tsc with_array
@@ -1296,7 +1296,7 @@ EOF
 RUN
 
 NAME=tsc pads only non-natural struct gaps
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 tk G=struct
@@ -1317,7 +1317,7 @@ EOF
 RUN
 
 NAME=td sizes pointer members by asm.bits
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 'td struct P {char *p; int c;};
@@ -1329,7 +1329,7 @@ EOF
 RUN
 
 NAME=td sizes pointer members by asm.bits on 32bit
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 'td struct P {char *p; int c;};
@@ -1362,7 +1362,7 @@ EOF
 RUN
 
 NAME=tsc does not pad unions
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 tk U=union
 tk union.U=a,b
@@ -1379,7 +1379,7 @@ EOF
 RUN
 
 NAME=tec test
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td enum Foo {COW=1,BAR=2};
 tec Foo
@@ -1393,7 +1393,7 @@ EOF
 RUN
 
 NAME=tuc test
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td union x{int x; int y; int z;}
 tuc x
@@ -1408,7 +1408,7 @@ EOF
 RUN
 
 NAME=ttc test
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td typedef char FILE_NAME;
 ttc FILE_NAME
@@ -1419,7 +1419,7 @@ EOF
 RUN
 
 NAME=tcd test
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 t-*
 'td typedef char FILE_NAME;
@@ -1437,7 +1437,7 @@ EOF
 RUN
 
 NAME=typedef struct
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 to bins/headers/12273.h
 ts A
@@ -1474,7 +1474,7 @@ EOF
 RUN
 
 NAME=typedef struct double header
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 to bins/headers/hdr1.h
 to bins/headers/hdr2.h
@@ -2321,7 +2321,7 @@ EOF
 RUN
 
 NAME=td crash
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td struct;
 'td struct crash __attribute__((packed)) { };
@@ -2331,7 +2331,7 @@ EOF
 RUN
 
 NAME=tn excludes explicit false prototypes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 k anal/types/func.probe_returns.noreturn=false
 k anal/types/func.probe_exits.noreturn=true
@@ -2415,7 +2415,7 @@ EOF
 RUN
 
 NAME=td union
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td union foo {int a;char b;}
 tu*~foo
@@ -2500,7 +2500,7 @@ EXPECT_ERR=
 RUN
 
 NAME=td uint64_t
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 0xa00f
 wx 0x401f @ 0x4
@@ -2518,7 +2518,7 @@ EOF
 RUN
 
 NAME=td empty struct
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 0xa00f
 wx 0x401f @ 0x4
@@ -2578,7 +2578,7 @@ EOF
 RUN
 
 NAME=aht aligned
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -2605,7 +2605,7 @@ EOF
 RUN
 
 NAME=ahts nested
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td struct foo {int bar;int cow;};
 'td struct spam {int ham;struct foo _foo;int eggs;};
@@ -2617,7 +2617,7 @@ EOF
 RUN
 
 NAME=ahts union nested
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td struct ahtpair {int a;int b;};
 'td union ahtunion {int raw;struct ahtpair pair;};
@@ -2629,7 +2629,7 @@ EOF
 RUN
 
 NAME=aaft io.va side effect
-FILE=-
+FILE=malloc://512
 ARGS=-eio.va=0 -a x86 -b 64
 CMDS=<<EOF
 af
@@ -2872,7 +2872,7 @@ EOF
 RUN
 
 NAME=a:tp works after manual aei
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 aei
@@ -3345,7 +3345,7 @@ EOF
 RUN
 
 NAME=td struct and union array counts reach sdb via base type serializer
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td struct KS {int a; char buf[16];}
 'td union KU {char buf[8]; int x;}
@@ -3402,7 +3402,7 @@ EOF
 RUN
 
 NAME=tsc struct member type with comma survives
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 tk tpl=struct
 tk struct.tpl=p
@@ -3422,7 +3422,7 @@ EOF
 RUN
 
 NAME=tuc union member type with comma survives
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 tk utpl=union
 tk union.utpl=p,q
@@ -3444,7 +3444,7 @@ EOF
 RUN
 
 NAME=comma member type resolves for sizeof and pf format
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'tk pair<int, char>=struct
 'tk struct.pair<int, char>=a,b
@@ -5425,7 +5425,7 @@ EOF2
 RUN
 
 NAME=td keeps the pointer with the type in function pointer members
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td struct S { int (*cb)(int *n, char *s); };
 tk~func.S
@@ -5441,7 +5441,7 @@ EOF
 RUN
 
 NAME=td stores an empty parameter list as zero arguments
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td int voidfn(void);
 'td int spacedfn( );
@@ -5459,7 +5459,7 @@ EOF
 RUN
 
 NAME=td stores a void parameter list on a member as zero arguments
-FILE=-
+FILE=malloc://512
 ARGS=-b 64
 CMDS=<<EOF
 'td struct A2 { float (*m)(void); void *x; };
@@ -5477,7 +5477,7 @@ EOF
 RUN
 
 NAME=tss reports the target word size for pointers
-FILE=-
+FILE=malloc://512
 ARGS=-b 64
 CMDS=<<EOF
 tss int *
@@ -5509,7 +5509,7 @@ EOF
 RUN
 
 NAME=td stores the variadic slot in the canonical ,... form
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td int myvarfn(const char *fmt, ...);
 tk~func.myvarfn
@@ -5525,7 +5525,7 @@ EOF
 RUN
 
 NAME=td parses function pointer parameters in prototypes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td void once(void (*cb)(int));
 'td int apply(int (*fn)(int, int), int seed);
@@ -5555,7 +5555,7 @@ EOF
 RUN
 
 NAME=td keeps a nested function pointer argument in one slot
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td struct N { int (*cb)(int (*inner)(int, int), char c); };
 tk~func.N
@@ -5609,7 +5609,7 @@ EOF
 RUN
 
 NAME=struct and union members are sized with the target pointer width
-FILE=-
+FILE=malloc://512
 ARGS=-b 64
 CMDS=<<EOF
 'td struct VB { void *a; void *b; };
@@ -5627,7 +5627,7 @@ EOF
 RUN
 
 NAME=struct size follows the target word size
-FILE=-
+FILE=malloc://512
 ARGS=-b 16
 CMDS=<<EOF
 'td struct VB { void *a; void *b; };
@@ -5692,7 +5692,7 @@ EOF
 RUN
 
 NAME=C11 aligned_alloc returns the allocation
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -5710,7 +5710,7 @@ EOF
 RUN
 
 NAME=posix and glibc prototypes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -6026,7 +6026,7 @@ EOF_EXPECT
 RUN
 
 NAME=C++ qualified members and function pointers have valid formats
-FILE=-
+FILE=malloc://512
 ARGS=-b 64
 CMDS=<<EOF_CMDS
 t-*
@@ -6065,7 +6065,7 @@ EOF_EXPECT
 RUN
 
 NAME=JSON type listings retain fields without inventing formats for incomplete types
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF_CMDS
 t-*
 'tk Incomplete=struct
@@ -6084,7 +6084,7 @@ EOF_EXPECT
 RUN
 
 NAME=Empty enums produce valid JSON in single and complete listings
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 t-*
 tk Empty=enum
@@ -6184,7 +6184,7 @@ EOF
 RUN
 
 NAME=tcc skipped include must not pop the include stack
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e types.plugin=tcc
 'td #include "/x_overflow.h"
@@ -6304,7 +6304,7 @@ EXPECT
 RUN
 
 NAME=srandom returns nothing
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64

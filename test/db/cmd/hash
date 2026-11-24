@@ -1,5 +1,5 @@
 NAME=t/md5sha1
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 100
 ph md5 64
@@ -21,7 +21,7 @@ EOF
 RUN
 
 NAME=ph crc32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 12
 w hello world
@@ -39,7 +39,7 @@ EOF
 RUN
 
 NAME=ph strhash
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 9
 w 123456789
@@ -51,7 +51,7 @@ EOF
 RUN
 
 NAME=ph sip
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w radare2
 ph sip 7
@@ -62,7 +62,7 @@ EOF
 RUN
 
 NAME=ph entropy
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w "hello world Shannon entropy"
 ph entropy 0x1b
@@ -73,7 +73,7 @@ EOF
 RUN
 
 NAME=ph elf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w syscall
 ph elf 7
@@ -84,7 +84,7 @@ EOF
 RUN
 
 NAME=ph adler32 prints the same hexpairs as rahash2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w 123456789
 ph adler32 9
@@ -95,7 +95,7 @@ EOF
 RUN
 
 NAME=ph fletcher64 sums modulo 2^32-1
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w hello-world
 ph fletcher64 11
@@ -106,7 +106,7 @@ EOF
 RUN
 
 NAME=crca 'hello world'
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 12
 w hello world
@@ -224,7 +224,7 @@ RUN
 
 
 NAME=phj
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 phj
 EOF

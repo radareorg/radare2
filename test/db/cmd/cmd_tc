@@ -802,7 +802,7 @@ EOF
 RUN
 
 NAME=tc typedef
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'td typedef char *string;
 ttc string

@@ -1,5 +1,5 @@
 NAME=b
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 100
 b
@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=b updates its command context
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 64;b;b+4;b;b-2;b
 EOF
@@ -22,7 +22,7 @@ EOF
 RUN
 
 NAME=b command token help suffixes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b?~?change working block size
 bf?~?set block size to flag size
@@ -49,7 +49,7 @@ EXPECT_ERR=
 RUN
 
 NAME=b64 raw command help suffix
-FILE=-
+FILE=malloc://512
 CMDS=b64:'?
 EXPECT=<<EOF
 | b64:AA=   execute a base64-encoded r2 script
@@ -59,7 +59,7 @@ EXPECT_ERR=
 RUN
 
 NAME=b help and invalid arithmetic do not change block size
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 32
 b+?~__no_help_line__
@@ -87,7 +87,7 @@ EOF
 RUN
 
 NAME=bj
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 100
 bj
@@ -98,7 +98,7 @@ EOF
 RUN
 
 NAME=bj preserves unsigned block size limit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 bm 0xffffffff
 bj
@@ -109,7 +109,7 @@ EOF
 RUN
 
 NAME=b64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b64?
 "p6es ?e hello;?e world"
@@ -138,7 +138,7 @@ EOF
 RUN
 
 NAME=b64 raw preserves encoded semicolons without executing the suffix
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b64:'P2UgbGl0ZXJhbDtmIGI2NC5zZXBhcmF0b3I=
 f~b64.separator
@@ -150,7 +150,7 @@ EXPECT_ERR=
 RUN
 
 NAME=b64 scripts execute encoded semicolons and newlines
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b64:P2UgbGl0ZXJhbDtmIGI2NC5zZXBhcmF0b3I=
 f~b64.separator
@@ -168,7 +168,7 @@ EXPECT_ERR=
 RUN
 
 NAME=b64 raw preserves encoded substitutions and seek operators
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b64:'P2UgJChmIGI2NC5kb2xsYXIpIGBmIGI2NC5iYWNrdGlja2AgQCAweDQw
 f~b64.
@@ -182,7 +182,7 @@ EXPECT_ERR=
 RUN
 
 NAME=b64 palette commands work outside theme loading
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ec comment rgb:123456
 b64:'ZWMgY29tbWVudCByZ2I6YWJjZGVm

@@ -1,6 +1,6 @@
 NAME=linux syscall empty
 ARGS=-a x86 -b 64 -k linux
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 asl~?
 e asm.bits=32
@@ -14,7 +14,7 @@ EOF
 RUN
 
 NAME=linux syscall
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -30,7 +30,7 @@ EOF
 RUN
 
 NAME=imul 1 arg
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -44,7 +44,7 @@ EOF
 RUN
 
 NAME=imul 1 arg pos result
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -59,7 +59,7 @@ EOF
 RUN
 
 NAME=imul 1 arg neg result
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -75,7 +75,7 @@ EOF
 RUN
 
 NAME=imul 1 arg overflow result
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -91,7 +91,7 @@ EOF
 RUN
 
 NAME=mul 64 bit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -110,7 +110,7 @@ EOF
 RUN
 
 NAME=imul 2 arg
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -124,7 +124,7 @@ EOF
 RUN
 
 NAME=imul 3 arg
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -193,7 +193,7 @@ EOF
 RUN
 
 NAME=esil x86-64 pd deinit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -213,7 +213,7 @@ EOF
 RUN
 
 NAME=esil x86-64 pd deinit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -233,7 +233,7 @@ EOF
 RUN
 
 NAME=esil x86-64 pd deinit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -253,7 +253,7 @@ EOF
 RUN
 
 NAME=esil x86-64 imul
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch = x86
@@ -269,7 +269,7 @@ EOF
 RUN
 
 NAME=esil x86-64 imul emu
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch = x86
@@ -286,7 +286,7 @@ EOF
 RUN
 
 NAME=esil x86-64 two steps
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -306,7 +306,7 @@ EOF
 RUN
 
 NAME=esil x86-64 aesu
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -326,7 +326,7 @@ EOF
 RUN
 
 NAME=esil x86-64 aesu
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -346,7 +346,7 @@ EOF
 RUN
 
 NAME=esil x86-64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ?e
 e asm.arch=x86
@@ -363,7 +363,7 @@ EOF
 RUN
 
 NAME=esil x86-64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ?e
 e asm.arch=x86
@@ -380,7 +380,7 @@ EOF
 RUN
 
 NAME=esil x86-64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ?e
 e asm.arch=x86
@@ -397,7 +397,7 @@ EOF
 RUN
 
 NAME=eax/rax
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -411,7 +411,7 @@ EOF
 RUN
 
 NAME=reg size bitmask
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -434,7 +434,7 @@ EOF
 RUN
 
 NAME=mem read
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -456,7 +456,7 @@ EOF
 RUN
 
 NAME=movsxd rax, dword [rdx + rax*4]
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -470,7 +470,7 @@ EOF
 RUN
 
 NAME=lea rax, [rdi + r13*8]
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -485,7 +485,7 @@ EOF
 RUN
 
 NAME=lea rbx, [rax + rdx]
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -500,7 +500,7 @@ EOF
 RUN
 
 NAME=ldrh instruction
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -557,7 +557,7 @@ EOF
 RUN
 
 NAME=cmd.esil.intr set
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch = x86
@@ -572,7 +572,7 @@ EOF
 RUN
 
 NAME=test_sf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86;e asm.bits=64;s 0;aei;aer rip=0;wa test eax, eax;aer eax=-1;aes
 aer 1~sf
@@ -583,7 +583,7 @@ EOF
 RUN
 
 NAME=neg
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx f6dbf6df66f7dbf7db48f7db
 e asm.arch = x86
@@ -611,7 +611,7 @@ EOF
 RUN
 
 NAME=pop mem rsp
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -626,7 +626,7 @@ EOF
 RUN
 
 NAME=push rsp,,pop rsp
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 e io.cache=true
@@ -641,7 +641,7 @@ EOF
 RUN
 
 NAME=128set and weakset
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 ae 1,xmm0,=;ar xmm0
@@ -2471,7 +2471,7 @@ EOF
 RUN
 
 NAME=cmpxchg generated esil text
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 wx 480fb10f
@@ -2679,7 +2679,7 @@ EOF
 RUN
 
 NAME=cmpxchg8b generated esil text
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 wx 0fc70f
@@ -2792,7 +2792,7 @@ EOF
 RUN
 
 NAME=lock cmpxchg16b generated esil text
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 wx f0480fc70f

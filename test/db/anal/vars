@@ -355,7 +355,7 @@ EOF
 RUN
 
 NAME=Detect register args used only by callee
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -418,7 +418,7 @@ EOF
 RUN
 
 NAME=Variable access with misc registers (x86) R2_590 - calling conventions ignored for now
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 e asm.flags=false
@@ -476,7 +476,7 @@ RUN
 
 
 NAME=Variable access with misc registers (ARM)
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 16
 CMDS=<<EOF
 e asm.var.summary=0
@@ -546,7 +546,7 @@ EOF
 RUN
 
 NAME=Takeover variables
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 wx e805000000e80600000039d1742577145589e583ec048b5d088b4d0c895dfc83f90174098b45fc8945fc49ebf28b45fc89ec5dc3
@@ -578,7 +578,7 @@ RUN
 
 
 NAME=Stack Variables
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 16
 CMDS=<<EOF
 e asm.var.summary=0
@@ -981,7 +981,7 @@ EOF
 RUN
 
 NAME=split blocks keep the stack depth
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64 -e anal.vars.stackname=true
 CMDS=<<EOF
 wx ff8300d1400000b4020000141f2003d5e10b40f9ff830091c0035fd6
@@ -1030,7 +1030,7 @@ EOF
 RUN
 
 NAME=sp restored from the frame pointer keeps the stack depth
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64 -e anal.vars.stackname=true
 CMDS=<<EOF
 wx fd7bbea9fd030091ff0304d11f010091bf030091e00f40f9fd7bc2a8c0035fd6
@@ -1071,7 +1071,7 @@ EOF
 RUN
 
 NAME=loading sp through the frame pointer does not restore it
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64 -e anal.vars.stackname=true
 CMDS=<<EOF
 wx 554889e54881ec00010000488b65f8488b442418c9c3
@@ -1086,7 +1086,7 @@ EOF
 RUN
 
 NAME=adding a register to the frame pointer does not restore sp
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64 -e anal.vars.stackname=true
 CMDS=<<EOF
 wx 554889e54881ec000100004801ec488b442418c9c3
@@ -1100,7 +1100,7 @@ EOF
 RUN
 
 NAME=a repurposed frame pointer does not restore sp
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64 -e anal.vars.stackname=true
 CMDS=<<EOF
 wx 554889e54881ec000100004889fd4889ec488b442418c9c3
@@ -1114,7 +1114,7 @@ EOF
 RUN
 
 NAME=a conditional restore from the frame pointer is ignored
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 32 -e anal.vars.stackname=true
 CMDS=<<EOF
 wx 00482de904b08de201dc4de2000050e304d04b1208109de50088bde8
@@ -1128,7 +1128,7 @@ EOF
 RUN
 
 NAME=lea rsp from the frame pointer restores the stack depth
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64 -e anal.vars.stackname=true
 CMDS=<<EOF
 wx 554889e5534881ec00010000488d65f8488b4424185b5dc3
@@ -1154,7 +1154,7 @@ EOF
 RUN
 
 NAME=arm32 add sp, fp, 0 restores the depth and sp writeback moves it
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 32 -e anal.vars.stackname=true
 CMDS=<<EOF
 wx 04b02de500b08de201dc4de200d08be208109de504b09de41eff2fe1
@@ -1194,7 +1194,7 @@ EOF
 RUN
 
 NAME=a restore deeper than the frame grows the frame
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64 -e anal.vars.stackname=true
 CMDS=<<EOF
 wx fd7bbfa9fd030091bf0308d1e00740f9bf030091fd7bc1a8c0035fd6

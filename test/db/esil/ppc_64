@@ -1,5 +1,5 @@
 NAME=load doubleword byte-reverse indexed ppc-64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -14,7 +14,7 @@ EOF
 RUN
 
 NAME=store doubleword byte-reverse indexed ppc-64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -167,7 +167,7 @@ EOF
 RUN
 
 NAME=unsigned modulo doubleword ppc-64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -239,7 +239,7 @@ EOF
 RUN
 
 NAME=fadd esil string ppc-64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -254,7 +254,7 @@ EOF
 RUN
 
 NAME=fadds single precision esil string ppc-64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -269,7 +269,7 @@ EOF
 RUN
 
 NAME=fmadd esil string ppc-64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -284,7 +284,7 @@ EOF
 RUN
 
 NAME=fcmpu esil string ppc-64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -299,7 +299,7 @@ EOF
 RUN
 
 NAME=fmr/fneg/fabs sign esil strings ppc-64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -320,7 +320,7 @@ EOF
 RUN
 
 NAME=lfd/lfs/stfd/stfs esil strings ppc-64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -510,7 +510,7 @@ EOF
 RUN
 
 NAME=fp single-precision arith esil strings ppc-64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -537,7 +537,7 @@ EOF
 RUN
 
 NAME=fma family esil strings ppc-64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -570,7 +570,7 @@ EOF
 RUN
 
 NAME=fnabs/fcpsgn esil strings ppc-64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -588,7 +588,7 @@ EOF
 RUN
 
 NAME=fp convert esil strings ppc-64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
@@ -627,7 +627,7 @@ EOF
 RUN
 
 NAME=fp indexed and update load/store esil strings ppc-64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64

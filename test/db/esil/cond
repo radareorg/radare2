@@ -1,5 +1,5 @@
 NAME=sub
-FILE=-
+FILE=malloc://512
 CMDS=ae 1,1,-,!,?{,1,}{,2,}
 EXPECT=<<EOF
 1
@@ -7,7 +7,7 @@ EOF
 RUN
 
 NAME=cond
-FILE=-
+FILE=malloc://512
 CMDS=ae 1,1,==,$z,?{,1,}{,2,}
 EXPECT=<<EOF
 1
@@ -15,7 +15,7 @@ EOF
 RUN
 
 NAME=cond tail
-FILE=-
+FILE=malloc://512
 CMDS=ae 1,1,==,$z,?{,1,}{,2,},3
 EXPECT=<<EOF
 1,3
@@ -23,7 +23,7 @@ EOF
 RUN
 
 NAME=cond neg
-FILE=-
+FILE=malloc://512
 CMDS=ae 1,1,==,$z,!,?{,1,}{,2,}
 EXPECT=<<EOF
 2
@@ -31,7 +31,7 @@ EOF
 RUN
 
 NAME=cond neg tail
-FILE=-
+FILE=malloc://512
 CMDS=ae 1,1,==,$z,!,?{,1,}{,2,},3
 EXPECT=<<EOF
 2,3
@@ -39,7 +39,7 @@ EOF
 RUN
 
 NAME=nested cond skipped branch
-FILE=-
+FILE=malloc://512
 CMDS=ae 0,?{,1,?{,7,}{,9,},},3
 EXPECT=<<EOF
 3
@@ -47,7 +47,7 @@ EOF
 RUN
 
 NAME=nested cond else arm
-FILE=-
+FILE=malloc://512
 CMDS=ae 1,?{,0,?{,7,}{,9,},},3
 EXPECT=<<EOF
 9,3
@@ -55,7 +55,7 @@ EOF
 RUN
 
 NAME=nested cond then arm
-FILE=-
+FILE=malloc://512
 CMDS=ae 1,?{,1,?{,7,}{,9,},},3
 EXPECT=<<EOF
 7,3
@@ -63,7 +63,7 @@ EOF
 RUN
 
 NAME=triple nested cond skipped branch
-FILE=-
+FILE=malloc://512
 CMDS=ae 0,?{,1,?{,1,?{,7,}{,9,},},},3
 EXPECT=<<EOF
 3
@@ -71,7 +71,7 @@ EOF
 RUN
 
 NAME=nested cond followed by outer else arm
-FILE=-
+FILE=malloc://512
 CMDS=ae 0,?{,1,?{,7,}{,9,},5,}{,4,},3
 EXPECT=<<EOF
 4,3
@@ -79,7 +79,7 @@ EOF
 RUN
 
 NAME=nested cond in v850 satadd
-FILE=-
+FILE=malloc://512
 ARGS=-a v850
 CMDS=<<EOF
 e asm.cpu=e0

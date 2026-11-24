@@ -1,12 +1,12 @@
 NAME=yank-segfault
-FILE=-
+FILE=malloc://512
 CMDS=y -2
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=yank-and-paste
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 64
 w hello world
@@ -20,7 +20,7 @@ EOF
 RUN
 
 NAME=yank-segfault2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 y 0
 y 10
@@ -38,7 +38,7 @@ EOF
 RUN
 
 NAME=yank-segfault3
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 y #
 ?e ok
@@ -49,7 +49,7 @@ EOF
 RUN
 
 NAME=yank-segfault4
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 y 1000000000
 ?e ok
@@ -60,7 +60,7 @@ EOF
 RUN
 
 NAME=yank-doublefree
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 y -5
 y -5

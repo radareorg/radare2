@@ -1,5 +1,5 @@
 NAME=base64 encode
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 11
 w hello world
@@ -11,7 +11,7 @@ EOF
 RUN
 
 NAME=base64 decode
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 16
 w aGVsbG8gd29ybGQ=
@@ -23,7 +23,7 @@ EOF
 RUN
 
 NAME=?b64 encode/decode
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ?b64 hello world
 ?b64-aGVsbG8gd29ybGQ=
@@ -35,7 +35,7 @@ EOF
 RUN
 
 NAME=both bsae64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 p6ds `p6es hello world`
 EOF
@@ -45,7 +45,7 @@ EOF
 RUN
 
 NAME=base64 zero-terminated
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 16
 w `p6es hello world`
@@ -59,7 +59,7 @@ EOF
 RUN
 
 NAME=w6e/w6d
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w6e hello world
 psz

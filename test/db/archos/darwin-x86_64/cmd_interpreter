@@ -1,5 +1,5 @@
 NAME=#!c
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ?e "#include <stdio.h>\nint entry(){puts(\"Hello\");return 0;}" > .tmp-hashc.c
 #!c .tmp-hashc.c
@@ -11,7 +11,7 @@ EOF
 RUN
 
 NAME=#! with ext != name
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ?e "#include <stdio.h>\nint main(){puts(\"Hello\");return 0;}" > .tmp-hashextname.c
 #!cpipe .tmp-hashextname.c

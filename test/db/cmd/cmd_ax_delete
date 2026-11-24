@@ -1,5 +1,5 @@
 NAME=ax- handles addresses without xrefs
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ax-$$
 ax-$$

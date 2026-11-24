@@ -1,5 +1,5 @@
 NAME=leak msvc demangling of an operator name that cannot be parsed
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 "iD msvc ??_R@@YAXXZ"
 ?e ok
@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=leak demangling result of iD
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 "iD msvc ??0A@@QAE@XZ"
 EOF

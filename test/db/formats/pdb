@@ -11,7 +11,7 @@ RUN
 
 NAME=PDB downloader json
 REQUIRE=network
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !!rabin2 -PPj bins/pdb/user32.dll
 EOF
@@ -32,7 +32,7 @@ EOF
 RUN
 
 NAME=idp 404
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 idp 404.pdb
 EOF
@@ -55,7 +55,7 @@ EOF
 RUN
 
 NAME=idp accepts a PDB without a global symbol stream
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 idpi bins/pdb/issue_12924.pdb~not-present
 EOF
@@ -226,7 +226,7 @@ WARN: Cannot find base address, flags will probably be misplaced
 EOF
 RUN
 NAME=idp and baddr
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e bin.baddr=0
 idp bins/pdb/Project1.pdb
@@ -419,7 +419,7 @@ EOF
 RUN
 
 NAME=PDB set flag realname
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 idp bins/pdb/Project1.pdb
 fN @ 0x00011000
@@ -445,7 +445,7 @@ EOF
 RUN
 
 NAME=idp union members reach sdb via union member vec
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 idp bins/pdb/Project1.pdb
 tk union.R2_TEST_UNION
@@ -472,7 +472,7 @@ EOF
 RUN
 
 NAME=idp keeps the members after the vtable pointer of a class
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 idp bins/pdb/r_bp.pdb
@@ -495,7 +495,7 @@ EOF
 RUN
 
 NAME=idp formats the members of simple pointer types as pointers
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 idpi* bins/pdb/Project1.pdb~pf._iobuf[0-9]
 EOF
@@ -517,7 +517,7 @@ EOF
 RUN
 
 NAME=Issue #12924 - Enum with modified underlying type in PDB
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 idp bins/pdb/issue_12924.pdb
 te~tagCOINITBASE
@@ -634,7 +634,7 @@ EOF2
 RUN
 
 NAME=pdb DBI module_size larger than the stream is rejected before allocating it
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 idpi bins/pdb/dbi-module-size.pdb
 ?e done
@@ -651,7 +651,7 @@ EOF
 RUN
 
 NAME=pdb DBI rejects negative, overflowing and wrapped section sizes
-FILE=-
+FILE=malloc://512
 ARGS=-e log.level=1
 CMDS=<<EOF
 idpi bins/pdb/dbi-section-negative.pdb
@@ -673,7 +673,7 @@ EOF
 RUN
 
 NAME=pdb DBI rejects incomplete module records, names and padding
-FILE=-
+FILE=malloc://512
 ARGS=-e log.level=1
 CMDS=<<EOF
 idpi bins/pdb/dbi-module-truncated.pdb
@@ -698,7 +698,7 @@ EOF
 RUN
 
 NAME=pdb stream directory and streams cannot use more pages than the file has
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 idpi bins/pdb/aliased-directory.pdb
 idpi bins/pdb/aliased-streams.pdb
@@ -719,7 +719,7 @@ EOF
 RUN
 
 NAME=pdb omap lookups do not walk the entry list per symbol
-FILE=-
+FILE=malloc://512
 TIMEOUT=10
 CMDS=<<EOF
 idpi bins/pdb/omap-last-entry.pdb~?

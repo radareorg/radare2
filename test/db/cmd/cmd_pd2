@@ -1,5 +1,5 @@
 NAME=Cd4middle
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 wx 01002143547601020304
@@ -15,7 +15,7 @@ EOF
 RUN
 
 NAME=Cd999
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 Cd 4096
@@ -34,7 +34,7 @@ RUN
 
 NAME=ipmetacolor
 ARGS=-a x86 -b 64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 01020304 05060708 090a0b0c
 e asm.meta=false
@@ -54,7 +54,7 @@ RUN
 
 NAME=ipmetacolor with metatrue
 ARGS=-a x86 -b 64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 01020304 05060708 090a0b0c
 e asm.meta=true
@@ -74,7 +74,7 @@ RUN
 
 NAME=Cd999nometa
 ARGS=-a x86 -b 64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.meta=false
 Cd 4096
@@ -110,7 +110,7 @@ RUN
 
 
 NAME=bytes for invalid insn (#11434)
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 e asm.arch=x86
@@ -416,7 +416,7 @@ EOF
 RUN
 
 NAME=aht asm.cmt.right=false fix (#12330)
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 e asm.arch=x86
@@ -1003,7 +1003,7 @@ EOF
 RUN
 
 NAME=seek with spaces
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 wx 010203040506
