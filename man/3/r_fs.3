@@ -241,8 +241,34 @@ within the catalog file, distinguishing remnants with the same CNID.
 Deleted listing examines free B-tree nodes, unreachable records and live-leaf
 slack. Directory ID 0 lists candidates independently of their parent paths.
 These records are marked DELETED and HEURISTIC: a remnant is evidence, not
-proof of deletion or historical identity. Unrepresentable live names use
-synthetic cnid-N names while their extents retain live ownership.
+proof of deletion or historical identity. Names use HFS Unicode decomposition
+and fixed HFS+ case equivalence; HFSX binary comparison remains case sensitive.
+Control characters, slash and percent are escaped as %XX in paths and listings.
+Unrepresentable names use synthetic cnid-N names, or an unambiguous matching
+catalog thread. Thread-only remnants preserve names and directory ancestry,
+but cannot supply missing file mappings. Ambiguous parent versions remain
+discoverable by ID without inventing a historical path.
+.Pp
+File and directory hard links resolve validated private-directory backing
+records. Aliases retain their own IDs and names while sharing backing forks.
+Missing or conflicting targets and directory cycles retain partial inspection;
+live unresolved links prevent complete ownership claims. A deleted alias that
+still points to a live inode cannot authorize checked recovery of that inode.
+.Pp
+List a file's streams with mdj /mount/file/..namedfork. The virtual directory
+contains data, rsrc and xattr:NAME entries. Open those paths with ordinary
+commands, for example mc /mount/file/..namedfork/rsrc or
+mie /mount/file/..namedfork/xattr:NAME. Attribute names use the same escaping;
+attribute selection is exact. The data entry reuses the file ID; other streams
+have mounted-snapshot IDs with bit 62 set and bit 63 clear.
+Use mfo /mount/file/..namedfork OFFSET to find a stream owning a disk offset.
+.Pp
+For a deleted file, mdxj /mount FILE_ID lists its retained streams. Extract a
+listed stream with mgx /mount STREAM_ID OUTPUT. Retained attribute versions have
+distinct IDs, including versions with identical names. Deleted attributes of
+live files appear in mdxj /mount/file/..namedfork. Unattached attributes appear
+in mdxj /mount 0 as cnid-N:xattr:NAME. Attribute association uses retained CNIDs
+and is heuristic; conflicting catalog versions prevent checked recovery.
 .Pp
 HFS+ data-fork mappings include overflow extents, allocation block sizes,
 64-bit sizes and offsets, mount deltas and embedded HFS-wrapper offsets.
@@ -252,6 +278,11 @@ reserved volume regions. A live CNID excludes recovery of an older candidate
 with that CNID. Only unambiguous retained overflow records extend deleted
 forks; missing, damaged or conflicting mappings retain their readable prefix.
 Cleared mappings do not establish the locations of the missing content.
+Resource forks and nonresident attributes use the same checked recovery.
+Inline attributes expose retained bytes in the attributes B-tree, so their
+extents can be allocated metadata; they still require complete ownership and
+an unambiguous identity. Attribute continuation gaps, duplicates or conflicting
+versions cannot establish a complete mapping.
 .Pp
 Allocation maps distinguish free, allocated, bad and unknown blocks. Orphan
 classification and checked recovery require complete ownership: damaged trees,
@@ -259,9 +290,11 @@ unreadable metadata, inconsistent volume flags or a pending/unverifiable journal
 refuse these operations while retaining readable inspection. Journal checking
 accepts a checksummed empty journal; it does not replay transactions or recover
 historical journal versions. Reads never synthesize missing HFS+ file data.
-Cached metadata is a read-only mounted snapshot; remount after changing the
-backing image. Resource-fork/attribute extraction, compressed recovery, historical
-path reconstruction and classic HFS forensic callbacks remain separate work.
+Cached metadata and stream IDs describe a read-only mounted snapshot; remount
+and enumerate IDs again after changing the backing image. Compressed data-fork
+recovery, journal-history recovery, alternate-header fallback and classic HFS
+forensic callbacks remain separate work. Raw compression attributes and resource
+forks can be extracted through the stream namespace.
 .Pp
 .Ft int
 .Fn r_fs_ranges "RFS *fs" "const char *mountpoint" "ut32 flags" "RFSRangeCb cb" "void *user"

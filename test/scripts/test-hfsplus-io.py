@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check HFS+/HFSX allocation, catalog remnants, overflow extents and checked recovery."""
+"""Check HFS+/HFSX allocation, historical names, hard links, forks and checked recovery."""
 import ctypes as C
 import gzip
 import json
@@ -446,14 +446,14 @@ print('PASS: large logical files preserve sizes, seeks and EOF above four GiB')
 
 def invalid_live_name(image):
     location = INFO['catalog'] + INFO['live_location']
-    put16(image, location + 8, 0)
+    put16(image, location + 8, 0xd800)
 
 check('unrepresentable live names preserve current ownership and checked recovery', invalid_live_name)
 image = bytearray(ORIGINAL)
 invalid_live_name(image)
 with Image(image) as disk:
-    assert (20, b'cnid-20', 2) in disk.listing(view=1)
-print('PASS: unrepresentable live names use synthetic CNID names without becoming deleted entries')
+    assert (20, b'live.txt', 2) in disk.listing(view=1)
+print('PASS: unrepresentable live names recover through matching catalog threads')
 
 
 def catalog_map_node(image):
@@ -534,3 +534,185 @@ def owned_attribute_tail(image):
 
 check('attribute continuation extents protect their data despite clear allocation bits', owned_attribute_tail,
       wanted=-1, prefix=0, conflict=True)
+
+
+def extra_attribute_tail(image):
+    attribute_continuation(image)
+    first = INFO['attributes'] + NODE + 14
+    value = first + u16(image, first) + 2
+    struct.pack_into('>Q', image, value + 8, 9)
+    put32(image, value + 8 + 12, 1)
+
+check('unexpected live attribute continuations refuse complete ownership', extra_attribute_tail,
+      wanted=-1, prefix=0)
+
+
+def duplicate_attribute_tail(image):
+    attribute_continuation(image)
+    start = INFO['attributes'] + NODE
+    first, end = u16(image, start + NODE - 4), u16(image, start + NODE - 6)
+    record = bytes(image[start + first:start + end])
+    image[start + end:start + end + len(record)] = record
+    put16(image, start + 10, 3)
+    put16(image, start + NODE - 8, end + len(record))
+    put32(image, INFO['attributes'] + 20, 3)
+
+check('duplicate live attribute continuations refuse complete ownership', duplicate_attribute_tail,
+      wanted=-1, prefix=0)
+
+NAMES = gzip.decompress((FIXTURES / 'names-forks.img.gz').read_bytes())
+NINFO = MANIFEST['names-forks']
+
+
+def catalog_address(image, logical):
+    offset = 1024 + 272
+    for index in range(8):
+        block, count = struct.unpack_from('>II', image, offset + 16 + index * 8)
+        size = count * BLOCK
+        if logical < size:
+            return block * BLOCK + logical
+        logical -= size
+    raise AssertionError('catalog offset outside mapped extents')
+
+
+def names_value(image, cnid=None, name=None):
+    logical = NINFO['live_locations'][str(cnid)] if cnid is not None else NINFO['deleted_locations'][name]
+    start = catalog_address(image, logical)
+    return start + u16(image, start) + 2
+
+
+def named_streams(disk, owner=None, path=None, view=7):
+    listing = dir_list(disk.fs, path or b'/hfs', owner if owner is not None else 0xffffffffffffffff, view)
+    try:
+        return [(C.string_at(File.from_address(list_n(listing, index)).name),
+                 File.from_address(list_n(listing, index)).id,
+                 File.from_address(list_n(listing, index)).size,
+                 File.from_address(list_n(listing, index)).flags)
+                for index in range(list_length(listing) if listing else 0)]
+    finally:
+        list_free(listing)
+
+
+def check_payload(disk, selector, expected, flags=0, status=1, prefix=None, conflict=False):
+    handle = open_path(disk.fs, selector, False) if isinstance(selector, bytes) else open_id(disk.fs, b'/hfs', selector, flags)
+    assert handle, selector
+    prefix = len(expected) if prefix is None else prefix
+    try:
+        state, found = collect_call(lambda cb: extents(handle, cb, None))
+        assert state == status and sum(row[2] for row in found) == prefix, (selector, state, found)
+        assert bool(File.from_address(handle).flags & 8) == conflict
+        if prefix:
+            assert read(disk.fs, handle, 0, len(expected)) == prefix
+            assert C.string_at(File.from_address(handle).data, prefix) == expected[:prefix]
+        if prefix < File.from_address(handle).size:
+            assert read(disk.fs, handle, prefix, 1) == -1
+        return found
+    finally:
+        close(disk.fs, handle)
+        free_file(handle)
+
+
+with Image(bytearray(NAMES)) as disk:
+    check_payload(disk, b'/hfs/linked.txt', b'Hard link contents\n')
+    check_payload(disk, b'/hfs/linked-again.txt', b'Hard link contents\n')
+    check_payload(disk, b'/hfs/linked.txt/..namedfork/rsrc', b'Linked resource\n')
+    check_payload(disk, b'/hfs/linked.txt/..namedfork/xattr:user.linked', b'linked attr\n')
+    print('PASS: hard links resolve data, resource forks and attributes through the validated backing inode')
+    check_payload(disk, b'/hfs/linked-dir/inside.txt', b'directory child\n')
+    check_payload(disk, b'/hfs/linked-dir/../linked.txt', b'Hard link contents\n')
+    assert named_streams(disk, path=b'/hfs/linked-dir', view=1)[0][0] == b'inside.txt'
+    print('PASS: directory hard links preserve traversal and logical parent navigation')
+    for path, payload in ((b'/hfs/CAF\xc3\x89.TXT', b'unicode\n'), ('/hfs/CA\u200dFÉ.TXT'.encode(), b'unicode\n'),
+                          ('/hfs/ΑΘΗΝΑ'.encode(), b'greek\n'),
+                          ('/hfs/가.txt'.encode(), b'hangul\n'), (b'/hfs/percent%25%2Ffile', b'escaped\n')):
+        check_payload(disk, path, payload)
+    print('PASS: fixed HFS+ Unicode folding, canonical decomposition, Hangul and escaped names match correctly')
+    for path, expected in ((b'/hfs/live.txt/..namedfork/rsrc', b'resource'),
+                           (b'/hfs/live.txt/..namedfork/xattr:demo', b'attribute'),
+                           (b'/hfs/live.txt/..namedfork/xattr:com.example.inline', b'inline attr\n'),
+                           (b'/hfs/live.txt/..namedfork/xattr:com.example.fragmented', b'X' * 512 + b'Y' * 88)):
+        check_payload(disk, path, expected)
+    print('PASS: live resource forks and inline or fragmented external attributes use ordinary file reads')
+    assert not open_path(disk.fs, b'/hfs/live.txt/..namedfork/missing', False)
+    assert not dir_list(disk.fs, b'/hfs/live.txt/..namedfork/missing', 0xffffffffffffffff, 7)
+    print('PASS: unknown fork names do not expose another stream or a directory listing')
+    streams = named_streams(disk, NINFO['ids']['vanished.bin'])
+    by_name = {}
+    for name, number, size, flags in streams:
+        by_name.setdefault(name, []).append(number)
+    check_payload(disk, by_name[b'xattr:user.deleted'][0], b'old attribute\n', flags=2)
+    found = check_payload(disk, by_name[b'xattr:user.inline'][0], b'deleted inline\n', flags=2)
+    assert all(row[3] == 2 for row in found)
+    check_payload(disk, by_name[b'xattr:user.big'][0], b'G' * 512 + b'H' * 188, flags=2)
+    check_payload(disk, by_name[b'xattr:user.history'][0], b'one\n', flags=2)
+    check_payload(disk, by_name[b'xattr:user.history'][1], b'two\n', flags=2)
+    print('PASS: retained inline and nonresident attributes recover distinct versions by stream ID')
+    removed = named_streams(disk, path=b'/hfs/live.txt/..namedfork', view=2)
+    assert len(removed) == 1 and removed[0][0] == b'xattr:user.removed'
+    check_payload(disk, removed[0][1], b'removed attr\n', flags=2)
+    print('PASS: deleted attributes of a surviving file remain explicitly heuristic recoveries')
+    check_payload(disk, NINFO['ids']['unlinked.txt'], b'Recovered linked file\n', flags=2)
+    linked = named_streams(disk, NINFO['ids']['unlinked.txt'])
+    resource = next(number for name, number, _, _ in linked if name == b'rsrc')
+    check_payload(disk, resource, b'Recovered resource\n', flags=2)
+    check_payload(disk, NINFO['ids']['removed-but-linked.txt'], b'Hard link contents\n', flags=2,
+                  status=-1, prefix=0, conflict=True)
+    print('PASS: deleted hard links recover freed backing forks and refuse current live inode data')
+    child = named_streams(disk, NINFO['ids']['lost-dir'])
+    assert [item[0] for item in child] == [b'child.txt']
+    check_payload(disk, NINFO['ids']['lost-dir/child.txt'], b'lost child\n', flags=2)
+    assert not named_streams(disk, NINFO['ids']['old-a']) and not named_streams(disk, NINFO['ids']['old-b'])
+    print('PASS: retained directory threads restore ancestry while ambiguous parent versions remain unattached')
+    thread = open_id(disk.fs, b'/hfs', NINFO['ids']['thread-only.txt'], 2)
+    assert thread
+    try:
+        assert collect_call(lambda cb: extents(thread, cb, None)) == (-1, [])
+        assert read(disk.fs, thread, 0, 1) == -1
+    finally:
+        close(disk.fs, thread)
+        free_file(thread)
+    print('PASS: thread-only file names cannot masquerade as recoverable empty files')
+    orphan = next(row for row in named_streams(disk, 0, view=2) if row[0] == b'cnid-999:xattr:user.orphan')
+    check_payload(disk, orphan[1], b'orphan attr\n', flags=2)
+    print('PASS: name-independent discovery exposes retained orphan attributes with recoverable inline values')
+
+image = bytearray(NAMES)
+put16(image, 1024, 0x4858)
+put16(image, 1026, 5)
+image[NINFO['catalog'] + 51] = 0xbc
+with Image(image) as disk:
+    check_payload(disk, '/hfs/Café.txt'.encode(), b'unicode\n')
+    assert not open_path(disk.fs, '/hfs/CAFÉ.TXT'.encode(), False)
+    assert not open_path(disk.fs, '/hfs/Ca\u200dfé.txt'.encode(), False)
+print('PASS: HFSX binary matching preserves canonical normalization and case sensitivity')
+
+image = bytearray(NAMES)
+value = names_value(image, 22)
+put32(image, value + 12, u32(image, value + 12) + 1)
+with Image(image) as disk:
+    assert not open_path(disk.fs, b'/hfs/linked.txt', False)
+    check_payload(disk, b'/hfs/linked-again.txt', b'Hard link contents\n')
+    check_payload(disk, NINFO['ids']['vanished.bin'], EXPECTED, flags=2, status=-1, prefix=0)
+print('PASS: invalid hard-link creation references never expose empty placeholders or authorize recovery')
+
+image = bytearray(NAMES)
+start = catalog_address(image, NINFO['live_locations']['24'])
+put32(image, start + 2, 41)
+with Image(image) as disk:
+    assert not dir_list(disk.fs, b'/hfs', 24, 7)
+    check_payload(disk, NINFO['ids']['vanished.bin'], EXPECTED, flags=2, status=-1, prefix=0)
+print('PASS: directory hard-link cycles terminate and invalidate ownership completeness')
+
+image = bytearray(NAMES)
+bitmap_set(image, 136, True)
+with Image(image) as disk:
+    resource = next(number for name, number, _, _ in named_streams(disk, NINFO['ids']['unlinked.txt']) if name == b'rsrc')
+    check_payload(disk, resource, b'Recovered resource\n', flags=2, status=-1, prefix=0, conflict=True)
+print('PASS: reused deleted resource-fork blocks refuse recovery')
+
+image = bytearray(NAMES)
+bitmap_set(image, 148, True)
+with Image(image) as disk:
+    big = next(number for name, number, _, _ in named_streams(disk, NINFO['ids']['vanished.bin']) if name == b'xattr:user.big')
+    check_payload(disk, big, b'G' * 512 + b'H' * 188, flags=2, status=-1, prefix=512, conflict=True)
+print('PASS: partially reused attribute continuations retain only the checked prefix')

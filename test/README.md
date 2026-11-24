@@ -49,8 +49,9 @@ compiler and does not load a kernel module or access kernel memory.
    journal ancestry, run `python3 test/scripts/test-ext-names.py` after building.
  * To check NTFS MFT recovery, attribute lists, resident fixups, mapping pairs,
    sparse files and allocation ownership, run `python3 test/scripts/test-ntfs-io.py` after building.
- * To check HFS+/HFSX allocation, catalog remnants, overflow mappings and checked
-   recovery, run `python3 test/scripts/test-hfsplus-io.py` after building.
+ * To check HFS+/HFSX allocation, catalog remnants, overflow mappings, Unicode
+   names, hard links, resource forks, attributes and checked recovery, run
+   `python3 test/scripts/test-hfsplus-io.py` after building.
  * To check HTTP sandbox enforcement on a local server, use `make http-sandbox`
    after building and installing this checkout. This requires Python 3 and
    permission to open localhost sockets.

@@ -114,3 +114,111 @@ Deleted from catalog slack
 EOF2
 EXPECT_ERR=
 RUN
+
+NAME=HFS+ lists live resource forks and attributes with stream IDs
+FILE=gzip://bins/fs/hfsplus-forensic/names-forks.img.gz
+CMDS=<<EOF2
+mdj /root/live.txt/..namedfork
+EOF2
+EXPECT=<<EOF2
+[{"type":"file","size":15,"name":"data","id":20,"deleted":false,"flags":0},{"type":"file","size":8,"name":"rsrc","id":4611686018427387906,"deleted":false,"flags":0},{"type":"file","size":600,"name":"xattr:com.example.fragmented","id":4611686018427387918,"deleted":false,"flags":0},{"type":"file","size":12,"name":"xattr:com.example.inline","id":4611686018427387919,"deleted":false,"flags":0},{"type":"file","size":9,"name":"xattr:demo","id":4611686018427387920,"deleted":false,"flags":0}]
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=HFS+ opens hard links and normalized Unicode or escaped names
+FILE=gzip://bins/fs/hfsplus-forensic/names-forks.img.gz
+CMDS=<<EOF2
+mc /root/linked.txt
+mc /root/linked-dir/inside.txt
+mc /root/CAFÉ.TXT
+mc /root/percent%25%2Ffile
+EOF2
+EXPECT=<<EOF2
+Hard link contents
+
+directory child
+
+unicode
+
+escaped
+
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=HFS+ maps fragmented attributes and resolves resource fork disk offsets
+FILE=gzip://bins/fs/hfsplus-forensic/names-forks.img.gz
+CMDS=<<EOF2
+mie /root/live.txt/..namedfork/xattr:com.example.fragmented
+mie /root/linked.txt/..namedfork/rsrc
+mfo /root/linked.txt/..namedfork 0x10201
+EOF2
+EXPECT=<<EOF2
+0x00000000 0x00011600 512 0x2
+0x00000200 0x00011a00 88 0x2
+0x00000000 0x00010200 16 0x2
+/root/linked.txt/..namedfork/rsrc
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=HFS+ enumerates and recovers deleted hard link backing resource forks
+FILE=gzip://bins/fs/hfsplus-forensic/names-forks.img.gz
+CMDS=<<EOF2
+mdxj /root 0x8000000000006120
+mgx /root 0x8000000000006120 -
+mgx /root 0x400000000000000b -
+EOF2
+EXPECT=<<EOF2
+[{"type":"file","size":22,"name":"data","id":9223372036854800672,"deleted":true,"flags":3},{"type":"file","size":19,"name":"rsrc","id":4611686018427387915,"deleted":true,"flags":3}]
+Recovered linked file
+Recovered resource
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=HFS+ recovers retained attribute versions and removed attributes of live files
+FILE=gzip://bins/fs/hfsplus-forensic/names-forks.img.gz
+CMDS=<<EOF2
+mdxj /root/live.txt/..namedfork
+mgx /root 0x4000000000000011 -
+mgx /root 0x4000000000000013 -
+mgx /root 0x4000000000000014 -
+mgx /root 0x4000000000000015 -
+mgx /root 0x4000000000000016 -
+mgx /root 0x4000000000000018 -
+EOF2
+EXPECT=<<EOF2
+[{"type":"file","size":13,"name":"xattr:user.removed","id":4611686018427387921,"deleted":true,"flags":3}]
+removed attr
+old attribute
+one
+two
+deleted inline
+orphan attr
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=HFS+ reconstructs thread ancestry without attaching ambiguous parent versions
+FILE=gzip://bins/fs/hfsplus-forensic/names-forks.img.gz
+CMDS=<<EOF2
+mdxr /root
+EOF2
+EXPECT=<<EOF2
+0x800000000000600e f 22 /root/%00%00%00%00HFS+ Private Data/iNode5678
+0x8000000000003126 d 0 /root/gone
+0x800000000000318e f 6 /root/gone/child.txt
+0x8000000000006394 d 0 /root/lost-dir
+0x80000000000063b6 f 11 /root/lost-dir/child.txt
+0x80000000000064c8 d 0 /root/old-a
+0x8000000000006532 d 0 /root/old-b
+0x8000000000006238 f 19 /root/removed-but-linked.txt
+0x8000000000004122 f 27 /root/slack.txt
+0x8000000000006364 f 0 /root/thread-only.txt
+0x8000000000006120 f 22 /root/unlinked.txt
+0x800000000000300e f 1024 /root/vanished.bin
+EOF2
+EXPECT_ERR=
+RUN
