@@ -61,32 +61,8 @@ static int _server_handle_exec_file_read(libgdbr_t *g, gdbr_server_cmd_cb cb,
 	return ret;
 }
 
-static int _server_handle_M(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	char *memstr, *buf;
-	ut64 memlen, memlen2, addr;
-	g->data[g->data_len] = '\0';
-	if (sscanf (g->data + 1, "%"PFMT64x",%"PFMT64x, &addr, &memlen) != 2) {
-		return send_msg (g, "E01");
-	}
-	memlen2 = memlen * 2;
-	if (!(memstr = strchr (g->data, ':')) || !*(++memstr)) {
-		return send_msg (g, "E01");
-	}
-	if (memlen2 != strlen (memstr)) {
-		return send_msg (g, "E01");
-	}
-	if (!(buf = malloc (memlen2 + 64))) {
-		return send_msg (g, "E01");
-	}
-	snprintf (buf, memlen2 + 63, "wx 0x%s @ 0x%"PFMT64x, memstr, addr);
-	buf[memlen2 + 63] = '\0';
-	R_LOG_DEBUG ("%s: buf: %s", __func__, buf);
-	if (cmd_cb (g, core_ptr, buf, NULL, 0) < 0) {
-		free (buf);
-		return send_msg (g, "E01");
-	}
-	free (buf);
-	return send_msg (g, "OK");
+static int server_write_memory(libgdbr_t *g, gdbr_server_cmd_cb cb, void *user) {
+	return send_msg (g, cb (g, user, g->data, NULL, 0) < 0? "E01": "OK");
 }
 
 static int server_stop_reply(libgdbr_t *g, gdbr_server_cmd_cb cb, void *user) {
@@ -273,29 +249,21 @@ static int _server_handle_g(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 }
 
 static int _server_handle_m(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	int length;
-	g->data[g->data_len] = 0;
-	char *cmd = strdup (g->data);
-	char *buf = malloc (g->data_max / 2);
+	const size_t cap = (g->send_max - 5) / 2;
+	char *buf = malloc (cap);
 	if (!buf) {
-		free (cmd);
-		send_msg (g, "E01");
-		return -1;
+		return send_msg (g, "E01");
 	}
-	if ((length = cmd_cb (g, core_ptr, cmd, buf, (g->data_max / 2) - 1)) < 0
-	    || length >= g->data_max / 2) {
-		free (cmd);
+	int len = cmd_cb (g, core_ptr, g->data, buf, cap);
+	if (len < 0 || (size_t)len > cap || !gdbr_data_reserve (g, (size_t)len * 2)) {
 		free (buf);
 		return send_msg (g, "E01");
 	}
-	pack_hex (buf, length, g->data);
-	free (cmd);
+	pack_hex (buf, len, g->data);
 	free (buf);
-	g->data[length * 2] = '\0';
 	return send_msg (g, g->data);
 }
 
-// Read register number
 static int _server_handle_p(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char cmd[128];
 	int regnum, i;
@@ -377,11 +345,21 @@ int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 		if (read_packet (g, false) < 0) {
 			return 0;
 		}
-		if (g->data_len == 0) {
+		if (!g->data_len || memchr (g->data, '\0', g->data_len)) {
+			if (send_msg (g, g->data_len? "E01": "") < 0) {
+				return -1;
+			}
 			continue;
 		}
 		if (!strcmp (g->data, "k")) {
 			return server_kill (g, cmd_cb, core_ptr, false);
+		}
+		if (!strcmp (g->data, "D")) {
+			bool detached = cmd_cb (g, core_ptr, "D", NULL, 0) >= 0;
+			if (send_msg (g, detached? "OK": "E01") < 0 || detached) {
+				return -1;
+			}
+			continue;
 		}
 		if (r_str_startswith (g->data, "vKill;")) {
 			if ((ret = server_kill (g, cmd_cb, core_ptr, true)) < 0) {
@@ -469,7 +447,7 @@ int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 			continue;
 		}
 		if (r_str_startswith (g->data, "M")) {
-			if ((ret = _server_handle_M (g, cmd_cb, core_ptr)) < 0) {
+			if ((ret = server_write_memory (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
 			continue;
