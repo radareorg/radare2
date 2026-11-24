@@ -52,6 +52,8 @@ TEST_O=$(TEST_C:.c=.o)
 
 all: $(LIB)/$(LIBNAME).${EXT_AR}
 
+-include $(SRC_O:.o=.d)
+
 include ../../shlr/zip/deps.mk
 include ../../libr/socket/deps.mk
 include ../../shlr/sdb.mk
