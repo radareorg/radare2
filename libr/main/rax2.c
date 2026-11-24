@@ -649,6 +649,7 @@ dotherax:
 		size_t ll = r_list_length (split);
 		if (ll < 1) {
 			R_LOG_ERROR ("Timestamp string is not containing GMT");
+			r_list_free (split);
 			return false;
 		}
 		char *ts = r_list_head (split)->data;
@@ -659,6 +660,7 @@ dotherax:
 		ut32 n = r_num_math_err (num, ts, &errstr);
 		if (errstr) {
 			R_LOG_ERROR ("%s", errstr);
+			r_list_free (split);
 			return false;
 		}
 		RPrint *p = r_print_new ();
@@ -666,6 +668,8 @@ dotherax:
 			p->datezone = r_num_math_err (num, gmt, &errstr);
 			if (errstr) {
 				R_LOG_ERROR ("%s", errstr);
+				r_print_free (p);
+				r_list_free (split);
 				return false;
 			}
 		}
