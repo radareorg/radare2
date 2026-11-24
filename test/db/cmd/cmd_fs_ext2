@@ -650,3 +650,20 @@ EXPECT=<<EOF2
 EOF2
 EXPECT_ERR=
 RUN
+
+NAME=ext2 search.in=fs.deleted follows the retained block map of deleted inodes
+FILE=gzip://bins/fs/ext2-forensic/recovery.img.gz
+CMDS=<<EOF2
+e search.verbose=false
+e fs.cwd=/root
+e search.in=fs.deleted
+e search.maxhits=1
+/xj 5265636f76657220657874322064617461
+/xj 4c6976652065787432
+EOF2
+EXPECT=<<EOF2
+[{"addr":27648,"type":"hexpair","data":"5265636f76657220657874322064617461"}]
+[]
+EOF2
+EXPECT_ERR=
+RUN

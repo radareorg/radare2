@@ -924,6 +924,62 @@ static bool fs_search_bound(const RFSRange *range, void *user) {
 	return true;
 }
 
+static bool fs_search_deleted(FSSearchBounds *bounds, const char *path, ut64 id, int depth, int *budget) {
+	RCore *core = bounds->core;
+	RList *list = r_fs_dir (core->fs, path, id, R_FS_VIEW_NORMAL | R_FS_VIEW_DELETED);
+	if (!list) {
+		return false;
+	}
+	bool ok = true;
+	RListIter *iter;
+	RFSFile *entry;
+	r_list_foreach (list, iter, entry) {
+		if (!strcmp (entry->name, ".") || !strcmp (entry->name, "..")) {
+			continue;
+		}
+		if (--(*budget) < 0 || r_cons_is_breaked (core->cons)) {
+			ok = false;
+			break;
+		}
+		if ((entry->flags & R_FS_FILE_DELETED) && entry->id != UT64_MAX) {
+			// recovery stops at reused storage, so a partial walk still yields the known prefix
+			RFSFile *file = r_fs_open_id (core->fs, entry->root->path, entry->id, R_FS_OPEN_RECOVER);
+			if (file) {
+				r_fs_extents (file, fs_search_bound, bounds);
+				r_fs_close (core->fs, file);
+				r_fs_file_free (file);
+			}
+		}
+		if (entry->type == R_FS_FILE_TYPE_DIRECTORY && depth > 1) {
+			char *child = entry->id == UT64_MAX? r_str_newf ("%s/%s", !strcmp (path, "/")? "": path, entry->name): NULL;
+			ok &= fs_search_deleted (bounds, child? child: entry->root->path, entry->id, depth - 1, budget);
+			free (child);
+		}
+	}
+	r_list_free (list);
+	return ok;
+}
+
+static int fs_search_bound_cmp(const void *a, const void *b) {
+	const RIOMap *ma = a, *mb = b;
+	return ma->itv.addr < mb->itv.addr? -1: ma->itv.addr > mb->itv.addr;
+}
+
+static void fs_search_merge(RList *list) {
+	r_list_sort (list, fs_search_bound_cmp);
+	RListIter *iter, *tmp;
+	RIOMap *map, *last = NULL;
+	r_list_foreach_safe (list, iter, tmp, map) {
+		if (last && map->itv.addr <= r_itv_end (last->itv)) {
+			ut64 end = R_MAX (r_itv_end (last->itv), r_itv_end (map->itv));
+			last->itv.size = end - last->itv.addr;
+			r_list_delete (list, iter);
+		} else {
+			last = map;
+		}
+	}
+}
+
 static ut32 fs_search_flags(const char *state) {
 	static const struct {
 		const char *name;
@@ -983,7 +1039,23 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 	if (perm == -1) {
 		perm = R_PERM_RWX;
 	}
-	if (r_str_startswith (mode, "fs.")) {
+	if (!strcmp (mode, "fs.deleted")) {
+		FSSearchBounds bounds = { core, list, search_itv };
+		const char *mountpoint = r_config_get (core->config, "fs.cwd");
+		int budget = 0x4000;
+		r_cons_break_push (core->cons, NULL, NULL);
+		bool ok = fs_search_deleted (&bounds, mountpoint, UT64_MAX, 64, &budget);
+		bool breaked = r_cons_is_breaked (core->cons);
+		r_cons_break_pop (core->cons);
+		if (breaked) {
+			r_list_free (list);
+			return NULL;
+		}
+		if (!ok) {
+			R_LOG_WARN ("Deleted entry walk in %s is incomplete", mountpoint);
+		}
+		fs_search_merge (list);
+	} else if (r_str_startswith (mode, "fs.")) {
 		ut32 flags = fs_search_flags (mode + strlen ("fs."));
 		if (!flags) {
 			R_LOG_ERROR ("Unknown filesystem search mode: %s", mode);

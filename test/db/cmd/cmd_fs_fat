@@ -999,3 +999,26 @@ EXPECT_ERR=<<EOF2
 ERROR: Cannot enumerate fs.unwritten in /root (unsupported)
 EOF2
 RUN
+
+NAME=FAT search.in=fs.deleted searches recoverable data of deleted entries
+FILE=gzip://bins/fs/fat/fat12.img.gz
+CMDS=<<EOF2
+e search.verbose=false
+e fs.cwd=/root
+e search.in=fs.deleted
+/j retained-tail
+/j child
+/j lost-lfn
+/xj 4641543132206c697665
+e search.in=fs.free
+/j retained-tail
+EOF2
+EXPECT=<<EOF2
+[{"addr":16896,"type":"string","data":"retained-tail"}]
+[{"addr":17920,"type":"string","data":"child"}]
+[{"addr":18432,"type":"string","data":"lost-lfn"}]
+[]
+[]
+EOF2
+EXPECT_ERR=
+RUN
