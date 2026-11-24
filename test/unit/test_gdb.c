@@ -316,6 +316,46 @@ static bool session_open(libgdbr_t *g, int fds[2], int remote_type) {
 	return !gdbr_set_reg_profile (g, PROFILE);
 }
 
+static bool test_gdb_memory_read_replies(void) {
+	const struct {
+		const char *reply;
+		int count;
+	} cases[] = {
+		{ "0203040506070809", 12 },
+		{ "0203", 4 },
+		{ "020", 2 },
+		{ "02g3", 2 },
+		{ "", 2 },
+		{ "02030405060708090a", 2 },
+		{ "E01", 2 }
+	};
+	RCons *cons = r_cons_new ();
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (cases); i++) {
+		int fds[2];
+		libgdbr_t g;
+		mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open memory session");
+		g.stub_features.pkt_sz = 16;
+		const char *replies[] = { "0001", cases[i].reply, "0a0b", NULL };
+		Stub stub;
+		RThread *th = stub_start (&stub, fds[1], -1, replies);
+		ut8 data[12];
+		memset (data, 0xff, sizeof (data));
+		int n = gdbr_read_memory (&g, 0xffe, data, sizeof (data));
+		char *sent = stub_finish (&stub, th, fds[0]);
+		gdbr_cleanup (&g);
+		mu_assert_eq (n, cases[i].count, "return only contiguous bytes");
+		mu_assert_streq_free (sent, n == 12? "mffe,2\nm1000,8\nm1008,2\n": "mffe,2\nm1000,8\n",
+			"stop before reading any further chunks after a short or invalid reply");
+		int j;
+		for (j = 0; j < sizeof (data); j++) {
+			mu_assert_eq (data[j], j < n? j: 0xff, "copy only valid reply bytes");
+		}
+	}
+	r_cons_free (cons);
+	mu_end;
+}
+
 static bool check_memory_packets(char *sent, ut64 address, const ut8 *data, size_t len, size_t limit, size_t *written) {
 	char *save_ptr = NULL;
 	char *packet = r_str_tok_r (sent, "\n", &save_ptr);
@@ -1448,6 +1488,7 @@ int main(int argc, char **argv) {
 	mu_run_test (test_gdb_processes_xml);
 	mu_run_test (test_gdb_memory_packet_sizes);
 	mu_run_test (test_gdb_memory_packet_failures);
+	mu_run_test (test_gdb_memory_read_replies);
 	mu_run_test (test_gdb_runtime_console_flows);
 	mu_run_test (test_gdb_console_terminal_replies);
 	mu_run_test (test_gdb_console_rejections);

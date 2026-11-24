@@ -15,7 +15,7 @@
 
 int handle_g(libgdbr_t* g);
 int handle_G(libgdbr_t* g);
-int handle_m(libgdbr_t* g);
+int handle_m(libgdbr_t *g, int requested);
 int handle_M(libgdbr_t* g);
 int handle_P(libgdbr_t* g);
 int handle_cont(libgdbr_t* g);

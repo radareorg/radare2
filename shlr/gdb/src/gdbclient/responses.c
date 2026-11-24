@@ -40,16 +40,21 @@ int handle_P(libgdbr_t *g) {
 	return ret;
 }
 
-int handle_m(libgdbr_t *g) {
-	if (g->data_len == 3 && g->data[0] == 'E') {
-		// TODO: figure out if this is a problem
-		send_ack (g);
+int handle_m(libgdbr_t *g, int requested) {
+	if (send_ack (g) < 0 || !g->data_len || (g->data_len & 1) || g->data_len / 2 > requested) {
 		return -1;
 	}
-	int len = strlen (g->data);
-	g->data_len = len / 2;
-	unpack_hex (g->data, len, g->data);
-	return send_ack (g);
+	int i;
+	for (i = 0; i < g->data_len / 2; i++) {
+		int high = hex2int (g->data[i * 2]);
+		int low = hex2int (g->data[i * 2 + 1]);
+		if (high < 0 || low < 0) {
+			return -1;
+		}
+		g->data[i] = (char)((high << 4) | low);
+	}
+	g->data_len = i;
+	return 0;
 }
 
 int handle_qStatus(libgdbr_t *g) {
