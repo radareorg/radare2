@@ -1420,7 +1420,7 @@ static bool test_gdb_connect_packet_limits(void) {
 		mu_assert_eq (g.stub_features.pkt_sz, cases[i].limit, "override only lowers the peer capacity");
 		if (sent) {
 			mu_assert ("initial negotiation is not inflated by the override", r_str_startswith (sent,
-				"qSupported:multiprocess+;qRelocInsn+;xmlRegisters=i386\n"));
+				"qSupported:multiprocess+;xmlRegisters=i386\n"));
 		}
 		free (sent);
 		gdbr_cleanup (&g);
@@ -1433,14 +1433,23 @@ static bool test_gdb_connect_packet_limits(void) {
 static bool test_gdb_connect_probes(void) {
 	RCons *cons = r_cons_new ();
 	libgdbr_t g;
+	const char *minimal[] = { "", "QC1", "", "", "", NULL };
+	char *sent = connect_transcript (&g, minimal);
+	mu_assert_streq_free (sent, "qSupported:multiprocess+;xmlRegisters=i386\nqC\nvCont?\nHg1\nHc-1\n",
+		"an unsupported qSupported reply keeps protocol defaults");
+	mu_assert_eq (g.stub_features.pkt_sz, 64, "keep the default packet size");
+	mu_assert_false (g.stub_features.multiprocess, "do not assume multiprocess support");
+	mu_assert_false (g.no_ack, "acknowledgments stay enabled");
+	gdbr_cleanup (&g);
+
 	const char *gdbserver[] = {
 		"PacketSize=1000;QStartNoAckMode+", "OK", "QC1", "vCont;c;C;s;S", "OK", "OK", NULL
 	};
-	char *sent = connect_transcript (&g, gdbserver);
+	sent = connect_transcript (&g, gdbserver);
 	mu_assert_notnull (sent, "connect to gdbserver stub");
 	// no lldb packet, no qProcessInfo, and 'g' is not asked before registers are read
 	mu_assert_streq_free (sent,
-		"qSupported:multiprocess+;qRelocInsn+;xmlRegisters=i386\n"
+		"qSupported:multiprocess+;xmlRegisters=i386\n"
 		"QStartNoAckMode\nqC\nvCont?\nHg1\nHc-1\n", "gdbserver connect");
 	mu_assert_eq (g.remote_type, GDB_REMOTE_TYPE_GDB, "gdb flavor");
 	mu_assert_false (g.caps.thread_suffix, "no thread suffix");
@@ -1454,7 +1463,7 @@ static bool test_gdb_connect_probes(void) {
 	sent = connect_transcript (&g, lldb);
 	mu_assert_notnull (sent, "connect to lldb stub");
 	mu_assert_streq_free (sent,
-		"qSupported:multiprocess+;qRelocInsn+;xmlRegisters=i386\n"
+		"qSupported:multiprocess+;xmlRegisters=i386\n"
 		"QStartNoAckMode\nQThreadSuffixSupported\nqC\nvCont?\nHg1c03\nHc-1\n", "lldb connect");
 	mu_assert_eq (g.remote_type, GDB_REMOTE_TYPE_LLDB, "lldb flavor");
 	mu_assert_true (g.caps.thread_suffix, "thread suffix accepted");

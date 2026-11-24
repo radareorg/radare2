@@ -11,10 +11,6 @@
 int handle_qSupported(libgdbr_t *g) {
 	char *tok = NULL;
 	char *save_ptr = NULL;
-	// Catch no data received
-	if (!*g->data) {
-		return -1;
-	}
 	// TODO handle the message correct and set all infos like packetsize, thread stuff and features
 	tok = r_str_tok_r (g->data, ";", &save_ptr);
 	while (tok) {
