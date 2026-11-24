@@ -207,9 +207,19 @@ with missing names can be discovered with directory ID 0 as mft-N entries.
 Resident data, fragmented nonresident mapping pairs, sparse runs and initialized
 data lengths are supported. Resident extents identify the actual on-disk bytes,
 including update-sequence-array words that restore sector trailers.
+Resident and nonresident ATTRIBUTE_LIST values resolve attributes across MFT
+extension records, checking sequence numbers, base references, attribute
+instances, types, names and lowest VCNs. Continuation segments must form a
+contiguous logical map. Fragmented MFT mappings are bootstrapped progressively
+from reachable extension records. Incomplete mappings retain inspection of
+readable records without permitting checked recovery or orphan classification.
 .Pp
 NTFS recovery requires a clear MFT allocation bit and an unused record. Nonresident
 data must also have clear volume allocation bits and no live or metadata owner.
+Nonresident attribute-list storage must pass the same checks; reused or unknown
+list storage limits recovery to mappings retained in the base record. Resident
+data in an extension record also requires that record's MFT allocation bit to
+be clear. Missing or invalid extension references retain only validated prefixes.
 Both in-use flags and MFT bitmap references protect live data, including named
 nonresident attributes. Bad clusters come from the BadClus stream. Unreadable,
 sparse or uninitialized allocation bitmaps produce unknown space, never free
@@ -219,8 +229,8 @@ A free allocation bit does not prove that clusters were never overwritten and fr
 NTFS metadata is cached as a read-only mounted snapshot; unmount and remount
 after modifying the backing image. Checked recovery and orphan classification
 are unavailable when live ownership cannot be established, including unresolved
-attribute lists or a dirty volume requiring journal processing. Compressed and
-encrypted recovery, attribute-list reconstruction and alternate-data-stream
+extension references or a dirty volume requiring journal processing. Compressed and
+encrypted recovery and alternate-data-stream
 extraction remain unsupported by the forensic callbacks. Ordinary path reads
 retain the existing reader as a fallback where supported. These operations do
 not replay LogFile or USN journal records.

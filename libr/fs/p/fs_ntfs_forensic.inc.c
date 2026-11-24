@@ -10,9 +10,9 @@ typedef struct {
 R_VEC_TYPE (RVecNtfsRun, NtfsRun);
 
 typedef struct {
-	RVecNtfsRun runs;
+	RVecNtfsRun runs, metadata;
 	ut8 *resident;
-	ut64 size, initialized, record;
+	ut64 size, initialized, record, local_size;
 	ut32 value_offset, usa;
 	int status;
 } NtfsStream;
@@ -57,6 +57,7 @@ static ut64 ntfs_duplicate_limit(NtfsStream *stream);
 
 static void ntfs_stream_fini(NtfsStream *stream) {
 	RVecNtfsRun_fini (&stream->runs);
+	RVecNtfsRun_fini (&stream->metadata);
 	free (stream->resident);
 	memset (stream, 0, sizeof (*stream));
 }
@@ -228,16 +229,187 @@ static int ntfs_runs(NtfsFS *fs, const ut8 *attr, RVecNtfsRun *runs) {
 	return offset < length && vcn == highest + 1? R_FS_WALK_COMPLETE: R_FS_WALK_ERROR;
 }
 
+static int ntfs_stream_add(NtfsFS *fs, const ut8 *record, ut64 id, const ut8 *attr, NtfsStream *stream, bool first) {
+	if (first) {
+		stream->size = attr[8]? r_read_le64 (attr + 48): r_read_le32 (attr + 16);
+		stream->initialized = attr[8]? r_read_le64 (attr + 56): stream->size;
+		if (stream->initialized > stream->size || stream->size > INT64_MAX) {
+			return R_FS_WALK_ERROR;
+		}
+	} else if (stream->resident || !attr[8]) {
+		return R_FS_WALK_ERROR;
+	}
+	if (r_read_le16 (attr + 12) & (1 | 0x4000)) {
+		return R_FS_WALK_UNSUPPORTED;
+	}
+	if (attr[8]) {
+		NtfsRun *last = RVecNtfsRun_last (&stream->runs);
+		ut64 next = last? (last->logical + last->size) / fs->cluster_size: 0;
+		if (r_read_le64 (attr + 16) != next) {
+			return R_FS_WALK_ERROR;
+		}
+		return ntfs_runs (fs, attr, &stream->runs);
+	}
+	ut32 size = r_read_le32 (attr + 16), value = r_read_le16 (attr + 20);
+	stream->resident = malloc (R_MAX (size, 1));
+	if (!stream->resident) {
+		return R_FS_WALK_ERROR;
+	}
+	memcpy (stream->resident, attr + value, size);
+	stream->record = id;
+	stream->value_offset = attr - record + value;
+	stream->usa = r_read_le16 (record + 4);
+	return R_FS_WALK_COMPLETE;
+}
+
+static int ntfs_stream_finish(NtfsStream *stream) {
+	NtfsRun *last = RVecNtfsRun_last (&stream->runs);
+	if (stream->status == R_FS_WALK_COMPLETE && !stream->resident
+			&& (last? stream->size > last->logical + last->size: stream->size != 0)) {
+		stream->status = R_FS_WALK_ERROR;
+	}
+	return stream->status;
+}
+
+typedef struct {
+	NtfsFS *fs;
+	const ut8 *base, *record;
+	ut8 *extension;
+	ut64 base_id, id, position, cached_id;
+	ut32 offset;
+	NtfsStream list;
+	HtUP *seen;
+	int status;
+	bool base_done, has_list;
+} NtfsAttrIter;
+
+static bool ntfs_record(NtfsFS *fs, ut64 id, ut8 *record);
+
+static void ntfs_attrs_init(NtfsAttrIter *iter, NtfsFS *fs, const ut8 *record, ut64 id) {
+	*iter = (NtfsAttrIter){ .fs = fs, .base = record, .record = record,
+		.base_id = id, .id = id, .cached_id = UT64_MAX,
+		.offset = r_read_le16 (record + 20), .status = R_FS_WALK_COMPLETE };
+}
+
+static void ntfs_attrs_fini(NtfsAttrIter *iter) {
+	ntfs_stream_fini (&iter->list);
+	ht_up_free (iter->seen);
+	free (iter->extension);
+}
+
+static bool ntfs_attrs_list(NtfsAttrIter *iter, const ut8 *attr) {
+	if (iter->has_list || r_read_le64 (iter->base + 32)) {
+		return false;
+	}
+	iter->has_list = true;
+	iter->list.status = ntfs_stream_add (iter->fs, iter->base, iter->base_id, attr, &iter->list, true);
+	if (attr[9] || r_read_le16 (attr + 12) || ntfs_stream_finish (&iter->list) != R_FS_WALK_COMPLETE
+			|| iter->list.size < 26 || iter->list.size > iter->fs->size || iter->list.initialized != iter->list.size) {
+		return false;
+	}
+	size_t i;
+	for (i = 0; i < RVecNtfsRun_length (&iter->list.runs); i++) {
+		if (RVecNtfsRun_at (&iter->list.runs, i)->physical == UT64_MAX) {
+			return false;
+		}
+	}
+	iter->seen = ht_up_new0 ();
+	iter->extension = malloc (iter->fs->record_size);
+	return iter->seen && iter->extension;
+}
+
+static int ntfs_attrs_next(NtfsAttrIter *iter, const ut8 **attribute) {
+	if (!iter->base_done) {
+		int status = ntfs_attribute (iter->base, &iter->offset, attribute);
+		if (status == R_FS_WALK_STOPPED) {
+			if (r_read_le32 (*attribute) == 0x20 && !ntfs_attrs_list (iter, *attribute)) {
+				iter->status = R_FS_WALK_ERROR;
+			}
+			return status;
+		}
+		iter->base_done = true;
+		if (status != R_FS_WALK_COMPLETE) {
+			iter->status = R_FS_WALK_ERROR;
+		}
+	}
+	if (iter->status != R_FS_WALK_COMPLETE || !iter->has_list) {
+		return iter->status;
+	}
+	while (iter->position < iter->list.size) {
+		ut8 entry[26], name[510];
+		if (!ntfs_stream_read (iter->fs, &iter->list, iter->position, entry, sizeof (entry))) {
+			break;
+		}
+		ut32 length = r_read_le16 (entry + 4), namesize = (ut32)entry[6] * 2, start = entry[7];
+		ut64 reference = r_read_le64 (entry + 16), id = reference & 0xffffffffffffULL;
+		ut64 vcn = r_read_le64 (entry + 8), key = (id << 16) | r_read_le16 (entry + 24);
+		if (length < sizeof (entry) || (length & 7) || length > iter->list.size - iter->position
+				|| !r_read_le32 (entry) || r_read_le32 (entry) == UT32_MAX
+				|| (namesize && (start < sizeof (entry) || start > length || namesize > length - start))
+				|| ht_up_find (iter->seen, key, NULL) || !ht_up_insert (iter->seen, key, iter)
+				|| (namesize && !ntfs_stream_read (iter->fs, &iter->list, iter->position + start, name, namesize))) {
+			break;
+		}
+		if (id == iter->base_id) {
+			iter->record = iter->base;
+		} else {
+			if (id != iter->cached_id) {
+				if (!ntfs_record (iter->fs, id, iter->extension)) {
+					break;
+				}
+				iter->cached_id = id;
+			}
+			iter->record = iter->extension;
+			ut64 base = iter->base_id | (ut64)r_read_le16 (iter->base + 16) << 48;
+			if (r_read_le64 (iter->record + 32) != base
+					|| ((r_read_le16 (iter->record + 22) ^ r_read_le16 (iter->base + 22)) & 1)) {
+				break;
+			}
+		}
+		if (!r_read_le16 (iter->record + 16) || r_read_le16 (iter->record + 16) != reference >> 48) {
+			break;
+		}
+		ut32 offset = r_read_le16 (iter->record + 20);
+		const ut8 *attr, *found = NULL;
+		int status;
+		while ((status = ntfs_attribute (iter->record, &offset, &attr)) == R_FS_WALK_STOPPED) {
+			if (id != iter->base_id && r_read_le32 (attr) == 0x20) {
+				status = R_FS_WALK_ERROR;
+				break;
+			}
+			if (r_read_le16 (attr + 14) == r_read_le16 (entry + 24)) {
+				if (found || r_read_le32 (attr) != r_read_le32 (entry) || attr[9] != entry[6]
+						|| (attr[8]? r_read_le64 (attr + 16): 0) != vcn
+						|| (namesize && memcmp (attr + r_read_le16 (attr + 10), name, namesize))) {
+					status = R_FS_WALK_ERROR;
+					break;
+				}
+				found = attr;
+			}
+		}
+		if (status != R_FS_WALK_COMPLETE || !found) {
+			break;
+		}
+		iter->position += length;
+		if (id != iter->base_id) {
+			iter->id = id;
+			*attribute = found;
+			return R_FS_WALK_STOPPED;
+		}
+	}
+	iter->status = iter->position == iter->list.size? R_FS_WALK_COMPLETE: R_FS_WALK_ERROR;
+	return iter->status;
+}
+
 static int ntfs_stream(NtfsFS *fs, const ut8 *record, ut64 id, ut32 type, const char *name, NtfsStream *stream) {
-	ut32 offset = r_read_le16 (record + 20);
+	NtfsAttrIter iter;
+	ntfs_attrs_init (&iter, fs, record, id);
 	const ut8 *attr;
-	bool found = false, external = false;
+	bool found = false;
+	ut16 flags = 0;
 	int status;
 	stream->status = R_FS_WALK_UNSUPPORTED;
-	while ((status = ntfs_attribute (record, &offset, &attr)) == R_FS_WALK_STOPPED) {
-		if (r_read_le32 (attr) == 0x20) {
-			external = true;
-		}
+	while ((status = ntfs_attrs_next (&iter, &attr)) == R_FS_WALK_STOPPED) {
 		if (r_read_le32 (attr) != type || (name? attr[9] != strlen (name): attr[9] != 0)) {
 			continue;
 		}
@@ -250,55 +422,31 @@ static int ntfs_stream(NtfsFS *fs, const ut8 *record, ut64 id, ut32 type, const 
 				continue;
 			}
 		}
-		if (found) {
-			external = true;
-			continue;
+		if (!found || stream->status == R_FS_WALK_COMPLETE) {
+			if (found && flags != r_read_le16 (attr + 12)) {
+				stream->status = R_FS_WALK_ERROR;
+			} else {
+				flags = r_read_le16 (attr + 12);
+				stream->status = ntfs_stream_add (fs, iter.record, iter.id, attr, stream, !found);
+			}
+			if (iter.id == id) {
+				NtfsRun *last = RVecNtfsRun_last (&stream->runs);
+				stream->local_size = stream->resident? stream->size: last? R_MIN (stream->size, last->logical + last->size): 0;
+			}
 		}
 		found = true;
-		stream->size = attr[8]? r_read_le64 (attr + 48): r_read_le32 (attr + 16);
-		stream->initialized = attr[8]? r_read_le64 (attr + 56): stream->size;
-		if (stream->initialized > stream->size || stream->size > INT64_MAX) {
-			stream->status = R_FS_WALK_ERROR;
-			continue;
-		}
-		if (r_read_le16 (attr + 12) & (1 | 0x4000)) {
-			continue;
-		}
-		if (attr[8]) {
-			if (r_read_le64 (attr + 16)) {
-				external = true;
-				continue;
-			}
-			stream->status = ntfs_runs (fs, attr, &stream->runs);
-			NtfsRun *last = RVecNtfsRun_last (&stream->runs);
-			if (last? stream->size > last->logical + last->size: stream->size != 0) {
-				stream->status = R_FS_WALK_ERROR;
-			}
-		} else {
-			ut32 size = r_read_le32 (attr + 16), value = r_read_le16 (attr + 20);
-			stream->resident = malloc (R_MAX (size, 1));
-			if (!stream->resident) {
-				stream->status = R_FS_WALK_ERROR;
-				continue;
-			}
-			memcpy (stream->resident, attr + value, size);
-			stream->record = id;
-			stream->value_offset = attr - record + value;
-			stream->usa = r_read_le16 (record + 4);
-			stream->size = stream->initialized = size;
-			stream->status = R_FS_WALK_COMPLETE;
-		}
 	}
 	if (status != R_FS_WALK_COMPLETE) {
 		stream->status = R_FS_WALK_ERROR;
-	} else if (external && stream->status != R_FS_WALK_ERROR) {
-		stream->status = R_FS_WALK_UNSUPPORTED;
 	}
-	return stream->status;
+	stream->metadata = iter.list.runs;
+	memset (&iter.list.runs, 0, sizeof (iter.list.runs));
+	ntfs_attrs_fini (&iter);
+	return ntfs_stream_finish (stream);
 }
 
 static bool ntfs_record(NtfsFS *fs, ut64 id, ut8 *record) {
-	return id < fs->records && ntfs_stream_read (fs, &fs->mft, id * fs->record_size, record, fs->record_size)
+	return id < fs->mft.initialized / fs->record_size && ntfs_stream_read (fs, &fs->mft, id * fs->record_size, record, fs->record_size)
 		&& ntfs_fixup (fs, record) && (r_read_le16 (record + 4) < 48
 			|| !r_read_le32 (record + 44) || r_read_le32 (record + 44) == (ut32)id);
 }
@@ -367,8 +515,8 @@ static bool ntfs_initialize(NtfsFS *fs) {
 		return false;
 	}
 	bool ok = ntfs_disk (fs, mft * fs->cluster_size, record, fs->record_size) && ntfs_fixup (fs, record)
-		&& ntfs_stream (fs, record, 0, 0x80, NULL, &fs->mft) == R_FS_WALK_COMPLETE
-		&& !fs->mft.resident && fs->mft.initialized <= fs->mft.size;
+		&& ntfs_stream (fs, record, 0, 0x80, NULL, &fs->mft) != R_FS_WALK_UNSUPPORTED
+		&& !fs->mft.resident && RVecNtfsRun_length (&fs->mft.runs) && fs->mft.size <= fs->size;
 	if (ok) {
 		fs->records = fs->mft.initialized / fs->record_size;
 		NtfsRun *first = ntfs_run_at (&fs->mft.runs, 0);
@@ -381,6 +529,8 @@ static bool ntfs_initialize(NtfsFS *fs) {
 		}
 		if (!ok) {
 			fs->mft.status = R_FS_WALK_ERROR;
+		} else if (fs->mft.status != R_FS_WALK_COMPLETE) {
+			R_LOG_WARN ("Incomplete NTFS MFT mapping: retaining readable records");
 		}
 		ntfs_stream (fs, record, 0, 0xb0, NULL, &fs->mft_bitmap);
 		if (ntfs_record (fs, 6, record)) {
@@ -388,14 +538,19 @@ static bool ntfs_initialize(NtfsFS *fs) {
 		}
 		fs->dirty = true;
 		if (ntfs_record (fs, 3, record)) {
-			ut32 offset = r_read_le16 (record + 20);
+			NtfsAttrIter attrs;
+			ntfs_attrs_init (&attrs, fs, record, 3);
 			const ut8 *attr;
-			while (ntfs_attribute (record, &offset, &attr) == R_FS_WALK_STOPPED) {
+			bool clean = false;
+			int status;
+			while ((status = ntfs_attrs_next (&attrs, &attr)) == R_FS_WALK_STOPPED) {
 				if (r_read_le32 (attr) == 0x70 && !attr[8] && r_read_le32 (attr + 16) >= 12) {
 					const ut8 *value = attr + r_read_le16 (attr + 20);
-					fs->dirty = value[8] != 3 || value[9] > 1 || (r_read_le16 (value + 10) & 1);
+					clean = value[8] == 3 && value[9] <= 1 && !(r_read_le16 (value + 10) & 1);
 				}
 			}
+			fs->dirty = !clean || status != R_FS_WALK_COMPLETE;
+			ntfs_attrs_fini (&attrs);
 		}
 	}
 	free (record);
@@ -430,15 +585,13 @@ static void ntfs_merge_runs(RVecNtfsRun *runs) {
 	}
 }
 
-static bool ntfs_live_runs(NtfsFS *fs, const ut8 *record, bool bad) {
-	ut32 offset = r_read_le16 (record + 20);
+static bool ntfs_live_runs(NtfsFS *fs, const ut8 *record, ut64 id) {
+	NtfsAttrIter iter;
+	ntfs_attrs_init (&iter, fs, record, id);
 	const ut8 *attr;
 	int status;
 	bool complete = true;
-	while ((status = ntfs_attribute (record, &offset, &attr)) == R_FS_WALK_STOPPED) {
-		if (r_read_le32 (attr) == 0x20) {
-			complete = false;
-		}
+	while ((status = ntfs_attrs_next (&iter, &attr)) == R_FS_WALK_STOPPED) {
 		if (!attr[8]) {
 			continue;
 		}
@@ -453,13 +606,15 @@ static bool ntfs_live_runs(NtfsFS *fs, const ut8 *record, bool bad) {
 			NtfsRun *copy = RVecNtfsRun_emplace_back (&fs->owners);
 			if (!copy) {
 				RVecNtfsRun_fini (&runs);
+				ntfs_attrs_fini (&iter);
 				return false;
 			}
 			*copy = *run;
-			if (bad && r_read_le32 (attr) == 0x80) {
+			if (id == 8 && r_read_le32 (attr) == 0x80) {
 				copy = RVecNtfsRun_emplace_back (&fs->bad);
 				if (!copy) {
 					RVecNtfsRun_fini (&runs);
+					ntfs_attrs_fini (&iter);
 					return false;
 				}
 				*copy = *run;
@@ -467,6 +622,7 @@ static bool ntfs_live_runs(NtfsFS *fs, const ut8 *record, bool bad) {
 		}
 		RVecNtfsRun_fini (&runs);
 	}
+	ntfs_attrs_fini (&iter);
 	return complete && status == R_FS_WALK_COMPLETE;
 }
 
@@ -531,6 +687,7 @@ static bool ntfs_catalog(NtfsFS *fs) {
 	fs->catalog_ready = true;
 	fs->catalog_complete = true;
 	fs->owners_complete = fs->mft_bitmap.status == R_FS_WALK_COMPLETE;
+	fs->owners_complete &= fs->mft.status == R_FS_WALK_COMPLETE;
 	fs->owners_complete &= fs->mft_bitmap.initialized >= (fs->records + 7) / 8;
 	fs->owners_complete &= !fs->dirty;
 	fs->names = r_list_newf (ntfs_name_free);
@@ -579,18 +736,19 @@ static bool ntfs_catalog(NtfsFS *fs) {
 		}
 		bool live = id < 24 || (r_read_le16 (record + 22) & 1) || allocated != 0;
 		if (live) {
-			fs->owners_complete &= ntfs_live_runs (fs, record, id == 8);
+			fs->owners_complete &= ntfs_live_runs (fs, record, id);
 		}
 		if (r_read_le64 (record + 32)) {
 			continue;
 		}
-		ut32 offset = r_read_le16 (record + 20);
+		NtfsAttrIter attrs;
+		ntfs_attrs_init (&attrs, fs, record, id);
 		const ut8 *attr;
 		NtfsStream data = {0};
 		ntfs_stream (fs, record, id, 0x80, NULL, &data);
 		bool named = false;
 		int status;
-		while ((status = ntfs_attribute (record, &offset, &attr)) == R_FS_WALK_STOPPED) {
+		while ((status = ntfs_attrs_next (&attrs, &attr)) == R_FS_WALK_STOPPED) {
 			if (r_read_le32 (attr) != 0x30 || attr[8] || r_read_le32 (attr + 16) < 66) {
 				continue;
 			}
@@ -653,6 +811,7 @@ static bool ntfs_catalog(NtfsFS *fs) {
 			}
 		}
 		fs->catalog_complete &= status == R_FS_WALK_COMPLETE;
+		ntfs_attrs_fini (&attrs);
 		ntfs_stream_fini (&data);
 	}
 	free (record);
@@ -811,6 +970,12 @@ static int FSP(_forensic_extents)(RFSFile *file, RFSRangeCb cb, void *user) {
 	if (entry->recovery) {
 		ntfs_catalog (fs);
 		int allocated = ntfs_bit (fs, &fs->mft_bitmap, &fs->mft_cache, entry->id);
+		if (stream->resident && stream->record != entry->id) {
+			int extension = ntfs_bit (fs, &fs->mft_bitmap, &fs->mft_cache, stream->record);
+			if (extension != 0) {
+				allocated = extension;
+			}
+		}
 		if (!entry->deleted || !fs->owners_complete || allocated != 0) {
 			file->flags |= R_FS_FILE_PARTIAL;
 			if (!entry->deleted || allocated > 0) {
@@ -825,6 +990,29 @@ static int FSP(_forensic_extents)(RFSFile *file, RFSRangeCb cb, void *user) {
 			limit = duplicate;
 			file->flags |= R_FS_FILE_CONFLICT;
 			status = R_FS_WALK_ERROR;
+		}
+		size_t i;
+		for (i = 0; i < RVecNtfsRun_length (&stream->metadata); i++) {
+			NtfsRun *metadata = RVecNtfsRun_at (&stream->metadata, i);
+			if (metadata->physical == UT64_MAX) {
+				limit = R_MIN (limit, stream->local_size);
+				status = R_FS_WALK_ERROR;
+				break;
+			}
+			ut64 offset;
+			for (offset = 0; offset < metadata->size; offset += fs->cluster_size) {
+				ut64 physical = metadata->physical + offset;
+				int allocated = ntfs_bit (fs, &fs->bitmap, &fs->bitmap_cache, physical / fs->cluster_size);
+				bool owned = ntfs_run_at (&fs->owners, physical) != NULL;
+				if (allocated != 0 || owned) {
+					limit = R_MIN (limit, stream->local_size);
+					status = R_FS_WALK_ERROR;
+					if (allocated > 0 || owned) {
+						file->flags |= R_FS_FILE_CONFLICT;
+					}
+					break;
+				}
+			}
 		}
 	}
 	RFSRange run = {0};
@@ -850,8 +1038,9 @@ static int FSP(_forensic_extents)(RFSFile *file, RFSRangeCb cb, void *user) {
 			} else {
 				size = R_MIN (size, fs->cluster_size - physical % fs->cluster_size);
 				int allocated = ntfs_bit (fs, &fs->bitmap, &fs->bitmap_cache, physical / fs->cluster_size);
-				if (entry->recovery && (allocated != 0 || ntfs_run_at (&fs->owners, physical))) {
-					if (allocated > 0 || ntfs_run_at (&fs->owners, physical)) {
+				bool owned = entry->recovery && ntfs_run_at (&fs->owners, physical);
+				if (entry->recovery && (allocated != 0 || owned)) {
+					if (allocated > 0 || owned) {
 						file->flags |= R_FS_FILE_CONFLICT;
 					}
 					status = R_FS_WALK_ERROR;
@@ -940,9 +1129,10 @@ static RFSFile *FSP(_forensic_open_id)(RFSRoot *root, ut64 id, ut32 flags) {
 	file->ptr = entry;
 	file->id = id;
 	file->type = r_read_le16 (record + 22) & 2? 'd': 'f';
-	ut32 offset = r_read_le16 (record + 20);
+	NtfsAttrIter attrs;
+	ntfs_attrs_init (&attrs, fs, record, id);
 	const ut8 *attr;
-	while (ntfs_attribute (record, &offset, &attr) == R_FS_WALK_STOPPED) {
+	while (ntfs_attrs_next (&attrs, &attr) == R_FS_WALK_STOPPED) {
 		if (attr[8]) {
 			continue;
 		}
@@ -954,6 +1144,7 @@ static RFSFile *FSP(_forensic_open_id)(RFSRoot *root, ut64 id, ut32 flags) {
 			file->type = 's';
 		}
 	}
+	ntfs_attrs_fini (&attrs);
 	ntfs_stream (fs, record, id, 0x80, NULL, &entry->data);
 	file->size = entry->data.size;
 	if (deleted) {

@@ -651,3 +651,407 @@ with Image(image) as disk:
         close(disk.fs, handle)
         free_file(handle)
 print('PASS: empty nonresident data streams preserve zero length and EOF')
+
+
+def set_attributes(record, values):
+    start = u16(record, 20)
+    payload = b''.join(values) + struct.pack('<II', 0xffffffff, 0)
+    assert start + len(payload) <= RECORD
+    record[start:] = payload + bytes(RECORD - start - len(payload))
+    put32(record, 24, start + len(payload))
+    put16(record, 40, max((u16(value, 14) for value in values), default=0) + 1)
+
+
+def resident_attribute(kind, value, instance, name=b''):
+    start = (24 + len(name) + 7) & ~7
+    attr = bytearray(start) + value
+    attr.extend(bytes((-len(attr)) % 8))
+    put32(attr, 0, kind)
+    put32(attr, 4, len(attr))
+    attr[9] = len(name) // 2
+    put16(attr, 10, 24 if name else 0)
+    put16(attr, 14, instance)
+    put32(attr, 16, len(value))
+    put16(attr, 20, start)
+    attr[24:24 + len(name)] = name
+    return attr
+
+
+def segment(attr, start, values, first=False):
+    result = bytearray(attr[:u16(attr, 32)]) + mapping_pairs(values)
+    result.extend(bytes((-len(result)) % 8))
+    put32(result, 4, len(result))
+    struct.pack_into('<QQ', result, 16, start, start + sum(count for count, _ in values) - 1)
+    if not first:
+        struct.pack_into('<QQQ', result, 40, 0, 0, 0)
+    return result
+
+
+def list_entry(number, record, attr):
+    name = bytes(attr[u16(attr, 10):u16(attr, 10) + attr[9] * 2]) if attr[9] else b''
+    length = (26 + len(name) + 7) & ~7
+    reference = number | (u16(record, 16) << 48)
+    result = bytearray(struct.pack('<IHBBQQH', u32(attr, 0), length, attr[9], 26 if name else 0,
+                                   u64(attr, 16) if attr[8] else 0, reference, u16(attr, 14))) + name
+    result.extend(bytes(length - len(result)))
+    return result
+
+
+def extension_record(image, base, number, values):
+    record = get_record(image, base)
+    struct.pack_into('<Q', record, 32, base | (u16(record, 16) << 48))
+    put16(record, 16, 9)
+    put32(record, 44, number)
+    set_attributes(record, values)
+    store_record(image, number, record)
+    bitmap_set(image, number, bool(u16(record, 22) & 1), mft=True)
+    return record
+
+
+def attribute_list_image(image, base, values, extensions, nonresident=False):
+    record = get_record(image, base)
+    entries = [(value, base, record) for value in values]
+    for number, attributes_ in extensions:
+        extended = extension_record(image, base, number, attributes_)
+        entries.extend((value, number, extended) for value in attributes_)
+    entries.sort(key=lambda item: (u32(item[0], 0), bytes(item[0][u16(item[0], 10):u16(item[0], 10) + item[0][9] * 2]),
+                                   u64(item[0], 16) if item[0][8] else 0))
+    payload = b''.join(list_entry(number, record_, value) for value, number, record_ in entries)
+    if nonresident:
+        clusters = (len(payload) + CLUSTER - 1) // CLUSTER
+        encoded = mapping_pairs([(1, 16000 + index * 2) for index in range(clusters)])
+        attr = bytearray(64) + encoded
+        attr.extend(bytes((-len(attr)) % 8))
+        put32(attr, 0, 0x20)
+        put32(attr, 4, len(attr))
+        attr[8] = 1
+        put16(attr, 14, 100)
+        struct.pack_into('<Q', attr, 24, clusters - 1)
+        put16(attr, 32, 64)
+        struct.pack_into('<QQQ', attr, 40, clusters * CLUSTER, len(payload), len(payload))
+        for index in range(clusters):
+            cluster = 16000 + index * 2
+            data = payload[index * CLUSTER:(index + 1) * CLUSTER]
+            image[cluster * CLUSTER:cluster * CLUSTER + len(data)] = data
+            bitmap_set(image, cluster, bool(u16(record, 22) & 1))
+    else:
+        attr = resident_attribute(0x20, payload, 100)
+    set_attributes(record, sorted(values + [attr], key=lambda value: u32(value, 0)))
+    store_record(image, base, record)
+
+
+def split_deleted(image, nonresident=False):
+    number = IDS['vanished.bin']
+    record = get_record(image, number)
+    _, old = data_attribute(record)
+    values = [value for _, value in attributes(record) if u32(value, 0) != 0x80]
+    physical = INFO['deleted_runs']
+    values.append(segment(old, 0, physical[:1], first=True))
+    extension1 = segment(old, physical[0][0], physical[1:2])
+    extension2 = segment(old, physical[0][0] + physical[1][0], physical[2:])
+    attribute_list_image(image, number, values, [(24, [extension1]), (25, [extension2])], nonresident)
+
+
+check('resident attribute lists reconstruct three deleted data segments', split_deleted, raw=True)
+check('nonresident attribute lists reconstruct deleted data segments', lambda image: split_deleted(image, True), raw=True)
+
+
+def moved_resident(image, number=None):
+    number = IDS['inline.txt'] if number is None else number
+    record = get_record(image, number)
+    _, value = data_attribute(record)
+    values = [value for _, value in attributes(record) if u32(value, 0) != 0x80]
+    padding = resident_attribute(0x40, bytes(256), 10)
+    attribute_list_image(image, number, values, [(24, [padding, value])])
+
+check('resident data in extension records maps original fixup bytes', moved_resident,
+      number=IDS['inline.txt'], expected=b'Resident NTFS recovery\n' * 16, raw=True)
+check('resolved live attribute lists permit checked recovery', lambda image: moved_resident(image, IDS['live.txt']))
+
+
+def reused_resident_extension(image):
+    moved_resident(image)
+    bitmap_set(image, 24, True, mft=True)
+
+check('reused resident extension records refuse recovery', reused_resident_extension,
+      number=IDS['inline.txt'], wanted=-1, prefix=0, conflict=True)
+
+
+def damaged_extension(image, change):
+    split_deleted(image)
+    record = get_record(image, 24)
+    change(record)
+    store_record(image, 24, record)
+
+check('stale extension sequence references preserve the base data prefix',
+      lambda image: damaged_extension(image, lambda record: put16(record, 16, 10)), wanted=-1, prefix=6144)
+check('foreign base record references preserve the base data prefix',
+      lambda image: damaged_extension(image, lambda record: struct.pack_into('<Q', record, 32, 64 | (1 << 48))),
+      wanted=-1, prefix=6144)
+check('reused base sequences reject old extension records',
+      lambda image: damaged_extension(image, lambda record: struct.pack_into('<Q', record, 32, IDS['vanished.bin'] | (12 << 48))),
+      wanted=-1, prefix=6144)
+check('missing attribute instances reject foreign extension contents',
+      lambda image: damaged_extension(image, lambda record: put16(record, u16(record, 20) + 14, 77)),
+      wanted=-1, prefix=6144)
+check('mismatched lowest VCN values reject extension mappings',
+      lambda image: damaged_extension(image, lambda record: struct.pack_into('<Q', record, u16(record, 20) + 16, 13)),
+      wanted=-1, prefix=6144)
+check('an in-use extension cannot supply deleted file contents',
+      lambda image: damaged_extension(image, lambda record: put16(record, 22, 1)), wanted=-1, prefix=6144)
+
+
+def edit_list(image, change):
+    split_deleted(image)
+    record = get_record(image, IDS['vanished.bin'])
+    offset, attr = data_attribute(record, 0x20)
+    start = offset + u16(attr, 20)
+    entries = []
+    end = start + u32(attr, 16)
+    while start < end:
+        entries.append(start)
+        start += u16(record, start + 4)
+    change(record, entries)
+    store_record(image, IDS['vanished.bin'], record)
+
+check('truncated attribute list entries retain only the validated prefix',
+      lambda image: edit_list(image, lambda record, entries: put16(record, entries[-1] + 4, 8)),
+      wanted=-1, prefix=12288)
+check('duplicate list references cannot duplicate file mappings',
+      lambda image: edit_list(image, lambda record, entries: record.__setitem__(slice(entries[-1], entries[-1] + 32), record[entries[-2]:entries[-2] + 32])),
+      wanted=-1, prefix=12288)
+check('attribute list name mismatches cannot select an unnamed stream',
+      lambda image: edit_list(image, lambda record, entries: record.__setitem__(entries[-1] + 6, 1)),
+      wanted=-1, prefix=12288)
+
+
+def extension_cycle(image):
+    split_deleted(image)
+    record = get_record(image, 24)
+    values = [value for _, value in attributes(record)]
+    values.insert(0, resident_attribute(0x20, bytes(32), 99))
+    set_attributes(record, values)
+    store_record(image, 24, record)
+
+check('extension attribute-list cycles terminate without following links', extension_cycle, wanted=-1, prefix=6144)
+
+
+def extension_name(image):
+    number = IDS['vanished.bin']
+    record = get_record(image, number)
+    values = [value for _, value in attributes(record) if u32(value, 0) != 0x30]
+    _, name = data_attribute(record, 0x30)
+    attribute_list_image(image, number, values, [(24, [name])])
+
+image = bytearray(ORIGINAL)
+extension_name(image)
+with Image(image) as disk:
+    found = {row[0]: row for row in disk.listing()}
+    assert found[IDS['vanished.bin']][1] == b'vanished.bin'
+    assert not open_id(disk.fs, b'/ntfs', 24, 0)
+    print('PASS: extension filenames attach to their base IDs and extension IDs cannot open independently')
+
+
+def split_mft(image, nonresident=False):
+    bitmap_set(image, 24, True, mft=True)
+    bitmap_set(image, 40, True, mft=True)
+    record = get_record(image, 0)
+    _, old = data_attribute(record)
+    count = sum(size for _, _, size in INFO['mft_runs']) // CLUSTER
+    assert count == 150
+    values = [value for _, value in attributes(record) if u32(value, 0) != 0x80]
+    values.append(segment(old, 0, [(50, 32)], first=True))
+    attribute_list_image(image, 0, values, [(24, [segment(old, 50, [(50, 3000)])]),
+                                           (40, [segment(old, 100, [(50, 3200)])])], nonresident)
+    for index in range(50, count):
+        bitmap_set(image, 32 + index, False)
+    for cluster in list(range(3000, 3050)) + list(range(3200, 3250)):
+        bitmap_set(image, cluster, True)
+    original = bytes(image)
+    image[3000 * CLUSTER:3050 * CLUSTER] = original[(32 + 50) * CLUSTER:(32 + 100) * CLUSTER]
+    image[3200 * CLUSTER:3250 * CLUSTER] = original[(32 + 100) * CLUSTER:(32 + 150) * CLUSTER]
+
+check('fragmented MFT bootstrapping progressively resolves extension records', split_mft, raw=True)
+check('fragmented MFT bootstrapping supports nonresident attribute lists', lambda image: split_mft(image, True), raw=True)
+
+
+def external_mft_bitmap(image):
+    bitmap_set(image, 24, True, mft=True)
+    record = get_record(image, 0)
+    values = [value for _, value in attributes(record) if u32(value, 0) != 0xb0]
+    _, bitmap = data_attribute(record, 0xb0)
+    attribute_list_image(image, 0, values, [(24, [bitmap])])
+
+check('MFT allocation bitmaps can reside in extension records', external_mft_bitmap)
+
+
+def split_volume_bitmap(image):
+    record = get_record(image, 6)
+    _, old = data_attribute(record)
+    logical, physical, size = runs(old)[0]
+    assert not logical and size > CLUSTER
+    values = [value for _, value in attributes(record) if u32(value, 0) != 0x80]
+    values.append(segment(old, 0, [(1, physical // CLUSTER)], first=True))
+    attribute_list_image(image, 6, values, [(24, [segment(old, 1, [(size // CLUSTER - 1, physical // CLUSTER + 1)])])])
+
+check('volume allocation bitmaps reconstruct continuation segments', split_volume_bitmap)
+
+
+def long_named_list(image):
+    number = IDS['live.txt']
+    record = get_record(image, number)
+    values = [value for _, value in attributes(record)]
+    named = resident_attribute(0x80, b'named', 20, ('é' * 240).encode('utf-16le'))
+    attribute_list_image(image, number, values, [(24, [named])], True)
+
+check('fragmented nonresident lists read Unicode names across cluster boundaries', long_named_list)
+
+
+def reused_list(image):
+    split_deleted(image, True)
+    bitmap_set(image, 16000, True)
+
+check('reused nonresident attribute-list storage retains only base-record data', reused_list,
+      wanted=-1, prefix=6144, conflict=True)
+
+
+def owned_list(image):
+    split_deleted(image, True)
+    record = get_record(image, IDS['live.txt'])
+    _, original = data_attribute(get_record(image, IDS['vanished.bin']))
+    value = segment(original, 0, [(1, 16000)], first=True)
+    struct.pack_into('<QQQ', value, 40, CLUSTER, CLUSTER, CLUSTER)
+    offset, _ = data_attribute(record)
+    replace_attr(record, offset, value)
+    store_record(image, IDS['live.txt'], record)
+
+check('live ownership protects attribute-list storage despite clear allocation bits', owned_list,
+      wanted=-1, prefix=6144, conflict=True)
+
+
+def unknown_list_bitmap(image):
+    split_deleted(image, True)
+    change_data(image, 6, lambda record, offset, attr: struct.pack_into('<Q', record, offset + 56, 512))
+
+check('unknown attribute-list allocation retains the independently known prefix', unknown_list_bitmap,
+      wanted=-1, prefix=6144)
+
+
+def external_named_owner(image):
+    number = IDS['live.txt']
+    record = get_record(image, number)
+    name = 'secret'.encode('utf-16le')
+    start = (64 + len(name) + 7) & ~7
+    value = bytearray(start) + mapping_pairs([(1, first)])
+    value.extend(bytes((-len(value)) % 8))
+    put32(value, 0, 0x80)
+    put32(value, 4, len(value))
+    value[8], value[9] = 1, len(name) // 2
+    put16(value, 10, 64)
+    put16(value, 14, 11)
+    put16(value, 32, start)
+    struct.pack_into('<QQQ', value, 40, CLUSTER, CLUSTER, CLUSTER)
+    value[64:64 + len(name)] = name
+    attribute_list_image(image, number, [value for _, value in attributes(record)], [(24, [value])])
+
+check('named attributes in extension records protect live data ownership', external_named_owner,
+      wanted=-1, prefix=0, conflict=True)
+
+
+def broken_extension_fixup(image):
+    split_deleted(image)
+    image[INFO['record_offsets']['24'] + SECTOR - 1] ^= 1
+
+check('damaged extension fixups preserve the valid base mapping', broken_extension_fixup, wanted=-1, prefix=6144)
+
+image = bytearray(ORIGINAL)
+record = get_record(image, IDS['sparse.bin'])
+_, original = data_attribute(record)
+values = [value for _, value in attributes(record) if u32(value, 0) != 0x80]
+values.append(segment(original, 0, INFO['sparse_runs'][:1], first=True))
+attribute_list_image(image, IDS['sparse.bin'], values,
+                     [(24, [segment(original, 1, INFO['sparse_runs'][1:2])]),
+                      (25, [segment(original, (1 << 32) // CLUSTER, INFO['sparse_runs'][2:])])])
+with Image(image) as disk:
+    handle = open_path(disk.fs, b'/ntfs/sparse.bin', False)
+    assert handle
+    try:
+        status, found = collect_call(lambda cb: extents(handle, cb, None))
+        assert status == 1 and len(found) == 3 and found[1][3] == 64
+        assert read(disk.fs, handle, (1 << 32) - 2, 4) == 4
+        assert C.string_at(File.from_address(handle).data, 4) == b'\0\0ZZ'
+    finally:
+        close(disk.fs, handle)
+        free_file(handle)
+print('PASS: attribute-list continuations preserve sparse mappings above four GiB')
+
+image = bytearray(ORIGINAL)
+split_mft(image)
+image[INFO['record_offsets']['24'] + SECTOR - 1] ^= 1
+with Image(image) as disk:
+    handle = open_id(disk.fs, b'/ntfs', 0, 0)
+    assert handle
+    try:
+        status, found = collect_call(lambda cb: extents(handle, cb, None))
+        assert status == -1 and sum(row[2] for row in found) == 50 * CLUSTER
+        assert collect_call(lambda cb: ranges(disk.fs, b'/ntfs', 4, cb, None))[0] == -1
+    finally:
+        close(disk.fs, handle)
+        free_file(handle)
+print('PASS: incomplete fragmented MFT maps retain inspection and refuse orphan claims')
+
+
+def moved_nonresident(image):
+    number = IDS['vanished.bin']
+    record = get_record(image, number)
+    values = [value for _, value in attributes(record) if u32(value, 0) != 0x80]
+    _, data = data_attribute(record)
+    attribute_list_image(image, number, values, [(24, [data])])
+
+check('nonresident data can start entirely in an extension record', moved_nonresident, raw=True)
+
+
+def reused_data_extension(image):
+    split_deleted(image)
+    bitmap_set(image, 25, True, mft=True)
+
+check('allocated extension records protect their nonresident data runs', reused_data_extension,
+      wanted=-1, prefix=12288, conflict=True)
+
+
+def discontinuous_segment(image, start):
+    def change(record):
+        offset = u16(record, 20)
+        struct.pack_into('<QQ', record, offset + 16, start, start + 11)
+    damaged_extension(image, change)
+    record = get_record(image, IDS['vanished.bin'])
+    offset, attr = data_attribute(record, 0x20)
+    entry = offset + u16(attr, 20)
+    while entry < offset + u16(attr, 20) + u32(attr, 16):
+        if (u64(record, entry + 16) & 0xffffffffffff) == 24:
+            struct.pack_into('<Q', record, entry + 8, start)
+        entry += u16(record, entry + 4)
+    store_record(image, IDS['vanished.bin'], record)
+
+check('logical gaps between valid continuation records stop recovery', lambda image: discontinuous_segment(image, 13),
+      wanted=-1, prefix=6144)
+check('overlapping valid continuation records stop recovery', lambda image: discontinuous_segment(image, 11),
+      wanted=-1, prefix=6144)
+
+image = bytearray(ORIGINAL)
+split_deleted(image)
+bitmap_set(image, first + 5, True)
+with Image(image) as disk:
+    handle = open_id(disk.fs, b'/ntfs', IDS['vanished.bin'], 2 | 4)
+    assert handle
+    try:
+        status, found = collect_call(lambda cb: extents(handle, cb, None))
+        assert status == -1 and sum(row[2] for row in found) == len(EXPECTED) - CLUSTER
+        assert found[0][0] == 0 and found[0][2] == 5 * CLUSTER
+        assert found[-1][0] + found[-1][2] == len(EXPECTED)
+        assert read(disk.fs, handle, 0, len(EXPECTED)) == 5 * CLUSTER
+        assert read(disk.fs, handle, 5 * CLUSTER, 1) == -1
+    finally:
+        close(disk.fs, handle)
+        free_file(handle)
+print('PASS: deleted-data salvage spans continuation records while reads retain the checked prefix')

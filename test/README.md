@@ -47,8 +47,8 @@ compiler and does not load a kernel module or access kernel memory.
    run `python3 test/scripts/test-ext-journal.py` after building.
  * To check historical directory names, renamed paths, hard links and ambiguous
    journal ancestry, run `python3 test/scripts/test-ext-names.py` after building.
- * To check NTFS MFT recovery, resident fixups, mapping pairs, sparse files and
-   allocation ownership, run `python3 test/scripts/test-ntfs-io.py` after building.
+ * To check NTFS MFT recovery, attribute lists, resident fixups, mapping pairs,
+   sparse files and allocation ownership, run `python3 test/scripts/test-ntfs-io.py` after building.
  * To check HTTP sandbox enforcement on a local server, use `make http-sandbox`
    after building and installing this checkout. This requires Python 3 and
    permission to open localhost sockets.
