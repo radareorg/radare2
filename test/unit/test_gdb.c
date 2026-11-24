@@ -141,7 +141,7 @@ static bool test_gdb_processes_xml(void) {
 		libgdbr_t g;
 		mu_assert_eq (gdbr_init (&g, false), 0, "initialize GDB client");
 		g.sock->fd = fds[0];
-		g.stub_features.qXfer_features_read = true;
+		g.stub_features.qXfer_osdata_read = true;
 		g.stub_features.pkt_sz = 4096;
 		g.num_retries = 1;
 		char *response = r_str_newf (

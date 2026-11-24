@@ -140,6 +140,7 @@ RList* gdbr_pids_list(libgdbr_t *g, int pid);
  * Get absolute name of file executed to create a process
  */
 char* gdbr_exec_file_read(libgdbr_t *g, int pid);
+char *gdbr_read_xfer(libgdbr_t *g, const char *object, const char *annex, size_t limit, size_t *size);
 
 /*!
  * Get offset of lowest segment returned by 'qOffsets'

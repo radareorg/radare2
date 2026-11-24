@@ -1598,70 +1598,59 @@ end:
 	return ret;
 }
 
-char* gdbr_exec_file_read(libgdbr_t *g, int pid) {
-	char msg[128], pidstr[16];
-	char *path = NULL;
-	ut64 len, off = 0;
-	int ret = -1;
-
-	if (!g) {
+char *gdbr_read_xfer(libgdbr_t *g, const char *object, const char *annex, size_t limit, size_t *size) {
+	if (size) {
+		*size = 0;
+	}
+	if (!g || g->stub_features.pkt_sz <= 2) {
 		return NULL;
 	}
-
-	len = g->stub_features.pkt_sz;
-	memset (pidstr, 0, sizeof (pidstr));
-	if (g->stub_features.multiprocess && pid > 0) {
-		snprintf (pidstr, sizeof (pidstr), "%x", pid);
-	}
-
 	if (!gdbr_lock_enter (g)) {
-		goto end;
+		gdbr_lock_leave (g);
+		return NULL;
 	}
-	while (1) {
-		if (snprintf (msg, sizeof (msg) - 1,
-			    "qXfer:exec-file:read:%s:%"PFMT64x",%"PFMT64x,
-			    pidstr, off, len) < 0) {
-			ret = -1;
-			goto end;
-		}
-		if (send_msg (g, msg) < 0 || read_packet (g, false) < 0
-			    || g->data_len == 0) {
-			ret = -1;
-			goto end;
-		}
-		g->data[g->data_len] = '\0';
-		const size_t slice = strlen (g->data + 1);
-		if (slice > GDBR_PATH_MAX - off) {
-			ret = -1;
-			goto end;
-		}
-		if (g->data[0] == 'l') {
-			if (g->data_len == 1) {
-				break;
-			}
-			path = r_str_append (path, g->data + 1);
+	const ut32 chunk = g->stub_features.pkt_sz - 2;
+	RStrBuf request;
+	r_strbuf_init (&request);
+	RStrBuf *reply = r_strbuf_new ("");
+	char *result = NULL;
+	size_t offset = 0;
+	while (reply) {
+		const char *packet = r_strbuf_setf (&request, "qXfer:%s:read:%s:%"PFMT64x",%x",
+			object, annex, (ut64)offset, chunk);
+		if (!packet || send_msg (g, packet) < 0 || read_packet (g, false) < 0 || !g->data_len) {
 			break;
 		}
-		// a slice without data makes no progress
-		if (g->data[0] != 'm' || !slice) {
-			ret = -1;
-			goto end;
+		const char status = g->data[0];
+		const size_t count = g->data_len - 1;
+		if ((status != 'l' && (status != 'm' || !count)) || count > chunk || count > limit - offset
+		    || memchr (g->data + 1, '\0', count) || !r_strbuf_append_n (reply, g->data + 1, count)) {
+			break;
 		}
-		off += slice;
-		if (!(path = r_str_append (path, g->data + 1))) {
-			ret = -1;
-			goto end;
+		offset += count;
+		if (status == 'l') {
+			if (offset) {
+				result = r_strbuf_drain (reply);
+				reply = NULL;
+				if (result && size) {
+					*size = offset;
+				}
+			}
+			break;
 		}
 	}
-
-	ret = 0;
-end:
+	r_strbuf_free (reply);
+	r_strbuf_fini (&request);
 	gdbr_lock_leave (g);
-	if (ret != 0) {
-		free (path);
-		return NULL;
+	return result;
+}
+
+char *gdbr_exec_file_read(libgdbr_t *g, int pid) {
+	char annex[16] = {0};
+	if (g && g->stub_features.multiprocess && pid > 0) {
+		snprintf (annex, sizeof (annex), "%x", (unsigned int)pid);
 	}
-	return path;
+	return gdbr_read_xfer (g, "exec-file", annex, GDBR_PATH_MAX, NULL);
 }
 
 bool gdbr_is_thread_dead(libgdbr_t *g, int pid, int tid) {
@@ -1715,8 +1704,8 @@ RList* gdbr_pids_list(libgdbr_t *g, int pid) {
 		goto end;
 	}
 	// Use qfThreadInfo as a fallback since it doesn't actually show all children
-	if (g->stub_features.qXfer_threads_read) {
-		if (gdbr_read_processes_xml(g, pid, list) == 0) {
+	if (g->stub_features.qXfer_osdata_read) {
+		if (gdbr_read_processes_xml (g, pid, list) == 0) {
 			ret = 0;
 			goto end;
 		}

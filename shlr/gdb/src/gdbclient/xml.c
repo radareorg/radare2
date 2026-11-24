@@ -13,58 +13,19 @@
 #define MAX_FEATURE_DEPTH (16)
 
 // left: the bytes the description, its inclusions too, may still take
-static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len, ut64 *left, int depth) {
+static char *gdbr_read_feature(libgdbr_t *g, const char *file, size_t *tot_len, size_t *left, int depth) {
+	*tot_len = 0;
 	if (depth >= MAX_FEATURE_DEPTH) {
-		*tot_len = 0;
 		return NULL;
 	}
-	ut64 retlen = 0, off = 0, len = g->stub_features.pkt_sz - 2,
-		subret_space = 0, subret_len = 0;
-	char *tmp, *tmp2, *tmp3, *ret = NULL, *subret = NULL, msg[128] = {0},
-		status, tmpchar;
-	RStrBuf *sb = r_strbuf_new ("");
-	if (!sb) {
-		goto exit_err;
-	}
-	while (1) {
-		snprintf (msg, sizeof (msg), "qXfer:features:read:%s:%"PFMT64x
-			",%"PFMT64x, file, off, len);
-		if (send_msg (g, msg) < 0
-		    || read_packet (g, false) < 0) {
-			goto exit_err;
-		}
-		if (g->data_len == 0) {
-			goto exit_err;
-		}
-		if (g->data_len == 1 && g->data[0] == 'l') {
-			break;
-		}
-		status = g->data[0];
-		// a slice without data makes no progress
-		if (g->data_len == 1 || g->data_len - 1 > *left) {
-			goto exit_err;
-		}
-		*left -= g->data_len - 1;
-		r_strbuf_append_n (sb, g->data + 1, g->data_len - 1);
-		retlen += g->data_len - 1;
-		off = retlen;
-		if (status == 'l') {
-			break;
-		}
-		if (status != 'm') {
-			goto exit_err;
-		}
-	}
-	if (r_strbuf_is_empty (sb)) {
-		*tot_len = 0;
-		r_strbuf_free (sb);
-		return NULL;
-	}
-	ret = r_strbuf_drain (sb);
-	sb = NULL;
+	size_t retlen;
+	char *ret = gdbr_read_xfer (g, "features", file, *left, &retlen);
 	if (!ret) {
-		goto exit_err;
+		return NULL;
 	}
+	*left -= retlen;
+	size_t subret_space, subret_len;
+	char *tmp, *tmp2, *tmp3;
 	tmp = strstr (ret, "<xi:include");
 	while (tmp) {
 		// inclusion
@@ -79,10 +40,9 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len, ut
 		if (!(tmp3 = strchr (tmp2, '"'))) {
 			goto exit_err;
 		}
-		tmpchar = *tmp3;
 		*tmp3 = '\0';
-		subret = gdbr_read_feature (g, tmp2, &subret_len, left, depth + 1);
-		*tmp3 = tmpchar;
+		char *subret = gdbr_read_feature (g, tmp2, &subret_len, left, depth + 1);
+		*tmp3 = '"';
 		if (!subret) {
 			goto exit_err;
 		}
@@ -108,58 +68,7 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len, ut
 	*tot_len = retlen;
 	return ret;
 exit_err:
-	r_strbuf_free (sb);
 	free (ret);
-	*tot_len = 0;
-	return NULL;
-}
-
-static char *gdbr_read_osdata(libgdbr_t *g, const char *file, ut64 *tot_len) {
-	ut64 retlen = 0, off = 0, len = g->stub_features.pkt_sz - 2;
-	char *ret = NULL, msg[128] = {0}, status;
-	RStrBuf *sb = r_strbuf_new ("");
-	if (!sb) {
-		goto exit_err;
-	}
-	while (1) {
-		snprintf (msg, sizeof (msg), "qXfer:osdata:read:%s:%" PFMT64x ",%" PFMT64x, file, off, len);
-		if (send_msg (g, msg) < 0 || read_packet (g, false) < 0) {
-			goto exit_err;
-		}
-		if (g->data_len == 0) {
-			goto exit_err;
-		}
-		if (g->data_len == 1 && g->data[0] == 'l') {
-			break;
-		}
-		status = g->data[0];
-		// a slice without data makes no progress
-		if (g->data_len == 1 || g->data_len - 1 > GDBR_XFER_MAX - retlen) {
-			goto exit_err;
-		}
-		r_strbuf_append_n (sb, g->data + 1, g->data_len - 1);
-		retlen += g->data_len - 1;
-		off = retlen;
-		if (status == 'l') {
-			break;
-		}
-	}
-	if (r_strbuf_is_empty (sb)) {
-		*tot_len = 0;
-		r_strbuf_free (sb);
-		return NULL;
-	}
-	ret = r_strbuf_drain (sb);
-	sb = NULL;
-	if (!ret) {
-		goto exit_err;
-	}
-	*tot_len = retlen;
-	return ret;
-exit_err:
-	r_strbuf_free (sb);
-	free (ret);
-	*tot_len = 0;
 	return NULL;
 }
 
@@ -478,7 +387,7 @@ int gdbr_read_target_xml(libgdbr_t *g) {
 		return -1;
 	}
 	char *data;
-	ut64 len, left = GDBR_XFER_MAX;
+	size_t len, left = GDBR_XFER_MAX;
 	if (!(data = gdbr_read_feature (g, "target.xml", &len, &left, 0))) {
 		return -1;
 	}
@@ -488,28 +397,16 @@ int gdbr_read_target_xml(libgdbr_t *g) {
 }
 
 int gdbr_read_processes_xml(libgdbr_t *g, int pid, RList *list) {
-	if (!g->stub_features.qXfer_features_read) {
+	if (!g->stub_features.qXfer_osdata_read) {
 		return -1;
 	}
-	ut64 len;
-	int ret = -1;
-	char *data;
-
-	if (!(data = gdbr_read_osdata (g, "processes", &len))) {
-		ret = -1;
-		goto end;
+	size_t len;
+	char *data = gdbr_read_xfer (g, "osdata", "processes", GDBR_XFER_MAX, &len);
+	if (!data) {
+		return -1;
 	}
-
-	if (gdbr_parse_processes_xml (g, data, len, pid, list) != 0) {
-		ret = -1;
-		goto end;
-	}
-
-	ret = 0;
-end:
-	if (data) {
-		free (data);
-	}
+	int ret = gdbr_parse_processes_xml (g, data, len, pid, list);
+	free (data);
 	return ret;
 }
 
