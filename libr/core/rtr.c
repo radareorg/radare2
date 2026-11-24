@@ -293,28 +293,30 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 		return -1;
 	}
 	RCore *core = (RCore*) core_ptr;
+	RDebug *dbg = core->dbg;
 	switch (cmd[0]) {
 	case '?': // Stop reason
-		if (!out_buf) {
+		if (!out_buf || !max_len) {
 			return -1;
 		}
-		// dbg->reason.signum and dbg->reason.tid are not correct for native
-		// debugger. This is a hack
-		switch (core->dbg->reason.type) {
-		case R_DEBUG_REASON_BREAKPOINT:
-		case R_DEBUG_REASON_STEP:
-		case R_DEBUG_REASON_TRAP:
-		default: // remove when possible
-			return snprintf (out_buf, max_len - 1, "T05thread:%x;",
-					 core->dbg->tid);
+		if (dbg->reason.type == R_DEBUG_REASON_DEAD || dbg->reason.type == R_DEBUG_REASON_EXIT_PID) {
+			if (!dbg->reason.exited_normally && dbg->reason.signum > 0 && dbg->reason.signum <= UT8_MAX) {
+				return snprintf (out_buf, max_len, "X%02x", (unsigned int)dbg->reason.signum);
+			}
+			return snprintf (out_buf, max_len, "W%02"PFMT32x, dbg->reason.exit_code);
 		}
-		// Fallback for when it's fixed
-		/*
-		return snprintf (out_buf, max_len - 1, "T%02xthread:%x;",
-				 core->dbg->reason.type, core->dbg->reason.tid);
-		*/
+		unsigned int signal = dbg->reason.type == R_DEBUG_REASON_SIGNAL && dbg->reason.signum > 0?
+			dbg->reason.signum: 5;
+		return snprintf (out_buf, max_len, "T%02xthread:%x;", signal, (unsigned int)dbg->tid);
 	case 'd':
 		switch (cmd[1]) {
+		case 's':
+		case 'c':
+			ret = cmd[1] == 's'? r_debug_step (dbg, 1): r_debug_continue (dbg);
+			return ret > 0 || dbg->reason.type == R_DEBUG_REASON_DEAD
+				|| dbg->reason.type == R_DEBUG_REASON_EXIT_PID? 0: -1;
+		case 'k':
+			return r_debug_kill (dbg, dbg->pid, dbg->tid, 9)? 0: -1;
 		case 'm': // dm
 			if (snprintf (out_buf, max_len - 1, "%"PFMT64x, r_debug_get_baddr (core->dbg, NULL)) < 0) {
 				return -1;
@@ -328,6 +330,8 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 				return 0;
 			case 't':
 				switch (cmd[3]) {
+				case '=':
+					return r_debug_select (dbg, dbg->pid, atoi (cmd + 4))? 0: -1;
 				case '\0': // dpt
 					{
 						RDebugPlugin *plugin = R_UNWRAP3 (core->dbg, current, plugin);
@@ -440,6 +444,7 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 	}
 	libgdbr_t *g = R_NEW0 (libgdbr_t);
 	gdbr_init (g, true);
+	g->pid = core->dbg->pid;
 	int arch = r_sys_arch_id (r_config_get (core->config, "asm.arch"));
 	int bits = r_config_get_i (core->config, "asm.bits");
 	gdbr_set_architecture (g, arch, bits);

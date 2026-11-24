@@ -221,15 +221,27 @@ static char *stub_recv(int fd) {
 typedef struct {
 	libgdbr_t g;
 	RDebug *dbg;
+	int selected;
 } RegisterServer;
 
 static int register_server_cmd(libgdbr_t *g, void *user, const char *cmd, char *out, size_t size) {
-	return r_str_startswith (cmd, "dr")? gdb_cmd_reg (user, g->registers, cmd + 2, out, size): -1;
+	RegisterServer *server = user;
+	if (r_str_startswith (cmd, "dr")) {
+		return gdb_cmd_reg (server->dbg, g->registers, cmd + 2, out, size);
+	}
+	if (r_str_startswith (cmd, "dpt=")) {
+		server->selected = atoi (cmd + 4);
+		return 0;
+	}
+	if (!strcmp (cmd, "ds") || !strcmp (cmd, "dc")) {
+		return 0;
+	}
+	return !strcmp (cmd, "?")? snprintf (out, size, "T05thread:%x;", server->selected): -1;
 }
 
 static RThreadFunctionRet register_server_run(RThread *th) {
 	RegisterServer *server = th->user;
-	gdbr_server_serve (&server->g, register_server_cmd, server->dbg);
+	gdbr_server_serve (&server->g, register_server_cmd, server);
 	return R_TH_STOP;
 }
 
@@ -276,6 +288,30 @@ static bool test_gdb_server_wide_packets(void) {
 		r_strbuf_free (expected);
 		free (hex);
 	}
+	mu_end;
+}
+
+static bool test_gdb_server_resume(void) {
+	RegisterServer server = {0};
+	mu_assert_eq (gdbr_init (&server.g, true), 0, "initialize server");
+	int fds[2];
+	mu_assert_eq (socketpair (AF_UNIX, SOCK_STREAM, 0, fds), 0, "server socket pair");
+	server.g.sock->fd = fds[0];
+	server.g.no_ack = true;
+	RThread *thread = r_th_new (register_server_run, &server, 0);
+	r_th_start (thread);
+	const char *commands[] = { "vCont?", "Hg3", "Hc2", "?", "s", "vCont;c:4", "vCont;t:4" };
+	const char *replies[] = { "vCont;c;s", "OK", "OK", "T05thread:3;", "T05thread:2;", "T05thread:4;", "E01" };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (commands); i++) {
+		mu_assert_true (send_response (fds[1], commands[i]), "send server command");
+		mu_assert_streq_free (stub_recv (fds[1]), replies[i], "reply from selected thread");
+	}
+	mu_assert_true (send_response (fds[1], "k"), "stop server");
+	r_th_wait (thread);
+	r_th_free (thread);
+	gdbr_cleanup (&server.g);
+	close (fds[1]);
 	mu_end;
 }
 
@@ -1847,6 +1883,7 @@ int main(int argc, char **argv) {
 	mu_run_test (test_gdb_packet_limits);
 #if R2__UNIX__ && !__wasi__
 	mu_run_test (test_gdb_server_wide_packets);
+	mu_run_test (test_gdb_server_resume);
 	mu_run_test (test_gdb_packet_retransmission);
 	mu_run_test (test_gdb_nonstop);
 	mu_run_test (test_gdb_server_packet_retransmission);
