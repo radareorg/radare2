@@ -913,9 +913,12 @@ typedef struct {
 
 static bool fs_search_bound(const RFSRange *range, void *user) {
 	FSSearchBounds *bounds = user;
-	if (r_cons_is_breaked (bounds->core->cons) || range->physical == UT64_MAX
-			|| !range->size || range->size > UT64_MAX - range->physical) {
+	if (r_cons_is_breaked (bounds->core->cons)) {
 		return false;
+	}
+	// sparse holes and wrapping ranges have no bytes to search
+	if (range->physical == UT64_MAX || !range->size || range->size > UT64_MAX - range->physical) {
+		return true;
 	}
 	append_bound (bounds->list, bounds->core->io, bounds->interval, range->physical, range->size, R_PERM_R);
 	return true;
