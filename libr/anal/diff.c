@@ -126,9 +126,10 @@ R_API bool r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2) 
 		R_VEC_FOREACH (&fcn2->bbs, iter2) {
 			bb2 = *iter2;
 			if (!bb2->diff || bb2->diff->type == R_ANAL_DIFF_TYPE_NULL) {
-				r_diff_buffers_distance (NULL, bb->fingerprint, bb->size,
-						bb2->fingerprint, bb2->size, NULL, &t);
-				if (t > anal->diff_thbb && t > ot) {
+				if (bb->fingerprint && bb2->fingerprint
+						&& r_diff_buffers_distance (NULL, bb->fingerprint, bb->size,
+							bb2->fingerprint, bb2->size, NULL, &t)
+						&& t > anal->diff_thbb && t > ot) {
 					ot = t;
 					mbb = bb;
 					mbb2 = bb2;
@@ -148,7 +149,8 @@ R_API bool r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2) 
 			if (!mbb->diff || !mbb2->diff) {
 				return false;
 			}
-			if (ot == 1 || t > anal->diff_thfcn) {
+			mbb->diff->dist = mbb2->diff->dist = ot;
+			if (ot == 1 || ot > anal->diff_thfcn) {
 				mbb->diff->type = mbb2->diff->type = R_ANAL_DIFF_TYPE_MATCH;
 			} else {
 				mbb->diff->type = mbb2->diff->type = \
@@ -318,12 +320,10 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 				R_LOG_DEBUG ("Function %s type not supported", fcn2->name);
 				continue;
 			}
-			if (fcn->fingerprint && fcn2->fingerprint) {
-				r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->fingerprint_size,
-						fcn2->fingerprint, fcn2->fingerprint_size, NULL, &t);
-			}
-			fcn->diff->dist = fcn2->diff->dist = t;
-			if (t > anal->diff_thfcn && t > ot) {
+			if (fcn->fingerprint && fcn2->fingerprint
+					&& r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->fingerprint_size,
+						fcn2->fingerprint, fcn2->fingerprint_size, NULL, &t)
+					&& t > anal->diff_thfcn && t > ot) {
 				ot = t;
 				mfcn = fcn;
 				mfcn2 = fcn2;
@@ -333,6 +333,7 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 			}
 		}
 		if (mfcn && mfcn2) {
+			mfcn->diff->dist = mfcn2->diff->dist = ot;
 			/* Set flag in matched functions */
 			mfcn->diff->type = mfcn2->diff->type = (ot == 1)
 				? R_ANAL_DIFF_TYPE_MATCH

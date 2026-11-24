@@ -35,6 +35,7 @@ enum {
 	GRAPH_SDB_MODE,
 	GRAPH_JSON_MODE,
 	GRAPH_JSON_DIS_MODE,
+	GRAPH_JSON_PAIR_MODE,
 	GRAPH_TINY_MODE,
 	GRAPH_INTERACTIVE_MODE,
 	GRAPH_DOT_MODE,
@@ -71,6 +72,7 @@ typedef struct {
 	RadiffDisasm disasm_b;
 	RDiffOp disasm_pending;
 	bool quiet;
+	bool hex_detail;
 	RCore *core;
 	const char *arch;
 	RList *runcmd;
@@ -502,7 +504,7 @@ static int show_help(int v) {
 			"  -S [name]  sort code diff (name, namelen, addr, size, type, dist) (only for -C or -g)\n"
 			"  -t [0-100] set threshold for code diff (default is 70%%)\n"
 			"  -T         analyze files in threads (EXPERIMENTAL, 30%% faster and crashy)\n"
-			"  -x         show two column hexdump diffing\n"
+			"  -x         show two column hexdump diffing (-xj reports equal/changed ranges)\n"
 			"  -X         use xpatch format for the diffing output\n"
 			"  -u         unified output (---+++)\n"
 			"  -U         unified output using system 'diff'\n"
@@ -1059,6 +1061,67 @@ static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
 	}
 }
 
+static char *capture_diff_graph(RCore *core, ut64 addr) {
+	r_cons_push (core->cons);
+	r_core_seek (core, addr, true);
+	r_core_anal_graph (core, addr, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF | R_CORE_ANAL_JSON);
+	char *graph = r_cons_drain (core->cons, NULL);
+	r_cons_pop (core->cons);
+	return graph;
+}
+
+static bool print_graph_pair(RCore *first, RCore *second, const char *addresses) {
+	char *left = strdup (addresses);
+	if (!left) {
+		return false;
+	}
+	char *right = strchr (left, ',');
+	if (right) {
+		*right++ = 0;
+	}
+	RCore *cores[] = { first, second };
+	const char *expressions[] = { left, right? right: left };
+	RAnalFunction *functions[2];
+	int i;
+	for (i = 0; i < 2; i++) {
+		RCore *core = cores[i];
+		ut64 addr = r_num_math (core->num, expressions[i]);
+		if (core->num->nc.errors) {
+			R_LOG_ERROR ("Unknown function address '%s'", expressions[i]);
+			free (left);
+			return false;
+		}
+		RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
+		if (!fcn) {
+			r_core_cmdf (core, "af @ 0x%" PFMT64x, addr);
+			fcn = r_anal_get_function_at (core->anal, addr);
+		}
+		if (!fcn) {
+			R_LOG_ERROR ("No function at 0x%" PFMT64x, addr);
+			free (left);
+			return false;
+		}
+		functions[i] = fcn;
+		RAnalBlock **block;
+		R_VEC_FOREACH (&fcn->bbs, block) {
+			r_anal_diff_fingerprint_bb (core->anal, *block);
+		}
+	}
+	free (left);
+	if (!r_anal_diff_bb (first->anal, functions[0], functions[1])) {
+		return false;
+	}
+	char *a = capture_diff_graph (first, functions[0]->addr);
+	char *b = capture_diff_graph (second, functions[1]->addr);
+	const bool ok = R_STR_ISNOTEMPTY (a) && R_STR_ISNOTEMPTY (b);
+	if (ok) {
+		printf ("{\"left\":%s,\"right\":%s}\n", a, b);
+	}
+	free (a);
+	free (b);
+	return ok;
+}
+
 static void radiff_options_init(RadiffOptions *ro) {
 	memset (ro, 0, sizeof (RadiffOptions));
 	ro->threshold = -1;
@@ -1197,6 +1260,7 @@ static const char gfhelp[] =
 	"  g          graph Modelling Language (gml)\n"
 	"  j          json\n"
 	"  J          json with disasm\n"
+	"  p          paired function graphs with block matches in json\n"
 	"  k          sdb key-value\n"
 	"  t          tiny ascii art\n"
 	"  i          interactive ascii art\n";
@@ -1237,6 +1301,7 @@ static bool select_graph_type(RadiffOptions *ro, const char *arg) {
 	case 'k': ro->gmode = GRAPH_SDB_MODE; break;
 	case 'j': ro->gmode = GRAPH_JSON_MODE; break;
 	case 'J': ro->gmode = GRAPH_JSON_DIS_MODE; break;
+	case 'p': ro->gmode = GRAPH_JSON_PAIR_MODE; break;
 	case 't': ro->gmode = GRAPH_TINY_MODE; break;
 	case 'd': ro->gmode = GRAPH_DOT_MODE; break;
 	case 'r': ro->gmode = GRAPH_STAR_MODE; break;
@@ -1257,9 +1322,16 @@ static const char ofhelp[] =
 	" u unified      unified diffing format\n"
 	" U gdiff        use system's diff program instead\n"
 	" x hex          two column hexdump-style\n"
-	" X hexii        simplified hexdump (hexII format)\n";
+	" X hexii        simplified hexdump (hexII format)\n"
+	"   hexjson      JSON hexdump rows (select up to 64 KiB with -l)\n";
 
 static bool select_output_format(RadiffOptions *ro, const char *arg) {
+	if (!strcmp (arg, "hexjson")) {
+		ro->mode = MODE_COLS;
+		ro->diffmode = 'j';
+		ro->hex_detail = true;
+		return true;
+	}
 	char ch0 = *arg;
 	if (!singlechar (arg)) {
 		if (!strcmp (arg, "hexii")) {
@@ -1334,6 +1406,127 @@ static void parse_num_pair(const char *arg, ut64 *a, ut64 *b) {
 	*a = r_num_math (NULL, first? first: arg);
 	*b = colon? r_num_math (NULL, colon + 1): *a;
 	free (first);
+}
+
+#define HEXDIFF_READ_SIZE (64 * 1024)
+#define HEXDIFF_BLOCK_SIZE 4096
+#define HEXDIFF_ROW_SIZE 16
+
+typedef enum {
+	HEXDIFF_EQUAL, HEXDIFF_CHANGED, HEXDIFF_LEFT, HEXDIFF_RIGHT
+} HexDiffStatus;
+
+static const char *hex_diff_status(HexDiffStatus status) {
+	static const char *names[] = { "equal", "changed", "left-only", "right-only" };
+	return names[status];
+}
+
+static ut64 hex_diff_size(RIODesc *desc, ut64 start, ut64 length) {
+	const ut64 total = r_io_desc_size (desc);
+	if (total == UT64_MAX) {
+		return UT64_MAX;
+	}
+	return start < total? R_MIN (total - start, length): 0;
+}
+
+static void hex_diff_range(ut64 offset, ut64 size, HexDiffStatus status) {
+	printf ("%s{\"offset\":%" PFMT64u ",\"size\":%" PFMT64u ",\"status\":\"%s\"}",
+		offset? ",": "", offset, size, hex_diff_status (status));
+}
+
+static void hex_diff_row(ut64 offset, const ut8 *a, int as, const ut8 *b, int bs) {
+	char left[2 * HEXDIFF_ROW_SIZE + 1] = { 0 };
+	char right[2 * HEXDIFF_ROW_SIZE + 1] = { 0 };
+	if (as) {
+		r_hex_bin2str (a, as, left);
+	}
+	if (bs) {
+		r_hex_bin2str (b, bs, right);
+	}
+	printf ("%s{\"offset\":%" PFMT64u ",\"left\":\"%s\",\"right\":\"%s\"}",
+		offset? ",": "", offset, left, right);
+}
+
+static bool print_hex_diff(RadiffOptions *ro) {
+	RIO *io = r_io_new ();
+	if (!io) {
+		return false;
+	}
+	RIODesc *a = r_io_open_nomap (io, ro->file, R_PERM_R, 0);
+	RIODesc *b = r_io_open_nomap (io, ro->file2, R_PERM_R, 0);
+	bool ok = false;
+	ut8 *left = NULL, *right = NULL;
+	if (!a || !b) {
+		R_LOG_ERROR ("Cannot open inputs for hex comparison");
+		goto beach;
+	}
+	const ut64 as = hex_diff_size (a, ro->offset_a, ro->length_a);
+	const ut64 bs = hex_diff_size (b, ro->offset_b, ro->length_b);
+	if (as == UT64_MAX || bs == UT64_MAX) {
+		R_LOG_ERROR ("Hex comparison requires inputs of known size");
+		goto beach;
+	}
+	const ut64 max_size = R_MAX (as, bs);
+	if (ro->hex_detail && max_size > HEXDIFF_READ_SIZE) {
+		R_LOG_ERROR ("Select up to 64 KiB with -l when using hexjson");
+		goto beach;
+	}
+	left = malloc (HEXDIFF_READ_SIZE);
+	right = malloc (HEXDIFF_READ_SIZE);
+	if (!left || !right) {
+		goto beach;
+	}
+	printf ("{\"offset_a\":%" PFMT64u ",\"offset_b\":%" PFMT64u
+		",\"size_a\":%" PFMT64u ",\"size_b\":%" PFMT64u ",\"%s\":[",
+		ro->offset_a, ro->offset_b, as, bs, ro->hex_detail? "rows": "ranges");
+	const int width = ro->hex_detail? HEXDIFF_ROW_SIZE: HEXDIFF_BLOCK_SIZE;
+	ut64 base = 0, range_start = 0;
+	HexDiffStatus pending = HEXDIFF_EQUAL;
+	r_cons_break_push (ro->cons, NULL, NULL);
+	while (base < max_size && !r_cons_is_breaked (ro->cons)) {
+		const int alen = base < as? R_MIN (as - base, HEXDIFF_READ_SIZE): 0;
+		const int blen = base < bs? R_MIN (bs - base, HEXDIFF_READ_SIZE): 0;
+		if ((alen && r_io_desc_read_at (a, ro->offset_a + base, left, alen) != alen)
+				|| (blen && r_io_desc_read_at (b, ro->offset_b + base, right, blen) != blen)) {
+			R_LOG_ERROR ("Short read in hex comparison at relative offset 0x%" PFMT64x, base);
+			break;
+		}
+		const int span = R_MAX (alen, blen);
+		int pos = 0;
+		while (pos < span) {
+			const int na = R_MIN (width, R_MAX (0, alen - pos));
+			const int nb = R_MIN (width, R_MAX (0, blen - pos));
+			if (ro->hex_detail) {
+				hex_diff_row (base + pos, left + pos, na, right + pos, nb);
+				pos += R_MAX (na, nb);
+				continue;
+			}
+			const int common = R_MIN (na, nb);
+			const HexDiffStatus status = common
+				? (memcmp (left + pos, right + pos, common)? HEXDIFF_CHANGED: HEXDIFF_EQUAL)
+				: (na? HEXDIFF_LEFT: HEXDIFF_RIGHT);
+			if (status != pending) {
+				if (base + pos > range_start) {
+					hex_diff_range (range_start, base + pos - range_start, pending);
+				}
+				range_start = base + pos;
+				pending = status;
+			}
+			pos += common? common: R_MAX (na, nb);
+		}
+		base += span;
+	}
+	if (!ro->hex_detail && base > range_start) {
+		hex_diff_range (range_start, base - range_start, pending);
+	}
+	printf ("]}\n");
+	r_cons_break_pop (ro->cons);
+	ok = base == max_size;
+beach:
+	free (left);
+	free (right);
+	r_io_free (io);
+	return ok;
 }
 
 R_API int r_main_radiff2(int argc, const char **argv) {
@@ -1491,6 +1684,13 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		return 1;
 	}
 
+	if (ro.mode == MODE_COLS && ro.diffmode == 'j') {
+		const bool ok = print_hex_diff (&ro);
+		pj_free (ro.pj);
+		radiff_options_fini (&ro);
+		return ok? 0: 1;
+	}
+
 	ut8 *bufa_orig = NULL;
 	ut8 *bufb_orig = NULL;
 	switch (ro.mode) {
@@ -1546,6 +1746,14 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		}
 		r_anal_diff_setup_i (c->anal, ro.diffops, ro.threshold, ro.threshold);
 		r_anal_diff_setup_i (c2->anal, ro.diffops, ro.threshold, ro.threshold);
+		if (ro.mode == MODE_GRAPH && ro.gmode == GRAPH_JSON_PAIR_MODE) {
+			const bool ok = print_graph_pair (c, c2, r_str_get_fail (addr, "entry0"));
+			r_core_free (c);
+			r_core_free (c2);
+			pj_free (ro.pj);
+			radiff_options_fini (&ro);
+			return ok? 0: 1;
+		}
 		if (addr) {
 			bool err = false;
 			if (r_num_math (c->num, addr) == 0) {

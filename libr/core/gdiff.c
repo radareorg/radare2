@@ -57,7 +57,7 @@ R_API bool r_core_gdiff(RCore *c, RCore *c2) {
 		/* remove strings */
 		r_list_foreach_safe (cores[i]->anal->fcns, iter, iter2, fcn) {
 			if (r_str_startswith (fcn->name, "str.")) {
-				r_anal_function_delete (c->anal, fcn);
+				r_anal_function_delete (cores[i]->anal, fcn);
 			}
 		}
 		/* Fingerprint fcn bbs (functions basic-blocks) */

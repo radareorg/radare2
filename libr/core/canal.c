@@ -1726,6 +1726,15 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 			pj_o (pj);
 			pj_kn (pj, "addr", bbi->addr);
 			pj_kn (pj, "size", bbi->size);
+			if (opts & R_CORE_ANAL_GRAPHDIFF) {
+				const RAnalDiff *diff = bbi->diff;
+				if (diff && diff->addr != UT64_MAX) {
+					pj_ks (pj, "diff", diff->dist == 1? "equal": "changed");
+					pj_kn (pj, "diff_addr", diff->addr);
+				} else {
+					pj_ks (pj, "diff", "unmatched");
+				}
+			}
 			if (custom) {
 				char *body = core_graph_block_body (core, bbi, decompiled);
 				pj_ks (pj, "body", r_str_get (body));

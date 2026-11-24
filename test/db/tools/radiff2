@@ -462,3 +462,35 @@ EXPECT=<<EOF
 + 0x00000008  nop
 EOF
 RUN
+
+NAME=radiff2 paired graph reports a changed block in both directions at zero
+FILE=-
+CMDS=<<EOF2
+!!radiff2 -g 0,0 -m p -a x86 -b 64 -e scr.color=0 hex://b801000000c3 hex://b802000000c3~{left[0].blocks[0].diff}
+!!radiff2 -g 0,0 -m p -a x86 -b 64 -e scr.color=0 hex://b801000000c3 hex://b802000000c3~{right[0].blocks[0].diff_addr}
+EOF2
+EXPECT=<<EOF2
+changed
+0
+EOF2
+RUN
+
+NAME=radiff2 sparse hex ranges collapse equal data and retain one-sided tails
+FILE=-
+CMDS=<<EOF2
+!!radiff2 -xj hex://00112233 hex://0011223344
+!!radiff2 -xj malloc://8192 malloc://8192
+EOF2
+EXPECT=<<EOF2
+{"offset_a":0,"offset_b":0,"size_a":4,"size_b":5,"ranges":[{"offset":0,"size":4,"status":"equal"},{"offset":4,"size":1,"status":"right-only"}]}
+{"offset_a":0,"offset_b":0,"size_a":8192,"size_b":8192,"ranges":[{"offset":0,"size":8192,"status":"equal"}]}
+EOF2
+RUN
+
+NAME=radiff2 JSON hex rows allow separate offsets and lengths
+FILE=-
+CMDS=!!radiff2 -f hexjson -o 2:1 -l 1:2 hex://00112233 hex://44223344
+EXPECT=<<EOF2
+{"offset_a":2,"offset_b":1,"size_a":1,"size_b":2,"rows":[{"offset":0,"left":"22","right":"2233"}]}
+EOF2
+RUN
