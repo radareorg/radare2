@@ -182,6 +182,16 @@ static bool stub_getc(int fd, char *ch) {
 	return poll (&pfd, 1, 3000) == 1 && read (fd, ch, 1) == 1;
 }
 
+static bool stub_expect(int fd, const char *expected) {
+	char ch;
+	for (; *expected; expected++) {
+		if (!stub_getc (fd, &ch) || ch != *expected) {
+			return false;
+		}
+	}
+	return true;
+}
+
 static char *stub_recv(int fd) {
 	RStrBuf *sb = r_strbuf_new ("");
 	bool in_packet = false;
@@ -314,6 +324,57 @@ static bool session_open(libgdbr_t *g, int fds[2], int remote_type) {
 	g->remote_type = remote_type;
 	g->pid = g->tid = 0x1c03;
 	return !gdbr_set_reg_profile (g, PROFILE);
+}
+
+static bool test_gdb_packet_retransmission(void) {
+	RCons *cons = r_cons_new ();
+	libgdbr_t g;
+	int fds[2];
+	mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open packet session");
+	g.no_ack = false;
+	g.num_retries = 2;
+	mu_assert ("send stop query", send_msg (&g, "?") > 0);
+	const char *wire = "-$S05#00+$S05#b8";
+	mu_assert_eq (write (fds[1], wire, strlen (wire)), strlen (wire), "queue NACK and corrected reply");
+	mu_assert_eq (read_packet (&g, false), 0, "accept retransmitted reply");
+	mu_assert_streq (g.data, "S05", "ignore corrupt reply");
+	mu_assert_true (stub_expect (fds[1], "$?#3f$?#3f-+"), "resend exact frame and acknowledge valid reply once");
+	mu_assert ("send another stop query", send_msg (&g, "?") > 0);
+	mu_assert_eq (write (fds[1], "---", 3), 3, "queue repeated NACKs");
+	mu_assert_eq (read_packet (&g, false), -1, "stop retransmitting when the retry limit is reached");
+	mu_assert_true (stub_expect (fds[1], "$?#3f$?#3f$?#3f"), "send exactly two retries");
+	struct pollfd pfd = { .fd = fds[1], .events = POLLIN };
+	mu_assert_eq (poll (&pfd, 1, 0), 0, "no extra retransmissions");
+	gdbr_cleanup (&g);
+	close (fds[1]);
+	r_cons_free (cons);
+	mu_end;
+}
+
+static bool test_gdb_server_packet_retransmission(void) {
+	RegisterServer server = {0};
+	int fds[2];
+	mu_assert_eq (gdbr_init (&server.g, true), 0, "initialize GDB server");
+	mu_assert_eq (socketpair (AF_UNIX, SOCK_STREAM, 0, fds), 0, "server socket pair");
+	server.g.sock->fd = fds[0];
+	RThread *thread = r_th_new (register_server_run, &server, 0);
+	r_th_start (thread);
+	mu_assert_true (send_response (fds[1], "qAttached"), "query attachment status");
+	mu_assert_true (stub_expect (fds[1], "+$0#30"), "acknowledge command and reply once");
+	mu_assert_eq (write (fds[1], "-", 1), 1, "reject server reply");
+	mu_assert_true (stub_expect (fds[1], "$0#30"), "retransmit exactly without acknowledging the NACK");
+	mu_assert_eq (write (fds[1], "+", 1), 1, "accept retransmission");
+	mu_assert_true (send_response (fds[1], "QStartNoAckMode"), "request no-ack mode");
+	mu_assert_true (stub_expect (fds[1], "+$OK#9a"), "acknowledge the transition");
+	mu_assert_eq (write (fds[1], "+-", 2), 2, "send final ACK and a stray NACK");
+	mu_assert_true (send_response (fds[1], "qAttached"), "query in no-ack mode");
+	mu_assert_true (stub_expect (fds[1], "$0#30"), "reply without an ACK or a retransmission");
+	mu_assert_true (send_response (fds[1], "k"), "stop server");
+	r_th_wait (thread);
+	r_th_free (thread);
+	gdbr_cleanup (&server.g);
+	close (fds[1]);
+	mu_end;
 }
 
 static bool test_gdb_debug_execution_failures(void) {
@@ -924,9 +985,9 @@ static bool test_gdb_invalid_stop_signals(void) {
 		mu_assert_false (g.stop_reason.is_valid, "malformed replies do not publish a stop");
 	}
 	g.no_ack = false;
-	r_str_ncpy (g.data, "S05", g.data_max);
-	g.data_len = 3;
-	mu_assert_eq (handle_stop_reason (&g), -1, "failed acknowledgement rejects the stop");
+	memcpy (g.read_buff, "$S05#b8", 7);
+	g.read_len = 7;
+	mu_assert_eq (read_packet (&g, false), -1, "failed acknowledgement rejects the packet");
 	mu_assert_false (g.stop_reason.is_valid, "failed acknowledgement does not publish a stop");
 	gdbr_cleanup (&g);
 	mu_end;
@@ -1529,6 +1590,8 @@ int main(int argc, char **argv) {
 	mu_run_test (test_gdb_packet_limits);
 #if R2__UNIX__ && !__wasi__
 	mu_run_test (test_gdb_server_wide_packets);
+	mu_run_test (test_gdb_packet_retransmission);
+	mu_run_test (test_gdb_server_packet_retransmission);
 	mu_run_test (test_gdb_processes_xml);
 	mu_run_test (test_gdb_memory_packet_sizes);
 	mu_run_test (test_gdb_memory_packet_failures);

@@ -11,6 +11,7 @@ int gdbr_init(libgdbr_t *g, bool is_server) {
 	}
 	memset (g, 0, sizeof (libgdbr_t));
 	g->no_ack = false;
+	g->ack_retries = -1;
 	g->stub_features.extended_mode = -1;
 	g->stub_features.pkt_sz = 64;
 	g->stub_features.P = true;

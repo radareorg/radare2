@@ -30,7 +30,7 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len, ut
 		snprintf (msg, sizeof (msg), "qXfer:features:read:%s:%"PFMT64x
 			",%"PFMT64x, file, off, len);
 		if (send_msg (g, msg) < 0
-		    || read_packet (g, false) < 0 || send_ack (g) < 0) {
+		    || read_packet (g, false) < 0) {
 			goto exit_err;
 		}
 		if (g->data_len == 0) {
@@ -123,7 +123,7 @@ static char *gdbr_read_osdata(libgdbr_t *g, const char *file, ut64 *tot_len) {
 	}
 	while (1) {
 		snprintf (msg, sizeof (msg), "qXfer:osdata:read:%s:%" PFMT64x ",%" PFMT64x, file, off, len);
-		if (send_msg (g, msg) < 0 || read_packet (g, false) < 0 || send_ack (g) < 0) {
+		if (send_msg (g, msg) < 0 || read_packet (g, false) < 0) {
 			goto exit_err;
 		}
 		if (g->data_len == 0) {

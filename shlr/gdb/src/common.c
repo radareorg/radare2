@@ -24,7 +24,6 @@ int handle_qSupported(libgdbr_t *g) {
 			ut64 size = strtoull (value, NULL, 16);
 			if (digit == value || *digit || !size || errno == ERANGE) {
 				g->stub_features.pkt_sz = 0;
-				send_ack (g);
 				return -1;
 			}
 			g->stub_features.pkt_sz = R_MIN (size, 2048);
@@ -129,7 +128,7 @@ int handle_qSupported(libgdbr_t *g) {
 		// TODO
 		tok = r_str_tok_r (NULL, ";", &save_ptr);
 	}
-	return send_ack (g);
+	return 0;
 }
 
 
@@ -140,7 +139,7 @@ int send_ack(libgdbr_t *g) {
 		if (g->no_ack) {
 			return 0;
 		}
-		if (r_socket_write (g->sock, "+", 1) < 0) {
+		if (r_socket_write (g->sock, "+", 1) != 1) {
 			return -1;
 		}
 		R_LOG_DEBUG ("[sent ack]");
@@ -154,11 +153,14 @@ int send_msg(libgdbr_t *g, const char *msg) {
 	if (!g || !msg) {
 		return -1;
 	}
+	g->ack_retries = -1;
 	ret = pack (g, msg);
 	if (ret < 0) {
 		return -1;
 	}
 	ret = send_packet (g);
-	g->send_len = ret;
+	if (ret >= 0 && !g->no_ack) {
+		g->ack_retries = 0;
+	}
 	return ret;
 }

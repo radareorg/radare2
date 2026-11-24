@@ -23,7 +23,6 @@ struct parse_ctx {
 };
 
 static bool append(libgdbr_t *g, const char ch) {
-	R_RETURN_VAL_IF_FAIL (g, -1);
 	if (!gdbr_data_reserve (g, g->data_len + 1)) {
 		R_LOG_ERROR ("%s: Failed to reallocate buffer", __func__);
 		return false;
@@ -32,75 +31,77 @@ static bool append(libgdbr_t *g, const char ch) {
 	return true;
 }
 
-static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
-	R_RETURN_VAL_IF_FAIL (g, -1);
-	int i = 0;
-	int j = 0;
-	g->read_buff[len] = '\0';
-	for (i = 0; i < len; i++) {
-		char cur = g->read_buff[i];
+enum {
+	PACKET_READY,
+	PACKET_PARTIAL,
+	PACKET_CORRUPT,
+};
+
+static void consume(libgdbr_t *g, int count) {
+	g->read_len -= count;
+	memmove (g->read_buff, g->read_buff + count, g->read_len);
+}
+
+static int unpack(libgdbr_t *g, struct parse_ctx *ctx) {
+	int i;
+	for (i = 0; i < g->read_len; i++) {
+		const ut8 cur = g->read_buff[i];
+		if (!(ctx->flags & HEADER)) {
+			if (cur == '$') {
+				ctx->flags = HEADER;
+			} else if (!g->no_ack && cur == '+') {
+				g->ack_retries = -1;
+			} else if (!g->no_ack && cur == '-' && g->ack_retries >= 0) {
+				if (g->ack_retries++ >= g->num_retries || send_packet (g) < 0) {
+					g->ack_retries = -1;
+					g->read_len = 0;
+					return -1;
+				}
+			}
+			continue;
+		}
 		if (ctx->flags & CHKSUM) {
-			const int digit = hex2int ((ut8)cur);
+			const int digit = hex2int (cur);
 			if (digit < 0) {
-				return -1;
+				consume (g, i + (cur != '$'));
+				return PACKET_CORRUPT;
 			}
 			ctx->sum -= digit << (ctx->chksum_nibble * 4);
-			if (!--ctx->chksum_nibble) {
+			if (ctx->chksum_nibble--) {
 				continue;
 			}
-			if (ctx->sum != '#') {
-				R_LOG_ERROR ("%s: Invalid checksum", __func__);
-				return -1;
-			}
-			if (i != len - 1) {
-				if (g->read_buff[i + 1] == '$' ||
-				    (g->read_buff[i + 1] == '+' && g->read_buff[i + 2] == '$')) {
-					// Packets clubbed together
-					g->read_len = len - i - 1;
-					memmove (g->read_buff, g->read_buff + i + 1, g->read_len);
-					g->read_buff[g->read_len] = '\0';
-					return 0;
-				}
-				R_LOG_ERROR ("%s: Garbage at end of packet: %s (%s)",
-					 __func__, g->read_buff + i + 1, g->read_buff + i + 1);
-			}
-			g->read_len = 0;
-			return 0;
+			consume (g, i + 1);
+			return ctx->sum == 0? PACKET_READY: PACKET_CORRUPT;
 		}
 		ctx->sum += cur;
 		if (ctx->flags & ESC) {
-			if (!append (g, cur ^ 0x20)) {
+			ctx->last = cur ^ 0x20;
+			if (!append (g, ctx->last)) {
 				return -1;
 			}
 			ctx->flags &= ~ESC;
 			continue;
 		}
 		if (ctx->flags & DUP) {
-			if (cur < 32 || cur > 126) {
-				R_LOG_ERROR ("%s: Invalid repeat count: %d",
-					 __func__, cur);
-				return -1;
+			if (cur < 32 || cur > 126 || cur == '$' || cur == '#') {
+				consume (g, i + (cur != '$'));
+				return PACKET_CORRUPT;
 			}
-			for (j = cur - 29; j > 0; j--) {
+			int count;
+			for (count = cur - 29; count > 0; count--) {
 				if (!append (g, ctx->last)) {
 					return -1;
 				}
 			}
-			ctx->last = 0;
 			ctx->flags &= ~DUP;
 			continue;
 		}
 		switch (cur) {
 		case '$':
-			if (ctx->flags & HEADER) {
-				R_LOG_ERROR ("%s: More than one $", __func__);
-				return -1;
-			}
-			ctx->flags |= HEADER;
-			/* Disregard any characters preceding $ */
-			ctx->sum = 0;
-			break;
+			consume (g, i);
+			return PACKET_CORRUPT;
 		case '#':
+			ctx->sum -= cur;
 			ctx->flags |= CHKSUM;
 			ctx->chksum_nibble = 1;
 			break;
@@ -109,29 +110,21 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 			break;
 		case '*':
 			if (!g->data_len) {
-				R_LOG_ERROR ("%s: Invalid repeat", __func__);
-				return -1;
+				consume (g, i + 1);
+				return PACKET_CORRUPT;
 			}
 			ctx->flags |= DUP;
 			break;
-		case '+':
-		case '-':
-			if (!(ctx->flags & HEADER)) {
-				/* TODO: Handle acks/nacks */
-				if (!g->no_ack) {
-					R_LOG_DEBUG ("[received '%c' (0x%x)]", cur, (int) cur);
-				}
-				break;
-			}
-			/* Fall-through */
 		default:
 			if (!append (g, cur)) {
 				return -1;
 			}
 			ctx->last = cur;
+			break;
 		}
 	}
-	return 1;
+	g->read_len = 0;
+	return PACKET_PARTIAL;
 }
 
 static bool send_pending_interrupt(libgdbr_t *g, bool polling) {
@@ -152,76 +145,63 @@ static bool send_pending_interrupt(libgdbr_t *g, bool polling) {
 int read_packet(libgdbr_t *g, bool vcont) {
 	R_RETURN_VAL_IF_FAIL (g, -1);
 	struct parse_ctx ctx = {0};
-	int ret, retries = 0;
+	int timeouts = 0;
+	int corrupt = 0;
 	g->data_len = 0;
-	if (!send_pending_interrupt (g, vcont)) {
-		return -1;
-	}
-	if (g->read_len > 0) {
-		ret = unpack (g, &ctx, g->read_len);
-		if (ret < 0) {
-			return -1;
-		}
-		if (!ret) {
-			goto complete;
-		}
-		g->read_len = 0;
-	}
-	while (retries < g->num_retries) {
+	while (timeouts < g->num_retries) {
 		if (!send_pending_interrupt (g, vcont)) {
 			return -1;
 		}
-		ret = r_socket_ready (g->sock, 0, READ_TIMEOUT);
-		if (ret < 0) {
+		if (g->read_len > 0) {
+			int ret = unpack (g, &ctx);
+			if (ret < 0) {
+				return -1;
+			}
+			if (ret == PACKET_READY) {
+				g->ack_retries = -1;
+				g->data[g->data_len] = '\0';
+				return send_ack (g) < 0 || !send_pending_interrupt (g, vcont)? -1: 0;
+			}
+			if (ret == PACKET_CORRUPT) {
+				if (g->no_ack || r_socket_write (g->sock, "-", 1) != 1 || ++corrupt > g->num_retries) {
+					return -1;
+				}
+				ctx = (struct parse_ctx){0};
+				g->data_len = 0;
+			}
+			continue;
+		}
+		int ready = r_socket_ready (g->sock, 0, READ_TIMEOUT);
+		if (ready < 0) {
 			if (vcont && g->connected && g->isbreaked) {
 				continue;
 			}
 			return -1;
 		}
-		if (!ret) {
+		if (!ready) {
 			if (vcont && !(ctx.flags & HEADER)) {
 				return GDBR_READ_TIMEOUT;
 			}
-			if (!vcont || !g->connected) {
-				retries++;
-			}
+			timeouts++;
 			continue;
 		}
-		int sz = r_socket_read (g->sock, (void *)g->read_buff, g->read_max - 1);
-		if (sz < 0 && vcont && g->connected && g->isbreaked) {
+		int size = r_socket_read (g->sock, (ut8 *)g->read_buff, g->read_max - 1);
+		if (size < 0 && vcont && g->connected && g->isbreaked) {
 			continue;
 		}
-		if (sz <= 0) {
-			R_LOG_ERROR ("%s: read failed", __func__);
+		if (size <= 0) {
 			return -1;
 		}
-		ret = unpack (g, &ctx, sz);
-		if (ret < 0) {
-			R_LOG_ERROR ("%s: unpack failed", __func__);
-			return -1;
-		}
-		if (!ret) {
-			goto complete;
-		}
-		retries = 0;
+		g->read_len = size;
+		timeouts = 0;
 	}
 	return -1;
-complete:
-	g->data[g->data_len] = '\0';
-	R_LOG_DEBUG ("getpkt (\"%s\");  %s", g->data,
-		g->no_ack? "[no ack sent]": "[sending ack]");
-	if (!send_pending_interrupt (g, vcont)) {
-		return -1;
-	}
-	return 0;
 }
 
 int send_packet(libgdbr_t *g) {
 	R_RETURN_VAL_IF_FAIL (g, -1);
-	g->send_buff[g->send_len] = '\0';
-	R_LOG_DEBUG ("putpkt (\"%s\");  %s", g->send_buff,
-			g->no_ack ? "[noack mode]" : "[looking for ack]");
-	return r_socket_write (g->sock, g->send_buff, g->send_len);
+	R_LOG_DEBUG ("putpkt (\"%s\")", g->send_buff);
+	return r_socket_write (g->sock, g->send_buff, g->send_len) == g->send_len? g->send_len: -1;
 }
 
 int pack(libgdbr_t *g, const char *msg) {
@@ -247,7 +227,7 @@ int pack(libgdbr_t *g, const char *msg) {
 	g->send_len = 1;
 	src = msg;
 	while (*src) {
-		if (*src == '#' || *src == '$' || *src == '}') {
+		if (*src == '#' || *src == '$' || *src == '}' || *src == '*') {
 			msg_len += 1;
 			if (msg_len > payload_max) {
 				R_LOG_ERROR ("%s: message too long: %s", __func__, msg);
@@ -273,8 +253,11 @@ int pack(libgdbr_t *g, const char *msg) {
 			continue;
 		}
 		run_len += 29;                        // Encode as printable character
-		if (run_len == 35 || run_len == 36) { // Cannot use '$' or '#'
-			run_len = 34;
+		if (run_len == '#' || run_len == '$' || run_len == '+' || run_len == '-') {
+			run_len--;
+			if (run_len == '#') {
+				run_len--;
+			}
 		} else if (run_len > 126) {           // Max printable ascii value
 			run_len = 126;
 		}

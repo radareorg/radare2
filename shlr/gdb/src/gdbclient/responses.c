@@ -12,13 +12,10 @@ int handle_g(libgdbr_t *g) {
 		return -1;
 	}
 	g->data_len = g->data_len / 2;
-	return send_ack (g);
+	return 0;
 }
 
 static int handle_ok(libgdbr_t *g) {
-	if (send_ack (g) < 0) {
-		return -1;
-	}
 	return g->data_len == 2 && !memcmp (g->data, "OK", 2)? 0: -1;
 }
 
@@ -33,7 +30,7 @@ int handle_M(libgdbr_t *g) {
 int handle_P(libgdbr_t *g) {
 	if (!g->data_len) {
 		g->last_code = MSG_NOT_SUPPORTED;
-		return send_ack (g);
+		return 0;
 	}
 	int ret = handle_ok (g);
 	g->last_code = ret < 0? MSG_ERROR_1: MSG_OK;
@@ -41,7 +38,7 @@ int handle_P(libgdbr_t *g) {
 }
 
 int handle_m(libgdbr_t *g, int requested) {
-	if (send_ack (g) < 0 || !g->data_len || (g->data_len & 1) || g->data_len / 2 > requested) {
+	if (!g->data_len || (g->data_len & 1) || g->data_len / 2 > requested) {
 		return -1;
 	}
 	int i;
@@ -70,7 +67,6 @@ int handle_qStatus(libgdbr_t *g) {
 	}
 	// TODO: We do not yet handle the case where a trace is already running
 	if (!r_str_startswith (tok, "T0")) {
-		send_ack (g);
 		free (data);
 		return -1;
 	}
@@ -78,11 +74,10 @@ int handle_qStatus(libgdbr_t *g) {
 	while (tok) {
 		if (r_str_startswith (tok, "tnotrun:0")) {
 			free (data);
-			return send_ack (g);
+			return 0;
 		}
 		tok = r_str_tok_r (NULL, ";", &save_ptr);
 	}
-	send_ack (g);
 	free (data);
 	return -1;
 }
@@ -90,15 +85,13 @@ int handle_qStatus(libgdbr_t *g) {
 int handle_qC(libgdbr_t *g) {
 	// We get process and thread ID
 	if (strncmp (g->data, "QC", 2)) {
-		send_ack (g);
 		return -1;
 	}
 	g->data[g->data_len] = '\0';
 	if (read_thread_id (g->data + 2, &g->pid, &g->tid, g->stub_features.multiprocess) < 0) {
-		send_ack (g);
 		return -1;
 	}
-	return send_ack (g);
+	return 0;
 }
 
 int handle_setbp(libgdbr_t *g) {
@@ -111,28 +104,24 @@ int handle_removebp(libgdbr_t *g) {
 
 int handle_attach(libgdbr_t *g) {
 	if (g->data_len > 0 && g->data[0] == 'E') {
-		send_ack (g);
 		return -1;
 	}
-	return send_ack (g);
+	return 0;
 }
 
 int handle_vFile_open(libgdbr_t *g) {
 	if (g->data_len < 2 || g->data[0] != 'F' || g->data[1] == '-'
 	    || !isxdigit ((unsigned char)g->data[1])) {
-		send_ack (g);
 		return -1;
 	}
 	g->data[g->data_len] = '\0';
 	if ((g->remote_file_fd = strtol (g->data + 1, NULL, 16)) <= 0) {
-		send_ack (g);
 		return -1;
 	}
-	return send_ack (g);
+	return 0;
 }
 
 int handle_vFile_pread(libgdbr_t *g, ut8 *buf, size_t max_len) {
-	send_ack (g);
 	char *ptr, *end;
 	if (g->data_len < 3 || g->data[0] != 'F') {
 		return -1;
@@ -170,10 +159,9 @@ int handle_vFile_pread(libgdbr_t *g, ut8 *buf, size_t max_len) {
 int handle_vFile_close(libgdbr_t *g) {
 	if (g->data_len < 2 || g->data[0] != 'F' || g->data[1] == '-'
 	    || !isxdigit ((unsigned char)g->data[1])) {
-		send_ack (g);
 		return -1;
 	}
-	return send_ack (g);
+	return 0;
 }
 
 #include <r_debug.h>
@@ -236,7 +224,7 @@ static int stop_reason_death(libgdbr_t *g, bool is_signal) {
 }
 
 int handle_stop_reason(libgdbr_t *g) {
-	if (send_ack (g) < 0 || g->data_len < 3) {
+	if (g->data_len < 3) {
 		return -1;
 	}
 	switch (g->data[0]) {
