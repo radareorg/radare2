@@ -1540,23 +1540,29 @@ static bool test_gdb_target_xml_names(void) {
 	g.stub_features.qXfer_features_read = true;
 	g.stub_features.pkt_sz = 4096;
 	const char *replies[] = {
-		"l<?xml version=\"1.0\"?><target version=\"1.0\"><architecture>x86_64</architecture><feature>"
-		"<flags id=\"fl\" size=\"8\">"
-		"<field name=\"CF\" start=\"0\" end=\"0\"/>"
-		"<field name=\"ZF;!id\" start=\"6\" end=\"6\"/>"
+		"l<?xml version='1.0'?><target xmlns:xi='http://www.w3.org/2001/XInclude'>"
+		"<architecture>  i386:x86-64  </architecture><osabi> GNU/Linux </osabi>"
+		"<xi:include href = 'core.xml'></xi:include></target>",
+		"l<feature>"
+		"<flags id = 'fl' size = '8'>"
+		"<field name='CF' start='0' end='0'/>"
+		"<field name='ZF;!id' start='6' end='6'></field>"
 		"</flags>"
-		"<reg name=\"rax\" bitsize=\"64\" />"
-		"<reg name=\"r15;!id\" bitsize=\"64\" />"
-		"<reg name=\"eflags\" bitsize=\"64\" type=\"fl\" />"
-		"<reg name=\"rip\" bitsize=\"64\" type=\"code_ptr\" />"
-		"</feature></target>",
+		"<vector id='lanes' type='uint64' count='4'/>"
+		"<reg name='rax' bitsize='64' />"
+		"<reg name='r15;!id' bitsize='64' />"
+		"<reg name='eflags' bitsize='64' type='fl' />"
+		"<reg name='rip' bitsize='64' type='code_ptr' />"
+		"<reg name='v0' bitsize='256' regnum='12' type='lanes'/>"
+		"</feature>",
 		NULL
 	};
 	Stub stub;
 	RThread *th = stub_start (&stub, fds[1], -1, replies);
 	mu_assert_eq (gdbr_read_target_xml (&g), 0, "read target.xml");
 	char *sent = stub_finish (&stub, th, fds[0]);
-	free (sent);
+	mu_assert_streq_free (sent, "qXfer:features:read:target.xml:0,ffe\nqXfer:features:read:core.xml:0,ffe\n",
+		"read the included feature");
 	const char *profile = g.target.regprofile;
 	mu_assert_notnull (profile, "register profile");
 	mu_assert_null (strpbrk (profile, ";!`|&$"), "no command characters in profile");
@@ -1564,6 +1570,9 @@ static bool test_gdb_target_xml_names(void) {
 	mu_assert_notnull (strstr (profile, "gpr\tr15__id\t.64\t.64\t0\t"), "register name filtered");
 	mu_assert_notnull (strstr (profile, "gpr\tZF__id\t.1\t.134\t0\n"), "flag field name filtered");
 	mu_assert_notnull (strstr (profile, "=PC\trip\n"), "pc alias");
+	mu_assert_streq (g.target.osabi, "GNU/Linux", "retain the OS ABI");
+	mu_assert_notnull (strstr (profile, "vec256\tv0\t.256\t.256\t32\t"), "honor vector width and type");
+	mu_assert_eq (g.registers[4].regnum, 12, "preserve explicit number from include");
 	mu_assert_streq (g.registers[1].name, "r15__id", "filtered name in register list");
 	gdbr_cleanup (&g);
 	r_cons_free (cons);
