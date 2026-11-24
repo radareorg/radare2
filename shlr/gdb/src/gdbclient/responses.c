@@ -46,34 +46,6 @@ int handle_m(libgdbr_t *g, int requested) {
 	return 0;
 }
 
-int handle_qStatus(libgdbr_t *g) {
-	if (!g || !g->data || !*g->data) {
-		return -1;
-	}
-	char *data = strdup (g->data);
-	char *save_ptr = NULL;
-	char *tok = r_str_tok_r (data, ";", &save_ptr);
-	if (!tok) {
-		free (data);
-		return -1;
-	}
-	// TODO: We do not yet handle the case where a trace is already running
-	if (!r_str_startswith (tok, "T0")) {
-		free (data);
-		return -1;
-	}
-	// Ensure that trace was never run
-	while (tok) {
-		if (r_str_startswith (tok, "tnotrun:0")) {
-			free (data);
-			return 0;
-		}
-		tok = r_str_tok_r (NULL, ";", &save_ptr);
-	}
-	free (data);
-	return -1;
-}
-
 int handle_qC(libgdbr_t *g) {
 	// We get process and thread ID
 	if (strncmp (g->data, "QC", 2)) {
