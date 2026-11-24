@@ -518,6 +518,7 @@ grub_minix_open(struct grub_file *file, const char *name) {
 	}
 
 	if (!name || name[0] != '/') {
+		grub_free (data);
 		grub_error (GRUB_ERR_BAD_FILENAME, "bad filename");
 		return grub_errno;
 	}
