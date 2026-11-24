@@ -3,6 +3,7 @@
 #include "minunit.h"
 #include <r_bin.h>
 #include <r_muta.h>
+#include "../../libr/bin/format/mach0/coresymbolication.h"
 
 //TODO test r_str_chop_path
 
@@ -1204,6 +1205,71 @@ bool test_r_bin_te_truncated(void) {
 	mu_end;
 }
 
+bool test_r_bin_mach0_coresym_bounds(void) {
+	// 1. pa2va empty element and 64-bit address wraparound
+	RCoreSymCacheElement elem_empty = {0};
+	RCoreSymCacheElementHdr hdr_empty = {0};
+	elem_empty.hdr = &hdr_empty;
+	mu_assert_eq (r_coresym_cache_element_pa2va (&elem_empty, 0x1234), 0x1234, "pa2va with empty element returns pa");
+	RCoreSymCacheElement elem_wrap = {0};
+	RCoreSymCacheElementHdr hdr_wrap = {0};
+	RCoreSymCacheElementSegment seg_wrap = {0};
+	hdr_wrap.n_segments = 1;
+	seg_wrap.paddr = 0xffffffffffffff00ULL;
+	seg_wrap.size = 0x100;
+	seg_wrap.vaddr = 0x1000;
+	elem_wrap.hdr = &hdr_wrap;
+	elem_wrap.segments = &seg_wrap;
+	mu_assert_eq (r_coresym_cache_element_pa2va (&elem_wrap, 0xffffffffffffff00ULL), 0x1000, "pa2va translates segment start without overflow");
+	mu_assert_eq (r_coresym_cache_element_pa2va (&elem_wrap, 0xffffffffffffffffULL), 0x10ff, "pa2va translates last byte without overflow");
+	mu_assert_eq (r_coresym_cache_element_pa2va (&elem_wrap, 0x0ULL), 0x0ULL, "pa2va rejects exclusive upper bound after wraparound");
+
+	// 2. Reject table offsets exceeding buffer size and preserve caller file_name on error
+	ut8 malformed[0x80] = {0};
+	r_write_le32 (malformed, 1); // version = 1
+	r_write_le32 (malformed + 4, sizeof (malformed)); // size = 0x80
+	r_write_le32 (malformed + 8, 0); // n_segments = 0
+	r_write_le32 (malformed + 12, 0); // n_sections = 0
+	r_write_le32 (malformed + 16, 100); // n_symbols = 100 (100 * 24 = 2400 > 0x80)
+	RBuffer *buf_bad = r_buf_new_with_bytes (malformed, sizeof (malformed));
+	mu_assert_notnull (buf_bad, "malformed buffer creation");
+	char *caller_fn = strdup ("test_lib.dylib");
+	mu_assert_notnull (caller_fn, "caller file_name allocation");
+	RCoreSymCacheElement *elem_bad = r_coresym_cache_element_new (NULL, buf_bad, 0, 64, caller_fn);
+	mu_assert_null (elem_bad, "oversized table offsets rejected cleanly");
+	free (caller_fn); // Caller retains ownership on failure; must not double free
+	r_unref (buf_bad);
+
+	// 3. 16-char segment name and inclusive lower bound pa2va translation
+	ut8 cs[0x58 + 64] = {0};
+	r_write_le32 (cs, 1); // version = 1
+	r_write_le32 (cs + 4, sizeof (cs)); // size = 0x98
+	r_write_le32 (cs + 8, 2); // n_segments = 2
+	// Segment 0: __PAGEZERO (size = 0x2000)
+	r_write_le64 (cs + 0x58, 0);
+	r_write_le64 (cs + 0x58 + 8, 0x2000);
+	memcpy (cs + 0x58 + 16, "__PAGEZERO\0\0\0\0\0\0", 16);
+	// Segment 1: 16-char name without null terminator (paddr = 0x1000, size = 0x1000)
+	r_write_le64 (cs + 0x58 + 32, 0x1000);
+	r_write_le64 (cs + 0x58 + 40, 0x1000);
+	memcpy (cs + 0x58 + 48, "1234567890ABCDEF", 16);
+
+	RBuffer *buf_good = r_buf_new_with_bytes (cs, sizeof (cs));
+	mu_assert_notnull (buf_good, "valid coresym buffer creation");
+	char *caller_fn_good = strdup ("valid_lib.dylib");
+	mu_assert_notnull (caller_fn_good, "valid caller file_name allocation");
+	RCoreSymCacheElement *elem_good = r_coresym_cache_element_new (NULL, buf_good, 0, 64, caller_fn_good);
+	mu_assert_notnull (elem_good, "valid coresym element parsed");
+	mu_assert_streq (elem_good->file_name, "valid_lib.dylib", "element takes ownership of file_name on success");
+	mu_assert_streq (elem_good->segments[1].name, "1234567890ABCDEF", "16-char segment name preserved without truncation");
+	// pa = 0x1000 hits seg[1]->paddr inclusive lower bound; vaddr shifted by page_zero_size to 0x3000
+	mu_assert_eq (r_coresym_cache_element_pa2va (elem_good, 0x1000), 0x3000, "lower bound paddr correctly translated");
+	r_coresym_cache_element_free (elem_good);
+	r_unref (buf_good);
+
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_bin_symbol_physical_fallback);
 	mu_run_test (test_r_bin_debugger_buffer_layout);
@@ -1231,6 +1297,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_bin_pe_characteristics_offset);
 	mu_run_test (test_r_bin_pe_lfanew_checks);
 	mu_run_test(test_r_bin_mach0_full_segname);
+	mu_run_test(test_r_bin_mach0_coresym_bounds);
 	return tests_passed != tests_run;
 }
 
