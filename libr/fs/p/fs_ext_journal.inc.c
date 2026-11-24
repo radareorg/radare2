@@ -475,6 +475,19 @@ static ExtJournalTable *ext_journal_tables(ExtJournal *j, ut32 *count, ut32 *ino
 	return NULL;
 }
 
+static ExtJournalTable *ext_journal_table_find(ExtJournalTable *tables, ut32 count, ut64 block) {
+	ut32 low = 0, high = count;
+	while (low < high) {
+		ut32 mid = low + (high - low) / 2;
+		if (tables[mid].end <= block) {
+			low = mid + 1;
+		} else {
+			high = mid;
+		}
+	}
+	return low < count && tables[low].first <= block? tables + low: NULL;
+}
+
 static void ext_journal_inode_json(PJ *pj, const ut8 *inode, ut64 id, ut32 sequence) {
 	pj_o (pj);
 	pj_kn (pj, "inode", id);
@@ -507,25 +520,17 @@ static bool ext_journal_record(ExtJournal *j, ut32 sequence, ut32 start, const E
 		if (tag->revoked || (out->filter_sequence && sequence != out->sequence)) {
 			return true;
 		}
-		ut32 low = 0, high = out->table_count;
-		while (low < high) {
-			ut32 mid = low + (high - low) / 2;
-			if (out->tables[mid].end <= tag->block) {
-				low = mid + 1;
-			} else {
-				high = mid;
-			}
-		}
-		if (low >= out->table_count || out->tables[low].first > tag->block) {
+		ExtJournalTable *table = ext_journal_table_find (out->tables, out->table_count, tag->block);
+		if (!table) {
 			return true;
 		}
 		if (!ext_journal_payload (j, tag, out->data)) {
 			out->failed = true;
 			return false;
 		}
-		ut64 id = out->tables[low].inode + (tag->block - out->tables[low].first) * (j->block_size / out->inode_size);
+		ut64 id = table->inode + (tag->block - table->first) * (j->block_size / out->inode_size);
 		ut32 offset;
-		for (offset = 0; offset < j->block_size && id < out->tables[low].inode_end; offset += out->inode_size, id++) {
+		for (offset = 0; offset < j->block_size && id < table->inode_end; offset += out->inode_size, id++) {
 			const ut8 *inode = out->data + offset;
 			ut16 mode = r_read_le16 (inode) & 0xf000;
 			if (mode != 0x8000 && mode != 0x4000 && mode != 0xa000
@@ -929,6 +934,339 @@ static bool ext_journal_recover(RFS *fs, ExtJournal *j, ut32 sequence, ut64 id, 
 	return ok;
 }
 
+typedef struct ext_journal_name_t ExtJournalName;
+
+typedef struct {
+	ut32 id, sequence;
+	ut8 inode[128];
+	ExtJournalName *parent;
+	char *path;
+	unsigned state;
+	bool ambiguous;
+} ExtJournalNamedInode;
+
+struct ext_journal_name_t {
+	ExtJournalNamedInode *directory;
+	ut32 id, sequence;
+	ut64 block;
+	char *name;
+	bool deleted, conflict;
+};
+
+typedef struct {
+	ExtJournalHistory *history;
+	Ext2Geometry *geometry;
+	ExtJournalTable *tables;
+	ut32 table_count;
+	HtUP *nodes, *blocks;
+	HtPP *unique;
+	RList *inodes, *names;
+	ExtJournalNamedInode *directory;
+	ut64 block;
+	ut32 block_sequence, walked;
+	ut8 *data;
+	bool failed, partial;
+} ExtJournalNames;
+
+static void ext_journal_named_inode_free(void *ptr) {
+	ExtJournalNamedInode *node = ptr;
+	free (node->path);
+	free (node);
+}
+
+static void ext_journal_name_free(void *ptr) {
+	ExtJournalName *entry = ptr;
+	free (entry->name);
+	free (entry);
+}
+
+static int ext_journal_named_inode_compare(const void *a, const void *b) {
+	const ExtJournalNamedInode *left = a, *right = b;
+	return left->id < right->id? -1: left->id > right->id;
+}
+
+static bool ext_journal_name_inodes(void *user, const ut64 block, const void *value) {
+	ExtJournalNames *names = user;
+	const ExtJournalVersion *version = value;
+	ExtJournalTable *table = ext_journal_table_find (names->tables, names->table_count, block);
+	if (!table || version->tag.revoked) {
+		return true;
+	}
+	if (!ext_journal_payload (names->history->journal, &version->tag, names->data)) {
+		names->failed = true;
+		return false;
+	}
+	Ext2Geometry *g = names->geometry;
+	ut64 id = table->inode + (block - table->first) * (g->block_size / g->inode_size);
+	ut32 offset;
+	for (offset = 0; offset < g->block_size && id < table->inode_end; offset += g->inode_size, id++) {
+		ut8 *inode = names->data + offset;
+		ut16 mode = r_read_le16 (inode) & 0xf000;
+		if (mode != 0x8000 && mode != 0x4000 && mode != 0xa000
+				&& mode != 0x1000 && mode != 0x2000 && mode != 0x6000 && mode != 0xc000) {
+			continue;
+		}
+		if (!ext2_inode_valid (g, id, inode)) {
+			names->partial = true;
+			continue;
+		}
+		if (r_list_length (names->inodes) >= EXT_JOURNAL_LIMIT) {
+			names->failed = true;
+			return false;
+		}
+		ExtJournalNamedInode *node = R_NEW0 (ExtJournalNamedInode);
+		node->id = id;
+		node->sequence = version->sequence;
+		memcpy (node->inode, inode, sizeof (node->inode));
+		if (!r_list_append (names->inodes, node)) {
+			free (node);
+			names->failed = true;
+			return false;
+		}
+		if (!ht_up_insert (names->nodes, id, node)) {
+			names->failed = true;
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool ext_journal_name_entry(ut32 id, const char *name, bool deleted, void *user) {
+	ExtJournalNames *names = user;
+	if (!strcmp (name, ".") || !strcmp (name, "..")) {
+		return true;
+	}
+	if (r_list_length (names->names) >= EXT_JOURNAL_LIMIT) {
+		names->failed = true;
+		return false;
+	}
+	ExtJournalName *entry = R_NEW0 (ExtJournalName);
+	entry->directory = names->directory;
+	entry->id = id;
+	entry->sequence = names->block_sequence;
+	entry->block = names->block;
+	entry->deleted = deleted;
+	entry->name = strdup (name);
+	if (!entry->name || !r_list_append (names->names, entry)) {
+		ext_journal_name_free (entry);
+		names->failed = true;
+		return false;
+	}
+	if (!deleted) {
+		char *key = r_str_newf ("%u/%s", entry->directory->id, name);
+		ExtJournalName *previous = key? ht_pp_find (names->unique, key, NULL): NULL;
+		if (previous) {
+			previous->conflict = entry->conflict = true;
+		} else if (!key || !ht_pp_insert (names->unique, key, entry)) {
+			names->failed = true;
+		}
+		free (key);
+	}
+	return !names->failed;
+}
+
+static int ext_journal_name_block(ut64 block, ut64 logical, ut64 size, unsigned depth, ut32 flags, void *user) {
+	ExtJournalNames *names = user;
+	ExtJournal *j = names->history->journal;
+	if (names->walked++ >= EXT_JOURNAL_LIMIT || (j->console && j->console->is_breaked && j->console->is_breaked (j->console->cons))) {
+		names->failed = true;
+		return R_FS_WALK_STOPPED;
+	}
+	if (depth) {
+		return R_FS_WALK_COMPLETE;
+	}
+	ExtJournalVersion *version = ht_up_find (names->history->versions, block, NULL);
+	if (!block || (flags & R_FS_RANGE_UNWRITTEN) || size != j->block_size || !version || version->tag.revoked) {
+		names->partial = true;
+		return R_FS_WALK_COMPLETE;
+	}
+	if (!ext_journal_payload (j, &version->tag, names->data)) {
+		names->failed = true;
+		return R_FS_WALK_ERROR;
+	}
+	ExtJournalNamedInode *owner = ht_up_find (names->blocks, block, NULL);
+	if (owner) {
+		owner->ambiguous = names->directory->ambiguous = true;
+		names->partial = true;
+		return R_FS_WALK_COMPLETE;
+	}
+	if (!ht_up_insert (names->blocks, block, names->directory)) {
+		names->failed = true;
+		return R_FS_WALK_ERROR;
+	}
+	names->block = block;
+	names->block_sequence = version->sequence;
+	int status = ext2_directory_block (names->geometry, names->directory->inode, names->directory->id,
+		names->data, size, logical, ext_journal_name_entry, names, true, true);
+	names->partial |= status != R_FS_WALK_COMPLETE;
+	return names->failed? R_FS_WALK_ERROR: R_FS_WALK_COMPLETE;
+}
+
+static ExtJournalNamedInode *ext_journal_name_match(ExtJournalNames *names, ExtJournalName *entry) {
+	ExtJournalNamedInode *node = ht_up_find (names->nodes, entry->id, NULL);
+	return node && !entry->deleted && !entry->conflict && !entry->directory->ambiguous && !r_read_le32 (node->inode + 20)
+		&& r_read_le16 (node->inode + 26) && entry->sequence - node->sequence <= INT_MAX? node: NULL;
+}
+
+static const char *ext_journal_name_path(ExtJournalNamedInode *node, unsigned depth) {
+	if (node->state || depth >= 128) {
+		return node->state == 2? node->path: NULL;
+	}
+	node->state = 1;
+	if ((r_read_le16 (node->inode) & 0xf000) == 0x4000 && !r_read_le32 (node->inode + 20)
+			&& r_read_le16 (node->inode + 26) && !node->ambiguous) {
+		if (node->id == 2) {
+			node->path = strdup ("/");
+		} else if (node->parent) {
+			const char *parent = ext_journal_name_path (node->parent->directory, depth + 1);
+			if (parent && strlen (parent) + strlen (node->parent->name) + 2 <= 4096) {
+				node->path = r_str_newf ("%s%s%s", parent, !strcmp (parent, "/")? "": "/", node->parent->name);
+			}
+		}
+	}
+	node->state = node->path? 2: 3;
+	return node->path;
+}
+
+static void ext_journal_names(RFS *fs, ExtJournal *j, ut32 sequence, ut64 filter, bool json) {
+	Ext2Geometry geometry;
+	if (!ext2_geometry (j->root, &geometry) || geometry.block_size != j->block_size || geometry.blocks != j->blocks) {
+		R_LOG_ERROR ("Cannot establish the historical directory layout");
+		return;
+	}
+	ExtJournalHistory history = { .journal = j, .sequence = sequence };
+	history.versions = ht_up_new (NULL, ext_journal_version_free, NULL);
+	history.data = malloc (j->block_size);
+	ExtJournalNames names = { .history = &history, .geometry = &geometry };
+	names.nodes = ht_up_new0 ();
+	names.blocks = ht_up_new0 ();
+	names.unique = ht_pp_new0 ();
+	names.inodes = r_list_newf (ext_journal_named_inode_free);
+	names.names = r_list_newf (ext_journal_name_free);
+	names.data = malloc (j->block_size);
+	ut32 inode_size;
+	names.tables = ext_journal_tables (j, &names.table_count, &inode_size);
+	if (!history.versions || !history.data || !names.nodes || !names.blocks || !names.unique || !names.inodes || !names.names || !names.data
+			|| !names.tables || inode_size != geometry.inode_size) {
+		names.failed = true;
+		goto done;
+	}
+	ut32 i;
+	for (i = 0; i < names.table_count; i++) {
+		ut8 desc[64];
+		if (!ext2_group (&geometry, (names.tables[i].inode - 1) / geometry.inodes_per_group, desc)
+				|| ext2_group_block (&geometry, desc, 8) != names.tables[i].first) {
+			names.failed = true;
+			goto done;
+		}
+	}
+	if (!ext_journal_scan (j, ext_journal_version, &history) || history.failed || !history.selected) {
+		R_LOG_ERROR ("Cannot establish the requested committed journal transaction");
+		names.failed = true;
+		goto done;
+	}
+	ht_up_foreach (history.versions, ext_journal_name_inodes, &names);
+	r_list_sort (names.inodes, ext_journal_named_inode_compare);
+	RFSRoot overlay = *j->root;
+	overlay.iob.io = (RIO *)&history;
+	overlay.iob.read_at = ext_journal_history_read;
+	geometry.root = &overlay;
+	history.reading = true;
+	RListIter *iter;
+	ExtJournalNamedInode *node;
+	r_list_foreach (names.inodes, iter, node) {
+		if (names.failed) {
+			break;
+		}
+		if ((r_read_le16 (node->inode) & 0xf000) == 0x4000) {
+			names.directory = node;
+			int status = ext2_walk_inode (&geometry, node->inode, node->id, ext2_size (node->inode), ext_journal_name_block, &names);
+			names.partial |= status != R_FS_WALK_COMPLETE;
+		}
+	}
+	ExtJournalName *entry;
+	r_list_foreach (names.names, iter, entry) {
+		node = ext_journal_name_match (&names, entry);
+		if (node && (r_read_le16 (node->inode) & 0xf000) == 0x4000) {
+			if (node->id == 2 || node->parent) {
+				node->ambiguous = true;
+				entry->conflict = true;
+				if (node->parent) {
+					node->parent->conflict = true;
+				}
+			} else {
+				node->parent = entry;
+			}
+		}
+	}
+	PJ *pj = json? pj_new (): NULL;
+	if (pj) {
+		pj_a (pj);
+	}
+	r_list_foreach (names.names, iter, entry) {
+		if (filter != UT64_MAX && entry->id != filter) {
+			continue;
+		}
+		entry->conflict |= entry->directory->ambiguous;
+		const char *parent = ext_journal_name_path (entry->directory, 0);
+		char *path = parent && !entry->conflict && strlen (parent) + strlen (entry->name) + 2 <= 4096?
+			r_str_newf ("%s%s%s", parent, !strcmp (parent, "/")? "": "/", entry->name): NULL;
+		node = ext_journal_name_match (&names, entry);
+		if (pj) {
+			pj_o (pj);
+			pj_kn (pj, "sequence", sequence);
+			pj_kn (pj, "directory", entry->directory->id);
+			pj_kn (pj, "directory_sequence", entry->directory->sequence);
+			pj_kn (pj, "block", entry->block);
+			pj_kn (pj, "block_sequence", entry->sequence);
+			pj_kn (pj, "inode", entry->id);
+			pj_ks (pj, "name", entry->name);
+			if (path) {
+				pj_ks (pj, "path", path);
+			} else {
+				pj_knull (pj, "path");
+			}
+			if (node) {
+				pj_kn (pj, "inode_sequence", node->sequence);
+				pj_kn (pj, "generation", r_read_le32 (node->inode + 100));
+			} else {
+				pj_knull (pj, "inode_sequence");
+				pj_knull (pj, "generation");
+			}
+			pj_kb (pj, "deleted", entry->deleted);
+			pj_kb (pj, "conflict", entry->conflict);
+			pj_kb (pj, "heuristic", true);
+			pj_end (pj);
+		} else {
+			char *escaped = r_str_escape_utf8_keep_printable (path? path: entry->name, false, true);
+			if (escaped) {
+				fs->csb.cb_printf (fs->csb.cons, "%u %u %u %s %s\n", sequence, entry->directory->id, entry->id,
+					entry->conflict? "conflict": entry->deleted? "slack": "entry", escaped);
+				free (escaped);
+			}
+		}
+		free (path);
+	}
+	if (pj) {
+		pj_end (pj);
+		fs->csb.cb_printf (fs->csb.cons, "%s\n", pj_string (pj));
+		pj_free (pj);
+	}
+ done:
+	if (names.failed || names.partial) {
+		R_LOG_WARN ("Incomplete historical directory evidence: retaining recovered names and unresolved paths");
+	}
+	free (names.tables);
+	free (names.data);
+	ht_pp_free (names.unique);
+	ht_up_free (names.nodes);
+	ht_up_free (names.blocks);
+	r_list_free (names.names);
+	r_list_free (names.inodes);
+	free (history.data);
+	ht_up_free (history.versions);
+}
+
 static bool ext_journal_command(RFS *fs, const char *cmd) {
 	if (strncmp (cmd, "ext2", 4) || (cmd[4] && cmd[4] != '?' && !IS_WHITECHAR (cmd[4]))) {
 		return false;
@@ -943,21 +1281,26 @@ static bool ext_journal_command(RFS *fs, const char *cmd) {
 		return true;
 	}
 	bool inodes = argc > 1 && (!strcmp (argv[1], "journal-inodes") || !strcmp (argv[1], "journal-inodesj"));
+	bool names = argc > 1 && (!strcmp (argv[1], "journal-names") || !strcmp (argv[1], "journal-namesj"));
 	bool recover = argc > 1 && !strcmp (argv[1], "journal-recover");
 	bool free_space = recover && argc == 7 && !strcmp (argv[6], "free");
 	bool inode = recover || (argc > 1 && (!strcmp (argv[1], "journal-inode") || !strcmp (argv[1], "journal-inodej")));
-	bool json = argc > 1 && (!strcmp (argv[1], "journalj") || !strcmp (argv[1], "journal-inodej") || !strcmp (argv[1], "journal-inodesj"));
-	if (argc < 3 || (strcmp (argv[1], "journal") && !json && !inode && !inodes)
+	bool json = argc > 1 && (!strcmp (argv[1], "journalj") || !strcmp (argv[1], "journal-inodej") || !strcmp (argv[1], "journal-inodesj") || !strcmp (argv[1], "journal-namesj"));
+	if (argc < 3 || (strcmp (argv[1], "journal") && !json && !inode && !inodes && !names)
 			|| (recover && argc != 6 && argc != 7) || (recover && argc == 7 && !free_space && strcmp (argv[6], "journal"))
-			|| (!recover && (inodes? (argc != 3 && argc != 4): inode? (argc != 5 && argc != 6): (argc != 3 && argc != 6)))) {
+			|| (names && argc != 4 && argc != 5)
+			|| (!recover && !names && (inodes? (argc != 3 && argc != 4): inode? (argc != 5 && argc != 6): (argc != 3 && argc != 6)))) {
 		fs->csb.cb_printf (fs->csb.cons, "Usage: m:ext2 journal[j] /mount [sequence block output|-]\n"
 			"       m:ext2 journal-inodes[j] /mount [sequence]\n"
 			"       m:ext2 journal-inode[j] /mount sequence inode [output|-]\n"
+			"       m:ext2 journal-names[j] /mount sequence [inode]\n"
 			"       m:ext2 journal-recover /mount sequence inode output|- [journal|free]\n"
 			"List committed journal versions or recover journal-resident blocks, inodes, and file data.\n"
 			"Recovery defaults to journal bytes; free mode also reads unowned free blocks when the inode generation matches.\n"
 			"Current free-space bytes are heuristic; retained later writes and revocations exclude them.\n"
 			"Free-space fallback requires allocation metadata that does not need journal replay.\n"
+			"Names use retained directory evidence only; missing or ambiguous ancestors leave paths unresolved.\n"
+			"Historical names and paths are heuristic; JSON includes block and inode-version provenance.\n"
 			"Checkpointed transactions are scanned; incomplete or corrupt transactions are skipped.\n");
 		r_str_argv_free (argv);
 		return true;
@@ -970,7 +1313,7 @@ static bool ext_journal_command(RFS *fs, const char *cmd) {
 			break;
 		}
 	}
-	ExtJournalOutput output = { .fs = fs, .extract = inode || argc == 6, .inodes = inodes, .filter_sequence = inodes && argc == 4 };
+	ExtJournalOutput output = { .fs = fs, .extract = inode || argc == 6, .inodes = inodes, .filter_sequence = names || (inodes && argc == 4) };
 	if (output.extract || output.filter_sequence) {
 		const char *error = NULL;
 		RNum number = {0};
@@ -980,8 +1323,9 @@ static bool ext_journal_command(RFS *fs, const char *cmd) {
 			goto done;
 		}
 		output.sequence = sequence;
-		output.block = output.extract? r_num_math_err (&number, argv[4], &error): 0;
-		if (output.extract && (!*r_str_trim_head_ro (argv[4]) || error || number.dbz)) {
+		bool have_id = output.extract || (names && argc == 5);
+		output.block = have_id? r_num_math_err (&number, argv[4], &error): 0;
+		if (have_id && (!*r_str_trim_head_ro (argv[4]) || error || number.dbz || (names && (!output.block || output.block > UT32_MAX)))) {
 			R_LOG_ERROR ("Invalid filesystem block number");
 			goto done;
 		}
@@ -996,6 +1340,11 @@ static bool ext_journal_command(RFS *fs, const char *cmd) {
 		goto done;
 	}
 	journal.console = &fs->csb;
+	if (names) {
+		ext_journal_names (fs, &journal, output.sequence, argc == 5? output.block: UT64_MAX, json);
+		ext_journal_close (&journal);
+		goto done;
+	}
 	if (output.extract && !inode && output.block >= journal.blocks) {
 		R_LOG_ERROR ("Filesystem block number is out of range");
 		ext_journal_close (&journal);

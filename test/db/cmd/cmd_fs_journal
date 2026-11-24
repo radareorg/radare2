@@ -180,3 +180,74 @@ Recovery defaults to journal bytes; free mode also reads unowned free blocks whe
 EOF2
 EXPECT_ERR=
 RUN
+
+NAME=ext3 journal names reconstruct nested paths and hard links
+FILE=gzip://bins/fs/ext-journal/ext3-names.img.gz
+CMDS=<<EOF2
+e log.level=0
+m:ext2 journal-names /root 200 13
+EOF2
+EXPECT=<<EOF2
+200 2 13 slack /victim
+200 14 13 entry /archive/second.txt
+200 15 13 entry /archive/nested/report.txt
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=ext4 journal names preserve renamed and deleted directory entries
+FILE=gzip://bins/fs/ext-journal/ext4-names.img.gz
+CMDS=<<EOF2
+e log.level=0
+m:ext2 journal-names /root 201 13
+EOF2
+EXPECT=<<EOF2
+201 2 13 slack /victim
+201 14 13 entry /archive/second.txt
+201 15 13 slack /archive/nested/report.txt
+201 15 13 entry /archive/nested/renamed.txt
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=historical name JSON links a symlink name to its inode version
+FILE=gzip://bins/fs/ext-journal/ext4-names.img.gz
+CMDS=<<EOF2
+e log.level=0
+m:ext2 journal-namesj /root 200 16
+EOF2
+EXPECT=<<EOF2
+[{"sequence":200,"directory":14,"directory_sequence":200,"block":1060,"block_sequence":200,"inode":16,"name":"symlink","path":"/archive/symlink","inode_sequence":200,"generation":0,"deleted":false,"conflict":false,"heuristic":true}]
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=historical name recovery never substitutes current directory contents
+FILE=gzip://bins/fs/ext-journal/ext4-metadata.img.gz
+CMDS=<<EOF2
+e log.level=0
+m:ext2 journal-namesj /root 100
+EOF2
+EXPECT=<<EOF2
+[]
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=historical name recovery rejects invalid numeric arguments
+FILE=gzip://bins/fs/ext-journal/ext4-names.img.gz
+CMDS=<<EOF2
+e log.level=0
+m:ext2 journal-namesj /root 1/0
+m:ext2 journal-namesj /root -1
+m:ext2 journal-namesj /root 200 0
+m:ext2 journal-namesj /root 200 1/0
+m:ext2 journal-namesj /root 200 -1
+m:ext2 journal-namesj /root 200 4294967296
+echo done
+EOF2
+EXPECT=<<EOF2
+done
+EOF2
+EXPECT_ERR=
+RUN

@@ -1060,6 +1060,66 @@ static void FSP(_forensic_close)(RFSFile *file) {
 
 typedef bool (*Ext2DirCb)(ut32 id, const char *name, bool deleted, void *user);
 
+static int ext2_directory_block(Ext2Geometry *g, const ut8 *inode, ut64 id, const ut8 *buf, ut32 end, ut64 logical, Ext2DirCb cb, void *user, bool slack, bool strict) {
+	bool ok = true;
+	ut32 pos = 0, next = 0;
+	bool index = (r_read_le32 (inode + 32) & 0x1000) && (!logical || !r_read_le32 (buf));
+	if (strict && index) {
+		return R_FS_WALK_COMPLETE;
+	}
+	if ((g->ro_compat & 0x400) && !index && end == g->block_size) {
+		const ut8 *tail = buf + end - 12;
+		if (r_read_le32 (tail) || r_read_le16 (tail + 4) != 12 || tail[6] || tail[7] != 0xde
+				|| ext2_crc32c (ext2_inode_seed (g, id, inode), buf, end - 12) != r_read_le32 (tail + 8)) {
+			R_LOG_WARN ("Invalid ext4 directory checksum: %s", strict? "ignoring historical directory block": "retaining readable entries");
+			if (strict) {
+				return R_FS_WALK_ERROR;
+			}
+		} else {
+			end -= 12;
+		}
+	}
+	while (pos + 8 <= end) {
+		bool deleted = pos < next;
+		ut32 id = r_read_le32 (buf + pos);
+		ut32 length = r_read_le16 (buf + pos + 4);
+		if (length == 65535 && g->block_size == 65536) {
+			length = 65536;
+		}
+		ut32 namesize = g->incompat & 2? buf[pos + 6]: r_read_le16 (buf + pos + 6);
+		ut32 limit = deleted? next: end;
+		bool valid = length >= 8 && !(length & 3) && length <= limit - pos
+			&& namesize && namesize <= 255 && namesize <= length - 8
+			&& id && id <= g->inodes && !memchr (buf + pos + 8, 0, namesize)
+			&& !memchr (buf + pos + 8, '/', namesize);
+		if (valid) {
+			char name[256];
+			memcpy (name, buf + pos + 8, namesize);
+			name[namesize] = 0;
+			if (!cb (id, name, deleted, user)) {
+				return R_FS_WALK_STOPPED;
+			}
+		}
+		if (!deleted) {
+			if (length < 8 || (length & 3) || length > end - pos) {
+				ok = false;
+				if (!slack || strict) {
+					break;
+				}
+				next = end;
+			} else {
+				next = pos + length;
+			}
+		}
+		if (slack && !index) {
+			pos += valid? (8 + namesize + 3) & ~3U: 4;
+		} else {
+			pos = next;
+		}
+	}
+	return ok? R_FS_WALK_COMPLETE: R_FS_WALK_ERROR;
+}
+
 static bool ext2_entries(Ext2Geometry *g, const ut8 *inode, ut64 id, Ext2DirCb cb, void *user, bool slack) {
 	if ((r_read_le16 (inode) & 0xf000) != 0x4000) {
 		return false;
@@ -1078,56 +1138,12 @@ static bool ext2_entries(Ext2Geometry *g, const ut8 *inode, ut64 id, Ext2DirCb c
 			ok = false;
 			break;
 		}
-		ut32 pos = 0, end = R_MIN ((ut64)g->block_size, size - offset), next = 0;
-		bool index = (r_read_le32 (inode + 32) & 0x1000) && (!offset || !r_read_le32 (buf));
-		if ((g->ro_compat & 0x400) && !index && end == g->block_size) {
-			const ut8 *tail = buf + end - 12;
-			if (r_read_le32 (tail) || r_read_le16 (tail + 4) != 12 || tail[6] || tail[7] != 0xde
-					|| ext2_crc32c (ext2_inode_seed (g, id, inode), buf, end - 12) != r_read_le32 (tail + 8)) {
-				R_LOG_WARN ("Invalid ext4 directory checksum: retaining readable entries");
-			} else {
-				end -= 12;
-			}
+		int status = ext2_directory_block (g, inode, id, buf, R_MIN ((ut64)g->block_size, size - offset), offset, cb, user, slack, false);
+		if (status == R_FS_WALK_STOPPED) {
+			free (buf);
+			return true;
 		}
-		while (pos + 8 <= end) {
-			bool deleted = pos < next;
-			ut32 id = r_read_le32 (buf + pos);
-			ut32 length = r_read_le16 (buf + pos + 4);
-			if (length == 65535 && g->block_size == 65536) {
-				length = 65536;
-			}
-			ut32 namesize = g->incompat & 2? buf[pos + 6]: r_read_le16 (buf + pos + 6);
-			ut32 limit = deleted? next: end;
-			bool valid = length >= 8 && !(length & 3) && length <= limit - pos
-				&& namesize && namesize <= 255 && namesize <= length - 8
-				&& id && id <= g->inodes && !memchr (buf + pos + 8, 0, namesize)
-				&& !memchr (buf + pos + 8, '/', namesize);
-			if (valid) {
-				char name[256];
-				memcpy (name, buf + pos + 8, namesize);
-				name[namesize] = 0;
-				if (!cb (id, name, deleted, user)) {
-					free (buf);
-					return true;
-				}
-			}
-			if (!deleted) {
-				if (length < 8 || (length & 3) || length > end - pos) {
-					ok = false;
-					if (!slack) {
-						break;
-					}
-					next = end;
-				} else {
-					next = pos + length;
-				}
-			}
-			if (slack && !index) {
-				pos += valid? (8 + namesize + 3) & ~3U: 4;
-			} else {
-				pos = next;
-			}
-		}
+		ok &= status == R_FS_WALK_COMPLETE;
 	}
 	free (buf);
 	if (!ok) {

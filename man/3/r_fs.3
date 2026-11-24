@@ -279,6 +279,8 @@ into the mounted filesystem.
 .Bd -literal -offset indent
 m:ext2 journalj /root
 m:ext2 journal-inodesj /root
+m:ext2 journal-namesj /root 100
+m:ext2 journal-namesj /root 100 13
 m:ext2 journal /root 100 1234 recovered-block
 m:ext2 journal-inodej /root 100 13
 m:ext2 journal-inode /root 100 13 recovered-inode
@@ -291,6 +293,27 @@ commands inspect or extract specific block or inode versions. The journal-inodes
 command lists retained inode-table records and accepts an optional transaction
 sequence filter. It
 uses the current filesystem's inode-table layout to identify those records.
+.Pp
+The journal-names command reconstructs names from the latest retained directory
+inode and directory-block versions at or before the selected committed transaction.
+An optional inode number filters the results after reconstructing parent links,
+so hard links can produce several names. Current directory contents are never
+substituted for missing historical metadata. The text columns are transaction,
+parent inode, target inode, entry/slack/conflict, and escaped path or basename.
+JSON includes the directory inode version, directory block and its transaction,
+name, inode, path, and the linked inode version and generation when available.
+Slack entries and names older than the available inode version are not attached
+to that inode version. Their inode_sequence and generation fields are null.
+.Pp
+All historical names are marked heuristic. Complete paths require an unambiguous
+chain of normal directory entries reaching inode 2. Missing ancestors, cycles,
+overlapping directory blocks and multiple directory parents leave paths unresolved;
+JSON reports a null path while preserving the basename and parent inode.
+Duplicate live names are marked as conflicts. Directory index payload is excluded
+from name carving. Available inode and directory checksums are validated;
+damaged or missing blocks leave partial evidence and a warning. Symlinks are
+listed as names and are not followed when reconstructing ancestry.
+.Pp
 File recovery uses the latest retained block versions at or before the selected transaction;
 that transaction must itself be present and committed. Missing metadata or data
 stops recovery and retains the verified prefix. Symlinks are recovered as target
