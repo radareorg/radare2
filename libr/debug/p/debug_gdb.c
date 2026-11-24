@@ -2,7 +2,9 @@
 
 #include <r_core.h>
 #include <libgdbr.h>
+#include <gdbr_common.h>
 #include <gdbclient/commands.h>
+#include <errno.h>
 
 typedef struct {
 	libgdbr_t desc;
@@ -16,6 +18,9 @@ typedef struct plugin_data_t {
 	RIOGdb ** origriogdb;
 	libgdbr_t *desc;
 	ut8* reg_buf;
+	RList *modules;
+	ut64 modules_generation;
+	int modules_pid;
 	int buf_size;
 	int support_sw_bp;
 	int support_hw_bp;
@@ -174,14 +179,66 @@ static char *read_remote_maps(RDebug *dbg, ut64 *buflen) {
 	return buf;
 }
 
-static RList *r_debug_gdb_map_get(RDebug* dbg) { // TODO
+static RXmlNode *read_xml_object(libgdbr_t *g, const char *object) {
+	char *data = gdbr_read_xfer (g, object, "", GDBR_XFER_MAX, NULL);
+	RXmlNode *doc = data? rxml_dom_parse (data): NULL;
+	free (data);
+	return doc;
+}
+
+static bool read_xml_number(const RXmlNode *node, const char *key, ut64 *out) {
+	const char *text = rxml_dom_get_attribute (node, key);
+	if (!text || !isdigit ((ut8)*text)) {
+		return false;
+	}
+	char *end;
+	errno = 0;
+	*out = strtoull (text, &end, 0);
+	return !*end && errno != ERANGE;
+}
+
+static RList *read_memory_map(libgdbr_t *g) {
+	RXmlNode *doc = read_xml_object (g, "memory-map");
+	RXmlNode *root = rxml_dom_child (doc, "memory-map");
+	RList *maps = root? r_debug_map_list_new (): NULL;
+	if (maps) {
+		RXmlNode *node;
+		for (node = root->children; node; node = node->next) {
+			if (!node->name || strcmp (node->name, "memory")) {
+				continue;
+			}
+			const char *type = rxml_dom_get_attribute (node, "type");
+			ut64 start, len, end;
+			if (!type || !read_xml_number (node, "start", &start)
+			    || !read_xml_number (node, "length", &len) || !len
+			    || r_add_overflow_ut64 (start, len, &end)) {
+				continue;
+			}
+			int perm = R_PERM_R;
+			if (!strcmp (type, "ram")) {
+				perm |= R_PERM_W;
+			} else if (strcmp (type, "rom") && strcmp (type, "flash")) {
+				continue;
+			}
+			RDebugMap *map = r_debug_map_new ((char *)type, start, end, perm, 0);
+			if (map && !r_list_append (maps, map)) {
+				r_debug_map_free (map);
+			}
+		}
+	}
+	rxml_dom_free (doc);
+	return maps;
+}
+
+static RList *r_debug_gdb_map_get(RDebug *dbg) {
 	PluginData *pd = R_UNWRAP3 (dbg, current, plugin_data);
 	if (!pd) {
 		return NULL;
 	}
 
 	check_connection (dbg);
-	if (!pd->desc || pd->desc->pid <= 0) {
+	libgdbr_t *g = pd->desc;
+	if (!g) {
 		return NULL;
 	}
 	RList *retlist = NULL;
@@ -202,6 +259,15 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { // TODO
 		}
 	}
 
+	if (g->stub_features.qXfer_memory_map_read) {
+		RList *maps = read_memory_map (g);
+		if (maps) {
+			return maps;
+		}
+	}
+	if (g->pid <= 0) {
+		return NULL;
+	}
 	ut64 buflen = 0;
 	ut8 *buf = (ut8*) read_remote_maps (dbg, &buflen);
 	if (!buf) {
@@ -222,7 +288,7 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { // TODO
 		free (buf);
 		return NULL;
 	}
-	if (!(retlist = r_list_new ())) {
+	if (!(retlist = r_debug_map_list_new ())) {
 		free (buf);
 		return NULL;
 	}
@@ -309,7 +375,106 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { // TODO
 	return retlist;
 }
 
-static RList* r_debug_gdb_modules_get(RDebug *dbg) {
+static ut64 library_base(const RXmlNode *library) {
+	ut64 base = UT64_MAX;
+	const RXmlNode *node;
+	for (node = library->children; node; node = node->next) {
+		ut64 address;
+		if (node->name && (!strcmp (node->name, "segment") || !strcmp (node->name, "section"))
+		    && read_xml_number (node, "address", &address)) {
+			base = R_MIN (base, address);
+		}
+	}
+	return base;
+}
+
+static RList *read_libraries(libgdbr_t *g, bool svr4) {
+	RXmlNode *doc = read_xml_object (g, svr4? "libraries-svr4": "libraries");
+	RXmlNode *root = rxml_dom_child (doc, svr4? "library-list-svr4": "library-list");
+	RList *maps = root? r_debug_map_list_new (): NULL;
+	if (maps) {
+		RXmlNode *node;
+		for (node = root->children; node; node = node->next) {
+			if (!node->name || strcmp (node->name, "library")) {
+				continue;
+			}
+			const char *name = rxml_dom_get_attribute (node, "name");
+			if (R_STR_ISEMPTY (name)) {
+				continue;
+			}
+			ut64 bias = 0;
+			ut64 base = UT64_MAX;
+			if (svr4) {
+				if (!read_xml_number (node, "l_addr", &bias)) {
+					continue;
+				}
+				// l_addr is a relocation bias. It is the base only when an ELF image starts there.
+				ut8 magic[4];
+				if (gdbr_read_memory (g, bias, magic, sizeof (magic)) == sizeof (magic)
+				    && !memcmp (magic, "\x7f" "ELF", sizeof (magic))) {
+					base = bias;
+				}
+			} else {
+				base = library_base (node);
+				if (base == UT64_MAX) {
+					continue;
+				}
+			}
+			RDebugMap *map = r_debug_map_new ((char *)name, base, base, 0, 0);
+			if (map) {
+				map->offset = bias;
+				map->file = strdup (name);
+				if (!map->file || !r_list_append (maps, map)) {
+					r_debug_map_free (map);
+				}
+			}
+		}
+	}
+	rxml_dom_free (doc);
+	return maps;
+}
+
+static void refresh_libraries(PluginData *pd) {
+	libgdbr_t *g = pd->desc;
+	if (pd->modules && pd->modules_pid == g->pid && pd->modules_generation == g->library_generation) {
+		return;
+	}
+	r_list_free (pd->modules);
+	pd->modules = g->stub_features.qXfer_libraries_svr4_read? read_libraries (g, true): NULL;
+	if (!pd->modules && g->stub_features.qXfer_libraries_read) {
+		pd->modules = read_libraries (g, false);
+	}
+	pd->modules_pid = g->pid;
+	pd->modules_generation = g->library_generation;
+}
+
+static void *clone_library_map(void *data) {
+	RDebugMap *map = data;
+	RDebugMap *clone = r_debug_map_new (map->name, map->addr, map->addr_end, map->perm, map->user);
+	if (clone) {
+		clone->file = strdup (map->file);
+		clone->offset = map->offset;
+		if (!clone->file) {
+			r_debug_map_free (clone);
+			return NULL;
+		}
+	}
+	return clone;
+}
+
+static RList *r_debug_gdb_modules_get(RDebug *dbg) {
+	PluginData *pd = R_UNWRAP3 (dbg, current, plugin_data);
+	if (!pd) {
+		return NULL;
+	}
+	check_connection (dbg);
+	if (!pd->desc) {
+		return NULL;
+	}
+	refresh_libraries (pd);
+	if (pd->modules) {
+		return r_list_clone (pd->modules, clone_library_map);
+	}
 	char *lastname = NULL;
 	RDebugMap *map;
 	RListIter *iter, *iter2;
@@ -452,6 +617,9 @@ static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
 			gdbr_select (pd->desc, dbg->pid, dbg->tid);
 		}
 	}
+	if (stop->library) {
+		refresh_libraries (pd);
+	}
 	return dbg->reason.type;
 }
 
@@ -470,6 +638,8 @@ static bool r_debug_gdb_attach(RDebug *dbg, int pid) {
 			pd->origriogdb = (RIOGdb **)&d->data;	//TODO bit of a hack, please improve
 			pd->support_sw_bp = UNKNOWN;
 			pd->support_hw_bp = UNKNOWN;
+			r_list_free (pd->modules);
+			pd->modules = NULL;
 			pd->desc = &g->desc;
 			int arch = r_sys_arch_id (dbg->arch);
 			int bits = dbg->anal->config->bits;
@@ -690,6 +860,7 @@ static bool fini_plugin(RDebug *dbg, RDebugPluginSession *ds) {
 	}
 
 	free (pd->reg_buf);
+	r_list_free (pd->modules);
 	R_FREE (ds->plugin_data);
 	// no need to free desc and origriogdb? owned by other code?
 	return true;

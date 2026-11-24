@@ -204,6 +204,7 @@ typedef struct libgdbr_t {
 	libgdbr_stub_features_t stub_features;
 	libgdbr_caps_t caps;
 	libgdbr_regs_t regs;
+	ut64 library_generation;
 
 	int remote_file_fd; // For remote file I/O
 	int num_retries; // number of retries for packet reading

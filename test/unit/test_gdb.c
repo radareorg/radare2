@@ -474,6 +474,81 @@ static bool test_gdb_debug_watchpoints(void) {
 	mu_end;
 }
 
+static bool test_gdb_debug_xml_maps(void) {
+	RCore *core = r_core_new ();
+	libgdbr_t g;
+	int fds[2];
+	mu_assert_true (session_open (&g, fds, GDB_REMOTE_TYPE_GDB), "open XML map session");
+	g.stub_features.pkt_sz = 256;
+	g.stub_features.qXfer_memory_map_read = true;
+	g.stub_features.qXfer_libraries_read = true;
+	RIOPlugin io_plugin = { .meta.name = "gdb" };
+	RIODesc io_desc = { .plugin = &io_plugin, .data = &g };
+	core->io->desc = &io_desc;
+	RDebug *dbg = core->dbg;
+	mu_assert_true (r_debug_use (dbg, "gdb"), "select the GDB debugger");
+	RDebugPlugin *plugin = dbg->current->plugin;
+	const char *replies[] = {
+		"m<memory-map><memory type='ram' start='0x1000' length='256'/>",
+		"l<memory type='flash' start=\"0x2000\" length='512'><property name='blocksize'>16</property></memory></memory-map>",
+		"l<library-list><library name='/a&amp;b.so'><segment address='0x4200'/><segment address='0x4000'/></library></library-list>",
+		"T05library:;",
+		"l<library-list><library name='/new.so'><section address='0x3000'/></library></library-list>",
+		"T05library:;",
+		"l<library-list-svr4><library name='/elf.so' l_addr='0x5000' l_ld='0x5200' lm='0x8000'/>"
+		"<library name='/prelinked.so' l_addr='0x1000' l_ld='0x6400' lm='0x9000'/></library-list-svr4>",
+		"7f454c46",
+		"E01",
+		NULL
+	};
+	Stub stub;
+	RThread *th = stub_start (&stub, fds[1], -1, replies);
+	RList *maps = plugin->map_get (dbg);
+	mu_assert_eq (r_list_length (maps), 2, "read chunked memory map without procfs");
+	RDebugMap *map = r_list_first (maps);
+	mu_assert_eq (map->addr_end, 0x1100, "decode range end");
+	mu_assert_eq (map->perm, R_PERM_RW, "RAM permits ordinary writes");
+	map = r_list_last (maps);
+	mu_assert_eq (map->perm, R_PERM_R, "flash requires a dedicated write protocol");
+	r_list_free (maps);
+
+	RList *modules = r_debug_modules_list (dbg);
+	mu_assert_eq (r_list_length (modules), 1, "list the library");
+	map = r_list_first (modules);
+	mu_assert_streq (map->file, "/a&b.so", "decode the library path");
+	mu_assert_eq (map->addr, 0x4000, "use the lowest reported segment address");
+	r_list_free (modules);
+	mu_assert_true (plugin->cont (dbg, dbg->pid, dbg->tid, 0), "continue to a library change");
+	mu_assert_eq (plugin->wait (dbg, dbg->pid), R_DEBUG_REASON_STOPPED, "handle the library change stop");
+	modules = r_debug_modules_list (dbg);
+	mu_assert_eq (r_list_length (modules), 1, "unloaded library is gone");
+	map = r_list_first (modules);
+	mu_assert_streq (map->file, "/new.so", "new library is listed");
+	mu_assert_eq (map->addr, 0x3000, "use the reported section address");
+	r_list_free (modules);
+	g.stub_features.qXfer_libraries_svr4_read = true;
+	mu_assert_true (plugin->cont (dbg, dbg->pid, dbg->tid, 0), "continue to an SVR4 library change");
+	mu_assert_eq (plugin->wait (dbg, dbg->pid), R_DEBUG_REASON_STOPPED, "refresh the SVR4 list");
+	modules = r_debug_modules_list (dbg);
+	mu_assert_eq (r_list_length (modules), 2, "list SVR4 libraries");
+	map = r_list_first (modules);
+	mu_assert_eq (map->addr, 0x5000, "an ELF header identifies the absolute image base");
+	map = r_list_last (modules);
+	mu_assert_eq (map->addr, UT64_MAX, "a bias alone does not give a prelinked image base");
+	mu_assert_eq (map->offset, 0x1000, "preserve the relocation bias");
+	r_list_free (modules);
+	char *sent = stub_finish (&stub, th, fds[0]);
+	mu_assert_streq_free (sent,
+		"qXfer:memory-map:read::0,fe\nqXfer:memory-map:read::3c,fe\n"
+		"qXfer:libraries:read::0,fe\nc\nqXfer:libraries:read::0,fe\n"
+		"c\nqXfer:libraries-svr4:read::0,fe\nm5000,4\nm1000,4\n",
+		"refresh libraries once per stop and never open procfs");
+	core->io->desc = NULL;
+	r_core_free (core);
+	gdbr_cleanup (&g);
+	mu_end;
+}
+
 static bool test_gdb_memory_read_replies(void) {
 	const struct {
 		const char *reply;
@@ -1676,6 +1751,7 @@ int main(int argc, char **argv) {
 	mu_run_test (test_gdb_memory_read_replies);
 	mu_run_test (test_gdb_debug_execution_failures);
 	mu_run_test (test_gdb_debug_watchpoints);
+	mu_run_test (test_gdb_debug_xml_maps);
 	mu_run_test (test_gdb_runtime_console_flows);
 	mu_run_test (test_gdb_console_terminal_replies);
 	mu_run_test (test_gdb_console_rejections);
