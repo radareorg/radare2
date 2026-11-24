@@ -343,8 +343,12 @@ int handle_stop_reason(libgdbr_t *g) {
 				g->stop_reason.vforkdone = true;
 				continue;
 			}
-			if (r_str_startswith (ptr1, "library")) {
+			if (r_str_startswith (ptr1, "library:")) {
+				if (!g->stop_reason.library) {
+					g->library_generation++;
+				}
 				g->stop_reason.library = true;
+				g->stop_reason.reason = R_DEBUG_REASON_STOPPED;
 				continue;
 			}
 			if (r_str_startswith (ptr1, "swbreak")) {
