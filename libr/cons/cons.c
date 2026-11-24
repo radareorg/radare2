@@ -591,7 +591,6 @@ R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBr
 }
 
 R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig) {
-#if WANT_DEBUGSTUFF
 	if (!context || !context->break_stack) {
 		return;
 	}
@@ -613,7 +612,6 @@ R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig
 		context->was_breaked = context->breaked;
 		context->breaked = false;
 	}
-#endif
 }
 
 R_API bool r_cons_is_interactive(RCons *cons) {
@@ -621,18 +619,13 @@ R_API bool r_cons_is_interactive(RCons *cons) {
 }
 
 R_API bool r_cons_was_breaked(RCons *cons) {
-#if WANT_DEBUGSTUFF
 	const bool res = r_cons_is_breaked (cons) || cons->context->was_breaked;
 	cons->context->breaked = false;
 	cons->context->was_breaked = false;
 	return res;
-#else
-	return false;
-#endif
 }
 
 R_API bool r_cons_is_breaked(RCons *cons) {
-#if WANT_DEBUGSTUFF
 	RConsContext *C = cons->context;
 	if (R_UNLIKELY (cons->cb_break)) {
 		cons->cb_break (cons->user);
@@ -658,9 +651,6 @@ R_API bool r_cons_is_breaked(RCons *cons) {
 		cons->timeout_warned = true;
 	}
 	return R_UNLIKELY (C && C->breaked);
-#else
-	return false;
-#endif
 }
 
 // UNUSED. but maybe fancy for visual magic imho

@@ -584,6 +584,10 @@ bool test_cons_timeout_does_not_restart_expired_deadline(void) {
 	cons->otimeout = 1;
 	r_cons_break_timeout (cons, 100);
 	mu_assert ("expired timeout must stay expired", cons->timeout < r_time_now_mono ());
+	mu_assert_true (r_cons_is_breaked (cons), "expired timeout interrupts the console");
+	r_cons_break_timeout (cons, 0);
+	mu_assert_true (r_cons_was_breaked (cons), "interruption remains observable after disabling timeout");
+	mu_assert_false (r_cons_was_breaked (cons), "interruption is consumed once");
 
 	r_cons_free (cons);
 	mu_end;
