@@ -1,7 +1,5 @@
 /* radare - LGPL - Copyright 2026 - pancake */
 
-#include <r_hash.h>
-
 #define EXT_JOURNAL_MAGIC 0xc03b3998U
 #define EXT_JOURNAL_LIMIT 0x100000
 
@@ -29,7 +27,7 @@ typedef struct {
 typedef bool (*ExtJournalCb)(ExtJournal *journal, ut32 sequence, ut32 start, const ExtJournalTag *tag, void *user);
 
 static ut32 ext_journal_crc(const ut8 *data, ut32 size) {
-	return ~(ut32)r_hash_crc_preset (data, size, CRC_PRESET_32C);
+	return ext2_crc32c (UT32_MAX, data, size);
 }
 
 static bool ext_journal_read(ExtJournal *j, ut32 block, ut8 *data) {

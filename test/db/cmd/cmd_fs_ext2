@@ -552,3 +552,72 @@ liveend
 EOF2
 EXPECT_ERR=
 RUN
+
+NAME=ext4 lists deleted directory names and retained free inodes
+FILE=gzip://bins/fs/ext4-forensic/recovery.img.gz
+CMDS=<<EOF2
+mdxj /root
+mdxj /root 0
+mij /root 13~{size}
+EOF2
+EXPECT=<<EOF2
+[{"type":"file","size":13312,"name":"vanished","id":13,"deleted":true,"flags":3}]
+[{"type":"file","size":13312,"name":"inode-13","id":13,"deleted":true,"flags":3}]
+13312
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=ext4 maps deleted extent trees and sparse logical gaps
+FILE=gzip://bins/fs/ext4-forensic/recovery.img.gz
+CMDS=<<EOF2
+mie /root 13
+EOF2
+EXPECT=<<EOF2
+0x00000000 0x0004a800 1024 0x1
+0x00000400 0xffffffffffffffff 1024 0x60
+0x00000800 0x0004ac00 1024 0x1
+0x00000c00 0xffffffffffffffff 1024 0x60
+0x00001000 0x0004b000 1024 0x1
+0x00001400 0xffffffffffffffff 1024 0x60
+0x00001800 0x0004b400 1024 0x1
+0x00001c00 0xffffffffffffffff 1024 0x60
+0x00002000 0x0004b800 1024 0x1
+0x00002400 0xffffffffffffffff 1024 0x60
+0x00002800 0x0004c000 1024 0x1
+0x00002c00 0xffffffffffffffff 1024 0x60
+0x00003000 0x0004c400 1024 0x1
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=ext4 marks unwritten extents while preserving their physical storage
+FILE=gzip://bins/fs/ext4-forensic/recovery.img.gz
+CMDS=<<EOF2
+mie /root/unwritten
+EOF2
+EXPECT=<<EOF2
+0x00000000 0x0004c800 1024 0x2
+0x00000400 0x0004cc00 3072 0x82
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=ext4 resolves live and deleted disk ownership and lazy allocation groups
+FILE=gzip://bins/fs/ext4-forensic/recovery.img.gz
+CMDS=<<EOF2
+mfo /root 0x4a401
+mix /root 0x4a801
+mfu /root orphan
+mie /root/link
+mc /root/live
+EOF2
+EXPECT=<<EOF2
+/root/live
+/root/vanished
+0x00000000 0x0004a400 15 0x2
+Live ext4 file
+
+EOF2
+EXPECT_ERR=
+RUN

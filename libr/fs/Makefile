@@ -1,6 +1,6 @@
 NAME=r_fs
 PCLIBS_PRIVATE=@PKGCFG_LIBZIPLIBS@
-R2DEPS=r_util r_io r_socket r_cons r_muta
+R2DEPS=r_util r_io r_socket r_cons
 CFLAGS:=-DR2_PLUGIN_INCORE -Iarch/include -Iarch $(CFLAGS)
 
 include ../config.mk
