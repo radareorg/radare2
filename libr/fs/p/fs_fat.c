@@ -415,7 +415,8 @@ static RFSFile *fat_open(RFSRoot *root, const char *path, bool create) {
 static RFSFile *fat_open_id(RFSRoot *root, ut64 id, ut32 flags) {
 	FatFS *fat = root->ptr;
 	FatEntry entry;
-	if ((flags & ~(R_FS_OPEN_CONTIGUOUS | R_FS_OPEN_RECOVER)) || !fat_entry_id (fat, id, &entry)) {
+	// SALVAGE is accepted but ignored: links past a reused cluster belong to its new owner
+	if ((flags & ~(R_FS_OPEN_CONTIGUOUS | R_FS_OPEN_RECOVER | R_FS_OPEN_SALVAGE)) || !fat_entry_id (fat, id, &entry)) {
 		return NULL;
 	}
 	if (flags & R_FS_OPEN_CONTIGUOUS) {

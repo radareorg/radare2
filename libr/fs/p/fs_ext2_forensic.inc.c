@@ -50,6 +50,7 @@ typedef struct {
 	ut8 inode[128];
 	bool recovery;
 	bool contiguous;
+	bool salvage;
 	RBitset *owners;
 	Ext2BitmapCache bitmap;
 	bool checked;
@@ -865,20 +866,24 @@ typedef struct {
 	void *user;
 	RFSRange run;
 	ut64 readable;
+	bool skipped;
 } Ext2Extents;
 
 static int ext2_extent_block(ut64 block, ut64 logical, ut64 size, unsigned depth, ut32 flags, void *user) {
 	Ext2Extents *output = user;
 	Ext2File *entry = output->file->ptr;
+	bool salvage = entry->salvage && !depth;
 	if (!block && entry->recovery && !entry->sparse_known && !entry->contiguous) {
-		return R_FS_WALK_ERROR;
+		output->skipped |= salvage;
+		return salvage? R_FS_WALK_COMPLETE: R_FS_WALK_ERROR;
 	}
 	int allocated = block? ext2_allocated (output->g, block, false): 0;
 	if (allocated < 0 || (entry->recovery && block && (allocated || r_bitset_test (entry->owners, block)))) {
 		if (allocated > 0 || (block && entry->owners && r_bitset_test (entry->owners, block))) {
 			output->file->flags |= R_FS_FILE_CONFLICT;
 		}
-		return R_FS_WALK_ERROR;
+		output->skipped |= salvage;
+		return salvage? R_FS_WALK_COMPLETE: R_FS_WALK_ERROR;
 	}
 	if (depth) {
 		return R_FS_WALK_COMPLETE;
@@ -890,7 +895,8 @@ static int ext2_extent_block(ut64 block, ut64 logical, ut64 size, unsigned depth
 	}
 	ut64 physical = block? output->file->root->delta + (ut64)block * output->g->block_size: UT64_MAX;
 	RFSRange *run = &output->run;
-	if (run->size && (run->flags != flags || (block && run->physical + run->size != physical))) {
+	if (run->size && (run->flags != flags || run->logical + run->size != logical
+			|| (block && run->physical + run->size != physical))) {
 		if (!output->cb (run, output->user)) {
 			return R_FS_WALK_STOPPED;
 		}
@@ -902,7 +908,9 @@ static int ext2_extent_block(ut64 block, ut64 logical, ut64 size, unsigned depth
 		run->flags = flags;
 	}
 	run->size += size;
-	output->readable = logical + size;
+	if (!output->skipped) {
+		output->readable = logical + size;
+	}
 	return R_FS_WALK_COMPLETE;
 }
 
@@ -947,6 +955,9 @@ static int FSP(_forensic_extents)(RFSFile *file, RFSRangeCb cb, void *user) {
 	if (output.run.size && status != R_FS_WALK_STOPPED && !cb (&output.run, user)) {
 		return R_FS_WALK_STOPPED;
 	}
+	if (output.skipped && status == R_FS_WALK_COMPLETE) {
+		status = R_FS_WALK_ERROR;
+	}
 	if (entry->recovery && status != R_FS_WALK_STOPPED) {
 		entry->readable = output.readable;
 		entry->planned = true;
@@ -960,7 +971,7 @@ static int FSP(_forensic_extents)(RFSFile *file, RFSRangeCb cb, void *user) {
 static RFSFile *FSP(_forensic_open_id)(RFSRoot *root, ut64 id, ut32 flags) {
 	Ext2Geometry g;
 	ut8 inode[128];
-	if ((flags & ~(R_FS_OPEN_RECOVER | R_FS_OPEN_CONTIGUOUS)) || !ext2_geometry (root, &g) || !ext2_inode (&g, id, inode)
+	if ((flags & ~(R_FS_OPEN_RECOVER | R_FS_OPEN_CONTIGUOUS | R_FS_OPEN_SALVAGE)) || !ext2_geometry (root, &g) || !ext2_inode (&g, id, inode)
 			|| !(r_read_le16 (inode) & 0xf000)) {
 		return NULL;
 	}
@@ -975,6 +986,7 @@ static RFSFile *FSP(_forensic_open_id)(RFSRoot *root, ut64 id, ut32 flags) {
 	memcpy (entry->inode, inode, sizeof (inode));
 	entry->recovery = flags & (R_FS_OPEN_RECOVER | R_FS_OPEN_CONTIGUOUS);
 	entry->contiguous = flags & R_FS_OPEN_CONTIGUOUS;
+	entry->salvage = entry->recovery && (flags & R_FS_OPEN_SALVAGE);
 	file->ptr = entry;
 	ext2_fill (&g, file, inode, id);
 	if (entry->contiguous) {

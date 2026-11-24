@@ -94,3 +94,27 @@ Live NTFS file
 EOF2
 EXPECT_ERR=
 RUN
+
+NAME=NTFS fs.deleted salvages runs past a reused cluster while recovery keeps the prefix
+FILE=gzip://bins/fs/ntfs-forensic/reuse.img.gz
+CMDS=<<EOF2
+e search.verbose=false
+e fs.cwd=/root
+mie /root 65
+e search.in=fs.deleted
+e search.from=0x167e00
+e search.to=0x168000
+/xj 5265636f766572
+e search.from=0x168000
+e search.to=0x168020
+/xj 5265636f766572
+EOF2
+EXPECT=<<EOF2
+0x00000000 0x00167400 2560 0x1
+[]
+[{"addr":1474566,"type":"hexpair","data":"5265636f766572"},{"addr":1474584,"type":"hexpair","data":"5265636f766572"}]
+EOF2
+EXPECT_ERR=<<EOF2
+ERROR: Filesystem range enumeration: error
+EOF2
+RUN

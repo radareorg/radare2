@@ -146,6 +146,11 @@ Extent enumeration normally reports the mappings claimed by directory
 metadata, including deleted claims whose clusters may now be reused.
 R_FS_OPEN_RECOVER requests ownership-checked recovery extents;
 R_FS_OPEN_CONTIGUOUS implies it. Deleted data reads always check live ownership.
+R_FS_OPEN_SALVAGE, combined with R_FS_OPEN_RECOVER, makes ext2 and NTFS extent
+enumeration skip reused or unknown storage and continue with later retained
+mappings instead of stopping; the walk still reports R_FS_WALK_ERROR and the
+readable prefix is unchanged. FAT accepts and ignores it because links past a
+reused cluster belong to the new owner.
 Recovery previews and extraction commands use ownership-checked extents. Incomplete
 ownership enumeration refuses recovery; reused clusters stop the readable
 prefix and set R_FS_FILE_CONFLICT. R_FS_FILE_PARTIAL records incomplete data.

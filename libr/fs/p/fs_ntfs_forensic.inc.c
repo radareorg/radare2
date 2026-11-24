@@ -50,7 +50,7 @@ typedef struct {
 	GrubFS *grub;
 	NtfsStream data;
 	ut64 id, readable;
-	bool deleted, recovery, planned;
+	bool deleted, recovery, planned, salvage;
 } NtfsFile;
 
 static ut64 ntfs_duplicate_limit(NtfsStream *stream);
@@ -806,7 +806,7 @@ static int FSP(_forensic_extents)(RFSFile *file, RFSRangeCb cb, void *user) {
 	if (!fs->native || file->type != 'f' || stream->status == R_FS_WALK_UNSUPPORTED) {
 		return R_FS_WALK_UNSUPPORTED;
 	}
-	ut64 limit = file->size, logical = 0;
+	ut64 limit = file->size, logical = 0, readable = UT64_MAX;
 	int status = stream->status;
 	if (entry->recovery) {
 		ntfs_catalog (fs);
@@ -855,7 +855,12 @@ static int FSP(_forensic_extents)(RFSFile *file, RFSRangeCb cb, void *user) {
 						file->flags |= R_FS_FILE_CONFLICT;
 					}
 					status = R_FS_WALK_ERROR;
-					break;
+					if (!entry->salvage) {
+						break;
+					}
+					readable = R_MIN (readable, logical);
+					logical += R_MIN (size, limit - logical);
+					continue;
 				}
 				flags = allocated < 0? R_FS_RANGE_UNKNOWN: allocated? R_FS_RANGE_ALLOCATED: R_FS_RANGE_FREE;
 				if (allocated < 0) {
@@ -879,7 +884,7 @@ static int FSP(_forensic_extents)(RFSFile *file, RFSRangeCb cb, void *user) {
 		return R_FS_WALK_STOPPED;
 	}
 	if (entry->recovery) {
-		entry->readable = logical;
+		entry->readable = R_MIN (readable, logical);
 		entry->planned = true;
 	}
 	if (status != R_FS_WALK_COMPLETE || logical != file->size) {
@@ -907,7 +912,7 @@ static void FSP(_forensic_close)(RFSFile *file) {
 
 static RFSFile *FSP(_forensic_open_id)(RFSRoot *root, ut64 id, ut32 flags) {
 	NtfsFS *fs = root->ptr;
-	if (!fs->native || (flags & ~R_FS_OPEN_RECOVER) || id >= fs->records) {
+	if (!fs->native || (flags & ~(R_FS_OPEN_RECOVER | R_FS_OPEN_SALVAGE)) || id >= fs->records) {
 		return NULL;
 	}
 	ut8 *record = malloc (fs->record_size);
@@ -931,6 +936,7 @@ static RFSFile *FSP(_forensic_open_id)(RFSRoot *root, ut64 id, ut32 flags) {
 	entry->id = id;
 	entry->deleted = deleted;
 	entry->recovery = flags & R_FS_OPEN_RECOVER;
+	entry->salvage = entry->recovery && (flags & R_FS_OPEN_SALVAGE);
 	file->ptr = entry;
 	file->id = id;
 	file->type = r_read_le16 (record + 22) & 2? 'd': 'f';

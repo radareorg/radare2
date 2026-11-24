@@ -942,8 +942,8 @@ static bool fs_search_deleted(FSSearchBounds *bounds, const char *path, ut64 id,
 			break;
 		}
 		if ((entry->flags & R_FS_FILE_DELETED) && entry->id != UT64_MAX) {
-			// recovery stops at reused storage, so a partial walk still yields the known prefix
-			RFSFile *file = r_fs_open_id (core->fs, entry->root->path, entry->id, R_FS_OPEN_RECOVER);
+			// salvage skips reused storage instead of stopping at it
+			RFSFile *file = r_fs_open_id (core->fs, entry->root->path, entry->id, R_FS_OPEN_RECOVER | R_FS_OPEN_SALVAGE);
 			if (file) {
 				r_fs_extents (file, fs_search_bound, bounds);
 				r_fs_close (core->fs, file);
