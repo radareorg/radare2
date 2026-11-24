@@ -69,6 +69,10 @@ typedef struct r_fs_root_t {
 	// TODO: deprecate
 	RIOBind iob;
 	RCoreBind cob;
+	// plugin state shared between handles, kept only while r_fs_batch is enabled
+	bool batch;
+	void *cache;
+	void (*cache_free)(void *cache);
 } RFSRoot;
 
 typedef struct {
@@ -226,6 +230,7 @@ R_API RFSFile *r_fs_open(RFS* fs, const char *path, bool create);
 R_API RFSFile *r_fs_open_id(RFS *fs, const char *mountpoint, ut64 id, ut32 flags);
 R_API int r_fs_extents(RFSFile *file, RFSRangeCb cb, void *user);
 R_API int r_fs_ranges(RFS *fs, const char *mountpoint, ut32 flags, RFSRangeCb cb, void *user);
+R_API void r_fs_batch(RFS *fs, bool enable);
 R_API void r_fs_close(RFS* fs, RFSFile *file);
 R_API int r_fs_read(RFS* fs, RFSFile *file, ut64 addr, int len);
 R_API int r_fs_write(RFS* fs, RFSFile* file, ut64 addr, const ut8 *data, int len);

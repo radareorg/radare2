@@ -52,6 +52,7 @@ typedef struct {
 	bool contiguous;
 	bool salvage;
 	RBitset *owners;
+	bool shared_owners;
 	Ext2BitmapCache bitmap;
 	bool checked;
 	bool sparse_known;
@@ -847,12 +848,20 @@ static bool ext2_sparse_known(Ext2Geometry *g, const ut8 *inode, ut64 id) {
 	return status == R_FS_WALK_COMPLETE && blocks <= UT64_MAX / units && blocks * units == stored;
 }
 
-static bool ext2_recovery_owners(Ext2Geometry *g, Ext2File *entry, ut64 id) {
+static bool ext2_recovery_owners(Ext2Geometry *g, RFSFile *file) {
+	Ext2File *entry = file->ptr;
+	ut64 id = file->id;
 	if (!entry->recovery) {
 		return true;
 	}
 	if (!entry->checked) {
-		entry->owners = ext2_owners (g);
+		RFSRoot *root = file->root;
+		if (root->batch && !root->cache) {
+			root->cache = ext2_owners (g);
+			root->cache_free = (void (*)(void *))r_bitset_free;
+		}
+		entry->shared_owners = root->batch && root->cache;
+		entry->owners = entry->shared_owners? root->cache: ext2_owners (g);
 		entry->checked = true;
 		entry->sparse_known = ext2_sparse_known (g, entry->inode, id);
 	}
@@ -929,7 +938,7 @@ static int FSP(_forensic_extents)(RFSFile *file, RFSRangeCb cb, void *user) {
 		RFSRange range = { 0, file->root->delta + offset + 40, file->size, R_FS_RANGE_ALLOCATED };
 		return !range.size || cb (&range, user)? R_FS_WALK_COMPLETE: R_FS_WALK_STOPPED;
 	}
-	if (!ext2_recovery_owners (&g, entry, file->id)) {
+	if (!ext2_recovery_owners (&g, file)) {
 		file->flags |= R_FS_FILE_PARTIAL;
 		return R_FS_WALK_ERROR;
 	}
@@ -1039,7 +1048,7 @@ static int FSP(_forensic_read)(RFSFile *file, ut64 addr, int len) {
 		memcpy (file->data, entry->inode + 40 + addr, len);
 		return len;
 	}
-	if (!ext2_recovery_owners (&g, entry, file->id)) {
+	if (!ext2_recovery_owners (&g, file)) {
 		file->flags |= R_FS_FILE_PARTIAL;
 		return -1;
 	}
@@ -1088,7 +1097,9 @@ static void FSP(_forensic_close)(RFSFile *file) {
 	}
 	free (entry->bitmap.data);
 	r_bitset_free (entry->bitmap.metadata);
-	r_bitset_free (entry->owners);
+	if (!entry->shared_owners) {
+		r_bitset_free (entry->owners);
+	}
 	free (entry);
 	file->ptr = NULL;
 }

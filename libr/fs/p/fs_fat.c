@@ -643,7 +643,14 @@ static int fat_plan(RFSFile *file, RFSRangeCb cb, void *user) {
 		return entry->plan_status;
 	}
 	entry->plan_status = R_FS_WALK_ERROR;
-	RBitmap *owners = entry->flags & R_FS_FILE_DELETED? fat_owners (fat): NULL;
+	RFSRoot *root = file->root;
+	bool deleted = entry->flags & R_FS_FILE_DELETED;
+	if (deleted && root->batch && !root->cache) {
+		root->cache = fat_owners (fat);
+		root->cache_free = (void (*)(void *))r_bitmap_free;
+	}
+	bool shared = deleted && root->batch && root->cache;
+	RBitmap *owners = shared? root->cache: deleted? fat_owners (fat): NULL;
 	int status = R_FS_WALK_ERROR;
 	if (!(entry->flags & R_FS_FILE_DELETED) || owners) {
 		status = fat_walk (file, entry->attr & 0x10? UT64_MAX: entry->size,
@@ -658,7 +665,9 @@ static int fat_plan(RFSFile *file, RFSRangeCb cb, void *user) {
 			file->flags |= R_FS_FILE_PARTIAL;
 		}
 	}
-	r_bitmap_free (owners);
+	if (!shared) {
+		r_bitmap_free (owners);
+	}
 	return status;
 }
 

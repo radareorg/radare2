@@ -1044,7 +1044,9 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		const char *mountpoint = r_config_get (core->config, "fs.cwd");
 		int budget = 0x4000;
 		r_cons_break_push (core->cons, NULL, NULL);
+		r_fs_batch (core->fs, true);
 		bool ok = fs_search_deleted (&bounds, mountpoint, UT64_MAX, 64, &budget);
+		r_fs_batch (core->fs, false);
 		bool breaked = r_cons_is_breaked (core->cons);
 		r_cons_break_pop (core->cons);
 		if (breaked) {

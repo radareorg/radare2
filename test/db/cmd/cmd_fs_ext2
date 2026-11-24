@@ -678,14 +678,17 @@ miej /root 13
 e search.in=fs.deleted
 /xj 4f6c6420626c6f636b
 /xj 4e6577206c697665
+miej /root 13
 EOF2
 EXPECT=<<EOF2
 0xd f 4096 /root/old
 {"ranges":[],"status":"error","flags":13}
 [{"addr":28672,"type":"hexpair","data":"4f6c6420626c6f636b"},{"addr":29696,"type":"hexpair","data":"4f6c6420626c6f636b"},{"addr":30720,"type":"hexpair","data":"4f6c6420626c6f636b"}]
 []
+{"ranges":[],"status":"error","flags":13}
 EOF2
 EXPECT_ERR=<<EOF2
+ERROR: Filesystem range enumeration: error
 ERROR: Filesystem range enumeration: error
 EOF2
 RUN

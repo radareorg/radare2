@@ -354,6 +354,21 @@ R_API int r_fs_ranges(RFS *fs, const char *mountpoint, ut32 flags, RFSRangeCb cb
 	return root->p->ranges? root->p->ranges (root, flags, cb, user): R_FS_WALK_UNSUPPORTED;
 }
 
+// Batches let plugins reuse expensive ownership state across handles; the image must not change meanwhile
+R_API void r_fs_batch(RFS *fs, bool enable) {
+	R_RETURN_IF_FAIL (fs);
+	RListIter *iter;
+	RFSRoot *root;
+	r_list_foreach (fs->roots, iter, root) {
+		if (root->cache_free) {
+			root->cache_free (root->cache);
+		}
+		root->cache = NULL;
+		root->cache_free = NULL;
+		root->batch = enable;
+	}
+}
+
 // NOTE: close doesnt free
 R_API void r_fs_close(RFS *fs, RFSFile *file) {
 	R_RETURN_IF_FAIL (fs && file);

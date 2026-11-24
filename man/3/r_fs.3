@@ -257,6 +257,15 @@ physical bytes. Holes occupy no volume space, so allocation ranges never
 report R_FS_RANGE_SPARSE. There is no fs.sparse search mode, and
 .Ic search.in
 fs modes skip any range whose physical offset is UT64_MAX.
+.Pp
+.Ft void
+.Fn r_fs_batch "RFS *fs" "bool enable"
+.Pp
+Enable or disable batch mode on every mounted root. While enabled, plugins
+may keep expensive state, such as live ownership maps, in RFSRoot.cache and
+share it between recovery handles. Both calls drop the cached state, so the
+image must not change while a batch is active. Handles opened outside a batch
+always compute fresh state.
 .Sh FILESYSTEM ZOOM
 Use
 .Ic pzg

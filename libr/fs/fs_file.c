@@ -62,6 +62,9 @@ R_API RFSRoot* r_fs_root_new(const char* path, ut64 delta) {
 
 R_API void r_fs_root_free(RFSRoot* root) {
 	if (root) {
+		if (root->cache_free) {
+			root->cache_free (root->cache);
+		}
 		if (root->p && root->p->umount) {
 			root->p->umount (root);
 		}
