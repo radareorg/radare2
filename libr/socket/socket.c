@@ -496,11 +496,16 @@ success:
 
 /* close the file descriptor associated with the RSocket s */
 R_API bool r_socket_close_fd(RSocket *s) {
-#ifdef _MSC_VER
-	return s->fd != INVALID_SOCKET? closesocket (s->fd): false;
+	if (!s || s->fd == R_INVALID_SOCKET) {
+		return false;
+	}
+#if R2__WINDOWS__
+	int ret = closesocket (s->fd);
 #else
-	return s->fd != -1? close (s->fd): false;
+	int ret = close (s->fd);
 #endif
+	s->fd = R_INVALID_SOCKET;
+	return ret != 0;
 }
 
 /* shutdown the socket and close the file descriptor */
@@ -524,11 +529,8 @@ R_API bool r_socket_close(RSocket *s) {
 			nonblock = 0;
 			ioctlsocket (s->fd, FIONBIO, &nonblock);
 		}
-		ret = closesocket (s->fd);
-#else
-		ret = close (s->fd);
 #endif
-		s->fd = R_INVALID_SOCKET;
+		ret = r_socket_close_fd (s);
 	}
 #if HAVE_LIB_SSL
 	if (s->is_ssl && s->sfd) {
@@ -688,7 +690,7 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 	}
 	sock = R_NEW0 (RSocket);
 	// signal (SIGPIPE, SIG_DFL);
-	sock->fd = accept (s->fd, (struct sockaddr *)&s->sa, &salen);
+	sock->fd = accept (s->fd, (struct sockaddr *)&sock->sa, &salen);
 	if (sock->fd == R_INVALID_SOCKET) {
 		// EINTR Is received when the terminal is resized
 		if (errno != EWOULDBLOCK && errno != EINTR) {
@@ -697,6 +699,11 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 		}
 		free (sock);
 		return NULL;
+	}
+	sock->proto = s->proto;
+	if (sock->proto == R_SOCKET_PROTO_TCP) {
+		int enabled = 1;
+		setsockopt (sock->fd, IPPROTO_TCP, TCP_NODELAY, (char *)&enabled, sizeof (enabled));
 	}
 #if HAVE_LIB_SSL
 	sock->is_ssl = s->is_ssl;
