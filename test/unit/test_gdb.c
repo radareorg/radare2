@@ -1820,7 +1820,8 @@ static bool test_gdb_io_monitor_output(void) {
 	mu_assert_eq (listen (lfd, 1), 0, "listen for monitor connection");
 	mu_assert_eq (getsockname (lfd, (struct sockaddr *)&sa, &salen), 0, "get monitor listener port");
 	const char *replies[] = {
-		"PacketSize=1000;QStartNoAckMode+", "OK", "QC1", "vCont;c;C;s;S", "OK", "OK", "l/bin/test", NULL
+		"PacketSize=1000;QStartNoAckMode+;qXfer:exec-file:read+",
+		"OK", "QC1", "vCont;c;C;s;S", "OK", "OK", "l/bin/test", NULL
 	};
 	Stub stub;
 	RThread *th = stub_start (&stub, -1, lfd, replies);
