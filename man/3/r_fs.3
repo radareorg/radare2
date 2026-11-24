@@ -211,6 +211,36 @@ For allocation ranges, logical is the volume-relative offset.
 FAT allocation maps exclude reserved sectors, FAT copies and the fixed root
 region. ORPHAN requires a complete walk of live directory ownership and
 selects allocated clusters without a live owner; it differs from FREE.
+.Sh JOURNAL RECOVERY
+The ext2 plugin also reads internal ext3 JBD and ext4 JBD2 journals through
+plugin commands. It scans retained checkpointed records as well as the active
+log, validates commit records and available journal checksums, applies retained revoke
+records, and restores escaped block headers. Journal records are never replayed
+into the mounted filesystem.
+.Bd -literal -offset indent
+m:ext2 journalj /root
+m:ext2 journal-inodesj /root
+m:ext2 journal /root 100 1234 recovered-block
+m:ext2 journal-inodej /root 100 13
+m:ext2 journal-inode /root 100 13 recovered-inode
+m:ext2 journal-recover /root 100 13 recovered-file
+.Ed
+The first command lists retained block versions with transaction sequence,
+filesystem block, journal block, revocation and checksum information. The next
+commands inspect or extract specific block or inode versions. The journal-inodes
+command lists retained inode-table records and accepts an optional transaction
+sequence filter. It
+uses the current filesystem's inode-table layout to identify those records.
+File recovery uses the latest retained block versions at or before the selected transaction;
+that transaction must itself be present and committed. Missing metadata or data
+stops recovery and retains the verified prefix. Symlinks are recovered as target
+text, and sparse or unwritten extents read as zeros.
+.Pp
+File recovery reads data only from the journal. Default ordered/writeback
+journals normally contain metadata, so finding an older inode does not guarantee
+that its file contents can be recovered. Current image bytes are not substituted
+for missing historical data. Unsupported external journals and fast commits are
+reported explicitly. Use m:ext2? for command help.
 .Sh SHELL
 .Ft bool
 .Fn r_fs_shell "RFSShell *shell" "RFS *fs" "const char *root"

@@ -407,7 +407,7 @@ grub_ext2_read_block(grub_fshelp_node_t node, grub_disk_addr_t fileblock) {
 
 		if (--i >= 0) {
 			fileblock -= grub_le_to_cpu32 (ext[i].block);
-			if (fileblock >= grub_le_to_cpu16 (ext[i].len)) {
+			if (grub_le_to_cpu16 (ext[i].len) > 32768 || fileblock >= grub_le_to_cpu16 (ext[i].len)) {
 				grub_free (buf);
 				return 0;
 			} else {
@@ -420,9 +420,8 @@ grub_ext2_read_block(grub_fshelp_node_t node, grub_disk_addr_t fileblock) {
 				return fileblock + start;
 			}
 		} else {
-			grub_error (GRUB_ERR_BAD_FS, "something wrong with extent");
 			grub_free (buf);
-			return -1;
+			return 0;
 		}
 	}
 	/* Direct blocks.  */
@@ -569,7 +568,7 @@ grub_ext2_read_inode(struct grub_ext2_data *data,
 }
 
 static struct grub_ext2_data *
-grub_ext2_mount(grub_disk_t disk) {
+grub_ext2_mount_data(grub_disk_t disk, int read_root) {
 	struct grub_ext2_data *data;
 
 	data = grub_malloc (sizeof (struct grub_ext2_data));
@@ -618,9 +617,11 @@ grub_ext2_mount(grub_disk_t disk) {
 
 	data->inode = &data->diropen.inode;
 
-	grub_ext2_read_inode (data, 2, data->inode);
-	if (grub_errno) {
-		goto fail;
+	if (read_root) {
+		grub_ext2_read_inode (data, 2, data->inode);
+		if (grub_errno) {
+			goto fail;
+		}
 	}
 
 	return data;
@@ -632,6 +633,10 @@ fail:
 
 	grub_free (data);
 	return 0;
+}
+
+static struct grub_ext2_data *grub_ext2_mount(grub_disk_t disk) {
+	return grub_ext2_mount_data (disk, 1);
 }
 
 static char *
@@ -777,6 +782,33 @@ grub_ext2_iterate_dir(grub_fshelp_node_t dir,
 	}
 
 	return 0;
+}
+
+grub_err_t grub_ext2_open_inode(struct grub_file *file, grub_uint32_t ino, const void *inode) {
+	grub_errno = GRUB_ERR_NONE;
+	struct grub_ext2_data *data = grub_ext2_mount_data (file->device->disk, 0);
+	if (!data) {
+		return grub_errno;
+	}
+	if (!ino || ino > 0x7fffffff || ino > grub_le_to_cpu32 (data->sblock.total_inodes)) {
+		grub_free (data);
+		return grub_error (GRUB_ERR_BAD_FS, "invalid inode number");
+	}
+	if (inode) {
+		grub_memcpy (data->inode, inode, sizeof (*data->inode));
+	} else {
+		grub_ext2_read_inode (data, ino, data->inode);
+	}
+	if (grub_errno) {
+		grub_free (data);
+		return grub_errno;
+	}
+	data->diropen.ino = ino;
+	data->diropen.inode_read = 1;
+	file->size = grub_ext2_inode_size (data->inode);
+	file->data = data;
+	file->offset = 0;
+	return GRUB_ERR_NONE;
 }
 
 /* Open a file named NAME and initialize FILE.  */

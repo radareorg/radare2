@@ -41,6 +41,8 @@ compiler and does not load a kernel module or access kernel memory.
    another matching build.
  * To check ext2 deleted-inode recovery and damaged block maps, run
    `python3 test/scripts/test-ext2-io.py` after building.
+ * To check ext3/ext4 journal checksums, retained inode versions and file recovery,
+   run `python3 test/scripts/test-ext-journal.py` after building.
  * To check HTTP sandbox enforcement on a local server, use `make http-sandbox`
    after building and installing this checkout. This requires Python 3 and
    permission to open localhost sockets.

@@ -1,0 +1,132 @@
+NAME=ext3 journal recovers committed inode and file data
+FILE=gzip://bins/fs/ext-journal/ext3.img.gz
+CMDS=<<EOF2
+e log.level=0
+m:ext2 journal /root~[0,3]
+m:ext2 journal-inodej /root 100 13~{size}
+m:ext2 journal-recover /root 100 13 -
+EOF2
+EXPECT=<<EOF2
+99 committed
+100 committed
+101 committed
+102 revoked
+102 revoked
+28
+Deleted through the journal
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=ext3 journal verifies legacy transaction checksums
+FILE=gzip://bins/fs/ext-journal/ext3-crc.img.gz
+CMDS=<<EOF2
+e log.level=0
+m:ext2 journal-recover /root 100 13 -
+EOF2
+EXPECT=<<EOF2
+Deleted through the journal
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=ext4 journal checksum v2 recovers historical extent inode data
+FILE=gzip://bins/fs/ext-journal/ext4-v2.img.gz
+CMDS=<<EOF2
+e log.level=0
+m:ext2 journal-inodej /root 100 13~{flags}
+m:ext2 journal-recover /root 100 13 -
+EOF2
+EXPECT=<<EOF2
+524288
+Deleted through the journal
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=ext4 journal checksum v3 recovers historical extent inode data
+FILE=gzip://bins/fs/ext-journal/ext4-v3.img.gz
+CMDS=<<EOF2
+e log.level=0
+m:ext2 journal-inodej /root 100 13~{size}
+m:ext2 journal-recover /root 100 13 -
+EOF2
+EXPECT=<<EOF2
+28
+Deleted through the journal
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=journal recovery excludes revoked and uncommitted versions
+FILE=gzip://bins/fs/ext-journal/ext4-v3.img.gz
+CMDS=<<EOF2
+e log.level=0
+m:ext2 journal /root 102 3501 -
+m:ext2 journal /root 103 3502 -
+echo done
+EOF2
+EXPECT=<<EOF2
+done
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=journal transaction crosses the end of the ring
+FILE=gzip://bins/fs/ext-journal/ext4-wrap.img.gz
+CMDS=<<EOF2
+e log.level=0
+m:ext2 journal /root~[0,3]
+EOF2
+EXPECT=<<EOF2
+4294967295 committed
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=journal revocations across the ring apply to retained data
+FILE=gzip://bins/fs/ext-journal/ext4-wrap-revoke.img.gz
+CMDS=<<EOF2
+e log.level=0
+m:ext2 journal /root~[0,3]
+m:ext2 journal /root 0xffffffff 3500 -
+echo done
+EOF2
+EXPECT=<<EOF2
+4294967295 revoked
+4294967295 revoked
+done
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=journal recovery rejects invalid numeric arguments
+FILE=gzip://bins/fs/ext-journal/ext4-v3.img.gz
+CMDS=<<EOF2
+e log.level=0
+m:ext2 journal /root 1/0 3500 -
+m:ext2 journal /root "" 3500 -
+m:ext2 journal /root -1 3500 -
+m:ext2 journal /root 101 1/0 -
+m:ext2 journal /root 101 -1 -
+echo done
+EOF2
+EXPECT=<<EOF2
+done
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=journal inode discovery lists retained versions without known IDs
+FILE=gzip://bins/fs/ext-journal/ext4-v3.img.gz
+CMDS=<<EOF2
+e log.level=0
+m:ext2 journal-inodes /root 100~[0,1,2]
+m:ext2 journal-inodesj /root 99
+EOF2
+EXPECT=<<EOF2
+100 13 28
+[]
+EOF2
+EXPECT_ERR=
+RUN

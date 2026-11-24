@@ -20,10 +20,10 @@ if get_option('use_zip')
   r_fs_sources += [ 'p/fs_zip.c' ]
 endif
 
-r_fs_deps = [ r_util_dep, r_socket_dep ]
+r_fs_deps = [ r_util_dep, r_socket_dep, r_muta_dep ]
 r_fs_cflags = [ library_cflags ]
 if get_option('blob')
-  r_fs_static_deps = [ r_util_static_dep, r_socket_static_dep ]
+  r_fs_static_deps = [ r_util_static_dep, r_socket_static_dep, r_muta_static_dep ]
 endif
 
 grub_inc = []

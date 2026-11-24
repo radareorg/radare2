@@ -55,12 +55,19 @@ grub_disk_t grubfs_disk(void *data) {
 	return disk;
 }
 
+void grubfs_disk_free(struct grub_disk *disk) {
+	if (disk) {
+		free (disk->dev);
+		free (disk);
+	}
+}
+
 void grubfs_free(GrubFS *gf) {
 	if (gf) {
 		if (gf->file && gf->file->device) {
 			free (gf->file->device->disk);
+			free (gf->file->device);
 		}
-		// free (gf->file->device);
 		free (gf->file);
 		free (gf);
 	}

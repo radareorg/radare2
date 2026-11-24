@@ -819,7 +819,7 @@ R_API RList *r_fs_partitions(RFS *fs, const char *ptype, ut64 delta) {
 				gpt->iterate (disk,
 					(void *)partitions[i].iterate, list);
 			}
-			grubfs_free (disk);
+			grubfs_disk_free (disk);
 		} else {
 #else
 		{

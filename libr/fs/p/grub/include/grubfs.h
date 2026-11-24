@@ -18,6 +18,7 @@ grub_disk_t grubfs_disk (void *data);
 void grubfs_disk_free (struct grub_disk *gd);
 
 extern struct grub_fs grub_ext2_fs;
+grub_err_t grub_ext2_open_inode(struct grub_file *file, grub_uint32_t ino, const void *inode);
 extern struct grub_fs grub_ntfs_fs;
 extern struct grub_fs grub_ntfscomp_fs;
 extern struct grub_fs grub_reiserfs_fs;

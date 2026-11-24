@@ -258,6 +258,7 @@ static void details_ext2(RFSRoot *root, RStrBuf *sb) {
 
 #if WITH_GPL
 #include "fs_ext2_forensic.inc.c"
+#include "fs_ext_journal.inc.c"
 #endif
 
 RFSPlugin r_fs_plugin_ext2 = {
@@ -275,8 +276,9 @@ RFSPlugin r_fs_plugin_ext2 = {
 	.open_id = FSP(_forensic_open_id),
 	.extents = FSP(_forensic_extents),
 	.ranges = FSP(_forensic_ranges),
-	.mount = FSP(_forensic_mount),
+	.mount = ext_journal_mount,
 	.umount = FSP(_umount),
 	.details = FSP(details),
+	.cmd = ext_journal_command,
 #endif
 };

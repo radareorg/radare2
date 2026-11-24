@@ -47,6 +47,7 @@ static RCoreHelpMessage help_msg_mcolon = {
 	"Usage:", "m:", "[plugin-command]",
 	"m:", "", "list the fs plugins",
 	"m:", "posix", "run the command associated with the 'posix' fs plugin",
+	"m:", "ext2?", "inspect and recover ext3/ext4 journal history",
 	NULL
 };
 
