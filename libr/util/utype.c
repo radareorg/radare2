@@ -345,30 +345,66 @@ static ut64 type_ptr_bitsize(Sdb *R_NONNULL TDB) {
 // how many nested structs, unions or typedefs a measurement follows before giving up
 #define TYPE_CHAIN_MAX 32
 
-static bool type_array_parse(char *type, ut64 *elements) {
-	*elements = 1;
-	char *array = strchr (type, '[');
-	if (!array) {
-		return true;
-	}
-	const bool pointee = memchr (type, ')', array - type) && memchr (type, '*', array - type);
-	const char *extent = array;
+static const char *type_array_extents(const char *extent, ut64 *elements) {
 	while (*extent == '[') {
 		const char *number = r_str_trim_head_ro (extent + 1);
 		if (!isdigit ((ut8)*number)) {
-			return false;
+			return NULL;
 		}
 		char *end;
 		errno = 0;
 		ut64 count = strtoull (number, &end, 0);
 		extent = r_str_trim_head_ro (end);
 		if (errno == ERANGE || !count || *extent != ']'
-			|| (!pointee && r_mul_overflow (*elements, count, elements))) {
-			return false;
+			|| (elements && r_mul_overflow (*elements, count, elements))) {
+			return NULL;
 		}
 		extent = r_str_trim_head_ro (extent + 1);
 	}
-	if (*extent && !(*extent == ')' && memchr (type, '(', array - type) && memchr (type, '*', array - type))) {
+	return extent;
+}
+
+static const char *type_array_pointer_suffix(const char *suffix) {
+	suffix = r_str_trim_head_ro (suffix);
+	if (*suffix != '(') {
+		return type_array_extents (suffix, NULL);
+	}
+	size_t depth = 0;
+	do {
+		if (*suffix == '(') {
+			depth++;
+		} else if (*suffix == ')') {
+			depth--;
+		}
+		suffix++;
+	} while (*suffix && depth);
+	return depth? NULL: r_str_trim_head_ro (suffix);
+}
+
+static bool type_array_parse(char *type, ut64 *elements) {
+	*elements = 1;
+	char *array = strchr (type, '[');
+	if (!array) {
+		return true;
+	}
+	const bool pointer = memchr (type, '*', array - type);
+	const char *paren = pointer? memchr (type, '(', array - type): NULL;
+	bool pointee = false;
+	size_t depth = 0;
+	for (; paren && paren < array; paren++) {
+		if (*paren == '(') {
+			depth++;
+		} else if (*paren == ')' && depth) {
+			pointee = true;
+			depth--;
+		}
+	}
+	const char *extent = type_array_extents (array, pointee? NULL: elements);
+	while (depth && extent && *extent == ')') {
+		extent = type_array_pointer_suffix (extent + 1);
+		depth--;
+	}
+	if (depth || !extent || *extent) {
 		return false;
 	}
 	*array = 0;
