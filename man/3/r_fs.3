@@ -236,6 +236,12 @@ For allocation ranges, logical is the volume-relative offset.
 FAT allocation maps exclude reserved sectors, FAT copies and the fixed root
 region. ORPHAN requires a complete walk of live directory ownership and
 selects allocated clusters without a live owner; it differs from FREE.
+UNWRITTEN selects allocated ext4 blocks covered by unwritten extents of live
+files; these ranges also carry R_FS_RANGE_ALLOCATED and expose the stale
+physical bytes. Holes occupy no volume space, so allocation ranges never
+report R_FS_RANGE_SPARSE. There is no fs.sparse search mode, and
+.Ic search.in
+fs modes skip any range whose physical offset is UT64_MAX.
 .Sh FILESYSTEM ZOOM
 Use
 .Ic pzg
