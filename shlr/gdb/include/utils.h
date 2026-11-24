@@ -12,6 +12,7 @@ uint64_t unpack_uint64_co(char* buff, int len);
 int unpack_hex(const char* src, ut64 len, char* dst);
 int pack_hex(const char* src, ut64 len, char* dst);
 int hex2int(int ch);
+const char *gdbr_parse_hex_value(const char *digits, ut64 *result);
 int int2hex(int i);
 int write_thread_id(char *dest, int len, int pid, int tid, bool multiprocess);
 int read_thread_id(const char *src, int *pid, int *tid, bool multiprocess);
