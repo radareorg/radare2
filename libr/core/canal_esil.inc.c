@@ -689,7 +689,6 @@ static void getpcfromstack(RCore *core, REsil *esil) {
 	ut64 cur;
 	ut64 size;
 	int idx;
-	REsil esil_cpy;
 	RAnalOp op = {0};
 	ut8 *buf = NULL;
 	char *tmp_esil_str = NULL;
@@ -700,8 +699,12 @@ static void getpcfromstack(RCore *core, REsil *esil) {
 		return;
 	}
 
-	memcpy (&esil_cpy, esil, sizeof (esil_cpy));
-	ut64 addr = cur = esil_cpy.cur;
+	// no memcpy of the vm: hooks run while parsing can free what it owns
+	const ut64 esil_addr = esil->addr;
+	const ut64 esil_old = esil->old;
+	const ut8 esil_lastsz = esil->lastsz;
+	bool is_thunk = false;
+	ut64 addr = cur = esil->cur;
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 	if (!fcn) {
 		return;
@@ -751,12 +754,12 @@ static void getpcfromstack(RCore *core, REsil *esil) {
 		goto err_anal_op;
 	}
 
-	snprintf (tmp_esil_str, tmp_esil_str_len - 1, "%20" PFMT64u "%s", esil_cpy.old, &esilstr[strlen (spname) + 4]);
+	snprintf (tmp_esil_str, tmp_esil_str_len - 1, "%20" PFMT64u "%s", esil_old, &esilstr[strlen (spname) + 4]);
 	r_str_trim (tmp_esil_str);
 	idx += op.size;
-	r_esil_set_pc (&esil_cpy, cur);
-	r_esil_parse (&esil_cpy, tmp_esil_str);
-	r_esil_stack_free (&esil_cpy);
+	r_esil_set_pc (esil, cur);
+	r_esil_parse (esil, tmp_esil_str);
+	r_esil_stack_free (esil);
 	free (tmp_esil_str);
 
 	cur = addr + idx;
@@ -769,16 +772,21 @@ static void getpcfromstack(RCore *core, REsil *esil) {
 	r_asm_set_pc (core->rasm, cur);
 
 	esilstr = R_STRBUF_SAFEGET (&op.esil);
-	r_esil_set_pc (&esil_cpy, cur);
+	r_esil_set_pc (esil, cur);
 	if (R_STR_ISEMPTY (esilstr)) {
 		goto err_anal_op;
 	}
-	r_esil_parse (&esil_cpy, esilstr);
-	r_esil_stack_free (&esil_cpy);
-
-	memcpy (esil, &esil_cpy, sizeof (esil_cpy));
+	r_esil_parse (esil, esilstr);
+	r_esil_stack_free (esil);
+	is_thunk = true;
 
  err_anal_op:
+	if (!is_thunk) {
+		esil->addr = esil_addr;
+		esil->old = esil_old;
+		esil->cur = addr;
+		esil->lastsz = esil_lastsz;
+	}
 	r_anal_op_fini (&op);
 	free (buf);
 }
