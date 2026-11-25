@@ -2608,6 +2608,9 @@ static bool is_flag(const char *p) {
 			while (*p && *p != 'm') {
 				p++;
 			}
+			if (!*p) {
+				break;
+			}
 		}
 		p++;
 	}
