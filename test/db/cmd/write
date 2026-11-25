@@ -649,6 +649,25 @@ hello(c)
 EOF
 RUN
 
+NAME=wcf bounds of the cached writes
+FILE=malloc://8
+CMDS=<<EOF
+w ABCDEFGH
+e io.cache=true
+wx 5a0a @ 6
+wx 4141414141414141 @ 0xfffffffffffffff8
+wcf .tmp_wcf_bounds
+cat .tmp_wcf_bounds
+rm .tmp_wcf_bounds
+EOF
+EXPECT=<<EOF
+ABCDEFZ
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Out of bounds patch at 0xfffffffffffffff8
+EOF
+RUN
+
 NAME=wx pcache
 FILE=bins/pe/b.exe
 

@@ -1512,7 +1512,7 @@ static void cmd_wcf(RCore *core, const char *dfn) {
 			const ut64 ps = r_itv_size (c->itv);
 			const ut64 va = r_itv_begin (c->itv);
 			const ut64 pa = __va2pa (core, va);
-			if (pa + ps < sfs) {
+			if (ps <= sfs && pa <= sfs - ps) {
 				memcpy (sfb + pa, c->data, ps);
 			} else {
 				R_LOG_ERROR ("Out of bounds patch at 0x%08"PFMT64x, pa);
