@@ -55,6 +55,7 @@ typedef struct r_log_t {
 	bool show_source;
 	bool show_ts;
 	bool iterating; // true while iterating cbs, prevents modification
+	bool fini_pending; // r_log_fini called from a callback, finalize after iterating
 	RVecRLogCallbackUser *cbs;
 	PrintfCallback cb_printf;
 } RLog;

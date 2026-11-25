@@ -112,7 +112,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=cmd.log cannot finalize the logger while its callbacks run
+NAME=cmd.log defers finalizing the logger until its callbacks return
 FILE=-
 CMDS=<<EOF
 e cfg.sandbox.grain=none

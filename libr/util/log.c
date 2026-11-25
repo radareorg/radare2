@@ -80,7 +80,9 @@ R_API bool r_log_init(void) {
 }
 
 R_API void r_log_fini(void) {
-	if (rlog && !rlog->iterating) {
+	if (rlog && rlog->iterating) {
+		rlog->fini_pending = true;
+	} else if (rlog) {
 		RLog *log = rlog;
 		rlog = NULL;
 		RVecRLogCallbackUser_free (log->cbs);
@@ -187,6 +189,29 @@ R_API void r_log_set_quiet(bool bq) {
 	}
 }
 
+static bool log_run_callbacks(int level, const char *origin, const char *msg) {
+	bool handled = false;
+	const bool was_iterating = rlog->iterating;
+	rlog->iterating = true;
+	RLogCallbackUser *iter;
+	R_VEC_FOREACH (rlog->cbs, iter) {
+		// stop walking once a callback asked to finalize, the remaining users may be gone
+		if (rlog->fini_pending) {
+			break;
+		}
+		if (iter->cb (iter->user, level, origin, msg)) {
+			handled = true;
+			break;
+		}
+	}
+	rlog->iterating = was_iterating;
+	if (!was_iterating && rlog->fini_pending) {
+		r_log_fini ();
+		r_log_init ();
+	}
+	return handled;
+}
+
 R_API bool r_log_match(int level, const char *origin) {
 	if (!r_log_init ()) {
 		return false;
@@ -196,17 +221,8 @@ R_API bool r_log_match(int level, const char *origin) {
 			return false;
 		}
 	}
-	if (rlog->cbs) {
-		RLogCallbackUser *iter;
-		const bool was_iterating = rlog->iterating;
-		rlog->iterating = true;
-		R_VEC_FOREACH (rlog->cbs, iter) {
-			if (iter->cb (iter->user, level, origin, NULL)) {
-				rlog->iterating = was_iterating;
-				return true;
-			}
-		}
-		rlog->iterating = was_iterating;
+	if (rlog->cbs && log_run_callbacks (level, origin, NULL)) {
+		return true;
 	}
 	if (level == R_LOG_LEVEL_HINT && !rlog->hints) {
 		return false;
@@ -220,17 +236,8 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 		return;
 	}
 	vsnprintf (out, sizeof (out), fmt, ap);
-	if (rlog->cbs) {
-		RLogCallbackUser *iter;
-		const bool was_iterating = rlog->iterating;
-		rlog->iterating = true;
-		R_VEC_FOREACH (rlog->cbs, iter) {
-			if (iter->cb (iter->user, level, origin, out)) {
-				rlog->iterating = was_iterating;
-				return;
-			}
-		}
-		rlog->iterating = was_iterating;
+	if (rlog->cbs && log_run_callbacks (level, origin, out)) {
+		return;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
 	if (func && r_str_startswith (func, "./")) {

@@ -2769,7 +2769,6 @@ R_API bool r_core_init(RCore *core) {
 		core->print->flags |= R_PRINT_FLAGS_USEUTF8;
 	}
 	core->cmdlog = NULL;
-	// XXX causes uaf
 	r_log_add_callback (cbcore, core);
 
 	// We save the old num ad user, in order to restore it after free
@@ -2964,7 +2963,6 @@ R_API void r_core_fini(RCore *c) {
 		pending_usr1 = pending_usr2 = 0;
 	}
 #endif
-	r_log_add_callback (cbcore, NULL);
 	r_core_task_cancel_all (c, true);
 	r_core_task_join (&c->tasks, NULL, -1);
 	r_core_wait (c);
