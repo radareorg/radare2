@@ -4517,44 +4517,49 @@ static void cmd_afbt(RCore *core, const char *input) {
 	r_list_free (blocks);
 }
 
+// functions can own blocks anywhere, only mark the bytes inside the section
+static void fcnmap_mark(char *bitmap, ut64 base_addr, ut64 code_size, RAnalFunction *fcn) {
+	RAnalBlock **iter;
+	if (fcn->addr < base_addr || fcn->addr - base_addr >= code_size) {
+		return;
+	}
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		RAnalBlock *b = *iter;
+		ut64 at = 0;
+		ut64 len = b->size;
+		if (b->addr >= base_addr) {
+			at = b->addr - base_addr;
+		} else {
+			const ut64 skip = base_addr - b->addr;
+			len = (len > skip)? len - skip: 0;
+		}
+		if (at < code_size && len > 0) {
+			memset (bitmap + at, '=', R_MIN (len, code_size - at));
+		}
+		bitmap[fcn->addr - base_addr] = 'F';
+	}
+}
+
 static void r_core_anal_nofunclist(RCore *core, const char *input) {
 	int minlen = (int)(input[0] == ' ') ? r_num_math (core->num, input + 1): 16;
 	ut64 code_size = r_num_get (core->num, "$SS");
 	ut64 base_addr = r_num_get (core->num, "$S");
 	ut64 chunk_size, chunk_offset, i;
 	RListIter *iter;
-	RAnalBlock **iter2;
 	RAnalFunction *fcn;
-	RAnalBlock *b;
-	int counter;
 
 	if (minlen < 1) {
 		minlen = 1;
 	}
-	if (code_size < 1) {
+	if (code_size < 1 || code_size > ST32_MAX) {
 		return;
 	}
 	char *bitmap = calloc (1, code_size + 64);
 	if (!bitmap) {
 		return;
 	}
-
-	// for each function
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		// for each basic block in the function
-		R_VEC_FOREACH (&fcn->bbs, iter2) {
-			b = *iter2;
-			// if it is not withing range, continue
-			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr+code_size))
-				continue;
-			// otherwise mark each byte in the BB in the bitmap
-			for (counter = 0; counter < b->size; counter++) {
-				bitmap[b->addr+counter-base_addr] = '=';
-			}
-			// finally, add a special marker to show the beginning of a
-			// function
-			bitmap[fcn->addr-base_addr] = 'F';
-		}
+		fcnmap_mark (bitmap, base_addr, code_size, fcn);
 	}
 
 	// Now we print the list of memory regions that are not assigned to a function
@@ -4596,32 +4601,19 @@ static void r_core_anal_fmap(RCore *core, const char *input) {
 	ut64 code_size = r_num_get (core->num, "$SS");
 	ut64 base_addr = r_num_get (core->num, "$S");
 	RListIter *iter;
-	RAnalBlock **iter2;
 	RAnalFunction *fcn;
-	RAnalBlock *b;
 	int assigned;
 	ut64 i;
 
-	if (code_size < 1) {
+	if (code_size < 1 || code_size > ST32_MAX) {
 		return;
 	}
 	char *bitmap = calloc (1, code_size + 64);
 	if (!bitmap) {
 		return;
 	}
-
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		R_VEC_FOREACH (&fcn->bbs, iter2) {
-			b = *iter2;
-			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr+code_size)) {
-				continue;
-			}
-			int counter = 1;
-			for (counter = 0; counter < b->size; counter++) {
-				bitmap[b->addr+counter-base_addr] = '=';
-			}
-			bitmap[fcn->addr-base_addr] = 'F';
-		}
+		fcnmap_mark (bitmap, base_addr, code_size, fcn);
 	}
 	// print the bitmap
 	assigned = 0;

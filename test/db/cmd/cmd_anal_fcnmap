@@ -1,0 +1,36 @@
+NAME=aau ignores blocks outside the section
+FILE=bins/elf/analysis/armcall
+CMDS=<<EOF
+s section..text
+af+ $$ victim
+afb+ $$ $$ 4
+afb+ $$ $$-0x10000000000 1
+afb+ $$ $$-2 4
+afb+ $$ $$+0x1ea 8
+afb+ $$ $$+0x100000 1
+aau
+EOF
+EXPECT=<<EOF
+0x000102fc     486
+EOF
+RUN
+
+NAME=afM ignores blocks outside the section
+FILE=bins/elf/analysis/armcall
+CMDS=<<EOF
+e scr.color=0
+s section..text
+af+ $$ victim
+afb+ $$ $$ 4
+afb+ $$ $$-0x10000000000 1
+afb+ $$ $$-2 4
+afb+ $$ $$+0x1ea 8
+afb+ $$ $$+0x100000 1
+afM~=,bytes
+EOF
+EXPECT=<<EOF
+0x000102f8  F===............................................................
+0x000104b8  ..........................................==
+6 / 492 (1.22%) bytes assigned to a function
+EOF
+RUN
