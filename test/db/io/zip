@@ -223,3 +223,35 @@ zip://bins/java/example.zip//research_data/experiment/decompiler/dumped_jar_dec/
 zip://bins/java/example.zip//research_data/experiment/decompiler/dumped_jar_dec/c.class
 EOF
 RUN
+
+NAME=zipall:// only maps code files as executable
+FILE=zipall://bins/dex/org.radare.radare2installer.apk
+CMDS=<<EOF
+o~LICENSES,icon.png
+om~fd: 7 +,fd: 12 +
+EOF
+EXPECT=<<EOF
+ 7 - r-x 0x0000684f zip://bins/dex/org.radare.radare2installer.apk//LICENSES
+12 - r-x 0x00000e48 zip://bins/dex/org.radare.radare2installer.apk//res/drawable/icon.png
+- 9 fd: 12 +0x00000000 0x00000000 - 0x00000e47 r-- r--
+- 5 fd: 7 +0x00000000 0x00000000 - 0x0000684e r-x r-x
+EOF
+RUN
+
+NAME=apk:// AndroidManifest.xml is not analyzed as code
+FILE=apk://bins/dex/org.radare.radare2installer.apk
+CMDS=<<EOF
+o
+om
+aar
+axq~^0x00000,^0x00001~?
+EOF
+EXPECT=<<EOF
+ 3 - r-x 0x00001bac zip://bins/dex/org.radare.radare2installer.apk//AndroidManifest.xml
+ 4 * r-x 0x0004680c zip://bins/dex/org.radare.radare2installer.apk//classes.dex
+* 3 fd: 4 +0x0000c6c0 0x00012e18 - 0x00027db7 r-x r-x fmap.code
+- 2 fd: 4 +0x00000000 0x00006758 - 0x0004cf63 r-- r-- fmap.file
+- 1 fd: 3 +0x00000000 0x00000000 - 0x00001bab r-- r--
+0
+EOF
+RUN
