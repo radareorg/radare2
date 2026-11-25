@@ -938,6 +938,59 @@ EXPECT=<<EOF2
 EOF2
 RUN
 
+NAME=obf with a cmd.load that keeps the bin object
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF2
+e cmd.load=?e loaded
+obf
+ob~?
+iI~^arch
+EOF2
+EXPECT=<<EOF2
+loaded
+1
+arch     x86
+EOF2
+RUN
+
+NAME=obf with a cmd.load that deletes the bin object
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF2
+e cmd.load=ob-*
+obf
+ob~?
+EOF2
+EXPECT=<<EOF2
+0
+EOF2
+RUN
+
+NAME=obf with a cmd.esil.step that deletes the bin object (mips gp)
+FILE=bins/elf/mips-mozi
+CMDS=<<EOF2
+e cmd.esil.step=ob-*
+obf
+ob~?
+EOF2
+EXPECT=<<EOF2
+0
+EOF2
+RUN
+
+NAME=obf with bin.libs and a cmd.open that deletes the bin object
+FILE=bins/elf/tls/ext_tls
+CMDS=<<EOF2
+e dir.libs=null://8
+e bin.libs=true
+e cmd.open=ob-*
+obf
+?e alive
+EOF2
+EXPECT=<<EOF2
+alive
+EOF2
+RUN
+
 NAME=obr after aa drops the cached class methods
 FILE=bins/mach0/objc-employee
 CMDS=<<EOF2

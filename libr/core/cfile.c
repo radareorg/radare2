@@ -991,6 +991,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	desc = r->io->desc;
 	RBinFile *binfile = r_bin_cur (r->bin);
 	const int binfile_fd = binfile? binfile->fd: -1;
+	const ut32 binfile_id = binfile? binfile->id: UT32_MAX;
 	RBinPlugin *bp = R_UNWRAP5 (r, bin, cur, bo, plugin);
 	if (bp) {
 		char msg[2];
@@ -1025,6 +1026,9 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	if (has_cmd_load) {
 		r_core_cmd (r, cmd_load, 0);
 		desc = r->io->desc;
+		// the hook may have deleted the binfile
+		binfile = r_bin_file_find_by_id (r->bin, binfile_id);
+		plugin = r_bin_file_cur_plugin (binfile);
 	}
 
 	if (desc && plugin && plugin->meta.name) {
@@ -1082,7 +1086,11 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	if (r_config_get_b (r->config, "bin.libs")) {
 		const char *lib;
 		RListIter *iter;
-		RList *libs = r_bin_get_libs (r->bin);
+		// loading libraries runs cmd.open and cmd.load, which may delete the binfile owning this list
+		RList *libs = r_list_newf (free);
+		r_list_foreach (r_bin_get_libs (r->bin), iter, lib) {
+			r_list_append (libs, strdup (lib));
+		}
 		r_list_foreach (libs, iter, lib) {
 			if (file_is_loaded (r, lib)) {
 				continue;
@@ -1093,6 +1101,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 				r_core_file_loadlib (r, lib, baddr);
 			}
 		}
+		r_list_free (libs);
 		r_core_cmd0 (r, "obb 0;s entry0");
 		r_config_set_i (r->config, "bin.at", true);
 		R_LOG_INFO ("[bin.libs] Linking imports");
@@ -1122,7 +1131,10 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			}
 		}
 		}
-		bool is_core = false;
+	// load_gp and bin.libs run commands that may delete the binfile
+	binfile = r_bin_file_find_by_id (r->bin, binfile_id);
+	plugin = r_bin_file_cur_plugin (binfile);
+	bool is_core = false;
 	if (plugin && plugin->info) {
 		RBinInfo *info = plugin->info (binfile);
 		if (info && info->type) {
