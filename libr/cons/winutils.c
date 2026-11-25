@@ -201,10 +201,9 @@ static int win_hprint(RCons *cons, DWORD hdl, const char *ptr, int len, bool vmo
 				if (vmode) {
 					int wlen = cols - linelen - 1;
 					char white[1024];
-					//wlen = 5;
 					if (wlen > 0) {
 						memset (white, ' ', sizeof (white));
-						write (fd, white, wlen);
+						write (fd, white, R_MIN (wlen, sizeof (white)));
 					}
 				}
 				write (fd, "\n\r", 2);
@@ -432,7 +431,7 @@ static int win_hprint(RCons *cons, DWORD hdl, const char *ptr, int len, bool vmo
 		if (wlen > 0) {
 			char white[1024];
 			memset (white, ' ', sizeof (white));
-			write (fd, white, wlen);
+			write (fd, white, R_MIN (wlen, sizeof (white)));
 		}
 		/* fill tail */
 		__fill_tail (cols, lines);
