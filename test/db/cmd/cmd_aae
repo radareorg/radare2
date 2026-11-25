@@ -339,3 +339,64 @@ EXPECT_ERR=<<EOF
 ERROR: Cannot reinitialize the ESIL VM while it is in use
 EOF
 RUN
+
+NAME=aae resolves get-pc thunk ending in ret imm16
+FILE=malloc://64
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx e80b0000008d431b90909090909090908b1c24c20000
+w hello world @ 0x20
+af @ 0x10
+af
+aae 8
+axf @ 5
+EOF
+EXPECT=<<EOF
+STRN 0x20 str.hello_world
+EOF
+RUN
+
+NAME=aae resolves get-pc thunk ending in repz ret
+FILE=malloc://64
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx e80b0000008d431b90909090909090908b1c24f3c3
+w hello world @ 0x20
+af @ 0x10
+af
+aae 8
+axf @ 5
+EOF
+EXPECT=<<EOF
+STRN 0x20 str.hello_world
+EOF
+RUN
+
+NAME=aae ignores thunk loading from a non stack register
+FILE=malloc://64
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx e80b0000008d431b90909090909090908b18c3
+w hello world @ 0x20
+af @ 0x10
+af
+aae 8
+axf @ 5~[1]
+EOF
+EXPECT=<<EOF
+0x1b
+EOF
+RUN
+
+NAME=aae resolves pic string through __x86.get_pc_thunk.si
+FILE=bins/elf/abcde-qt32
+CMDS=<<EOF
+af @ main
+af @ sym.__x86.get_pc_thunk.si
+aae $FS @ main
+axf @ 0x08049254~[0,1]
+EOF
+EXPECT=<<EOF
+STRN 0x804a02c
+EOF
+RUN

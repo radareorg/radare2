@@ -4,6 +4,7 @@
 #include <r_anal.h>
 #include <r_core.h>
 #include <r_lib.h>
+#include "getpc.inc.c"
 
 #if USE_SYS_ZYDIS
 #include <Zydis/Zydis.h>
@@ -2139,13 +2140,11 @@ static void anop_esil(RArchSession *as, RAnalOp *op, const ZydisDecodedInstructi
 		if (bits == 32 && op0 && op0->type == ZYDIS_OPERAND_TYPE_IMMEDIATE) {
 			const ut64 target = zydis_imm_value (insn, op0, op->addr);
 			const ut64 retaddr = op->addr + op->size;
-			ut8 thunk[4] = {0};
+			ut8 thunk[X86_GETPC_THUNK_SIZE] = {0};
 			RBin *bin = as->arch->binb.bin;
-			if (bin && bin->iob.read_at && bin->iob.read_at (bin->iob.io, target, thunk, sizeof (thunk)) == sizeof (thunk)) {
-				if (thunk[0] == 0x8b && thunk[3] == 0xc3
-						&& (thunk[1] & 0xc7) == 4
-						&& (thunk[2] & 0x3f) == 0x24) {
-					ut8 reg = (thunk[1] & 0x38) >> 3;
+			if (bin && bin->iob.read_at && bin->iob.read_at (bin->iob.io, target, thunk, sizeof (thunk)) >= 4) {
+				const int reg = x86_getpc_thunk_reg (thunk);
+				if (reg >= 0) {
 					esilprintf (op, "0x%"PFMT64x",%s,=", retaddr, reg32_to_name (reg));
 					break;
 				}

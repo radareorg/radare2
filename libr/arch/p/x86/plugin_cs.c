@@ -40,6 +40,7 @@ call = 4
 	R_SYS_BITS_CHECK (as->config->bits, 32)? CS_MODE_32: \
 	R_SYS_BITS_CHECK (as->config->bits, 16)? CS_MODE_16: 0
 #include "../capstone.inc.c"
+#include "getpc.inc.c"
 
 typedef struct plugin_data_t {
 	CapstonePluginData cpd;
@@ -1960,18 +1961,12 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		{
 			arg0 = getarg (&gop, 0, 0, NULL, NULL);
 			if (bits != 16) {
-				ut8 thunk[4] = {0};
+				ut8 thunk[X86_GETPC_THUNK_SIZE] = {0};
 #if ARCH_HAVE_READ
 				RBin *bin = as->arch->binb.bin;
-				if (bin && bin->iob.read_at (bin->iob.io, (ut64)INSOP (0).imm, thunk, sizeof (thunk)) == sizeof (thunk)) {
-					/* Handle CALL ebx_pc (callpop)
-					   8b xx x4    mov <reg>, dword [esp]
-					   c3          ret
-					*/
-					if (thunk[0] == 0x8b && thunk[3] == 0xc3
-							&& (thunk[1] & 0xc7) == 4        /* 00rrr100 */
-							&& (thunk[2] & 0x3f) == 0x24) {  /* --100100: ignore scale in SIB byte */
-						ut8 reg = (thunk[1] & 0x38) >> 3;
+				if (bin && bin->iob.read_at (bin->iob.io, (ut64)INSOP (0).imm, thunk, sizeof (thunk)) >= 4) {
+					const int reg = x86_getpc_thunk_reg (thunk);
+					if (reg >= 0) {
 						esilprintf (op, "0x%"PFMT64x",%s,=", addr + op->size, reg32_to_name (reg));
 						free (arg0);
 						break;

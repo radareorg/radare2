@@ -4167,3 +4167,29 @@ EXPECT=<<EOF
 |           ; arg signed int arg_8h  { >= 0x1 && <= 0x3 || >= 0x1 && <= 0x5 } @ ebp+0x8
 EOF
 RUN
+
+NAME=x86 call to get-pc thunk variants
+FILE=malloc://64
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx e80b000000
+wx 8b1c24c3 @ 0x10
+ao~esil:
+wx 8b1c24c20000 @ 0x10
+ao~esil:
+wx 8b3424f3c3 @ 0x10
+ao~esil:
+wx 8b1c24c20400 @ 0x10
+ao~esil:
+e asm.arch=x86.zydis
+wx 8b1c24f3c3 @ 0x10
+ao~esil:
+EOF
+EXPECT=<<EOF
+esil: 0x5,ebx,=
+esil: 0x5,ebx,=
+esil: 0x5,esi,=
+esil: 16,eip,4,esp,-=,esp,=[4],eip,=
+esil: 0x5,ebx,=
+EOF
+RUN
