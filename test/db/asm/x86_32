@@ -1725,10 +1725,14 @@ a "pop ss" 17
 aB "por mm0, qword [eax]" 0feb00
 aB "por xmm0, xmmword [eax]" 660feb00
 a "prefetch byte [eax]" 0f0d
-aB "prefetchnta byte [eax]" 0f1800
-aB "prefetcht0 byte [eax]" 0f1808
-aB "prefetcht1 byte [eax]" 0f1810
-aB "prefetcht2 byte [eax]" 0f1818
+a "prefetchnta byte [eax]" 0f1800
+a "prefetcht0 byte [eax]" 0f1808
+a "prefetcht1 byte [eax]" 0f1810
+a "prefetcht2 byte [eax]" 0f1818
+a "prefetchnta [eax]" 0f1800
+a "prefetcht0 byte [ebp]" 0f184d00
+a "prefetcht1 [esp+ecx*4+0x20]" 0f18548c20
+a "prefetcht2 [0x12345678]" 0f181d78563412
 aB "psadbw mm0, qword [eax]" 0ff600
 aB "psadbw xmm0, xmmword [eax]" 660ff600
 aB "pshufb mm0, qword [eax]" 0f380000

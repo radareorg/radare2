@@ -110,6 +110,30 @@ ERROR: Cannot assemble 'lock mov dword [rax], ecx' at line 1
 EOF
 RUN
 
+NAME=x86 prefetch needs one byte memory operand with an encodable address
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+pa prefetcht1 rax
+pa prefetcht0 0x1000
+pa prefetchnta word [rax]
+pa prefetcht1 tbyte [rax]
+pa prefetcht2 [rax], [rbx]
+pa prefetcht1 [rax+0x80000000]
+pa prefetcht1 [rax+rcx*3]
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'prefetcht1 rax' at line 1
+ERROR: Cannot assemble 'prefetcht0 0x1000' at line 1
+ERROR: Cannot assemble 'prefetchnta word [rax]' at line 1
+ERROR: Cannot assemble 'prefetcht1 tbyte [rax]' at line 1
+ERROR: Cannot assemble 'prefetcht2 [rax], [rbx]' at line 1
+ERROR: Cannot assemble 'prefetcht1 [rax+0x80000000]' at line 1
+ERROR: Cannot assemble 'prefetcht1 [rax+rcx*3]' at line 1
+EOF
+RUN
+
 NAME=Invalid x86 64bit inc with a 64-bit address over a signed disp32
 FILE=-
 CMDS=<<EOF
