@@ -169,7 +169,7 @@ static int oprep(RArchSession *a, ut8 *data, const Opcode *op);
 static int op_reg_mem(int bits, ut8 *data, const Operand *reg, const Operand *mem, ut8 opcode);
 static bool use_op_reg_mem(int bits, const Operand *mem);
 static int encode_mem(ut8 *data, int reg, const Operand *mem, ut8 *rex);
-static int op_rm_ext(int bits, ut8 *data, const Operand *rm, int ext, ut8 opcode8, ut8 opcode);
+static int op_rm_ext(int bits, ut8 *data, const Operand *rm, int ext, ut16 opcode8, ut16 opcode);
 static int op_rm_near(int bits, ut8 *data, const Operand *rm, int ext, ut8 opcode);
 static int op_alu_imm(int bits, ut8 *data, const Opcode *op, int ext);
 
@@ -3042,7 +3042,7 @@ static bool use_op_reg_mem(int bits, const Operand *mem) {
 
 // opcode /ext with a general purpose register or memory operand in 32 or 64-bit mode,
 // opcode8 for byte operands. A memory operand without a size takes the address size.
-static int op_rm_ext(int bits, ut8 *data, const Operand *rm, int ext, ut8 opcode8, ut8 opcode) {
+static int op_rm_ext(int bits, ut8 *data, const Operand *rm, int ext, ut16 opcode8, ut16 opcode) {
 	ut8 modrm[16];
 	ut8 rex = 0;
 	int n = 1;
@@ -3111,9 +3111,26 @@ static int op_rm_ext(int bits, ut8 *data, const Operand *rm, int ext, ut8 opcode
 		}
 		data[l++] = 0x40 | rex;
 	}
-	data[l++] = (size == OT_BYTE)? opcode8: opcode;
+	const ut16 code = (size == OT_BYTE)? opcode8: opcode;
+	if (code > UT8_MAX) {
+		data[l++] = code >> 8;
+	}
+	data[l++] = code;
 	memcpy (data + l, modrm, n);
 	return l + n;
+}
+
+static int opprefetch(RArchSession *a, ut8 *data, const Opcode *op) {
+	const Operand *src = &op->operands[0];
+	if (op->operands_count != 1 || !(src->type & OT_MEMORY)
+			|| (src->dest_size && src->dest_size != OT_BYTE)) {
+		return -1;
+	}
+	Operand mem = *src;
+	mem.dest_size = OT_BYTE;
+	const char *suffix = op->mnemonic + 8;
+	const int hint = !r_str_casecmp (suffix, "nta")? 0: suffix[1] - '0' + 1;
+	return op_rm_ext (a->config->bits, data, &mem, hint, 0x0f18, 0x0f18);
 }
 
 // push, pop, call and jmp with a register or memory operand: the stack width needs no REX.W
@@ -4307,7 +4324,7 @@ static int opset(RArchSession *a, ut8 *data, const Opcode *op) {
 		return -1;
 	}
 	if (a->config->bits != 16) {
-		// setcc always writes a byte: op_rm_ext adds REX, SIB and displacement, then 0x0f goes before the opcode
+		// setcc always writes a byte
 		Operand rm = op->operands[0];
 		if (rm.type & OT_MEMORY) {
 			if (rm.dest_size & ALL_SIZE & ~OT_BYTE) {
@@ -4317,20 +4334,8 @@ static int opset(RArchSession *a, ut8 *data, const Opcode *op) {
 		} else if (!(rm.type & OT_BYTE)) {
 			return -1;
 		}
-		ut8 enc[16];
-		const ut8 cc = data[1];
-		int n = op_rm_ext (a->config->bits, enc, &rm, 0, cc, cc);
-		if (n < 0) {
-			return -1;
-		}
-		int p = 0;
-		while (enc[p] != cc) {
-			data[p] = enc[p]; // 0x67 and REX
-			p++;
-		}
-		data[p] = 0x0f;
-		memcpy (data + p + 1, enc + p, n - p);
-		return n + 1;
+		const ut16 code = 0x0f00 | data[1];
+		return op_rm_ext (a->config->bits, data, &rm, 0, code, code);
 	}
 	if (!(op->operands[0].type & OT_MEMORY)) {
 		mod = 3;
@@ -6291,6 +6296,10 @@ static const LookupTable oplookup[] = {
 	{ "popaw", 1, NULL, 0x6661, 2},
 	{ "popfd", 1, NULL, 0x9d, 1},
 	{ "prefetch", 0, NULL, 0x0f0d, 2},
+	{ "prefetchnta", 0, &opprefetch, 0},
+	{ "prefetcht0", 0, &opprefetch, 0},
+	{ "prefetcht1", 0, &opprefetch, 0},
+	{ "prefetcht2", 0, &opprefetch, 0},
 	{ "push", 0, &oppush, 0},
 	{ "pusha", 1, NULL, 0x60, 1},
 	{ "pushad", 1, NULL, 0x60, 1},

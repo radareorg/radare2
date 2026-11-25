@@ -389,10 +389,17 @@ a "push qword[rax-0x1234]" ffb0ccedffff
 a "push qword[rax+0x1234]" ffb034120000
 a "push qword[rax-0x12345678]" ffb088a9cbed
 a "push qword[rax+0x12345678]" ffb078563412
-aB "prefetcht1 [eax]" 670f1810
-aB "prefetcht1 [rax]" 0f1810
-aB "prefetcht1 byte [eax]" 670f1810
-aB "prefetcht1 byte [rax]" 0f1810
+a "prefetcht1 [eax]" 670f1810
+a "prefetcht1 [rax]" 0f1810
+a "prefetcht1 byte [eax]" 670f1810
+a "prefetcht1 byte [rax]" 0f1810
+a "prefetchnta [r8]" 410f1800
+a "prefetcht0 [r12+r9*8+0x1234]" 430f188ccc34120000
+a "prefetcht1 [r13]" 410f185500
+a "prefetcht2 [r13d]" 67410f185d00
+a "prefetcht1 [eax+ecx*4-0x80]" 670f18548880
+a "prefetcht1 [rip+0x10]" 0f181510000000
+a "prefetcht2 [0x12345678]" 0f181c2578563412
 a "shl rdx, 5" 48c1e205
 a "sub al, 0x89" 2c89
 a "sub al, 0xd9" 2cd9
