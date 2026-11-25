@@ -304,7 +304,7 @@ R_API int r_str_ansi_trim(char *str, int str_len, int n) {
 			if (ch2 == '\\') {
 				i++;
 			} else if (ch2 == ']') {
-				if (!strncmp (str + 2 + 5, "rgb:", 4)) {
+				if (i + 11 <= str_len && !strncmp (str + i + 7, "rgb:", 4)) {
 					i += 18;
 				}
 			} else if (ch2 == '[') {
@@ -319,6 +319,7 @@ R_API int r_str_ansi_trim(char *str, int str_len, int n) {
 		i++;
 		back = i; /* index in the original array */
 	}
+	back = R_MIN (back, str_len);
 	str[back] = 0;
 	return back;
 }

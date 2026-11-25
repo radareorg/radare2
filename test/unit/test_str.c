@@ -954,6 +954,23 @@ bool test_r_str_ansi_crop(void) {
 	mu_end;
 }
 
+bool test_r_str_ansi_trim(void) {
+	char *s = strdup ("A\x1b[3");
+	int len = r_str_ansi_trim (s, -1, 2);
+	mu_assert_eq (len, 4, "unterminated csi stays in bounds");
+	mu_assert_streq (s, "A\x1b[3", "unterminated csi");
+	free (s);
+	s = strdup ("\x1b]4;00;rgb:ff");
+	len = r_str_ansi_trim (s, -1, 1);
+	mu_assert_eq (len, 13, "truncated osc rgb stays in bounds");
+	free (s);
+	s = strdup ("\x1b[31mABC");
+	len = r_str_ansi_trim (s, -1, 2);
+	mu_assert_streq (s, "\x1b[31mAB", "trim visible chars");
+	free (s);
+	mu_end;
+}
+
 bool test_r_str_ansi_len(void) {
 	int len;
 
@@ -1804,6 +1821,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_rchr);
 	mu_run_test (test_r_str_ansi_crop);
 	mu_run_test (test_r_str_ansi_len);
+	mu_run_test (test_r_str_ansi_trim);
 	mu_run_test (test_r_utf16_decode_surrogates);
 	mu_run_test (test_r_str_len_utf8_ansi);
 	mu_run_test (test_r_str_len_utf8_ansi_truncated_utf8_tail);
