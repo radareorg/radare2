@@ -246,6 +246,26 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=prib4 monochrome with partial cells
+FILE=malloc://64
+CMDS=<<EOF
+e scr.color=0
+e hex.cols=3
+b 64
+wx ffffff00000000ff000000ff @ 0
+wx 000000ffffffff00ffffff00 @ 12
+wx 000000ff000000ffffffff00 @ 24
+wx ffffff00000000ff000000ff @ 36
+wx ffffff00000000ffffffff00 @ 48
+wx ffffff00 @ 60
+prib4
+EOF
+EXPECT=<<EOF
+⡑⠆
+⠁⠁
+EOF
+RUN
+
 NAME=pri2 hello-linux-x86_64
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=pri2 32@e:hex.cols=8

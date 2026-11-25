@@ -1173,6 +1173,19 @@ bool test_cons_image_width(void) {
 	mu_end;
 }
 
+bool test_cons_image_braille_colors(void) {
+	const ut8 pixels[] = {
+		80, 0, 0, 0, 0, 240, 80, 0, 0, 0, 0, 240,
+		0, 0, 240, 80, 0, 0, 0, 0, 240, 80, 0, 0,
+		80, 0, 0, 0, 0, 240, 80, 0, 0, 0, 0, 240,
+		0, 0, 240, 80, 0, 0, 0, 0, 240, 80, 0, 0
+	};
+	char *output = r_cons_image (pixels, sizeof (pixels), 4, 'b', 3);
+	mu_assert_streq_free (output, "\x1b[0m\x1b[38;2;0;0;240m\x1b[48;2;80;0;0m⡪⡪\x1b[0m\n",
+		"Braille distinguishes hues at equal brightness and reuses cell colors");
+	mu_end;
+}
+
 bool all_tests(void) {
 #if R2__UNIX__ && LIBC_HAVE_FORK && !__wasi__
 	mu_run_test (test_cons_suspend_raw);
@@ -1180,6 +1193,7 @@ bool all_tests(void) {
 	mu_run_test (test_cons_image_pixel_rows);
 	mu_run_test (test_cons_image_width);
 	mu_run_test (test_cons_image_color_state);
+	mu_run_test (test_cons_image_braille_colors);
 	mu_run_test (test_r_cons);
 	mu_run_test (test_cons_to_html);
 	mu_run_test (test_cons_child_isolation);

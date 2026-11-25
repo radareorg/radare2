@@ -150,9 +150,10 @@ static RCoreHelpMessage help_msg_pF = {
 };
 
 static RCoreHelpMessage help_msg_pri = {
-	"Usage: pri", "[acn1234rsg]", "print raw images (source row width in pixels: hex.cols)",
+	"Usage: pri", "[abcn1234rsg]", "print raw images (source row width in pixels: hex.cols)",
 	"prin", "t [msg]", "print a message",
 	"pria", "[4]", "RGB/RGBA image as ASCII characters",
+	"prib", "[4]", "RGB/RGBA image as truecolor Braille (2x4 pixels per cell, monochrome with scr.color=0)",
 	"pric", "[4]", "RGB/RGBA image as truecolor ASCII (plain ASCII with scr.color=0)",
 	"pri1", " [len]", "packed 1bpp bitmap as ASCII (hex.cols pixels, hex.stride bytes; 0=tight)",
 	"pri1u", " [len]", "packed 1bpp bitmap as Unicode half blocks",
@@ -169,7 +170,7 @@ static RCoreHelpMessage help_msg_pr = {
 	"Usage: pr[glx]", "[size]", "print N raw bytes",
 	"prc", "[=fep..]", "print bytes as colors in palette",
 	"prg", "[?]", "print raw GUNZIPped block",
-	"pri", "[acA12r]", "print raw image, 1bit image, honor hex.cols",
+	"pri", "[abcA12r]", "print raw image, 1bit image, honor hex.cols",
 	"print", "[f][ln]", "print, println, printf, printfln",
 	"prl", "", "print raw with lines offsets",
 	"prx", "", "printable chars with real offset (hyew)",
@@ -7009,11 +7010,14 @@ static void cmd_pri(RCore *core, const char *input, int l) {
 		}
 		break;
 	case 'a':
+	case 'b':
 	case 'c':
 		if (input[3] == '?' || (input[3] == '4' && input[4] == '?')) {
-			r_cons_cmd_help_match (core->cons, help_msg_pri, input[2] == 'c'? "pric": "pria", 0, true);
+			const char command[] = { 'p', 'r', 'i', input[2], 0 };
+			r_cons_cmd_help_match (core->cons, help_msg_pri, command, 0, true);
 		} else {
-			cmd_pri_image (core, buf, bsz, cols, input[2] == 'c' && has_color? 'c': 'a', input[3] == '4'? 4: 3);
+			const int mode = has_color? input[2]: (input[2] == 'b'? 'B': 'a');
+			cmd_pri_image (core, buf, bsz, cols, mode, input[3] == '4'? 4: 3);
 		}
 		break;
 	case 'g': // gresycale

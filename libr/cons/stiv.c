@@ -1,8 +1,9 @@
 /* tiv - terminal image viewer - MIT 2013-2026 - pancake */
 
 #include <r_cons.h>
+#include <r_util/r_utf8.h>
 
-#define XY(b,x,y) ( b+((y)*(w*components))+(x*components) )
+#define XY(b,x,y) ((b) + (y) * w * components + (x) * components)
 #define ABS(x) (((x)<0)?-(x):(x))
 #define POND(x,y) (ABS((x)) * (y))
 
@@ -133,6 +134,82 @@ static void render_ascii_rgb(RStrBuf *sb, const ut8 *c, const ut8 *d, bool foreg
 	render_ascii (sb, c, d, false, false);
 }
 
+static ut8 braille_mask(const ut8 *const pixels[8], ut8 colors[2][3], bool color) {
+	static const ut8 dots[] = { 1, 8, 2, 16, 4, 32, 64, 128 };
+	int channel = 0, midpoint = 0;
+	int i, c;
+	if (color) {
+		ut8 low[] = { 255, 255, 255 }, high[3] = {0};
+		for (i = 0; i < 8; i++) {
+			for (c = 0; c < 3; c++) {
+				low[c] = R_MIN (low[c], pixels[i][c]);
+				high[c] = R_MAX (high[c], pixels[i][c]);
+			}
+		}
+		// Split along the channel with the most contrast to preserve changes in hue.
+		for (c = 1; c < 3; c++) {
+			if (high[c] - low[c] > high[channel] - low[channel]) {
+				channel = c;
+			}
+		}
+		midpoint = (low[channel] + high[channel]) / 2;
+	}
+	int sums[2][3] = {{0}}, counts[2] = {0};
+	ut8 mask = 0;
+	for (i = 0; i < 8; i++) {
+		const ut8 *pixel = pixels[i];
+		const bool dot = color? pixel[channel] > midpoint: 3 * pixel[0] + 6 * pixel[1] + pixel[2] >= 128 * 10;
+		if (dot) {
+			mask |= dots[i];
+		}
+		if (color) {
+			counts[dot]++;
+			for (c = 0; c < 3; c++) {
+				sums[dot][c] += pixel[c];
+			}
+		}
+	}
+	for (i = 0; i < 2; i++) {
+		if (counts[i]) {
+			for (c = 0; c < 3; c++) {
+				colors[i][c] = sums[i][c] / counts[i];
+			}
+		}
+	}
+	return mask;
+}
+
+static void render_braille(RStrBuf *sb, const ut8 *buf, int w, int h, int components, bool color) {
+	const ut8 black[3] = {0};
+	if (color && h > 0) {
+		r_strbuf_append (sb, Color_RESET);
+	}
+	int x, y;
+	for (y = 0; y < h; y += 4) {
+		ut8 previous[2][3];
+		for (x = 0; x < w; x += 2) {
+			const ut8 *pixels[8];
+			int dx, dy;
+			for (dy = 0; dy < 4; dy++) {
+				for (dx = 0; dx < 2; dx++) {
+					pixels[dy * 2 + dx] = x + dx < w && y + dy < h? XY (buf, x + dx, y + dy): black;
+				}
+			}
+			ut8 colors[2][3] = {{0}};
+			const ut8 mask = braille_mask (pixels, colors, color);
+			if (color) {
+				render_rgb (sb, colors[1], colors[0], !x || memcmp (previous[1], colors[1], 3),
+					!x || memcmp (previous[0], colors[0], 3));
+				memcpy (previous, colors, sizeof (previous));
+			}
+			ut8 glyph[4];
+			const int len = r_utf8_encode (glyph, 0x2800 + mask);
+			r_strbuf_append_n (sb, (const char *)glyph, len);
+		}
+		r_strbuf_append (sb, color? Color_RESET "\n": "\n");
+	}
+}
+
 static void do_render(Renderer renderer, RStrBuf *sb, const ut8 *buf, int w, int h, int components) {
 	const ut8 *c, *d;
 	const bool ascii = renderer == render_ascii || renderer == render_ascii_rgb;
@@ -199,9 +276,12 @@ R_API char *r_cons_image(const ut8 *buf, int bufsz, int width, int mode, int com
 		return NULL;
 	}
 	const int height = (bufsz / width) / components;
-	Renderer renderer = select_renderer (mode);
 	RStrBuf *sb = r_strbuf_new (NULL);
-	do_render (renderer, sb, buf, width, height, components);
+	if (mode == 'b' || mode == 'B') {
+		render_braille (sb, buf, width, height, components, mode == 'b');
+	} else {
+		do_render (select_renderer (mode), sb, buf, width, height, components);
+	}
 	return r_strbuf_drain (sb);
 }
 

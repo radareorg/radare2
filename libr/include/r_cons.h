@@ -839,8 +839,9 @@ typedef struct r_cons_canvas_line_style_t {
 #define ARROW_LEFT 9
 
 #ifdef R_API
-// Packed RGB/RGBA, alpha ignored. Character modes pair rows, repeating an odd final row.
-// Modes: a=ASCII, c=truecolor ASCII, A=ANSI, 2=256, g=grey, r=RGB, s=sixel.
+// Packed RGB/RGBA, alpha ignored. ASCII and half-block modes repeat an odd final row.
+// Modes: a=ASCII, c=truecolor ASCII, b=truecolor Braille, B=monochrome Braille, A=ANSI, 2=256, g=grey, r=RGB, s=sixel.
+// Braille uses 2x4 pixels per cell and pads partial cells with black.
 // Returns owned text. Incomplete source rows are ignored; unsupported components return NULL.
 R_API char *r_cons_image(const ut8 *buf, int bufsz, int width, int mode, int components);
 R_API RConsCanvas* r_cons_canvas_new(RCons *cons, int w, int h, int flags);
