@@ -6327,7 +6327,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			RAnalFunction *fcn;
 			RListIter *iter;
 			if (core->anal) {
-				RConsGrep grep = cons->context->grep;
 				RStrBuf *sb = r_strbuf_new ("");
 				r_list_foreach (core->anal->fcns, iter, fcn) {
 					r_core_seek (core, fcn->addr, true);
@@ -6343,7 +6342,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					r_cons_print (cons, s);
 					free (s);
 				}
-				cons->context->grep = grep;
 			}
 			goto out_finish;
 		}

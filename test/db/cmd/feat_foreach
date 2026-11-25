@@ -72,3 +72,19 @@ hello joe
 hello cow
 EOF
 RUN
+
+NAME=@@f with a console reset in the iterated command
+FILE=-
+CMDS=<<EOF
+af+ 0 f0
+af+ 16 f1
+$gt=base64:Pg==
+?e `?e x~foo;?ec 1 $($gt) @@f`~?
+?e hello @@f~hell
+EOF
+EXPECT=<<EOF
+1
+hello
+hello
+EOF
+RUN
