@@ -389,6 +389,44 @@ static bool test_checkpoint_restore_preserves_resume_breakpoint_addr(void) {
 	mu_end;
 }
 
+static bool test_checkpoint_restore_bounds_arena_size(void) {
+	RDebugSession *session = r_debug_session_new ();
+	RDebugCheckpoint checkpoint = {0};
+	RDebug dbg = {0};
+
+	mu_assert ("session", session != NULL);
+	dbg.session = session;
+	dbg.reg = r_reg_new ();
+	mu_assert ("debug reg", dbg.reg != NULL);
+	RRegArena *live = dbg.reg->regset[R_REG_TYPE_GPR].arena;
+	mu_assert ("live arena", live && live->bytes);
+	const int live_size = live->size;
+
+	// a checkpoint as loaded from a session file: its arena is larger than the live one
+	checkpoint.id = 1;
+	checkpoint.parent_id = UT64_MAX;
+	checkpoint.arena[R_REG_TYPE_GPR] = r_reg_arena_new (live_size + 4096);
+	mu_assert ("checkpoint arena", checkpoint.arena[R_REG_TYPE_GPR] != NULL);
+	memset (checkpoint.arena[R_REG_TYPE_GPR]->bytes, 0x41, live_size + 4096);
+	checkpoint.snaps = r_list_newf ((RListFree)r_debug_snap_free);
+	RVecDebugCheckpoint_push_back (session->checkpoints, &checkpoint);
+
+	mu_assert ("restore checkpoint", r_debug_session_restore (&dbg, 1));
+	live = dbg.reg->regset[R_REG_TYPE_GPR].arena;
+	mu_assert_eq (live->size, live_size, "live arena size after dtsr");
+	mu_assert_eq (live->bytes[0], 0x41, "live arena bytes after dtsr");
+
+	live->bytes[0] = 0;
+	r_debug_session_restore_reg_mem (&dbg, 0);
+	live = dbg.reg->regset[R_REG_TYPE_GPR].arena;
+	mu_assert_eq (live->size, live_size, "live arena size after dtsf");
+	mu_assert_eq (live->bytes[0], 0x41, "live arena bytes after dtsf");
+
+	r_reg_free (dbg.reg);
+	r_debug_session_free (session);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_session_save);
 	mu_run_test (test_session_load);
@@ -397,6 +435,7 @@ int all_tests(void) {
 	mu_run_test (test_session_delete_leaf_checkpoint);
 	mu_run_test (test_session_delete_rejects_current_or_parent);
 	mu_run_test (test_checkpoint_restore_preserves_resume_breakpoint_addr);
+	mu_run_test (test_checkpoint_restore_bounds_arena_size);
 	return tests_passed != tests_run;
 }
 

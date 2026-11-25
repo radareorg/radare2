@@ -48,14 +48,22 @@ static void reset_resume_state(RDebug *dbg) {
 	}
 }
 
+// checkpoints loaded from a session file or taken with another reg profile may not match the live arena size
+static void restore_arena(RRegArena *dst, const RRegArena *src) {
+	if (!dst || !src || !src->bytes || !dst->bytes) {
+		return;
+	}
+	r_reg_arena_materialize (dst);
+	const int size = R_MIN (dst->size, src->size);
+	if (dst->bytes && size > 0) {
+		memcpy (dst->bytes, src->bytes, size);
+	}
+}
+
 static void restore_checkpoint_snapshot(RDebug *dbg, const RDebugCheckpoint *chkpt) {
 	size_t i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		RRegArena *a = chkpt->arena[i];
-		RRegArena *b = dbg->reg->regset[i].arena;
-		if (a && b && a->bytes && b->bytes) {
-			memcpy (b->bytes, a->bytes, a->size);
-		}
+		restore_arena (dbg->reg->regset[i].arena, chkpt->arena[i]);
 	}
 	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, true);
 
@@ -176,11 +184,7 @@ static void _set_initial_registers(RDebug *dbg) {
 		return;
 	}
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		RRegArena *a = dbg->session->cur_chkpt->arena[i];
-		RRegArena *b = dbg->reg->regset[i].arena;
-		if (a && b && a->bytes && b->bytes) {
-			memcpy (b->bytes, a->bytes, a->size);
-		}
+		restore_arena (dbg->reg->regset[i].arena, dbg->session->cur_chkpt->arena[i]);
 	}
 }
 
