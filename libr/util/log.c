@@ -80,7 +80,7 @@ R_API bool r_log_init(void) {
 }
 
 R_API void r_log_fini(void) {
-	if (rlog) {
+	if (rlog && !rlog->iterating) {
 		RLog *log = rlog;
 		rlog = NULL;
 		RVecRLogCallbackUser_free (log->cbs);
@@ -198,14 +198,15 @@ R_API bool r_log_match(int level, const char *origin) {
 	}
 	if (rlog->cbs) {
 		RLogCallbackUser *iter;
+		const bool was_iterating = rlog->iterating;
 		rlog->iterating = true;
 		R_VEC_FOREACH (rlog->cbs, iter) {
 			if (iter->cb (iter->user, level, origin, NULL)) {
-				rlog->iterating = false;
+				rlog->iterating = was_iterating;
 				return true;
 			}
 		}
-		rlog->iterating = false;
+		rlog->iterating = was_iterating;
 	}
 	if (level == R_LOG_LEVEL_HINT && !rlog->hints) {
 		return false;
@@ -221,14 +222,15 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 	vsnprintf (out, sizeof (out), fmt, ap);
 	if (rlog->cbs) {
 		RLogCallbackUser *iter;
+		const bool was_iterating = rlog->iterating;
 		rlog->iterating = true;
 		R_VEC_FOREACH (rlog->cbs, iter) {
 			if (iter->cb (iter->user, level, origin, out)) {
-				rlog->iterating = false;
+				rlog->iterating = was_iterating;
 				return;
 			}
 		}
-		rlog->iterating = false;
+		rlog->iterating = was_iterating;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
 	if (func && r_str_startswith (func, "./")) {

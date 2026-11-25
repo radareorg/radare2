@@ -97,3 +97,32 @@ hello
 EOF
 REGEXP_ERR=Starting http server
 RUN
+
+NAME=cmd.log cannot add log callbacks while they run
+FILE=-
+CMDS=<<EOF
+'e cmd.log=e log.cons=true
+e asm.arch=nope
+e cmd.log=
+T
+EOF
+EXPECT=<<EOF
+1 cb_asmarch asm.arch: cannot find 'nope'
+2 util.log cannot add log callback while iterating
+EOF
+RUN
+
+NAME=cmd.log cannot finalize the logger while its callbacks run
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=none
+e cfg.sandbox=true
+'e cmd.log=cg bins/elf/ls
+e asm.arch=nope
+e cmd.log=
+?e alive
+EOF
+EXPECT=<<EOF
+alive
+EOF
+RUN
