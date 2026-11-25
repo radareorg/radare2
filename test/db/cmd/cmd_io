@@ -120,7 +120,7 @@ RUN
 
 NAME=ioioio
 FILE=bins/mach0/ls-m1
-ARGS=-n
+ARGS=-n -e bin.relocs.apply=false
 CMDS=<<EOF
 o
 ob

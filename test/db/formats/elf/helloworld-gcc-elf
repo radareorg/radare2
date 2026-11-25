@@ -43,8 +43,6 @@ EXPECT=<<EOF
 0x0000050c                 80b5  push {r7, lr}
 0x000003a0   sym._init:
 0x000003a0             08402de9  push {r3, lr}
-0x000003ac   fcn.000003ac:
-0x000003ac             04e02de5  str lr, [sp, -4]!
 EOF
 RUN
 

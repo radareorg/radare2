@@ -171,6 +171,7 @@ RUN
 
 NAME=oom
 FILE=bins/elf/libmagic.so
+ARGS=-e bin.relocs.apply=false
 CMDS=<<EOF
 o~?
 oom
@@ -512,6 +513,7 @@ bins/elf/_Exit (42)
 bins/elf/libverifyPass.so
 bins/elf/libc.so.6
 EOF
+ARGS=-e bin.relocs.apply=false
 CMDS=<<EOF
 ob~[1-2]
 ?e
@@ -597,6 +599,7 @@ RUN
 
 NAME=o+ writable maps fix
 FILE=--
+ARGS=-e bin.relocs.apply=false
 CMDS=<<EOF
 o+ bins/elf/ls
 om

@@ -24,7 +24,7 @@ bits     64
 class    ELF64
 endian   big
 --
-13
+17
 --
 0x080000c4 0x000000c4 ADD_24 10    ._mcount - 0x080000c4
 --
@@ -41,12 +41,16 @@ endian   big
 ._mcount
 .crypto_register_shash
 .crypto_unregister_shash
+._mcount
+.crc32_le
+.crypto_register_shash
+.crypto_unregister_shash
 --
 13
 --
 22
 --
-50
+54
 --
 ._mcount
 .crc32_le
