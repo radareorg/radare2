@@ -21,21 +21,6 @@
 
 R_IPI bool alignCheck(REsil *esil, ut64 addr);
 
-static bool r_esil_fire_trap(REsil *esil, int trap_type, int trap_code) {
-	R_RETURN_VAL_IF_FAIL (esil, false);
-	if (esil->cmd && R_STR_ISNOTEMPTY (esil->cmd_trap)) {
-		if (esil->cmd (esil, esil->cmd_trap, trap_type, trap_code)) {
-			return true;
-		}
-	}
-#if 0
-	REsilTrapCB icb;
-	icb = (REsilTrapCB)sdb_ptr_get (esil->traps, i, 0);
-	return icb (esil, trap_type, trap_code);
-#endif
-	return false;
-}
-
 R_IPI bool isregornum(REsil *esil, RStrs str, ut64 *num) {
 	if (r_strs_empty (str)) {
 		return false;
@@ -432,12 +417,8 @@ static bool esil_trap(REsil *esil) {
 	ut64 s, d;
 	if (popRN (esil, &s) && popRN (esil, &d)) {
 		r_esil_set_trap (esil, s, d);
-		return r_esil_fire_trap (esil, (int)s, (int)d);
 	}
 	R_LOG_DEBUG ("esil_trap: missing parameters in stack");
-	if (esil->cmd_trap) {
-		esil->cmd (esil, esil->cmd_trap, esil->addr, R_ANAL_TRAP_INVALID);
-	}
 	return false;
 }
 

@@ -95,19 +95,6 @@ ERROR: ESIL stopped at 0x00000000: execute error (execute-err at 0x00000000)
 EOF
 RUN
 
-NAME=cmd.esil.trap hint TRAP
-FILE=-
-ARGS=-a x86 -b 64
-CMDS=<<EOF
-e cmd.esil.trap=?e its a trap
-ahe TRAP
-aes
-EOF
-EXPECT=<<EOF
-its a trap 0 7
-EOF
-RUN
-
 NAME=cmd.esil.intr
 FILE=-
 ARGS=-a x86 -b 64

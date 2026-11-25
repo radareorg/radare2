@@ -506,7 +506,7 @@ R_API bool r_core_esil_run_expr_at(RCore *core, const char *expr, ut64 addr) {
 	}
 	r_esil_restore_trap (&core->esil.esil, &fault);
 	if (R_STR_ISNOTEMPTY (core->esil.cmds.trap)) {
-		core_esil_cmd (core, core->esil.cmds.trap, pc, fault.addr_valid? fault.addr: fault.code);
+		core_esil_cmd (core, core->esil.cmds.trap, fault.addr_valid? fault.addr: fault.code, fault.type);
 	}
 	return false;
 }
