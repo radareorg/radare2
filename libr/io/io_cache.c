@@ -384,20 +384,22 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to, bool many) {
 					continue;
 				}
 				if (ci->tree_itv) {
-					invalidated_cache_bytes += r_itv_size (ci->tree_itv[0]);
-					if (r_itv_overlap (ci->tree_itv[0], _ci->itv)) {
-						_ci->tree_itv[0] = r_itv_intersect (ci->tree_itv[0], _ci->itv);
-						invalidated_cache_bytes -= r_itv_size (_ci->tree_itv[0]);
-						r_crbtree_insert (layer->tree, _ci, _ci_start_cmp_cb, NULL);
-					} else {
-						R_FREE (_ci->tree_itv);
-					}
-					if (r_itv_overlap (ci->itv, ci->tree_itv[0])) {
-						ci->tree_itv[0] = r_itv_intersect (ci->tree_itv[0], ci->itv);
+					const RInterval tree_itv = ci->tree_itv[0];
+					invalidated_cache_bytes += r_itv_size (tree_itv);
+					// ci leaves the tree before its tail enters it, both can have the same key
+					if (r_itv_overlap (ci->itv, tree_itv)) {
+						ci->tree_itv[0] = r_itv_intersect (tree_itv, ci->itv);
 						invalidated_cache_bytes -= r_itv_size (ci->tree_itv[0]);
 					} else {
 						r_crbtree_delete (layer->tree, ci, _ci_start_cmp_cb, NULL);
 						R_FREE (ci->tree_itv);
+					}
+					if (r_itv_overlap (tree_itv, _ci->itv)) {
+						_ci->tree_itv[0] = r_itv_intersect (tree_itv, _ci->itv);
+						invalidated_cache_bytes -= r_itv_size (_ci->tree_itv[0]);
+						r_crbtree_insert (layer->tree, _ci, _ci_start_cmp_cb, NULL);
+					} else {
+						R_FREE (_ci->tree_itv);
 					}
 				} else {
 					R_FREE (_ci->tree_itv);
@@ -481,6 +483,11 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to, bool many) {
 			}
 			if (all_written) {
 				r_crbtree_clear (layer->tree);
+				// tree_itv must only be set while the item is in the tree
+				RIOCacheItem **ci_iter;
+				R_VEC_FOREACH (layer->vec, ci_iter) {
+					R_FREE ((*ci_iter)->tree_itv);
+				}
 			}
 		} else {
 			RInterval itv = (RInterval){from, (to + 1) - from};

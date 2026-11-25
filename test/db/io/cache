@@ -215,6 +215,48 @@ idx=9 addr=0x00001004 size=4 00000000 -> 44556677 (not written)
 EOF
 RUN
 
+NAME=io.cache: wc- and wcu on an entry committed by wci
+FILE=malloc://512
+CMDS=<<EOF
+e io.cache=true
+wx 00112233445566778899aabbccddeeff
+wci
+wx 41 @ 3
+wc- 2 2
+wc
+wcu
+wc
+p8 16
+wcr
+p8 16
+EOF
+EXPECT=<<EOF
+idx=0 addr=0x00000000 size=2 0000 -> 0011 (not written)
+idx=1 addr=0x00000003 size=1 33 -> 41 (not written)
+idx=2 addr=0x00000003 size=13 00000000000000000000000000 -> 33445566778899aabbccddeeff (not written)
+idx=0 addr=0x00000000 size=2 0000 -> 0011 (not written)
+idx=1 addr=0x00000003 size=1 33 -> 41 (not written)
+00112241000000000000000000000000
+00112200000000000000000000000000
+EOF
+RUN
+
+NAME=io.cache: wc- splitting an entry that only has its tail in the cache tree
+FILE=malloc://512
+CMDS=<<EOF
+e io.cache=true
+wx ababababababab @ 20
+wx abababab @ 19
+wx abababababababababababab @ 6
+wc- 24 25
+wc- 22 22
+p8 27
+EOF
+EXPECT=<<EOF
+000000000000abababababababababababab00ababab00ab0000ab
+EOF
+RUN
+
 NAME=pcache commit keeps the selected fd and cache mode
 FILE=malloc://128
 CMDS=<<EOF
