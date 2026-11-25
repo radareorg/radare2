@@ -562,7 +562,9 @@ static bool dsc_dig_slices(RIODscObject * dsc) {
 	if (!dsc_header_get_u32 (header, "subCacheArrayOffset", &subCacheArrayOffset)) {
 		// not a multi-file cache
 		dsc->total_size = next_or_end;
-		return dsc_dig_one_slice (dsc, fd, dsc->filename, 0, next_or_end, NULL, header, false);
+		bool res = dsc_dig_one_slice (dsc, fd, dsc->filename, 0, next_or_end, NULL, header, false);
+		dsc_header_free (header);
+		return res;
 	} else {
 		if (!dsc_header_get_u32 (header, "subCacheArrayCount", &subCacheArrayCount)) {
 			R_LOG_ERROR ("Malformed multi file cache");
@@ -585,7 +587,9 @@ static bool dsc_dig_slices(RIODscObject * dsc) {
 				if (is_valid_magic (tmp)) {
 					// cache files are cat together ("monocache")
 					dsc->total_size = next_or_end;
-					return dsc_dig_one_slice (dsc, fd, dsc->filename, 0, next_or_end, NULL, header, true);
+					bool res = dsc_dig_one_slice (dsc, fd, dsc->filename, 0, next_or_end, NULL, header, true);
+					dsc_header_free (header);
+					return res;
 				}
 			}
 		}
