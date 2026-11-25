@@ -238,10 +238,144 @@ CMDS=<<EOF
 %R2_TEST_TMPENV
 %R2_TEST_TMPENV=0x20
 ?v $$ @%R2_TEST_TMPENV
+e asm.pseudo=false
+e asm.pseudo @e:asm.pseudo=true @%R2_TEST_TMPENV
+e asm.pseudo
 EOF
 EXPECT=<<EOF
 ok
 ok
 0x20
+true
+false
+EOF
+RUN
+
+NAME=Chained @a: and @b: restore the original architecture, bits and hints
+FILE=malloc://256
+ARGS=-a x86 -b 16
+CMDS=<<EOF
+e anal.ignbithints=false
+e asm.arch @a:arm:32@a:mips:64
+e asm.bits @a:arm:32@a:mips:64
+e asm.arch
+e asm.bits
+e anal.ignbithints
+e asm.bits @b:32@b:64
+e asm.bits
+e anal.ignbithints
+EOF
+EXPECT=<<EOF
+mips
+64
+x86
+16
+false
+64
+16
+false
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Mixed @a:, @b: and @e: restore configuration in reverse order
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e asm.bits @b:32 @e:asm.bits=16
+e asm.bits
+e asm.bits @e:asm.bits=16 @b:32
+e asm.bits
+e asm.arch @a:6502 @e:asm.arch=x86
+e asm.arch
+e asm.bits
+e asm.bits @e:asm.arch=6502,asm.bits=8
+e asm.arch
+e asm.bits
+EOF
+EXPECT=<<EOF
+16
+64
+32
+64
+x86
+x86
+64
+8
+x86
+64
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Invalid @ address restores temporary settings and block size
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+b 64
+e asm.pseudo=false
+e anal.ignbithints=false
+?e skipped @a:arm:32 @e:asm.pseudo=true @missing_tmpseek_address!16
+b
+e asm.arch
+e asm.bits
+e asm.pseudo
+e anal.ignbithints
+EOF
+EXPECT=<<EOF
+0x40
+x86
+64
+false
+false
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid tmpseek address 'missing_tmpseek_address'
+ERROR: Invalid command '?e skipped @a:arm:32 @e:asm.pseudo=true @missing_tmpseek_address!16' (0x3f)
+EOF
+RUN
+
+NAME=Invalid @{ range restores temporary settings
+FILE=malloc://256
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e asm.pseudo=false
+e anal.ignbithints=false
+?e skipped @a:arm:32 @e:asm.pseudo=true @{0x10}
+e asm.arch
+e asm.bits
+e asm.pseudo
+e anal.ignbithints
+EOF
+EXPECT=<<EOF
+| @{from to}  temporary set from and to for commands supporting ranges
+x86
+64
+false
+false
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid command '?e skipped @a:arm:32 @e:asm.pseudo=true @{0x10}' (0x3f)
+EOF
+RUN
+
+NAME=@f: reads a temporary block and leaves the original file intact
+FILE=malloc://64
+CMDS=<<EOF
+p8 4 @f:bins/README
+p8 4 @f:bins/README @x:deadbeef
+p8 4
+e cfg.sandbox.grain=disk
+e cfg.sandbox=true
+p8 4 @f:bins/README
+EOF
+EXPECT=<<EOF
+52454144
+deadbeef
+00000000
+00000000
+EOF
+EXPECT_ERR=<<EOF
+ERROR: rbuf:// doesnt work with sandbox enabled
 EOF
 RUN

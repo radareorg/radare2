@@ -61,11 +61,14 @@ typedef struct r_config_hold_t {
 
 #ifdef R_API
 
-// TODO: simplify this API?
 R_API RConfigHold* r_config_hold_new(RConfig *cfg);
 R_API bool r_config_hold(RConfigHold *h, ...);
 R_API void r_config_hold_free(RConfigHold *h);
 R_API void r_config_hold_restore(RConfigHold *h);
+
+static inline bool r_config_hold_isempty(const RConfigHold * R_NULLABLE h) {
+	return !h || !h->list || !h->list->length;
+}
 
 R_API RConfig *r_config_new(void *user);
 R_API RConfig *r_config_clone(RConfig *cfg);

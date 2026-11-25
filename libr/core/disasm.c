@@ -6455,9 +6455,6 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 		return;
 	}
 	RConfigHold *hc = r_config_hold_new (core->config);
-	if (!hc) {
-		return;
-	}
 	if (!esil) {
 		ds_print_esil_anal_init (ds);
 		esil = core->anal->esil;

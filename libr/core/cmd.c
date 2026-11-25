@@ -3660,15 +3660,12 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	return ret;
 }
 
-static char *parse_tmp_evals(RCore *core, const char *str) {
+static void set_tmp_evals(RCore *core, const char *str, RConfigHold *hold) {
 	char *s = strdup (str);
-	int i, argc = r_str_split (s, ',');
-	char *res = strdup ("");
-	if (!s || !res) {
-		free (s);
-		free (res);
-		return NULL;
+	if (!s) {
+		return;
 	}
+	int i, argc = r_str_split (s, ',');
 	for (i = 0; i < argc; i++) {
 		char *eq, *kv = (char *)r_str_word_get0 (s, i);
 		if (!kv) {
@@ -3677,26 +3674,19 @@ static char *parse_tmp_evals(RCore *core, const char *str) {
 		eq = strchr (kv, '=');
 		if (eq) {
 			*eq = 0;
-			const char *ov = r_config_get (core->config, kv);
-			if (!ov) {
-				continue;
+			if (r_config_get (core->config, kv)) {
+				if (!strcmp (kv, "asm.arch")) {
+					r_config_hold (hold, "asm.bits", NULL);
+				}
+				r_config_hold (hold, kv, NULL);
+				r_config_set (core->config, kv, eq + 1);
 			}
-			char *cmd = r_str_newf ("e %s=%s;", kv, ov);
-			if (!cmd) {
-				free (s);
-				free (res);
-				return NULL;
-			}
-			res = r_str_prepend (res, cmd);
-			free (cmd);
-			r_config_set (core->config, kv, eq + 1);
 			*eq = '=';
 		} else {
 			R_LOG_ERROR ("Missing '=' in e: expression (%s)", kv);
 		}
 	}
 	free (s);
-	return res;
 }
 
 static bool is_macro_command(const char *ptr) {
@@ -4147,22 +4137,32 @@ static void tmpenvs_free(void *item) {
 	}
 }
 
-static bool set_tmp_arch(RCore *core, char *arch, char **tmparch) {
-	R_RETURN_VAL_IF_FAIL (tmparch, false);
-	*tmparch = strdup (r_config_get (core->config, "asm.arch"));
-	r_config_set (core->config, "asm.arch", arch);
-	core->fixedarch = true;
-	return true;
-}
-
-static bool set_tmp_bits(RCore *core, int bits, char **tmpbits, int *cmd_ignbithints) {
-	R_RETURN_VAL_IF_FAIL (tmpbits, false);
-	*tmpbits = strdup (r_config_get (core->config, "asm.bits"));
+static void set_tmp_bits(RCore *core, int bits) {
 	r_config_set_i (core->config, "asm.bits", bits);
 	core->fixedbits = true;
-	// XXX: why?
-	*cmd_ignbithints = r_config_get_i (core->config, "anal.ignbithints");
 	r_config_set_b (core->config, "anal.ignbithints", true);
+}
+
+static bool set_tmp_buffer(RCore *core, RBuffer *buf, RBuffer **tmpbuf, RIODesc **tmpdesc, bool enable_va) {
+	if (!buf) {
+		return false;
+	}
+	RIODesc *desc = r_io_open_buffer (core->io, buf, R_PERM_RWX, 0);
+	if (!desc) {
+		r_unref (buf);
+		return false;
+	}
+	if (*tmpdesc) {
+		r_io_desc_close (*tmpdesc);
+		r_unref (*tmpbuf);
+	}
+	// The rbuf descriptor borrows its buffer.
+	*tmpbuf = buf;
+	*tmpdesc = desc;
+	if (enable_va) {
+		r_config_set_b (core->config, "io.va", true);
+	}
+	r_io_map_add (core->io, desc->fd, desc->perm, 0, core->addr, r_buf_size (buf));
 	return true;
 }
 
@@ -4480,6 +4480,7 @@ static int r_core_cmd_subst_i(RCore *core, RCmdContext *context, char *cmd, char
 	char *grep = NULL;
 	bool grep_noflush = false;
 	RIODesc *tmpdesc = NULL;
+	RBuffer *tmpbuf = NULL;
 	bool old_iova = r_config_get_b (core->config, "io.va");
 	bool pamode = (core->io? !core->io->va: false);
 	int i, ret = 0, pipefd, rc = 0;
@@ -4490,12 +4491,18 @@ static int r_core_cmd_subst_i(RCore *core, RCmdContext *context, char *cmd, char
 	bool haveQuote = false;
 	bool oldfixedarch = core->fixedarch;
 	bool oldfixedbits = core->fixedbits;
+	bool oldfixedblock = core->fixedblock;
 	bool cmd_tmpseek = false;
 	int old_pid = -1;
 	int old_tid = -1;
 	bool pid_changed = false;
 	ut64 tmpbsz = core->blocksize;
-	int cmd_ignbithints = -1;
+	char *blocksize_sep = NULL;
+	RConfigHold *cholder = NULL;
+	bool tmp_arch_set = false;
+	bool tmp_bits_set = false;
+	bool flgspc_changed = false;
+	int tmpfd = -1;
 	if (!cmd) {
 		r_list_free (tmpenvs);
 		return 0;
@@ -5179,18 +5186,11 @@ escape_backtick:
 	// keep core->tmpseek set when the caller applied a "@addr@cmd" prefix seek
 	core->tmpseek = cmd_tmpseek || (tmpseek && *tmpseek);
 	if (ptr) {
-		char *f, *ptr2 = strchr (ptr + 1, '!');
+		cholder = r_config_hold_new (core->config);
+		char *ptr2 = strchr (ptr + 1, '!');
 		ut64 addr = core->addr;
 		bool addr_is_set = false;
-		char *tmpbits = NULL;
 		const char *offstr = NULL;
-		bool is_bits_set = false;
-		bool is_arch_set = false;
-		char *tmpeval = NULL;
-		char *tmpasm = NULL;
-		bool flgspc_changed = false;
-		int tmpfd = -1;
-		size_t sz;
 		int len;
 		ut8 *buf;
 
@@ -5240,6 +5240,7 @@ repeat_arroba:
 				if (R_STR_ISNOTEMPTY (n)) {
 					ut64 v = r_num_math (core->num, n);
 					if (core->num->nc.errors == 0) {
+						free (n);
 						free (k);
 						r_core_seek (core, v, true);
 						cmd_tmpseek = core->tmpseek = true;
@@ -5301,22 +5302,13 @@ repeat_arroba:
 				}
 				break;
 			case 'f': // "@f:" // slurp file in block
-				f = r_file_slurp (ptr + 2, &sz);
-				if (f) {
-					RBuffer *b = r_buf_new_with_bytes ((const ut8*)f, (ut64)sz);
-					RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
-					if (d) {
-						if (tmpdesc) {
-							r_io_desc_close (tmpdesc);
-						}
-						tmpdesc = d;
-						if (pamode) {
-							r_config_set_b (core->config, "io.va", true);
-						}
-						r_io_map_add (core->io, d->fd, d->perm, 0, core->addr, r_buf_size (b));
+				{
+					RBuffer *b = r_buf_new_from_file (ptr + 2);
+					if (b) {
+						set_tmp_buffer (core, b, &tmpbuf, &tmpdesc, pamode);
+					} else {
+						R_LOG_ERROR ("Cannot open at-f '%s'", ptr + 2);
 					}
-				} else {
-					R_LOG_ERROR ("Cannot open at-f '%s'", ptr + 3);
 				}
 				break;
 			case 'd': // "@dr:" "@dp:"
@@ -5343,8 +5335,11 @@ repeat_arroba:
 					char *arg = getarg (ptr + 1);
 					if (arg) {
 						ut64 v = r_num_math (core->num, arg);
+						free (arg);
 						if (core->num->nc.errors == 0) {
-							is_bits_set = set_tmp_bits (core, v, &tmpbits, &cmd_ignbithints);
+							r_config_hold (cholder, "anal.ignbithints", "asm.bits", NULL);
+							set_tmp_bits (core, v);
+							tmp_bits_set = true;
 						}
 					} else {
 						R_LOG_ERROR ("Invalid block size @b");
@@ -5375,15 +5370,7 @@ repeat_arroba:
 				}
 				break;
 			case 'e': // "@e:"
-				{
-					char *cmd = parse_tmp_evals (core, ptr + 2);
-					if (tmpeval) {
-						tmpeval = r_str_prepend (tmpeval, cmd);
-						free (cmd);
-					} else {
-						tmpeval = cmd;
-					}
-				}
+			set_tmp_evals (core, ptr + 2, cholder);
 				break;
 			case 'v': // "@v:" // value (honors asm.bits and cfg.bigendian)
 				if (ptr[1] == ':') {
@@ -5401,16 +5388,7 @@ repeat_arroba:
 					tmpfd = r_io_fd_get_current(core->io);
 					r_core_block_size (core, R_ABS (len));
 					RBuffer *b = r_buf_new_with_bytes (buf, len);
-					RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
-					if (d) {
-						if (tmpdesc) {
-							r_io_desc_close (tmpdesc);
-						}
-						tmpdesc = d;
-						if (pamode) {
-							r_config_set_b (core->config, "io.va", true);
-						}
-						r_io_map_add (core->io, d->fd, d->perm, 0, core->addr, r_buf_size (b));
+					if (set_tmp_buffer (core, b, &tmpbuf, &tmpdesc, pamode)) {
 						r_core_block_size (core, len);
 						r_core_block_read (core);
 					}
@@ -5456,16 +5434,7 @@ repeat_arroba:
 				if (len > 0) {
 					r_core_block_size (core, len);
 					RBuffer *b = r_buf_new_with_bytes (buf, len);
-					RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
-					if (d) {
-						if (tmpdesc) {
-							r_io_desc_close (tmpdesc);
-						}
-						tmpdesc = d;
-						if (pamode) {
-							r_config_set_b (core->config, "io.va", true);
-						}
-						r_io_map_add (core->io, d->fd, d->perm, 0, core->addr, r_buf_size (b));
+					if (set_tmp_buffer (core, b, &tmpbuf, &tmpdesc, pamode)) {
 						r_core_block_size (core, len);
 						r_core_block_read (core);
 					}
@@ -5493,13 +5462,18 @@ repeat_arroba:
 				break;
 			case 'a': // "@a:"
 				if (ptr[1] == ':') {
+					// Restore asm.arch before asm.bits because its setter can change the width.
+				r_config_hold (cholder, "anal.ignbithints", "asm.bits", "asm.arch", NULL);
 					char *q = strchr (ptr + 2, ':');
 					if (q) {
 						*q++ = 0;
 						const int bits = r_num_math (core->num, q);
-						is_bits_set = set_tmp_bits (core, bits, &tmpbits, &cmd_ignbithints);
+						set_tmp_bits (core, bits);
 					}
-					is_arch_set = set_tmp_arch (core, ptr + 2, &tmpasm);
+					r_config_set (core->config, "asm.arch", ptr + 2);
+					core->fixedarch = true;
+					tmp_arch_set = true;
+					tmp_bits_set = true;
 				} else {
 					r_cons_cmd_help_match (cons, help_msg_at, "@a:", 0, true);
 				}
@@ -5512,19 +5486,7 @@ repeat_arroba:
 
 					if (len > 0) {
 						RBuffer *b = r_buf_new_with_bytes (buf, len);
-						RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
-						if (!core->io->va) {
-							r_config_set_b (core->config, "io.va", true);
-						}
-						if (d) {
-							if (tmpdesc) {
-								r_io_desc_close (tmpdesc);
-							}
-							tmpdesc = d;
-							if (pamode) {
-								r_config_set_b (core->config, "io.va", true);
-							}
-							r_io_map_add (core->io, d->fd, d->perm, 0, core->addr, r_buf_size (b));
+						if (set_tmp_buffer (core, b, &tmpbuf, &tmpdesc, pamode || !core->io->va)) {
 							r_core_block_size (core, len);
 							// r_core_block_read (core);
 						}
@@ -5558,7 +5520,8 @@ ignore:
 			} else if (strlen (ptr + 1) == 9 && strlen (ptr2 + 1) == 4) {
 				/* XXXX:YYYY */
 			} else {
-				*ptr2 = '\0';
+				blocksize_sep = ptr2;
+				*blocksize_sep = '\0';
 				if (!ptr2[1]) {
 					goto fail;
 				}
@@ -5610,6 +5573,10 @@ ignore:
 		}
 next_arroba:
 		if (arroba) {
+			// A nested command can replace the config before the first snapshot.
+			if (r_config_hold_isempty (cholder)) {
+				cholder->cfg = core->config;
+			}
 			ptr = arroba + 1;
 			*arroba = '@';
 			arroba = NULL;
@@ -5638,9 +5605,6 @@ next_arroba:
 				char *p = strchr (range, ' ');
 				if (!p) {
 					r_cons_cmd_help_match (cons, help_msg_at, "@{", 0, true);
-					free (tmpeval);
-					free (tmpasm);
-					free (tmpbits);
 					goto fail;
 				}
 				char *arg = p + 1;
@@ -5691,44 +5655,8 @@ next_arroba:
 				}
 			}
 		}
-		if (ptr2) {
-			*ptr2 = '!';
-			r_core_block_size (core, tmpbsz);
-		}
-		if (is_arch_set) {
-			core->fixedarch = oldfixedarch;
-			r_config_set (core->config, "asm.arch", tmpasm);
-			R_FREE (tmpasm);
-		}
-		if (tmpdesc) {
-			if (pamode) {
-				r_config_set_b (core->config, "io.va", old_iova);
-			}
-			r_io_desc_close (tmpdesc);
-			tmpdesc = NULL;
-		}
-		if (tmpfd != -1) {
-			// TODO: reuse tmpfd instead of
-			r_io_use_fd (core->io, tmpfd);
-			tmpfd = -1;
-		}
-		if (is_bits_set) {
-			r_config_set (core->config, "asm.bits", tmpbits);
-			core->fixedbits = oldfixedbits;
-		}
-		if (tmpbsz != core->blocksize) {
-			r_core_block_size (core, tmpbsz);
-		}
-		if (tmpeval) {
-			r_core_cmd0 (core, tmpeval);
-			R_FREE (tmpeval);
-		}
-		if (flgspc_changed) {
-			r_flag_space_pop (core->flags);
-		}
 		*ptr = '@';
 		rc = ret;
-		free (tmpbits);
 		goto beach;
 	}
 fuji:
@@ -5742,6 +5670,39 @@ fuji:
 		r_core_return_value (core, rc);
 	}
 beach:
+	if (blocksize_sep) {
+		*blocksize_sep = '!';
+	}
+	if (tmpdesc) {
+		if (pamode) {
+			r_config_set_b (core->config, "io.va", old_iova);
+		}
+		r_io_desc_close (tmpdesc);
+		r_unref (tmpbuf);
+	}
+	if (tmpfd != -1) {
+		r_io_use_fd (core->io, tmpfd);
+	}
+	if (cmd_tmpseek) {
+		core->fixedblock = oldfixedblock;
+		if (tmpbsz != core->blocksize) {
+			r_core_block_size (core, tmpbsz);
+		}
+	}
+	if (tmp_arch_set) {
+		core->fixedarch = oldfixedarch;
+	}
+	if (tmp_bits_set) {
+		core->fixedbits = oldfixedbits;
+	}
+	if (!r_config_hold_isempty (cholder)) {
+		r_list_reverse (cholder->list);
+		r_config_hold_restore (cholder);
+	}
+	r_config_hold_free (cholder);
+	if (flgspc_changed) {
+		r_flag_space_pop (core->flags);
+	}
 	if (pid_changed) {
 		r_debug_select (core->dbg, old_pid, old_tid);
 		pid_changed = false;
@@ -5762,30 +5723,13 @@ beach:
 		r_config_set_i (core->config, "scr.color", scr_color);
 	}
 	r_list_free (tmpenvs);
-	if (tmpdesc) {
-		if (pamode) {
-			r_config_set_b (core->config, "io.va", old_iova);
-		}
-		r_io_desc_close (tmpdesc);
-		tmpdesc = NULL;
-	}
 	if (tmpseek) {
 		// OR to preserve a seek applied by the @addr@cmd prefix in the caller
 		*tmpseek |= cmd_tmpseek;
 	}
-	if (cmd_ignbithints != -1) {
-		r_config_set_i (core->config, "anal.ignbithints", cmd_ignbithints);
-	}
 	return rc;
 fail:
 	rc = -1;
-	if (tmpdesc) {
-		if (pamode) {
-			r_config_set_b (core->config, "io.va", old_iova);
-		}
-		r_io_desc_close (tmpdesc);
-		tmpdesc = NULL;
-	}
 	goto beach;
 }
 
