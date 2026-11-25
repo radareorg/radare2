@@ -1704,14 +1704,16 @@ bool test_r_str_highlight(void) {
 	char line[] = "mov \x1b[36meax\x1b[0m, 1";
 	mu_assert_streq_free (r_str_highlight (line, "eax, 1", "\x1b[44m", "\x1b[0m"),
 		"mov \x1b[36m\x1b[44meax\x1b[0m, 1\x1b[0m", "color codes inside the word are kept");
-	// a long color code inside a word that starts near the end of the 1024 byte buffer
+	// a long color code inside a word after 1000 bytes of text
 	char *pad = r_str_pad (NULL, 0, 'a', 1000);
 	char *code = r_str_pad (NULL, 0, '1', 200);
 	char *str = r_str_newf ("%sX\x1b[%smY", pad, code);
-	char *s = r_str_highlight (str, "XY", "\x1b[44m", "\x1b[0m");
-	mu_assert_notnull (s, "highlighted string");
-	mu_assert_true (strlen (s) < 1024, "the color codes of the word fit in the buffer");
-	free (s);
+	char *expect = r_str_newf ("%s\x1b[44mX\x1b[%smY\x1b[0m", pad, code);
+	mu_assert_streq_free (r_str_highlight (str, "XY", "\x1b[44m", "\x1b[0m"), expect, "long text is not truncated");
+	free (expect);
+	free (str);
+	str = r_str_newf ("%s%sA", pad, pad);
+	mu_assert_streq_free (r_str_highlight (str, "AB", "<", ">"), str, "unmatched text over 1 KB is kept whole");
 	free (str);
 	free (code);
 	free (pad);

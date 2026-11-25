@@ -3804,11 +3804,6 @@ R_API char *r_str_highlight(char *str, const char *word, const char *color, cons
 	if (!*str) {
 		return NULL;
 	}
-	size_t i = 0, j = 0, to_copy;
-	char *start = str;
-	size_t l_str = strlen (str);
-	ut32 l_reset = strlen (color_reset);
-	ut32 l_color = color? strlen (color): 0;
 	if (!color) {
 		return strdup (str);
 	}
@@ -3816,54 +3811,33 @@ R_API char *r_str_highlight(char *str, const char *word, const char *color, cons
 		return r_str_newf ("%s%s%s", color, str, color_reset);
 	}
 	ut32 l_word = strlen (word);
-	// XXX don't use static buffers
-	char o[1024] = { 0 };
-	while (start && (start < str + l_str)) {
+	RStrBuf *sb = r_strbuf_new ("");
+	const char *p = str;
+	while (*p) {
 		// find first letter
-		start = strchr_ansi (str + i, *word);
-		if (start) {
-			to_copy = start - (str + i);
-			if (to_copy + j + 1 > sizeof (o)) {
-				// XXX. no limits
-				break;
-			}
-			strncpy (o + j, str + i, to_copy);
-			i += to_copy;
-			j += to_copy;
-			if (!strncmp_ansi (start, word, l_word)) {
-				if (j + strlen (color) >= sizeof (o)) {
-					// XXX. no limits
-					break;
-				}
-				strcpy (o + j, color);
-				j += l_color;
-				// the color codes inside the word are copied too
-				const int span = color_codes_span (str + i, l_word);
-				if (j + span >= sizeof (o)) {
-					// XXX. no limits
-					break;
-				}
-				memcpy (o + j, str + i, span);
-				i += span;
-				j += span;
-				if (j + strlen (color_reset) >= sizeof (o)) {
-					// XXX. no limits
-					break;
-				}
-				strcpy (o + j, color_reset);
-				j += l_reset;
-			} else {
-				o[j++] = str[i++];
-			}
-		} else {
-			if (j + strlen (str + i) >= sizeof (o)) {
-				break;
-			}
-			strcpy (o + j, str + i);
+		const char *start = strchr_ansi (p, *word);
+		if (!start) {
+			r_strbuf_append (sb, p);
 			break;
 		}
+		r_strbuf_append_n (sb, p, start - p);
+		p = start;
+		if (!*p) {
+			break;
+		}
+		if (!strncmp_ansi (p, word, l_word)) {
+			// the color codes inside the word are copied too
+			const int span = color_codes_span (p, l_word);
+			r_strbuf_append (sb, color);
+			r_strbuf_append_n (sb, p, span);
+			r_strbuf_append (sb, color_reset);
+			p += span;
+		} else {
+			r_strbuf_append_n (sb, p, 1);
+			p++;
+		}
 	}
-	return strdup (o);
+	return r_strbuf_drain (sb);
 }
 
 R_API wchar_t *r_str_mb_to_wc_l(const char *buf, int len) {
