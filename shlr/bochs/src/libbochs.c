@@ -154,7 +154,7 @@ int bochs_read(libbochs_t* b, ut64 addr, int count, ut8 * buf) {
 		return false;
 	}
 	size_t lenRec = strlen (data);
-	if (!strncmp (data, "[bochs]:", 8)) {
+	if (count > 0 && lenRec > 10) {
 		i += 10; // seek to next line
 		do {
 			while (data[i] != 0 && data[i] != ':' && i < lenRec) // find :
@@ -164,11 +164,18 @@ int bochs_read(libbochs_t* b, ut64 addr, int count, ut8 * buf) {
 				i++;
 			fin = i++;
 			data[fin] = 0;
-			if (data[i] == '<')
+			if (i < lenRec && data[i] == '<')
 				break;
-			pbuf += r_hex_str2bin (&data[ini], &buf[pbuf]);
+			size_t linelen = 0;
+			ut8 *line = r_hex_str2bin_dup (&data[ini], &linelen);
+			if (line) {
+				size_t n = R_MIN (linelen, (size_t)(count - pbuf));
+				memcpy (buf + pbuf, line, n);
+				pbuf += n;
+				free (line);
+			}
 			i++; // next line
-		} while (data[i] != '<' && i < lenRec);
+		} while (pbuf < count && i < lenRec && data[i] != '<');
 	}
 	return 0;
 }
