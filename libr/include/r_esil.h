@@ -234,6 +234,7 @@ typedef struct r_esil_t {
 	RLibStore *libstore;
 	ut64 trap_addr;
 	bool trap_addr_valid;
+	R_REF_TYPE; // emulations hold a reference, the vm must not be replaced while shared
 } REsil;
 
 R_API void r_esil_set_trap(REsil *esil, int type, ut32 code);

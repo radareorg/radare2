@@ -318,3 +318,24 @@ EXPECT=<<EOF
 svc 0x7c
 EOF
 RUN
+
+NAME=aae with a cmd.fcn.new hook that runs aei
+FILE=malloc://0x4000
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx b800200000ffd0ffc0 @ 0x3000
+wx c3 @ 0x2000
+e cmd.fcn.new=aei
+aae 9 @ 0x3000
+afl~?
+axt @ 0x2000~?
+aei
+EOF
+EXPECT=<<EOF
+1
+1
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot reinitialize the ESIL VM while it is in use
+EOF
+RUN

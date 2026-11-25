@@ -9470,6 +9470,11 @@ static void cmd_debug_stack_init(RCore *core, int argc, char **argv, char **envp
 }
 
 R_IPI void cmd_aei(RCore *core) {
+	// hooks like cmd.fcn.new or the esil #! operator run in the middle of an emulation
+	if (core->anal->esil && r_ref_count (core->anal->esil) > 1) {
+		R_LOG_ERROR ("Cannot reinitialize the ESIL VM while it is in use");
+		return;
+	}
 //TODO use core_esil here
 	REsil *esil = esil_new_setup (core);
 	if (esil) {

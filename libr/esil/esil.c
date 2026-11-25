@@ -290,6 +290,7 @@ R_API bool r_esil_init(REsil *esil, REsilOptions *R_NULLABLE opt) {
 	}
 	//not initializing stats here, it needs get reworked and should live in anal
 	//trace is created on demand once the vm stack is set up (see aeim)
+	r_ref_init (esil, NULL);
 	esil->stacksize = stacksize;
 	esil->parse_goto_count = R_ESIL_GOTO_LIMIT;
 	esil->iotrap = opt->iotrap;
@@ -1272,6 +1273,8 @@ R_API bool r_esil_parse(REsil *esil, const char *str) {
 	if (R_STR_ISEMPTY (str)) {
 		return false;
 	}
+	// the commands and callbacks that run from here must not free the vm
+	r_ref (esil);
 	r_esil_set_trap (esil, R_ANAL_TRAP_NONE, 0);
 	// Start each parse with an empty stack.
 	esil->stackptr = 0;
@@ -1319,6 +1322,7 @@ beach:
 			esil->jump_target_set = 0;
 		}
 	}
+	r_unref (esil);
 	return rc;
 }
 

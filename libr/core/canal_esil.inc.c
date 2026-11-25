@@ -190,6 +190,7 @@ static void esilbreak_ctx_fini(REsil *esil, EsilBreakCtx *ctx) {
 	esil->cb.hook_reg_read = NULL;
 	esil->cb.hook_reg_write = NULL;
 	esil->user = NULL;
+	r_unref (esil);
 	RVecEsilRegTaint_fini (&ctx->clob.reg_taints);
 	free (ctx->clob.delayed_call_cc);
 	RVecEsilRegTaint_fini (&ctx->call_clobbers->spans);
@@ -1008,6 +1009,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	ESIL->user = &ctx;
 	ESIL->cb.hook_mem_read = &esilbreak_mem_read;
 	ESIL->cb.hook_mem_write = &esilbreak_mem_write;
+	// cmd.fcn.new runs for the functions found below and must not replace the vm
+	r_ref (ESIL);
 	// r_core_cmd0 (core, "e io.cache=true;wc++");
 
 	if (fcn && fcn->reg_save_area) {

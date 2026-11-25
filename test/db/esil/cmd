@@ -238,3 +238,17 @@ EXPECT=<<EOF
 : += (2 -- 0) \ DUP,ROT,SWAP,+,SWAP,= (math+regw)
 EOF
 RUN
+
+NAME=esil #! operator running aei
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+'aeq aei,#!
+aei
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot reinitialize the ESIL VM while it is in use
+EOF
+RUN
