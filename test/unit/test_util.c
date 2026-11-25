@@ -779,6 +779,49 @@ bool test_file_copy(void) {
 	mu_end;
 }
 
+bool test_file_slurp_hexpairs(void) {
+	const char *file = "hexpairs_file";
+	int size = -1;
+	mu_assert_true (r_file_dump (file, (const ut8 *)"# patch\nde4db33f\n", -1, false), "cannot create hexpairs file");
+	ut8 *data = r_file_slurp_hexpairs (file, &size);
+	mu_assert_notnull (data, "hexpairs with a comment");
+	mu_assert_eq (size, 4, "hexpairs size");
+	mu_assert_memeq (data, (const ut8 *)"\xde\x4d\xb3\x3f", 4, "hexpairs contents");
+	free (data);
+
+	// 24 bytes in 47 chars
+	RStrBuf *sb = r_strbuf_new ("1");
+	int i;
+	for (i = 1; i < 24; i++) {
+		r_strbuf_append (sb, " 1");
+	}
+	mu_assert_true (r_file_dump (file, (const ut8 *)r_strbuf_get (sb), -1, false), "cannot create single digits file");
+	data = r_file_slurp_hexpairs (file, &size);
+	mu_assert_notnull (data, "single digits without a trailing newline");
+	mu_assert_eq (size, 24, "single digits size");
+	for (i = 0; i < 24; i++) {
+		mu_assert_eq (data[i], 1, "single digits contents");
+	}
+	mu_assert_eq (data[24], 0, "single digits terminator");
+	free (data);
+
+	// scanf takes "1-1" as two bytes in three chars
+	r_strbuf_set (sb, "");
+	for (i = 0; i < 190; i++) {
+		r_strbuf_append (sb, "1-1");
+	}
+	for (i = 0; i < 94; i++) {
+		r_strbuf_append (sb, "41");
+	}
+	mu_assert_true (r_file_dump (file, (const ut8 *)r_strbuf_get (sb), -1, false), "cannot create signed file");
+	data = r_file_slurp_hexpairs (file, &size);
+	r_strbuf_free (sb);
+	unlink (file);
+	mu_assert_null (data, "more bytes than hexpairs fit in the file");
+	mu_assert_eq (size, 0, "no size for a refused file");
+	mu_end;
+}
+
 bool test_sys_cmdf_long(void) {
 #if R2__UNIX__ && !__wasi__
 	// a command line longer than 4096 bytes
@@ -881,6 +924,7 @@ int all_tests(void) {
 	mu_run_test (test_file_rm_rf_symlink);
 	mu_run_test (test_session_pidfile_symlink);
 	mu_run_test (test_file_copy);
+	mu_run_test (test_file_slurp_hexpairs);
 	mu_run_test (test_sys_cmdf_long);
 	return tests_passed != tests_run;
 }

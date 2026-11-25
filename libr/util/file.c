@@ -611,7 +611,9 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 		fclose (fd);
 		return NULL;
 	}
-	ret = (ut8*)malloc ((sz>>1)+1);
+	// pairs, plus a last byte that can be a single digit
+	const int max = R_MIN ((sz >> 1) + 1, ST32_MAX - 1);
+	ret = (ut8*)malloc (max + 1);
 	if (!ret) {
 		fclose (fd);
 		return NULL;
@@ -620,7 +622,7 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 		if (fscanf (fd, " #%*[^\n]") == 1)  {
 			continue;
 		}
-		if (fscanf (fd, "%02x", &c) == 1) {
+		if (bytes < max && fscanf (fd, "%02x", &c) == 1) {
 			ret[bytes++] = c;
 			continue;
 		}
