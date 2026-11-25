@@ -1010,7 +1010,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	ESIL->cb.hook_mem_read = &esilbreak_mem_read;
 	ESIL->cb.hook_mem_write = &esilbreak_mem_write;
 	// cmd.fcn.new runs for the functions found below and must not replace the vm
-	r_ref (ESIL);
+	(void)r_ref (ESIL);
 	// r_core_cmd0 (core, "e io.cache=true;wc++");
 
 	if (fcn && fcn->reg_save_area) {

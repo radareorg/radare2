@@ -122,7 +122,7 @@ jobs:
         cd capstone && ( git log | head ) && sh make.sh && sudo make install
     - name: Installing r2 with symlinks (sys-capstone)
       run: |
-        export CFLAGS="-O0 -Werror -Wno-unused-result -Wno-stringop-truncation"
+        export CFLAGS="-O0 -Werror -Wno-unused-result -Wno-stringop-truncation -DCAPSTONE_NO_DEPRECATION_WARNING"
         sys/install.sh
     - name: Uninstalling
       run: sudo make uninstall

@@ -1274,7 +1274,7 @@ R_API bool r_esil_parse(REsil *esil, const char *str) {
 		return false;
 	}
 	// the commands and callbacks that run from here must not free the vm
-	r_ref (esil);
+	(void)r_ref (esil);
 	r_esil_set_trap (esil, R_ANAL_TRAP_NONE, 0);
 	// Start each parse with an empty stack.
 	esil->stackptr = 0;
