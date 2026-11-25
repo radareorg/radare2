@@ -1,4 +1,4 @@
-/* tiv - terminal image viewer - MIT 2013-2024 - pancake */
+/* tiv - terminal image viewer - MIT 2013-2026 - pancake */
 
 #include <r_cons.h>
 
@@ -72,9 +72,9 @@ static void render_sixel(RStrBuf *sb, const ut8 *c, const ut8 *d, bool foregroun
 	int g = (c[1] * 100 / 255);
 	int b = (c[2] * 100 / 255);
 	r_strbuf_appendf (sb, "#0;2;%d;%d;%d", r, g, b); // bg is black
-	r = (d[1] * 100 / 255);
-	g = (d[2] * 100 / 255);
-	b = (d[3] * 100 / 255);
+	r = (d[0] * 100 / 255);
+	g = (d[1] * 100 / 255);
+	b = (d[2] * 100 / 255);
 	r_strbuf_appendf (sb, "#1;2;%d;%d;%d", r, g, b); // fg is color
 	// r_strbuf_appendf (sb, "#%d!6%c", 1, 0x3f); // 6x6 pixel block
 	r_strbuf_appendf (sb, "#%d~~~~~~", 1); // 6x6 pixel block
@@ -123,18 +123,26 @@ static void render_ascii(RStrBuf *sb, const ut8 *c, const ut8 *d, bool foregroun
 	r_strbuf_append_n (sb, pal + idx, 1);
 }
 
-static void do_render(Renderer renderer, RStrBuf *sb, const ut8 *buf, int len, int w, int h, int components) {
+static void render_ascii_rgb(RStrBuf *sb, const ut8 *c, const ut8 *d, bool foreground, bool background) {
+	const ut8 color[] = {
+		(c[0] + d[0]) / 2,
+		(c[1] + d[1]) / 2,
+		(c[2] + d[2]) / 2
+	};
+	render_rgb (sb, color, color, foreground || background, false);
+	render_ascii (sb, c, d, false, false);
+}
+
+static void do_render(Renderer renderer, RStrBuf *sb, const ut8 *buf, int w, int h, int components) {
 	const ut8 *c, *d;
+	const bool ascii = renderer == render_ascii || renderer == render_ascii_rgb;
 	int x, y;
 	if (renderer == render_sixel) {
 		r_strbuf_append (sb, "\x1bPq");
 		for (y = 0; y < h; y += 6) {
 			for (x = 0; x < w; x += 3) {
 				c = XY (buf, x, y);
-				d = XY (buf, x, y + 1);
-				if (d + 3 > (buf + len)) {
-					break;
-				}
+				d = y + 1 < h? XY (buf, x, y + 1): c;
 				render_sixel (sb, c, d, true, true);
 			}
 			r_strbuf_append (sb, "$-");
@@ -144,18 +152,18 @@ static void do_render(Renderer renderer, RStrBuf *sb, const ut8 *buf, int len, i
 	}
 	for (y = 0; y < h; y += 2) {
 		const ut8 *previous_top = NULL, *previous_bottom = NULL;
+		if (renderer == render_ascii_rgb) {
+			r_strbuf_append (sb, Color_RESET);
+		}
 		for (x = 0; x < w; x++) {
 			c = XY (buf, x, y);
-			d = XY (buf, x, y + 1);
-			if (d + 3 > (buf + len)) {
-				break;
-			}
+			d = y + 1 < h? XY (buf, x, y + 1): c;
 			bool foreground = !previous_top || memcmp (previous_top, c, 3);
 			bool background = !previous_bottom || memcmp (previous_bottom, d, 3);
-			if (foreground || background || renderer == render_ascii) {
+			if (foreground || background || ascii) {
 				renderer (sb, c, d, foreground, background);
 			}
-			if (renderer != render_ascii) {
+			if (!ascii) {
 				r_strbuf_append_n (sb, "▀", 3);
 			}
 			previous_top = c;
@@ -169,6 +177,8 @@ static Renderer select_renderer(int mode) {
 	switch (mode) {
 	case 'a':
 		return render_ascii;
+	case 'c':
+		return render_ascii_rgb;
 	case 'A':
 		return render_ansi;
 	case 'g':
@@ -185,10 +195,13 @@ static Renderer select_renderer(int mode) {
 
 R_API char *r_cons_image(const ut8 *buf, int bufsz, int width, int mode, int components) {
 	R_RETURN_VAL_IF_FAIL (buf && bufsz >= 0 && width > 0 && components > 0, NULL);
+	if (components != 3 && components != 4) {
+		return NULL;
+	}
 	const int height = (bufsz / width) / components;
 	Renderer renderer = select_renderer (mode);
 	RStrBuf *sb = r_strbuf_new (NULL);
-	do_render (renderer, sb, buf, bufsz, width, height, components);
+	do_render (renderer, sb, buf, width, height, components);
 	return r_strbuf_drain (sb);
 }
 
