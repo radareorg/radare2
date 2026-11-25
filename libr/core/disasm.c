@@ -1226,7 +1226,12 @@ static void ds_highlight_word(RDisasmState *ds, char *word, char *color) {
 	char *source = ds->opstr? ds->opstr: ds->asmop.mnemonic;
 	const char *color_reset = line_highlighted (ds) ? ds->color_linehl : Color_RESET_BG;
 	char *asm_str = r_str_highlight (source, word, color, color_reset);
-	ds->opstr = asm_str? asm_str: source;
+	if (asm_str) {
+		if (source == ds->opstr) {
+			free (ds->opstr);
+		}
+		ds->opstr = asm_str;
+	}
 }
 
 static void __replaceImports(RDisasmState *ds) {
@@ -1513,17 +1518,18 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	}
 	r_str_trim (ds->opstr);
 	if (ds->show_color) {
-		int i = 0;
-		char *word = NULL;
-		char *bgcolor = NULL;
 		const char *wcdata = r_meta_get_string (ds->core->anal, R_META_TYPE_HIGHLIGHT, ds->at);
-		int argc = 0;
+		int i, argc = 0;
 		char **wc_array = r_str_argv (wcdata, &argc);
 		for (i = 0; i < argc; i++) {
-			bgcolor = strchr (wc_array[i], '\x1b');
-			word = R_STR_NDUP (wc_array[i], bgcolor - wc_array[i]);
-			ds_highlight_word (ds, word, bgcolor);
+			char *bgcolor = strchr (wc_array[i], '\x1b');
+			if (bgcolor) {
+				char *word = r_str_ndup (wc_array[i], bgcolor - wc_array[i]);
+				ds_highlight_word (ds, word, bgcolor);
+				free (word);
+			}
 		}
+		r_str_argv_free (wc_array);
 	}
 }
 
