@@ -904,7 +904,7 @@ static RList *dsc_get_slices_by_range(RIODscObject * dsc, ut64 off_global, int s
 		return NULL;
 	}
 
-	RList * result = r_list_new ();
+	RList * result = r_list_newf (free);
 	if (!result) {
 		return NULL;
 	}
@@ -986,7 +986,7 @@ static RList * dsc_slice_get_rebase_infos_by_range(RIODscSlice * slice, ut64 off
 		return NULL;
 	}
 
-	RList * result = r_list_new ();
+	RList * result = r_list_newf (free);
 	if (!result) {
 		return NULL;
 	}
