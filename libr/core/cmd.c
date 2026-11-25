@@ -5231,7 +5231,9 @@ repeat_arroba:
 						r_str_trim (k);
 					}
 					r_sys_setenv (k, v);
-					r_list_append (tmpenvs, k);
+					if (r_list_append (tmpenvs, k)) {
+						k = NULL;
+					}
 				}
 			} else {
 				char *n = r_sys_getenv (ptr + 2);

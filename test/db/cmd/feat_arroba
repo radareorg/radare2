@@ -228,3 +228,20 @@ true
 false
 EOF
 RUN
+
+NAME=@%VAR=value frees the temporary envvar once
+FILE=-
+CMDS=<<EOF
+?e ok @%1=0+0
+?e x @%AAAA=1
+?e ok
+%R2_TEST_TMPENV
+%R2_TEST_TMPENV=0x20
+?v $$ @%R2_TEST_TMPENV
+EOF
+EXPECT=<<EOF
+ok
+ok
+0x20
+EOF
+RUN
