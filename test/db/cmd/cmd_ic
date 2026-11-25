@@ -1554,6 +1554,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ic- then ic+ after obr renamed the class
+FILE=malloc://512
+CMDS=<<EOF
+ic+A
+ic+é
+obr
+icq
+ic-_1
+ic+é.meth
+icq
+EOF
+EXPECT=<<EOF
+0x00000000 [0x00000000 - 0x00000000] ? A
+0x00000000 [0x00000000 - 0x00000000] ? _1
+0x00000000 [0x00000000 - 0x00000000] ? A
+0x00000000 [0x00000000 - 0x00000000] ? é
+EOF
+RUN
+
 NAME=ic+ preserves binary names and sanitizes command exports
 FILE=malloc://512
 CMDS=<<EOF

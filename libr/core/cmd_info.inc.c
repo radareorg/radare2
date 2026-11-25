@@ -1118,6 +1118,32 @@ static void cmd_ic_invalidate_method_cache(RCore *core) {
 	}
 }
 
+typedef struct {
+	const RBinClass *klass;
+	const char *key;
+} CmdIcClassKey;
+
+static bool cmd_ic_class_key_cb(void *user, const void *k, const void *v) {
+	CmdIcClassKey *ck = user;
+	if (v == ck->klass) {
+		ck->key = k;
+		return false;
+	}
+	return true;
+}
+
+// the key is the name the class was added with, bin.filter may have renamed it since
+static void cmd_ic_forget_class(RBinObject *bo, const RBinClass *klass) {
+	if (!bo || !bo->classes_ht) {
+		return;
+	}
+	CmdIcClassKey ck = { klass, NULL };
+	ht_pp_foreach (bo->classes_ht, cmd_ic_class_key_cb, &ck);
+	if (ck.key) {
+		ht_pp_delete (bo->classes_ht, ck.key);
+	}
+}
+
 static RBinClass *cmd_ic_find_class(RList *klasses, const char *klass_name) {
 	RListIter *iter;
 	RBinClass *k;
@@ -1270,10 +1296,7 @@ static void cmd_ic_sub(RCore *core, const char *input) {
 				klass = k;
 			} else {
 				// drop the name lookup first or ic+ gets the freed class back
-				RBinObject *bo = r_bin_cur_object (core->bin);
-				if (bo && k->name && ht_pp_find (bo->classes_ht, k->name->oname, NULL) == k) {
-					ht_pp_delete (bo->classes_ht, k->name->oname);
-				}
+				cmd_ic_forget_class (r_bin_cur_object (core->bin), k);
 				r_list_delete (klasses, iter);
 				cmd_ic_invalidate_method_cache (core);
 				free (klass_name);
