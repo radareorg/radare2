@@ -1734,6 +1734,11 @@ bool test_r_str_highlight(void) {
 	free (str);
 	free (code);
 	free (pad);
+	str = strdup ("AAAAAAAAAAA\x1b[0m");
+	char *word = strdup ("AAAAAAAAAAA\x1b[0m");
+	mu_assert_streq_free (r_str_highlight (str, word, "<", ">"), "<AAAAAAAAAAA\x1b[0m>", "word ending in a color code matches at the end");
+	free (word);
+	free (str);
 	mu_end;
 }
 
