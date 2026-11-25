@@ -304,6 +304,23 @@ static RIOZipFileObj *alloc_zipfileobj(const char *archivename, const char *file
 	return zfo;
 }
 
+static int perms_for_file(const char *name) {
+	static const char *const exec_exts[] = {
+		".so", ".exe", ".dll", ".dylib", ".dex", ".class",
+	};
+	const char *ext = strrchr (r_file_basename (name), '.');
+	if (!ext) {
+		return R_PERM_RX;
+	}
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (exec_exts); i++) {
+		if (!r_str_casecmp (ext, exec_exts[i])) {
+			return R_PERM_RX;
+		}
+	}
+	return R_PERM_R;
+}
+
 // Below this line are the r_io_zip plugin APIs
 static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 	char *zip_filename = NULL, *zip_uri;
@@ -376,7 +393,8 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 			total += r_buf_size (zfo->b);
 			zfo->io_backref = io;
 			char *name = r_str_newf ("zip://%s//%s", zip_filename, sb.name);
-			RIODesc *res = r_io_desc_new (io, &r_io_plugin_zip, name, rw, mode, zfo);
+			int perms = perms_for_file (sb.name);
+			RIODesc *res = r_io_desc_new (io, &r_io_plugin_zip, name, perms, mode, zfo);
 			free (name);
 			if (!res) {
 				r_io_zip_free_zipfileobj (zfo);
