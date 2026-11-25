@@ -629,3 +629,62 @@ EXPECT_ERR=<<EOF
 ERROR: asm.arch: cannot find 'nonexistent'
 EOF
 RUN
+
+NAME=pd asm.bytes.asbits with pb1 growing the block
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx b800000000b800000000b800000000b800000000
+e asm.bytes.asbits=true
+b 32
+pd 4~mov eax, 0?
+EOF
+EXPECT=<<EOF
+4
+EOF
+RUN
+
+NAME=pd asm.var.summary=-1 with a folded function
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+af+ 0x10 fn
+afb+ 0x10 0x10 2
+afvb -4 var_4h int @ 0x10
+af+ 0x12 f2
+afb+ 0x12 0x12 2
+afF @ 0x12
+wx 90909090 @ 0x14
+e asm.var.summary=-1
+b 64
+pd 4 @ 0x10~!var
+EOF
+EXPECT=<<EOF
+/ 2: fn ();
+\           0x00000010      0000           add byte [rax], al
+/ (fcn) f2
+            0x00000012 (2 byte folded function)
+            0x00000014      90             nop
+            0x00000015      90             nop
+EOF
+RUN
+
+NAME=pd asm.anal with a cmd.fcn.new hook that changes asm.cmt.token
+FILE=malloc://8192
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx e8fb0f0000e8f60f0000c3 @ 0x100
+wx c3 @ 0x1100
+CC second call @ 0x105
+e asm.anal=true
+e asm.cmt.wrap=false
+e asm.cmt.token=TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
+e cmd.fcn.new=e asm.cmt.token=//
+pd 3 @ 0x100
+EOF
+EXPECT=<<EOF
+            0x00000100      e8fb0f0000     call fcn.00001100
+            0x00000105      e8f60f0000     call fcn.00001100           // second call
+            0x0000010a      c3             ret
+EOF
+RUN

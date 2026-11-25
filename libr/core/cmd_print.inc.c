@@ -7881,9 +7881,10 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 					R_LOG_ERROR ("Cannot allocate %" PFMTSZu " byte(s)", addrbytes * l);
 				}
 			} else {
-				ut8 *buf = core->block;
 				const int buf_size = core->blocksize;
-				if (buf) {
+				// commands run while listing can realloc core->block
+				block1 = core->block? r_mem_dup (core->block, buf_size): NULL;
+				if (block1) {
 					if (!l) {
 						l = use_blocksize;
 						if (!core->fixedblock) {
@@ -7892,7 +7893,7 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 					}
 					core->num->value = r_core_print_disasm (core,
 						addr,
-						buf,
+						block1,
 						buf_size,
 						l,
 						0,

@@ -1640,12 +1640,9 @@ static void ds_begin_comment(RDisasmState *ds) {
 	}
 }
 
-// Embedded commands may invalidate every borrowed analysis or configuration pointer.
-static char *ds_run_command(RDisasmState *ds, const char *str, bool capture) {
+// Commands may invalidate every borrowed analysis or configuration pointer.
+static char *ds_run_core_command(RDisasmState *ds, const char *str, bool capture) {
 	RCore *core = ds->core;
-	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
-		return NULL;
-	}
 	char *cmd = strdup (r_str_get (str));
 	if (!cmd) {
 		return NULL;
@@ -1688,6 +1685,14 @@ static char *ds_run_command(RDisasmState *ds, const char *str, bool capture) {
 	ds->mid_oplen = -1;
 	ds_refresh_refs (ds);
 	return output;
+}
+
+// Embedded commands come from metadata and must not run inside the sandbox.
+static char *ds_run_command(RDisasmState *ds, const char *str, bool capture) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		return NULL;
+	}
+	return ds_run_core_command (ds, str, capture);
 }
 
 static void ds_print_pins(RDisasmState *ds) {
@@ -3458,7 +3463,11 @@ static void ds_control_flow_comments(RDisasmState *ds) {
 		if (ds->asm_anal) {
 			switch (ds->analop.type) {
 			case R_ANAL_OP_TYPE_CALL:
-				r_core_cmdf (ds->core, "af @ 0x%"PFMT64x, ds->analop.jump);
+				{
+					// af runs the cmd.fcn.new hook
+					r_strf_var (cmd, 64, "af @ 0x%"PFMT64x, ds->analop.jump);
+					ds_run_core_command (ds, cmd, false);
+				}
 				break;
 			}
 		}
