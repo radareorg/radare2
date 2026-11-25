@@ -1676,6 +1676,19 @@ R_API int r_core_visual_classes(RCore *core) {
 			if (cmd && *cmd) {
 				r_core_cmd (core, cmd, 1);
 				r_cons_any_key (core->cons, NULL);
+				// the command may have freed classes (ic-) or reloaded the bin
+				list = r_bin_get_classes (core->bin);
+				if (r_list_empty (list)) {
+					R_FREE (grep);
+					return true;
+				}
+				mur = NULL;
+				fur = NULL;
+				cur = (mode != 'c')? r_list_get_n (list, oldcur): NULL;
+				if (!cur && mode != 'c') {
+					mode = 'c';
+					index = oldcur;
+				}
 			}
 			r_cons_clear (core->cons);
 			}
