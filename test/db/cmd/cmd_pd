@@ -249,6 +249,7 @@ RUN
 
 NAME=pd color opstr with unterminated escape
 FILE=malloc://64
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 e scr.color=1
 wx 90
@@ -256,7 +257,7 @@ ahd aaaaaaaaaaaaa 
 pd 1
 EOF
 EXPECT=<<EOF
-            [32m[7m0x00000000[0m      [36m90[32m00[32m00[32m00[0m       [1;31maaaaaaaaaaaaa[37m [0m[0m
+            [32m[7m0x00000000[0m      [36m90[0m             [34maaaaaaaaaaaaa[37m [0m[0m
 EOF
 RUN
 
