@@ -1,0 +1,12 @@
+NAME=leak dsc:// open and read
+FILE=dsc://bins/mach0/dyld_shared_cache_arm64-macOS
+ARGS=-n
+CMDS=<<EOF
+p8 8
+p8 8 @ 0x1000
+EOF
+EXPECT=<<EOF
+64796c645f763120
+cffaedfe0c000001
+EOF
+RUN
