@@ -333,7 +333,7 @@ static ut32 mov(ArmOp *op) {
 	return data;
 }
 
-static ut32 cb(ArmOp *op) {
+static ut32 cb(ArmOp *op, ut64 addr) {
 	ut32 data = UT32_MAX;
 	int k = 0;
 	if (r_str_startswith (op->mnemonic, "cbnz")) {
@@ -355,12 +355,10 @@ static ut32 cb(ArmOp *op) {
 	} else {
 		return UT32_MAX;
 	}
-	// printf ("%s %d, %llu\n", op->mnemonic, op->operands[0].reg, op->operands[1].immediate);
-	ut32 imm = op->operands[1].immediate;
-	data = k | encode1reg (op) | ((imm & 0x1c) << 27) | ((imm & 0x1fe0) << 11);
-	data = data | ((imm & 0x1fe000) >> 5);
-
-	return data;
+	st64 off = op->operands[1].immediate - addr;
+	check_cond (!(off & 3));
+	off >>= 2;
+	return k | encode1reg (op) | (off & 0x7f800) >> 3 | (off & 0x7f8) << 13 | (off & 0x7) << 29;
 }
 
 static ut32 cl(ArmOp *op) {
@@ -2248,7 +2246,7 @@ bool arm64ass (const char *str, ut64 addr, ut32 *op) {
 	if (r_str_startswith (str, "mov")) {
 		*op = mov (&ops);
 	} else if (r_str_startswith (str, "cb")) {
-		*op = cb (&ops);
+		*op = cb (&ops, addr);
 	} else if (r_str_startswith (str, "cmp")) {
 		*op = cmp (&ops);
 	} else if (r_str_startswith (str, "mul ")) {
