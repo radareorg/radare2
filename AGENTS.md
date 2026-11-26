@@ -11,6 +11,7 @@ Search symbols and paths first; read only relevant sections:
 - APIs: `libr/include/` declarations, corresponding `libr/` implementations and callers. Verify signatures and ownership against current code.
 - Layout: libraries in `libr/`, CLI tools in `binr/`, plugins in `libr/*/p/`.
 - Style/build details: `DEVELOPERS.md` and `doc/indent-example.c`; public API/ABI changes: `doc/abi.md`.
+- Consult the reviewer guidelines in [MUST.md](doc/rules/MUST.md) and [DONT.md](doc/rules/DONT.md).
 - Commands: `man/`, `r2 -h` and `<command>?`; test formats: `test/README.md` and nearby `test/db/` cases.
 
 ## Style
