@@ -1,0 +1,48 @@
+--- a/src/query.c
++++ b/src/query.c
+@@ -83,12 +83,12 @@ static bool foreach_list_cb(void *user, const char *k, const char *v) {
+ 	return true;
+ }
+ 
+-static void walk_namespace(StrBuf *sb, char *root, int left, char *p, SdbNs *ns, bool encode) {
+-	int len;
++// p is the terminator of the path in root, with left bytes available from there
++static void walk_namespace(StrBuf *sb, char *root, size_t left, char *p, SdbNs *ns, bool encode) {
++	size_t len;
+ 	SdbListIter *it;
+ 	SdbNs *n;
+ 	ForeachListUser user = { sb, encode, root };
+-	char *roote = root + strlen (root);
+ 	if (!ns->sdb) {
+ 		return;
+ 	}
+@@ -98,12 +98,13 @@ static void walk_namespace(StrBuf *sb, char *root, int left, char *p, SdbNs *ns,
+ 	/*Pick "sub"-ns*/
+ 	ls_foreach_cast (ns->sdb->ns, it, SdbNs*, n) {
+ 		len = strlen (n->name);
+-		p[0] = '/';
+-		if (len + 2 < left) {
+-			memcpy (p + 1, n->name, len + 1);
+-			left -= len + 2;
++		if (len + 2 > left) {
++			// '/' + name + terminator does not fit, skip this subtree
++			continue;
+ 		}
+-		walk_namespace (sb, root, left, roote + len + 1, n, encode);
++		p[0] = '/';
++		memcpy (p + 1, n->name, len + 1);
++		walk_namespace (sb, root, left - len - 1, p + len + 1, n, encode);
+ 	}
+ }
+ 
+@@ -137,8 +138,8 @@ static bool q_dump(Query *q) {
+ 	if (!strcmp (q->cmd, "***")) {
+ 		char root[1024];
+ 		ls_foreach_cast (q->s->ns, it, SdbNs*, ns) {
+-			int name_len = strlen (ns->name);
+-			if (name_len < (long)sizeof (root)) {
++			size_t name_len = strlen (ns->name);
++			if (name_len < sizeof (root)) {
+ 				memcpy (root, ns->name, name_len + 1);
+ 				walk_namespace (q->out, root, sizeof (root) - name_len,
+ 					root + name_len, ns, q->encode);

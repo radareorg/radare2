@@ -3869,3 +3869,32 @@ EXPECT=<<EOF
 }
 EOF
 RUN
+
+NAME=k *** skips namespace paths longer than the path buffer
+FILE=-
+CMDS=<<EOF
+k long/zz/`p8 540`/sub/x=1
+k long/zz/ok/y=2
+k long/***
+EOF
+EXPECT=<<EOF
+zz/ok/y=2
+EOF
+RUN
+
+NAME=k *** lists each namespace under its own name
+FILE=-
+CMDS=<<EOF
+k sib/top/a`p8 200`/sub/k=1
+k sib/top/b`p8 200`/sub/k=2
+k sib/top/c`p8 200`/sub/k=3
+k sib/***~/a0?
+k sib/***~/b0?
+k sib/***~/c0?
+EOF
+EXPECT=<<EOF
+1
+1
+1
+EOF
+RUN

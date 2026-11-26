@@ -4,4 +4,4 @@ revision = 2.6.2
 directory = sdb
 depth = 1
 patch_directory = sdb
-diff_files = sdb/archive-create.patch
+diff_files = sdb/archive-create.patch, sdb/fix-query-ns-dump.patch

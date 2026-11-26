@@ -5,7 +5,7 @@ WRAP_wrap_git_revision:=2.6.2
 WRAP_wrap_git_directory:=sdb
 WRAP_wrap_git_depth:=1
 WRAP_wrap_git_patch_directory:=sdb
-WRAP_wrap_git_diff_files:=sdb/archive-create.patch
+WRAP_wrap_git_diff_files:=sdb/archive-create.patch,sdb/fix-query-ns-dump.patch
 
 .PHONY: sdb sdb_clean sdb_all
 
@@ -17,7 +17,7 @@ sdb_all:
 	cd sdb && git fetch --depth=1 origin 2.6.2:refs/acr-wrap/2.6.2
 	cd sdb && git checkout FETCH_HEAD
 	cp -rf packagefiles/sdb/* sdb
-	for a in sdb/archive-create.patch ; do echo "patch -d sdb -p1 < $$a" ; patch -d sdb -p1 < $$a ; done
+	for a in sdb/archive-create.patch sdb/fix-query-ns-dump.patch ; do echo "patch -d sdb -p1 < $$a" ; patch -d sdb -p1 < $$a ; done
 
 sdb_clean:
 	rm -rf sdb
