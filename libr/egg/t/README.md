@@ -25,7 +25,7 @@ Files
 - hello-linux-x64.r  loop that writes "Hello World" using Linux x86-64 syscalls
 - hello-darwin-arm64.r  macOS arm64 hello world using Darwin syscalls
 - hello-llvm.r      native hello world linked with the C runtime by Clang
-- fib.r            first seven Fibonacci numbers with selectable I/O declarations
+- fib.r            first seven Fibonacci numbers with native or libc I/O
 - exit.r            inline assembly for the Linux i386 exit syscall
 - arith.r           arithmetic expressions and operator precedence
 - regs.r            direct native-register access via the `.regname` syntax
@@ -43,7 +43,8 @@ Language cheat sheet
     name@global(S,F) { body }        ; function with S byte stackframe
                                       and F bytes reserved for constants
     name@syscall(N);                 ; declare name as a syscall number
-    file.r@include("");              ; load a file from the include search path
+    name@syscall(write);             ; resolve a syscall name for the native target
+    file.r@include("");              ; load relative to this file or the include path
     name@alias(value)                ; textual alias: .name -> value
     name@fastcall(addr)              ; call a function at addr via fastcall
     @syscall() { body }              ; override the generated syscall body
@@ -71,29 +72,29 @@ Example compile and inspect
 Run the Fibonacci example from the repository root
 --------------------------------------------------
 
-`fib.r` includes `io.r`, which declares `read(fd, buf, count)`,
-`write(fd, buf, count)`, and `exit(status)`. Use `-I` to select the directory
-that supplies those declarations. The program writes `0`, `1`, `1`, `2`, `3`,
-`5`, and `8` on separate lines.
+`fib.r` includes `io/libc64/io.r` relative to its source file. The header uses
+`#if LLVM` to select libc imports for `read(fd, buf, count)`,
+`write(fd, buf, count)`, and `exit(status)`. The `#else` branch uses named
+syscalls and the native target's return conventions. The program writes
+`0`, `1`, `1`, `2`, `3`, `5`, and `8` on separate lines.
 
 On macOS ARM64, run with native Darwin syscalls.
 
 ```sh
-ragg2 -x -I libr/egg/t/io/darwin-arm64 libr/egg/t/fib.r
+ragg2 -x libr/egg/t/fib.r
 ```
 
-Use the same include for a standalone Mach-O executable.
+Build a standalone Mach-O executable with `-F`.
 
 ```sh
-ragg2 -F -I libr/egg/t/io/darwin-arm64 -o fib libr/egg/t/fib.r
+ragg2 -F -o fib libr/egg/t/fib.r
 ./fib
 ```
 
-The `io/libc64` include uses `@extern`, which requires the LLVM backend.
 On a 64-bit macOS or Linux host, generate LLVM IR and link with Clang.
 
 ```sh
-ragg2 -a llvm -I libr/egg/t/io/libc64 -o fib.ll libr/egg/t/fib.r
+ragg2 -a llvm -o fib.ll libr/egg/t/fib.r
 clang -Wno-override-module fib.ll -o fib
 ./fib
 ```

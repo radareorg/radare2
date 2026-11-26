@@ -1,4 +1,4 @@
-io.r@include("");
+io.r@include("io/libc64");
 
 main@global(128) {
 	/* Keep locals above the native emitter's syscall argument slots. */

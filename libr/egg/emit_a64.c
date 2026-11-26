@@ -123,7 +123,7 @@ static char *emit_syscall(REgg *egg, int num) {
 		svc = 0x8000;
 		break;
 	case R_EGG_OS_LINUX:
-		svc = 0;
+		syscall_reg = "x8";
 		break;
 	}
 	return r_str_newf (": mov %s, `.arg`\n: svc 0x%x\n", syscall_reg, svc);

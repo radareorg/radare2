@@ -84,55 +84,46 @@ enum {
 	LANG_MODE_LAST
 };
 
-static char *find_include(const char *prefix, const char *file) {
-	char *pfx = NULL, *ret = NULL, *env = r_sys_getenv (R_EGG_INCDIR_ENV);
-	if (!prefix) {
-		prefix = "";
+static char *find_include(REgg *egg, const char *prefix, const char *file) {
+	char *env_prefix = NULL;
+	if (prefix && *prefix == '$') {
+		prefix = env_prefix = r_sys_getenv (prefix + 1);
 	}
-	if (*prefix == '$') {
-		char *out = r_sys_getenv (prefix + 1);
-		pfx = out? out: strdup ("");
-	} else {
-		pfx = strdup (prefix);
-		if (!pfx) {
+	char *relative = R_STR_ISEMPTY (prefix) || r_file_is_abspath (file)
+		? strdup (file): r_str_newf ("%s" R_SYS_DIR "%s", prefix, file);
+	free (env_prefix);
+	if (!relative || r_file_is_abspath (relative)) {
+		return relative;
+	}
+	const char *source = egg->lang.file;
+	if (source && (strchr (source, '/') || strchr (source, '\\'))) {
+		char *dir = r_file_dirname (source);
+		char *path = dir? r_file_new (dir, relative, NULL): NULL;
+		free (dir);
+		if (path && r_file_exists (path)) {
+			free (relative);
+			return path;
+		}
+		free (path);
+	}
+	char *env = r_sys_getenv (R_EGG_INCDIR_ENV);
+	char *dir = env;
+	while (dir) {
+		char *next = strchr (dir, ':');
+		if (next) {
+			*next++ = 0;
+		}
+		char *path = r_file_new (*dir? dir: ".", relative, NULL);
+		if (path && r_file_exists (path)) {
 			free (env);
-			return NULL;
+			free (relative);
+			return path;
 		}
+		free (path);
+		dir = next;
 	}
-
-	if (env) {
-		char *str, *ptr = strchr (env, ':');
-		// eprintf ("MUST FIND IN PATH (%s)\n", env);
-		str = env;
-		while (str) {
-			if (ptr) {
-				*ptr = 0;
-			}
-			free (ret);
-			ret = r_str_appendf (NULL, "%s/%s", pfx, file);
-			{
-				char *filepath = r_str_appendf (NULL, "%s/%s/%s", str, pfx, file);
-				// eprintf ("try (%s)\n", filepath);
-				if (r_file_exists (filepath)) {
-					free (env);
-					free (pfx);
-					free (ret);
-					return filepath;
-				}
-				free (filepath);
-			}
-			if (!ptr) {
-				break;
-			}
-			str = ptr + 1;
-			ptr = strchr (str, ':');
-		}
-		free (env);
-	} else {
-		ret = r_str_appendf (NULL, "%s/%s", pfx, file);
-	}
-	free (pfx);
-	return ret;
+	free (env);
+	return relative;
 }
 
 R_API void r_egg_lang_init(REgg *egg) {
@@ -140,7 +131,9 @@ R_API void r_egg_lang_init(REgg *egg) {
 	/* do call or inline it? */ // BOOL
 	egg->lang.docall = 1;
 	egg->lang.line = 1;
-	egg->lang.file = strdup ("stdin");
+	if (!egg->lang.file) {
+		egg->lang.file = strdup ("stdin");
+	}
 	egg->lang.oc = '\n';
 	egg->lang.mode = LANG_MODE_NORMAL;
 }
@@ -464,7 +457,7 @@ static void rcc_element(REgg *egg, char *str) {
 			R_FREE (egg->lang.dstvar);
 			egg->lang.mode = LANG_MODE_NORMAL;
 			break;
-		case LANG_MODE_SYSCALL:
+		case LANG_MODE_SYSCALL: {
 			if (!egg->lang.dstvar) {
 				R_LOG_ERROR ("does not set name or arg for syscall");
 				break;
@@ -473,11 +466,27 @@ static void rcc_element(REgg *egg, char *str) {
 				R_LOG_ERROR ("global-buffer-overflow in syscalls");
 				break;
 			}
+			char syscall_number[32];
+			r_str_trim (str);
+			if (r_name_check (str)) {
+				char *alias = (char *)find_alias (egg, str);
+				if (alias) {
+					free (alias);
+				} else {
+					int number = egg->syscall->db? r_syscall_get_num (egg->syscall, str): -1;
+					if (number < 0) {
+						rcc_error (egg, "unknown syscall for this target ", str);
+						break;
+					}
+					snprintf (syscall_number, sizeof (syscall_number), "%d", number);
+					str = syscall_number;
+				}
+			}
 			{
 				bool found = false;
 				int idx = egg->lang.nsyscalls;
 				for (i = 0; i < egg->lang.nsyscalls; i++) {
-				if (egg->lang.syscalls[i].name && !strcmp (egg->lang.dstvar, egg->lang.syscalls[i].name)) {
+					if (egg->lang.syscalls[i].name && !strcmp (egg->lang.dstvar, egg->lang.syscalls[i].name)) {
 						idx = i;
 						found = true;
 						break;
@@ -494,6 +503,7 @@ static void rcc_element(REgg *egg, char *str) {
 				R_FREE (egg->lang.dstvar);
 			}
 			break;
+		}
 		case LANG_MODE_GOTO:
 			e->jmp (egg, str, 0);
 			break;
@@ -1064,6 +1074,114 @@ static int rcc_parse(REgg *egg, const char *s) {
 	return 0;
 }
 
+static int rcc_target_matches(REgg *egg, RStrs expression) {
+	const struct {
+		const char *name;
+		bool enabled;
+	} targets[] = {
+		{ "LLVM", !strcmp (egg->remit->arch, "llvm") },
+		{ "DARWIN", egg->os == R_EGG_OS_DARWIN || egg->os == R_EGG_OS_OSX || egg->os == R_EGG_OS_MACOS },
+		{ "LINUX", egg->os == R_EGG_OS_LINUX },
+		{ "ARM64", egg->arch == R_SYS_ARCH_ARM && egg->bits == 64 },
+		{ "X86_64", egg->arch == R_SYS_ARCH_X86 && egg->bits == 64 },
+	};
+	bool matches = true;
+	bool more;
+	do {
+		RStrs target;
+		more = r_strs_split_strs (expression, R_STRS_LIT ("&&"), &target, &expression);
+		r_strs_trim (&target);
+		size_t i;
+		for (i = 0; i < R_ARRAY_SIZE (targets); i++) {
+			if (r_strs_equals_str (target, targets[i].name)) {
+				matches &= targets[i].enabled;
+				break;
+			}
+		}
+		if (i == R_ARRAY_SIZE (targets)) {
+			rcc_error (egg, "expected an RCC target in preprocessor condition", NULL);
+			return -1;
+		}
+	} while (more);
+	return matches;
+}
+
+typedef struct {
+	bool parent_active;
+	bool matched;
+	bool seen_else;
+} RCCConditional;
+
+R_IPI bool r_egg_lang_parse_source(REgg *egg, const char *source) {
+	RCCConditional frames[32];
+	int depth = 0;
+	bool active = true;
+	while (*source) {
+		const char *end = strchr (source, '\n');
+		if (!end) {
+			end = source + strlen (source);
+		}
+		RStrs line = r_strs_new (source, end);
+		r_strs_trim (&line);
+		bool directive = false;
+		if (r_strs_at (line, 0) == '#' && !egg->lang.commentmode && !egg->lang.slurp
+				&& egg->lang.mode != LANG_MODE_INLINE && egg->lang.mode != LANG_MODE_DATA) {
+			r_strs_advance (&line, 1);
+			RStrs keyword;
+			r_strs_next_token (&line, " \t", &keyword);
+			r_strs_trim (&line);
+			bool opens = r_strs_equals_str (keyword, "if");
+			bool alternate = r_strs_equals_str (keyword, "elif");
+			bool otherwise = r_strs_equals_str (keyword, "else");
+			bool closes = r_strs_equals_str (keyword, "endif");
+			bool error = r_strs_equals_str (keyword, "error");
+			directive = opens || alternate || otherwise || closes || error;
+			if ((opens && depth == R_ARRAY_SIZE (frames))
+					|| ((alternate || otherwise || closes) && !depth)
+					|| ((alternate || otherwise) && frames[depth - 1].seen_else)
+					|| ((otherwise || closes) && !r_strs_empty (line))) {
+				rcc_error (egg, "invalid preprocessor conditional", NULL);
+				return false;
+			}
+			if (opens) {
+				frames[depth++] = (RCCConditional) { .parent_active = active };
+			}
+			if (opens || alternate || otherwise) {
+				int matches = otherwise? 1: rcc_target_matches (egg, line);
+				if (matches < 0) {
+					return false;
+				}
+				RCCConditional *frame = &frames[depth - 1];
+				active = frame->parent_active && !frame->matched && matches;
+				frame->matched |= matches;
+				frame->seen_else = otherwise;
+			} else if (closes) {
+				active = frames[--depth].parent_active;
+			} else if (error && active) {
+				R_LOG_ERROR ("%s:%d: %.*s", egg->lang.file, egg->lang.line,
+					(int)R_MIN (r_strs_len (line), INT_MAX), line.a);
+				return false;
+			}
+		}
+		if (active && !directive) {
+			for (; source < end; source++) {
+				if (r_egg_lang_parsechar (egg, *source) < 0) {
+					return false;
+				}
+			}
+		}
+		source = end;
+		if (*source && r_egg_lang_parsechar (egg, *source++) < 0) {
+			return false;
+		}
+	}
+	if (depth) {
+		rcc_error (egg, "unterminated preprocessor conditional", NULL);
+		return false;
+	}
+	return !egg->lang.quoteline || r_egg_lang_parsechar (egg, '\n') >= 0;
+}
+
 /* TODO: split this function into several ones..quite long fun */
 static int rcc_statement(REgg *egg, char *elem) {
 	const char *ocn;
@@ -1079,25 +1197,26 @@ static int rcc_statement(REgg *egg, char *elem) {
 		return 0;
 	}
 	if (egg->lang.includefile) {
-		char *p, *q, *path;
-		path = find_include (egg->lang.includedir, egg->lang.includefile);
-		if (!path) {
-			R_LOG_ERROR ("Cannot find include file '%s'", elem);
-			return 0;
+		char *path = find_include (egg, egg->lang.includedir, egg->lang.includefile);
+		char *source = path? r_file_slurp (path, NULL): NULL;
+		if (!source) {
+			R_LOG_ERROR ("Cannot load include file '%s'", path? path: egg->lang.includefile);
+			free (path);
+			return -1;
 		}
 		R_FREE (egg->lang.includefile);
 		R_FREE (egg->lang.includedir);
 		rcc_reset_callname (egg);
-		p = q = r_file_slurp (path, NULL);
-		if (p) {
-			int oline = ++ (egg->lang.line);
-			egg->lang.line = 0;
-			ret = rcc_parse (egg, p);
-			free (q);
-			egg->lang.line = oline;
-		} else {
-			R_LOG_ERROR ("Cannot find '%s'", path);
-		}
+		egg->lang.mode = LANG_MODE_NORMAL;
+		char *previous_file = egg->lang.file;
+		int previous_line = egg->lang.line;
+		egg->lang.file = path;
+		egg->lang.line = 1;
+		egg->lang.oc = '\n';
+		ret = r_egg_lang_parse_source (egg, source)? 0: -1;
+		egg->lang.file = previous_file;
+		egg->lang.line = previous_line;
+		free (source);
 		free (path);
 		return ret;
 	}
@@ -1182,6 +1301,7 @@ static int rcc_statement(REgg *egg, char *elem) {
 							free (s);
 						} else {
 							R_LOG_ERROR ("Cannot get @syscall payload");
+							ret = -1;
 						}
 					}
 					if (ret < 0) {

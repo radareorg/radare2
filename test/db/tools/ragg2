@@ -1205,12 +1205,22 @@ ERROR: r_egg_compile failed
 EOF
 RUN
 
-NAME=ragg2 -F rejects the Fibonacci libc include
+NAME=ragg2 -F rejects an extern declaration without a native fallback
 FILE=--
-CMDS=ragg2 -F -a arm -b 64 -k darwin -I ../libr/egg/t/io/libc64 ../libr/egg/t/fib.r
+CMDS=ragg2 -F -a arm -b 64 -k darwin -e 'read@extern(i64, i32, ptr, i64);'
 EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: @extern for 'read' requires the LLVM backend (-a llvm)
+ERROR: r_egg_compile failed
+EOF
+RUN
+
+NAME=ragg2 stops when an RCC include is missing
+FILE=--
+CMDS=ragg2 -a arm -b 64 -e 'missing-ragg2-header.r@include(""); main@global() { ; }'
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot load include file 'missing-ragg2-header.r'
 ERROR: r_egg_compile failed
 EOF
 RUN

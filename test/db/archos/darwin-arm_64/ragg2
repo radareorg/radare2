@@ -6,9 +6,9 @@ Hello from Darwin arm64!
 EOF
 RUN
 
-NAME=ragg2 -x runs the Fibonacci example with Darwin syscall declarations
+NAME=ragg2 -x runs the Fibonacci example with its source-relative I/O header
 FILE=-
-CMDS=!ragg2 -x -I ../libr/egg/t/io/darwin-arm64 ../libr/egg/t/fib.r
+CMDS=!ragg2 -x ../libr/egg/t/fib.r
 EXPECT=<<EOF
 0
 1

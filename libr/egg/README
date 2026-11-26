@@ -26,10 +26,11 @@ at any place in the code.
 
 Preprocessor
 ------------
-There's no standard preprocessor integrated with it. But if you feel
-the need to use one you may use cpp or spp*.
-
-  * hg clone http://hg.youterm.com/spp
+RCC supports `#if`, `#elif`, `#else`, `#endif`, and `#error` on their own
+lines. Conditions use the predefined targets `LLVM`, `DARWIN`, `LINUX`,
+`ARM64`, and `X86_64`. Join targets with `&&`, as in `#if DARWIN && ARM64`.
+The architecture conditions refer to the selected native backend. Each file
+must close its own conditionals.
 
 Aliases
 -------
@@ -42,9 +43,10 @@ language. This is just an assembler-level keyword redefinition.
 
 Includes
 --------
-Use `io.r@include("");` to load `io.r` from the include search path.
-Add a directory to the search path with `ragg2 -I DIR`. See `t/README.md`
-for an example that selects syscall or libc declarations this way.
+Use `io.r@include("headers");` to load `headers/io.r` relative to the file
+containing the directive. If the header is absent there, ragg2 checks the
+include search path and the working directory. Use `ragg2 -I DIR` to add a
+search directory and use an empty prefix to look for `io.r` directly.
 
 Hashbang
 --------
@@ -93,6 +95,11 @@ Function types
 
 Syscalls
 --------
+Native backends accept syscall names as well as numbers. For example,
+`write@syscall(write);` looks up `write` for the selected target OS,
+architecture and bit width. See `t/io/libc64/io.r` for a header that selects
+typed libc imports with LLVM and named syscalls with native backends.
+
 r_egg offers a syntax sugar for defining syscalls. The syntax is like this:
 
   exit@syscall(1);

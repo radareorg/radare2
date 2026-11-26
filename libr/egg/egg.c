@@ -15,6 +15,7 @@ extern REggEmit emit_ppc64;
 extern REggEmit emit_esil;
 extern REggEmit emit_trace;
 extern REggEmit emit_llvm;
+R_IPI bool r_egg_lang_parse_source(REgg *egg, const char *source);
 
 #if !defined(R_EGG_STATIC_PLUGINS)
 #define R_EGG_STATIC_PLUGINS 0
@@ -235,6 +236,10 @@ R_API bool r_egg_include(REgg *egg, const char *file, int format) {
 		r_buf_append_bytes (egg->buf, foo, (ut64)sz);
 		break;
 	default:
+		if (!r_buf_size (egg->src)) {
+			free (egg->lang.file);
+			egg->lang.file = r_file_abspath (file);
+		}
 		r_buf_append_bytes (egg->src, foo, (ut64)sz);
 		break;
 	}
@@ -406,15 +411,19 @@ R_API bool r_egg_assemble(REgg *egg) {
 R_API bool r_egg_compile(REgg *egg) {
 	R_RETURN_VAL_IF_FAIL (egg, false);
 	REggEmit *e = egg->remit;
-	r_buf_seek (egg->src, 0, R_BUF_SET);
-	char b;
-	int r = r_buf_read (egg->src, (ut8 *)&b, sizeof (b));
-	if (r != sizeof (b) || !e) {
+	if (!e || !r_buf_size (egg->src)) {
 		return true;
 	}
+	char *source = r_buf_tostring (egg->src);
+	if (!source) {
+		return false;
+	}
 	// only emit begin if code is found
+	char *source_file = egg->lang.file;
+	egg->lang.file = NULL;
 	r_egg_lang_fini (egg);
 	memset (&egg->lang, 0, sizeof (egg->lang));
+	egg->lang.file = source_file;
 	egg->context = 0;
 	r_egg_lang_init (egg);
 	if (e->priv_new) {
@@ -423,16 +432,9 @@ R_API bool r_egg_compile(REgg *egg) {
 		}
 		egg->priv = e->priv_new (egg);
 	}
-	for (; b;) {
-		if (r_egg_lang_parsechar (egg, b) < 0) {
-			return false;
-		}
-		size_t r = r_buf_read (egg->src, (ut8 *)&b, sizeof (b));
-		if (r != sizeof (b)) {
-			break;
-		}
-	}
-	if (egg->lang.quoteline && r_egg_lang_parsechar (egg, '\n') < 0) {
+	bool parsed = r_egg_lang_parse_source (egg, source);
+	free (source);
+	if (!parsed) {
 		return false;
 	}
 	if (egg->context > 0) {
