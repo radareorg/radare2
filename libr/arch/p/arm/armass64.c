@@ -131,26 +131,6 @@ R_UNUSED static bool has64reg(const char *str) {
 	return (w && isdigit (w[1]));
 }
 
-static int calcNegOffset(int n, int shift) {
-	int a = n >> shift;
-	if (a == 0) {
-		return 0xff;
-	}
-	// find first set bit then invert it and all
-	// bits below it
-	int t = 0x400;
-	while (!(t & a) && a != 0 && t != 0) {
-		t = t >> 1;
-	}
-	t = t & (t - 1);
-	a = a ^ t;
-	// If bits below 32 are set
-	if (countTrailingZeros (n) > shift) {
-		a--;
-	}
-	return 0xff & (0xff - a);
-}
-
 static int countLeadingOnes(ut64 x) {
 	return countLeadingZeros (~x);
 }
@@ -1262,32 +1242,10 @@ static ut32 branch(ArmOp *op, ut64 addr, int k) {
 
 static ut32 bdot(ArmOp *op, ut64 addr, int k) {
 	ut32 data = UT32_MAX;
-	int n = 0;
-	int a = 0;
-	n = op->operands[0].immediate;
-	// I am sure there's a logical way to do negative offsets,
-	// but I was unable to find any sensible docs so I did my best
-	if (!(n & 0x3 || n > 0x7ffffff)) {
-		n -= addr;
-		data = k;
-		if (n < 0) {
-			n *= -1;
-			a = (n << 3) - 1;
-			data |= (0xff - a) << 24;
-
-			a = calcNegOffset (n, 5);
-			data |= a << 16;
-
-			a = calcNegOffset (n, 13);
-			data |= a << 8;
-		} else {
-			data |= (n & 31) << 27;
-			data |= (0xff & (n >> 5)) << 16;
-			data |= (0xff & (n >> 13)) << 8;
-		}
-	}
-
-	return data;
+	st64 off = op->operands[0].immediate - addr;
+	check_cond (!(off & 3));
+	off >>= 2;
+	return k | (off & 0x7f800) >> 3 | (off & 0x7f8) << 13 | (off & 0x7) << 29;
 }
 
 static ut32 mem_barrier(ArmOp *op, ut64 addr, int k) {
