@@ -366,32 +366,38 @@ R_API ut8 *r_reg_arena_peek(RReg *reg, int *size) {
 	return ret;
 }
 
-R_API void r_reg_arena_poke(RReg *reg, const ut8 *ret, int len) {
-	R_RETURN_IF_FAIL (reg && ret);
+static bool arena_write(RReg *reg, const ut8 *buf, int len) {
 	RRegSet *regset = r_reg_regset_get (reg, R_REG_TYPE_GPR);
-	if (!ret || !regset || !regset->arena || !regset->arena->bytes) {
-		return;
+	if (!buf || !regset || !regset->arena || !regset->arena->bytes) {
+		return false;
 	}
-	if (len > 0 && len != regset->arena->size) {
+	if (len != regset->arena->size) {
 		R_LOG_WARN ("Invalid size of the arena bytes to poke (%d vs %d)",
 			len, regset->arena->size);
-		return;
+		return false;
 	}
 	r_reg_arena_materialize (regset->arena);
-	memcpy (regset->arena->bytes, ret, regset->arena->size);
+	memcpy (regset->arena->bytes, buf, len);
+	return true;
 }
 
-R_API ut8 *r_reg_arena_dup(RReg *reg, const ut8 *source) {
-	R_RETURN_VAL_IF_FAIL (reg && source, NULL);
+R_API void r_reg_arena_poke(RReg *reg, const ut8 *ret, int len) {
+	R_RETURN_IF_FAIL (reg && ret);
+	arena_write (reg, ret, len);
+}
+
+R_API RRegArena *r_reg_arena_save(RReg *reg) {
+	R_RETURN_VAL_IF_FAIL (reg, NULL);
 	RRegSet *regset = r_reg_regset_get (reg, R_REG_TYPE_GPR);
-	if (!regset || !regset->arena || (regset->arena->size < 1)) {
+	if (!regset || !regset->arena || regset->arena->size < 1) {
 		return NULL;
 	}
-	ut8 *ret = malloc (regset->arena->size);
-	if (R_LIKELY (ret)) {
-		memcpy (ret, source, regset->arena->size);
-	}
-	return ret;
+	return r_reg_arena_clone (regset->arena);
+}
+
+R_API bool r_reg_arena_restore(RReg *reg, const RRegArena *a) {
+	R_RETURN_VAL_IF_FAIL (reg && a, false);
+	return arena_write (reg, a->bytes, a->size);
 }
 
 R_API int r_reg_arena_set_bytes(RReg *reg, const char *str) {

@@ -1066,8 +1066,9 @@ static RAnalBlock *pending_block(PDCState *state, RBitset *vis, ut64 addr) {
 static void emulate_block(PDCState *state, RAnalBlock *bb, HtUP *bytes, const ut8 *saved, int len) {
 	RReg *reg = state->core->anal->reg;
 	if (bb->parent_reg_arena) {
-		r_reg_arena_poke (reg, bb->parent_reg_arena, bb->parent_reg_arena_size);
-		R_FREE (bb->parent_reg_arena);
+		r_reg_arena_restore (reg, bb->parent_reg_arena);
+		r_reg_arena_free (bb->parent_reg_arena);
+		bb->parent_reg_arena = NULL;
 	} else {
 		r_reg_arena_poke (reg, saved, len);
 	}
@@ -1091,8 +1092,7 @@ static void push_successor(PDCState *state, RVecPdcEmuStep *steps, RBitset *vis,
 		return;
 	}
 	if (anal->last_disasm_reg && !bb->parent_reg_arena) {
-		bb->parent_reg_arena = r_reg_arena_dup (anal->reg, anal->last_disasm_reg);
-		bb->parent_reg_arena_size = anal->last_disasm_reg_size;
+		bb->parent_reg_arena = r_reg_arena_clone (anal->last_disasm_reg);
 	}
 	push_step (steps, addr, enter, false);
 }
@@ -1156,7 +1156,8 @@ static void pdc_emulate_blocks(PDCState *state) {
 	R_VEC_FOREACH (&state->fcn->bbs, iter) {
 		bb = *iter;
 		// a seed left behind by another command would outrank the walk
-		R_FREE (bb->parent_reg_arena);
+		r_reg_arena_free (bb->parent_reg_arena);
+		bb->parent_reg_arena = NULL;
 		// stores may hit code; disassemble the bytes as they were
 		ut8 *buf = malloc (bb->size);
 		if (buf) {
@@ -1171,7 +1172,8 @@ static void pdc_emulate_blocks(PDCState *state) {
 			r_bitset_set (vis, bb->addr);
 			emulate_block (state, bb, bytes, saved, len);
 		}
-		R_FREE (bb->parent_reg_arena);
+		r_reg_arena_free (bb->parent_reg_arena);
+		bb->parent_reg_arena = NULL;
 	}
 	ht_up_free (bytes);
 	r_bitset_free (vis);

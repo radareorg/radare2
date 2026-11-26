@@ -524,3 +524,33 @@ EXPECT=<<EOF
 | // true: 0x00005b40
 EOF
 RUN
+
+NAME=pdr stale emu arena after agf and profile change
+FILE=malloc://16
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 31c085c090c3
+e asm.emu=true
+af+ 0 f
+afb+ 0 0 2 2 -1
+afb+ 0 2 2 4 -1
+afb+ 0 4 2 -1 -1
+e graph.few=true
+s 0
+agf~xyzzy
+e graph.few=false
+e asm.bits=64
+afB 64
+pdr
+EOF
+EXPECT=<<EOF
+/ 6: f ();
+| 0x00000000      31c0           xor eax, eax                          ; rax=0x0 ; zf=0x1 -> 0x90c085c0 ; pf=0x1 -> 0x90c085c0 ; sf=0x0 ; cf=0x0 ; of=0x0 ; rax=0x0
+| // true: 0x00000002
+| 0x00000002      85c0           test eax, eax                         ; zf=0x1 -> 0x90c085c0 ; pf=0x1 -> 0x90c085c0 ; sf=0x0 ; cf=0x0 ; of=0x0
+| // true: 0x00000004
+| 0x00000004      90             nop
+\ 0x00000005      c3             ret                                   ; rip=0xc390c085c031 ; rsp=0x8
+
+EOF
+RUN

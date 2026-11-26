@@ -2370,8 +2370,9 @@ static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fc
 	if (emu) {
 		core->anal->gp = saved_gp;
 		if (b->parent_reg_arena) {
-			r_reg_arena_poke (core->anal->reg, b->parent_reg_arena, b->parent_reg_arena_size);
-			R_FREE (b->parent_reg_arena);
+			r_reg_arena_restore (core->anal->reg, b->parent_reg_arena);
+			r_reg_arena_free (b->parent_reg_arena);
+			b->parent_reg_arena = NULL;
 			ut64 gp = r_reg_getv (core->anal->reg, "gp");
 			if (gp) {
 				core->anal->gp = gp;
@@ -2395,7 +2396,7 @@ static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fc
 			continue;
 		}
 		if (emu && core->anal->last_disasm_reg && !target->parent_reg_arena) {
-			target->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
+			target->parent_reg_arena = r_reg_arena_clone (core->anal->last_disasm_reg);
 		}
 		if (target->parent_stackptr == INT_MAX) {
 			target->parent_stackptr = core->anal->stackptr + b->stackptr;

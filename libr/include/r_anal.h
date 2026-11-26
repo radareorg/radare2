@@ -524,8 +524,7 @@ typedef struct r_anal_t {
 	HtUP *ht_addr_fun; // address => function
 	HtPP *ht_name_fun; // name => function
 	RReg *reg;
-	ut8 *last_disasm_reg;
-	int last_disasm_reg_size;
+	RRegArena *last_disasm_reg;
 	RSyscall *syscall;
 	bool diff_ops;
 	double diff_thbb;
@@ -719,7 +718,7 @@ typedef struct r_anal_bb_t {
 	RAnalCond *cond;
 	RAnalSwitchOp *switch_op;
 	ut8 *op_bytes;
-	ut8 *parent_reg_arena;
+	RRegArena *parent_reg_arena;
 #if R2_600
 	// for the oppos
 	USE RVec
@@ -728,7 +727,6 @@ typedef struct r_anal_bb_t {
 	int op_pos_size; // size of the op_pos array
 	int ninstr;
 #endif
-	int parent_reg_arena_size;
 	int stackptr;
 	int parent_stackptr;
 	ut32 bbhash; // calculated with xxhash

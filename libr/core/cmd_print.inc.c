@@ -5942,8 +5942,9 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 	if (emu) {
 		if (b->parent_reg_arena) {
 			ut64 gp;
-			r_reg_arena_poke (core->anal->reg, b->parent_reg_arena, b->parent_reg_arena_size);
-			R_FREE (b->parent_reg_arena);
+			r_reg_arena_restore (core->anal->reg, b->parent_reg_arena);
+			r_reg_arena_free (b->parent_reg_arena);
+			b->parent_reg_arena = NULL;
 			gp = r_reg_getv (core->anal->reg, "gp");
 			if (gp) {
 				core->anal->gp = gp;
@@ -5984,7 +5985,7 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 			RAnalBlock *jumpbb = r_anal_get_block_at (b->anal, b->jump);
 			if (jumpbb && r_list_contains (jumpbb->fcns, fcn)) {
 				if (emu && core->anal->last_disasm_reg && !jumpbb->parent_reg_arena) {
-					jumpbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
+					jumpbb->parent_reg_arena = r_reg_arena_clone (core->anal->last_disasm_reg);
 				}
 				if (jumpbb->parent_stackptr == INT_MAX) {
 					jumpbb->parent_stackptr = core->anal->stackptr + b->stackptr;
@@ -6000,7 +6001,7 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 			RAnalBlock *failbb = r_anal_get_block_at (b->anal, b->fail);
 			if (failbb && r_list_contains (failbb->fcns, fcn)) {
 				if (emu && core->anal->last_disasm_reg && !failbb->parent_reg_arena) {
-					failbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
+					failbb->parent_reg_arena = r_reg_arena_clone (core->anal->last_disasm_reg);
 				}
 				if (failbb->parent_stackptr == INT_MAX) {
 					failbb->parent_stackptr = core->anal->stackptr + b->stackptr;

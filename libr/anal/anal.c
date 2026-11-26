@@ -335,7 +335,7 @@ R_API void r_anal_free(RAnal *a) {
 	sdb_free (a->sdb);
 	a->esil->anal = NULL;
 	r_esil_free (a->esil);
-	free (a->last_disasm_reg);
+	r_reg_arena_free (a->last_disasm_reg);
 	r_list_free (a->imports);
 	r_str_constpool_fini (&a->constpool);
 	r_anal_backtrace_fini (a);

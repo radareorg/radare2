@@ -79,7 +79,7 @@ static void block_free(RAnalBlock *bb) {
 	r_anal_switch_op_free (bb->switch_op);
 	r_list_free (bb->fcns);
 	free (bb->op_pos);
-	free (bb->parent_reg_arena);
+	r_reg_arena_free (bb->parent_reg_arena);
 	free (bb);
 }
 
