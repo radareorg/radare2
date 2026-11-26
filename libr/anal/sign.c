@@ -646,16 +646,46 @@ static RSignItem *sign_get_sdb_item(RAnal *a, const char *key) {
 	return NULL;
 }
 
+/*
+ * sdb keys hold at most SDB_KSZ - 1 chars and sdb files only load back keys
+ * up to SDB_KSZ - 2 chars: longer names (common for C++ symbols) were dropped
+ * or corrupted the saved file. Shorten them keeping them unique with a hash,
+ * the full name stays in the rawname/demangled fields.
+ */
+#define ZIGN_KEY_MAXLEN (SDB_KSZ - 2)
+#define ZIGN_NAME_HASHLEN 9 // ".%08x"
+static void item_fit_name(RSignItem *it) {
+	const char *sp = it->space? it->space->name: "*";
+	const size_t fixed = strlen ("zign||") + strlen (sp);
+	if (fixed + strlen (it->name) <= ZIGN_KEY_MAXLEN || fixed + ZIGN_NAME_HASHLEN >= ZIGN_KEY_MAXLEN) {
+		return;
+	}
+	const int keep = (int)(ZIGN_KEY_MAXLEN - fixed - ZIGN_NAME_HASHLEN);
+	char *name = r_str_newf ("%.*s.%08x", keep, it->name, r_str_hash (it->name));
+	if (!name) {
+		return;
+	}
+	if (!it->rawname) {
+		it->rawname = it->name;
+	} else {
+		free (it->name);
+	}
+	it->name = name;
+}
+
 static bool r_sign_set_item(Sdb *sdb, RSignItem *it, char *key_optional) {
 	bool retval = false;
 	char *key = NULL, *mykey = key_optional;
 	if (!mykey) {
+		item_fit_name (it);
 		key = mykey = item_serialize_key (it);
 	}
 	char *value = serialize_value (it);
 	if (mykey && value) {
-		sdb_set (sdb, mykey, value, 0);
-		retval = true;
+		retval = sdb_set (sdb, mykey, value, 0);
+		if (!retval) {
+			R_LOG_WARN ("Cannot store signature %s", it->name);
+		}
 	}
 	free (key);
 	free (value);
@@ -702,6 +732,7 @@ static bool validate_item(RSignItem *it) {
 R_API bool r_sign_add_item(RAnal *a, RSignItem *it) {
 	R_RETURN_VAL_IF_FAIL (a && it, false);
 	r_name_filter (it->name, -1);
+	item_fit_name (it);
 	if (!validate_item (it)) {
 		return false;
 	}
@@ -1027,8 +1058,9 @@ R_API int r_sign_all_functions(RAnal *a, bool merge) {
 			if (prev_name) {
 				it->next = prev_name;
 			}
-			prev_name = strdup (it->name);
 			r_sign_add_item (a, it);
+			// after r_sign_add_item, which may shorten the name
+			prev_name = strdup (it->name);
 			r_sign_item_free (it);
 			count++;
 		} else {
