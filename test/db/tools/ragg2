@@ -1185,3 +1185,20 @@ EXPECT_ERR=<<EOF
 ERROR: cannot open file 'ragg2_sandbox_out'
 EOF
 RUN
+
+NAME=ragg2 source ends right after a while block
+FILE=--
+CMDS=<<EOF
+ragg2 -a x86 -b 64 -e 'main@global(16,0) { .var0 = 3; while (.var0) { .var0 -= 1; }'
+?e alive
+ragg2 -a x86 -b 64 -e 'main@global(16,0) { .var0 = 3; while (.var0) { .var0 -= 1; while (.var0) { .var0 -= 1; } } }'
+EOF
+EXPECT=<<EOF
+alive
+554889e54883ec1048c7c70000000048c7c70300000048897d08488b450850584883f800743648c7c70000000048c7c70100000048297d08488b450850584883f800741348c7c70000000048c7c70100000048297d08ff7508ebe0ff7508ebbf4883c4105dc3
+EOF
+EXPECT_ERR=<<EOF
+ERROR: expected '}' at the end of the file. 1 left
+ERROR: r_egg_compile failed
+EOF
+RUN

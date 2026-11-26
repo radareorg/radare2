@@ -1526,12 +1526,9 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 			rcc_context (egg, 1);
 			break;
 		case '}':
-			egg->lang.endframe = egg->lang.nested[CTX];
-			if (egg->lang.endframe) {
-				// XXX: use egg->lang.endframe[context]
-				r_egg_printf (egg, "%s", egg->lang.endframe);
+			if (egg->lang.nested[CTX]) {
+				r_egg_printf (egg, "%s", egg->lang.nested[CTX]);
 				R_FREE (egg->lang.nested[CTX]);
-				// R_FREE (egg->lang.endframe);
 			}
 			if (CTX > 1) {
 				if (egg->lang.nested_callname[CTX - 1] && strstr (egg->lang.nested_callname[CTX - 1], "if")) {
