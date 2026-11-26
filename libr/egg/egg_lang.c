@@ -152,6 +152,10 @@ R_API void r_egg_lang_fini(REgg *egg) {
 		R_FREE (egg->lang.nested_callname[i]);
 	}
 	R_FREE (egg->lang.conditionstr);
+	/* dstval may alias syscallbody (inline @syscall body capture) */
+	if (egg->lang.dstval == egg->lang.syscallbody) {
+		egg->lang.dstval = NULL;
+	}
 	R_FREE (egg->lang.syscallbody);
 	R_FREE (egg->lang.includefile);
 	R_FREE (egg->lang.setenviron);
@@ -780,6 +784,9 @@ static void rcc_fun(REgg *egg, char *str) {
 					if (egg->lang.syscallbody) {
 						egg->lang.dstval = egg->lang.syscallbody;
 						*egg->lang.syscallbody = '\0';
+					}
+					if (egg->lang.dstval == old_syscallbody) {
+						egg->lang.dstval = NULL;
 					}
 					free (old_syscallbody);
 					R_FREE (egg->lang.dstvar);
