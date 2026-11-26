@@ -56,8 +56,9 @@ Search symbols and paths first; read only relevant sections:
 ## Commits
 
 Commit only when requested or needed for a requested PR; otherwise suggest a one-line message.
-Write a one-line subject starting with a capital letter. If a body is needed,
-separate it with a blank line and use only short bullet points.
+Write a one-line subject starting with a capital letter. Keep it within 60
+columns, including any issue prefix and `##tag`. If a body is needed, separate
+it with a blank line and wrap short bullet points at 72 columns.
 For user-visible changes, append one existing `##tag` as the final word of the
 subject; security fixes use `##crash`. See [Commit messages](DEVELOPERS.md#commit-messages)
 for details, issue references and the tag list.

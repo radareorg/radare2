@@ -4115,7 +4115,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.jmp.tailcall", "true", &cb_anal_jmptailcall, "consume a branch as a call if delta is a function");
 	SETICB ("anal.jmp.tailcall.delta", 0, &cb_anal_jmptailcall_delta, "consume a branch as a call if delta is big");
 
-	SETCB ("anal.chain", "true", &cb_anal_chain, "follow chains of unconditional jumps and hint the first call/jump with the final destination");
+	SETCB ("anal.chain", "true", &cb_anal_chain, "register direct jump thunks and hint the original call/jump with the final destination");
 	SETCB ("anal.delay", "true", &cb_anal_delay, "enable delay slot analysis if supported by the architecture");
 #if __wasi__
 	SETI ("anal.depth", 32, "max depth of the callee recursion in af and of graph path searches");

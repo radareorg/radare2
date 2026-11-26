@@ -14,10 +14,10 @@ For information about the git process, see
 
 - Write the subject on one line. Start with a capital letter and a present-tense
   action: `Fix`, `Add`, `Remove`.
-- Describe the change, preferably in fewer than 100 characters. Quote command
-  names with backticks.
+- Describe the change in at most 60 columns, including any issue prefix and
+  `##tag`. Quote command names with backticks.
 - Omit the body unless extra context is needed. If needed, separate it from the
-  subject with a blank line and use only short bullet points.
+  subject with a blank line. Use short bullet points and wrap at 72 columns.
 - For changelog-worthy changes, end the subject with exactly one existing
   `##tag`, separated by a space. Choose from the
   [tag list](CONTRIBUTING.md#commit-message-tag-list) or recent `git log` entries;

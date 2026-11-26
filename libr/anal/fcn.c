@@ -1039,45 +1039,143 @@ static const char *tailcall_name(RAnal *anal, ut64 addr) {
 	return NULL;
 }
 
+typedef struct {
+	ut64 addr;
+	int size;
+	int bits;
+} ChainHop;
+
+// Some functions jump over the update at the top of their entry loop.
+static bool chain_enters_entry_loop(RAnal *anal, const ChainHop *hop, RAnalOp *op, const ut8 *buf, int size, int len) {
+	const ut64 dst = op->addr;
+	const ut64 gap = dst - hop->addr;
+	if (dst <= hop->addr || gap <= hop->size || gap > size || dst > UT64_MAX - size) {
+		return false;
+	}
+	int offset = 0;
+	while (len > 0 && len < size - offset && !r_anal_op_nonlinear (op->type)) {
+		offset += len;
+		r_anal_op_fini (op);
+		len = r_anal_op (anal, op, dst + offset, buf + offset, size - offset, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
+	}
+	return len > 0 && len <= size - offset && op->type == R_ANAL_OP_TYPE_CJMP
+		&& op->jump >= hop->addr + hop->size && op->jump < dst;
+}
+
 // follow unconditional direct jumps from dst, UT64_MAX when there is no chain or it loops
-static ut64 chain_target(RAnal *anal, ut64 dst, int code_perm) {
-	ut64 hops[MAX_CHAIN_HOPS];
+static ut64 chain_target(RAnal *anal, ut64 dst, int code_perm, ChainHop *hops, int *count) {
 	ut64 at = dst;
 	int i, n;
 	for (n = 0; n < MAX_CHAIN_HOPS; n++) {
 		ut8 buf[32];
-		if (!anal->iob.is_valid_offset (anal->iob.io, at, code_perm) || !anal->iob.read_at (anal->iob.io, at, buf, sizeof (buf))) {
+		if (!anal->iob.is_valid_offset (anal->iob.io, at, code_perm)) {
+			break;
+		}
+		const int bytes_read = anal->iob.read_at (anal->iob.io, at, buf, sizeof (buf));
+		if (bytes_read < 1) {
 			break;
 		}
 		RAnalOp op;
-		r_anal_op_init (&op);
-		const int len = r_anal_op (anal, &op, at, buf, sizeof (buf), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
-		const bool is_jmp = len > 0 && op.type == R_ANAL_OP_TYPE_JMP && !op.delay && op.jump != UT64_MAX;
+		const int len = r_anal_op (anal, &op, at, buf, bytes_read, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
+		const bool is_jmp = len > 0 && len <= bytes_read && op.type == R_ANAL_OP_TYPE_JMP && !op.delay && op.jump != UT64_MAX;
 		const ut64 next = op.jump;
+		if (!is_jmp && n > 0 && chain_enters_entry_loop (anal, &hops[n - 1], &op, buf, bytes_read, len)) {
+			n--;
+			at = hops[n].addr;
+		}
 		r_anal_op_fini (&op);
 		if (!is_jmp) {
 			break;
 		}
-		hops[n] = at;
+		hops[n] = (ChainHop){ at, len, anal->config->bits };
 		for (i = 0; i <= n; i++) {
-			if (hops[i] == next) {
+			if (hops[i].addr == next) {
 				return UT64_MAX;
 			}
 		}
 		at = next;
 	}
+	*count = n;
 	return (n > 0 && n < MAX_CHAIN_HOPS)? at: UT64_MAX;
 }
 
+static bool chain_register_thunk(FcnWalk *w, const ChainHop *hop, ut64 next, ut64 target) {
+	RAnal *anal = w->anal;
+	if (hop->addr > UT64_MAX - hop->size || next - hop->addr < (ut64)hop->size) {
+		return false;
+	}
+	RAnalFunction *fcn = r_anal_get_function_at (anal, hop->addr);
+	if (fcn) {
+		if (RVecAnalBlockPtr_length (&fcn->bbs) == 1) {
+			RAnalBlock *bb = *RVecAnalBlockPtr_at (&fcn->bbs, 0);
+			if (bb->addr == hop->addr && bb->size == hop->size && bb->ninstr == 1) {
+				fcn->attrs |= R_ANAL_FCN_ATTR_THUNK;
+			}
+		}
+		return true;
+	}
+	if (hop->addr == w->fcn->addr) {
+		return false;
+	}
+	RList *blocks = r_anal_get_blocks_intersect (anal, hop->addr, hop->size);
+	const bool overlaps = !r_list_empty (blocks);
+	r_list_free (blocks);
+	if (overlaps) {
+		return false;
+	}
+	RAnalBlock *bb = r_anal_create_block (anal, hop->addr, hop->size);
+	if (!bb) {
+		return false;
+	}
+	bb->ninstr = 1;
+	bb->jump = next;
+	fcn = r_anal_function_new (anal);
+	fcn->addr = hop->addr;
+	fcn->bits = hop->bits;
+	fcn->type = R_ANAL_FCN_TYPE_FCN;
+	fcn->ninstr = 1;
+	fcn->attrs = R_ANAL_FCN_ATTR_THUNK;
+	const char *name = tailcall_name (anal, hop->addr);
+	if (name) {
+		r_anal_function_rename_unique (fcn, name);
+	} else {
+		RAnalFunction *dst = r_anal_get_function_at (anal, target);
+		name = dst? dst->name: tailcall_name (anal, target);
+		char *thunk_name = name? r_str_newf ("j.%s", name)
+			: r_str_newf ("j.%s.%08"PFMT64x, r_anal_fcn_prefix_at (anal, target), target);
+		r_anal_function_rename_unique (fcn, thunk_name);
+		free (thunk_name);
+	}
+	if (!fcn->name) {
+		fcn->name = r_str_newf ("%s.%08"PFMT64x, r_anal_fcn_prefix_at (anal, hop->addr), hop->addr);
+	}
+	r_anal_function_add_block (fcn, bb);
+	r_unref (bb);
+	if (RVecAnalBlockPtr_empty (&fcn->bbs) || !r_anal_add_function (anal, fcn)) {
+		r_anal_function_free (fcn);
+		return false;
+	}
+	if (anal->opt.jmpref) {
+		r_anal_xrefs_set (anal, hop->addr, next, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
+	}
+	// cmd.fcn.new may have written io
+	w->ra.cache_addr = UT64_MAX;
+	return true;
+}
+
 // hint the call or jump at op with the end of the jump chain at its destination
-static bool chain_resolve(RAnal *anal, RAnalOp *op, int code_perm, bool need_entry) {
-	const ut64 dst = chain_target (anal, op->jump, code_perm);
+static bool chain_resolve(FcnWalk *w, RAnalOp *op, int code_perm, bool need_entry) {
+	RAnal *anal = w->anal;
+	ChainHop hops[MAX_CHAIN_HOPS];
+	int count;
+	const ut64 dst = chain_target (anal, op->jump, code_perm, hops, &count);
 	if (dst == UT64_MAX) {
 		return false;
 	}
 	if (need_entry && !r_anal_get_function_at (anal, dst) && !tailcall_name (anal, dst)) {
 		ut8 buf[32];
-		if (!anal->iob.read_at (anal->iob.io, dst, buf, sizeof (buf)) || !r_anal_is_prelude (anal, dst, buf, sizeof (buf))) {
+		const int bytes_read = anal->iob.read_at (anal->iob.io, dst, buf, sizeof (buf));
+		if (bytes_read < 1 || !r_anal_is_prelude (anal, dst, buf, bytes_read)) {
 			return false;
 		}
 	}
@@ -1086,6 +1184,16 @@ static bool chain_resolve(RAnal *anal, RAnalOp *op, int code_perm, bool need_ent
 	r_anal_hint_free (hint);
 	if (user_jump) {
 		return false;
+	}
+	if (w->follow) {
+		int i;
+		for (i = 0; i < count; i++) {
+			const ut64 next = (i + 1 < count)? hops[i + 1].addr: dst;
+			if (chain_register_thunk (w, &hops[i], next, dst) && !i && (!need_entry || anal->opt.jmpref)) {
+				const RAnalRefType type = need_entry? R_ANAL_REF_TYPE_CODE: R_ANAL_REF_TYPE_CALL;
+				r_anal_xrefs_set (anal, op->addr, hops[i].addr, type | R_ANAL_REF_TYPE_EXEC);
+			}
+		}
 	}
 	r_anal_hint_set_jump (anal, op->addr, dst);
 	op->jump = dst;
@@ -1890,7 +1998,7 @@ noskip:
 			// a function starting with a jump is a link of the chain, not its first site
 			if (anal->opt.chain && anal->iob.io && op->addr != fcn->addr) {
 				// the flag checks below may end the block before jmpref records the resolved target
-				if (chain_resolve (anal, op, code_perm, true) && anal->opt.jmpref) {
+				if (chain_resolve (w, op, code_perm, true) && anal->opt.jmpref) {
 					(void) r_anal_xrefs_setf (anal, fcn, op->addr, op->jump, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
 				}
 			}
@@ -2145,7 +2253,7 @@ noskip:
 		case R_ANAL_OP_TYPE_CALL:
 			/* call dst */
 			if (anal->opt.chain && anal->iob.io && op->jump != UT64_MAX) {
-				chain_resolve (anal, op, code_perm, false);
+				chain_resolve (w, op, code_perm, false);
 			}
 			(void) r_anal_xrefs_setf (anal, fcn, op->addr, op->jump, R_ANAL_REF_TYPE_CALL | R_ANAL_REF_TYPE_EXEC);
 

@@ -1,27 +1,44 @@
-NAME=anal.chain arm64 bl through a b chain
+NAME=anal.chain arm64 calls share a chain of named thunks
 FILE=malloc://0x100
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
-wx 04000094c0035fd6 @ 0
+wx 0400009403000094c0035fd6 @ 0
 wx 04000014 @ 0x10
 wx 02000014 @ 0x20
 wx 02000014 @ 0x28
 wx 200080d2c0035fd6 @ 0x30
 f sym.target @ 0x30
 aa
-pi 1 @ 0
+pi 2 @ 0
 ah. @ 0
 axt @ sym.target
 axt @ 0x10
 afl
+afl,attrs/str/T,addr/cols/attrs/name
+afbj @ 0x10~{[0].jump}
 EOF
 EXPECT=<<EOF
 bl sym.target
+bl sym.target
  0x00000000 => jump=0x00000030
 fcn.00000000 0x0 [CALL:--x] bl 0x10
-0x00000000    1      8 fcn.00000000
+fcn.00000000 0x4 [CALL:--x] bl 0x10
+j.sym.target_28 0x28 [CODE:--x] b 0x30
+fcn.00000000 0x0 [CALL:--x] bl 0x10
+fcn.00000000 0x4 [CALL:--x] bl 0x10
+0x00000010    1      4 j.sym.target
+0x00000020    1      4 j.sym.target_20
+0x00000028    1      4 j.sym.target_28
+0x00000000    1     12 fcn.00000000
 0x00000030    1      8 sym.target
+addr       attrs name
+---------------------
+0x00000010 TE    j.sym.target
+0x00000020 TE    j.sym.target_20
+0x00000028 TE    j.sym.target_28
+
+32
 EOF
 RUN
 
@@ -41,6 +58,7 @@ aa
 pi 1 @ 0
 ah. @ 0
 axt @ 0x10
+afl~j.
 EOF
 EXPECT=<<EOF
 bl fcn.00000010
@@ -59,15 +77,20 @@ wx 04000014 @ 0x20
 wx 200080d2c0035fd6 @ 0x30
 f sym.target @ 0x30
 af
-af @ 0x10
 pi 1 @ 4
 ah
 axt @ sym.target
+axt @ 0x10
+afl~j.sym.target
 EOF
 EXPECT=<<EOF
 b sym.target
  0x00000004 => jump=0x00000030
 fcn.00000000 0x4 [CODE:--x] b 0x10
+j.sym.target_20 0x20 [CODE:--x] b 0x30
+fcn.00000000 0x4 [CODE:--x] b 0x10
+0x00000010    1      4 j.sym.target
+0x00000020    1      4 j.sym.target_20
 EOF
 RUN
 
@@ -83,9 +106,31 @@ wx 200080d2c0035fd6 @ 0x30
 ahc 0x20 @ 0
 af
 ah. @ 0
+afl~j.
 EOF
 EXPECT=<<EOF
  0x00000000 => jump=0x00000020
+EOF
+RUN
+
+NAME=anal.chain arm64 preserves a jump inside an analyzed block
+FILE=malloc://0x100
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 05000094c0035fd6 @ 0
+wx 200080d203000014 @ 0x10
+wx c0035fd6 @ 0x20
+f sym.target @ 0x20
+af @ 0x10
+af @ 0
+pi 1 @ 0
+afl
+EOF
+EXPECT=<<EOF
+bl sym.target
+0x00000010    1      8 fcn.00000010
+0x00000000    1      8 fcn.00000000
+0x00000020    1      4 sym.target
 EOF
 RUN
 
@@ -140,14 +185,36 @@ CMDS=<<EOF
 aa
 pi 1 @ 0x140001544
 pi 1 @ 0x140001131
+afl~0x140001131
+afiaq @ 0x140001131
+axt @ 0x140001131~0x140001544
 axt @ 0x140001930~0x140001544
 ah. @ 0x140001544
 EOF
 EXPECT=<<EOF
 call fcn.140001930
 jmp fcn.140001930
-fcn.140001510 0x140001544 [CALL:--x] call 0x140001131
+0x140001131    1      5 j.fcn.140001930
+TE
+fcn.140001510 0x140001544 [CALL:--x] call j.fcn.140001930
+fcn.140001510 0x140001544 [CALL:--x] call j.fcn.140001930
  0x140001544 => jump=0x140001930
+EOF
+RUN
+
+NAME=anal.chain x86 keeps an entry jump into its own loop
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx e80b000000c3 @ 0
+wx eb049090ffc083f8017cf9c3 @ 0x10
+af
+ah. @ 0
+afl
+EOF
+EXPECT=<<EOF
+0x00000000    1      6 fcn.00000000
+0x00000010    4     10 fcn.00000010
 EOF
 RUN
 

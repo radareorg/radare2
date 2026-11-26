@@ -38,6 +38,6 @@ zg
 z~?
 EOF
 EXPECT=<<EOF
-2597
+2607
 EOF
 RUN
