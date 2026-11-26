@@ -1049,6 +1049,53 @@ bool test_r_bin_te_bounds(void) {
 	mu_end;
 }
 
+bool test_r_bin_mach064_create_arm64(void) {
+	const ut8 code[] = { 0xc0, 0x03, 0x5f, 0xd6 }; // ret
+	const ut8 data[] = { 0xca, 0xfe, 0xba, 0xbe };
+	RBinArchOptions arch;
+	r_bin_arch_options_init (&arch, "arm", 64);
+	RBin *bin = r_bin_new ();
+	RIO *io = r_io_new ();
+	r_io_bind (io, &bin->iob);
+	RMuta *muta = r_muta_new ();
+	r_muta_bind (muta, &bin->mb);
+
+	RBuffer *buf = r_bin_create (bin, "mach064", code, sizeof (code), data, sizeof (data), &arch);
+	mu_assert_notnull (buf, "Created ARM64 executable");
+	RBinFileOptions opt;
+	r_bin_file_options_init (&opt, -1, 0, 0, 0);
+	opt.filename = "arm64.macho";
+	mu_assert_true (r_bin_open_buf (bin, buf, &opt), "Open generated Mach-O");
+	RBinInfo *info = r_bin_get_info (bin);
+	mu_assert_notnull (info, "Mach-O info");
+	mu_assert_streq (info->arch, "arm", "Mach-O architecture");
+	mu_assert_eq (info->bits, 64, "Mach-O bitness");
+	const RList *entries = r_bin_get_entries (bin);
+	const RBinAddr *entry = r_list_first (entries);
+	mu_assert_notnull (entry, "Mach-O entrypoint");
+	mu_assert_eq (r_buf_read_le32_at (buf, entry->paddr), r_read_le32 (code), "Entrypoint points to input code");
+	RVecRBinSection *sections = r_bin_get_sections_vec (bin);
+	mu_assert_notnull (sections, "Mach-O sections");
+	const RBinSection *section;
+	bool found_data = false;
+	R_VEC_FOREACH (sections, section) {
+		if (!section->is_segment && r_str_endswith (section->name, ".__data")) {
+			mu_assert_eq (r_buf_read_le32_at (buf, section->paddr), r_read_le32 (data), "Mach-O data bytes");
+			found_data = true;
+		}
+	}
+	mu_assert_true (found_data, "Mach-O data section");
+	RStrBuf *report = r_strbuf_new ("");
+	mu_assert_eq (r_bin_wr_checksum (bin, report, false), 0, "All ad-hoc signature page hashes match");
+
+	r_strbuf_free (report);
+	r_bin_free (bin);
+	r_io_free (io);
+	r_muta_free (muta);
+	r_unref (buf);
+	mu_end;
+}
+
 bool test_r_bin_mach0_full_segname(void) {
 	ut8 macho[256] = {0};
 	r_write_le32 (macho, 0xfeedfacf);
@@ -1296,6 +1343,7 @@ bool all_tests(void) {
 	mu_run_test(test_r_bin_te_truncated);
 	mu_run_test (test_r_bin_pe_characteristics_offset);
 	mu_run_test (test_r_bin_pe_lfanew_checks);
+	mu_run_test (test_r_bin_mach064_create_arm64);
 	mu_run_test(test_r_bin_mach0_full_segname);
 	mu_run_test(test_r_bin_mach0_coresym_bounds);
 	return tests_passed != tests_run;

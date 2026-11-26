@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2009-2023 - nibble, pancake, alvaro_fe */
 
+#include <r_hash.h>
+
 #define R_BIN_MACH064 1
 #include "bin_mach0.c"
 
@@ -22,7 +24,179 @@ static bool check(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
+static ut8 *mach064_write_segment(ut8 *out, const char *name, ut64 vaddr, ut64 vsize, ut32 offset, ut32 size, ut32 perms, bool has_section) {
+	struct segment_command_64 *seg = (void *)out;
+	r_write_le32 (&seg->cmd, LC_SEGMENT_64);
+	r_write_le32 (&seg->cmdsize, sizeof (*seg) + (has_section? sizeof (struct section_64): 0));
+	memcpy (seg->segname, name, strlen (name));
+	r_write_le64 (&seg->vmaddr, vaddr);
+	r_write_le64 (&seg->vmsize, vsize);
+	r_write_le64 (&seg->fileoff, offset);
+	r_write_le64 (&seg->filesize, size);
+	r_write_le32 (&seg->maxprot, perms);
+	r_write_le32 (&seg->initprot, perms);
+	r_write_le32 (&seg->nsects, has_section? 1: 0);
+	return out + sizeof (*seg);
+}
+
+static ut8 *mach064_write_section(ut8 *out, const char *name, const char *segment, ut64 addr, ut32 offset, ut32 size, ut32 flags) {
+	struct section_64 *section = (void *)out;
+	memcpy (section->sectname, name, strlen (name));
+	memcpy (section->segname, segment, strlen (segment));
+	r_write_le64 (&section->addr, addr);
+	r_write_le64 (&section->size, size);
+	r_write_le32 (&section->offset, offset);
+	r_write_le32 (&section->align, 2);
+	r_write_le32 (&section->flags, flags);
+	return out + sizeof (*section);
+}
+
+static const char mach064_identifier[] = "radare2";
+
+static void mach064_sign(ut8 *image, ut32 signature_offset, ut32 directory_size, ut32 text_size) {
+	ut8 *signature = image + signature_offset;
+	const ut32 super_size = sizeof (struct super_blob_t) + sizeof (struct blob_index_t);
+	const ut32 slots = signature_offset / CS_PAGE_SIZE;
+	r_write_be32 (signature, CSMAGIC_EMBEDDED_SIGNATURE);
+	r_write_be32 (signature + 4, super_size + directory_size);
+	r_write_be32 (signature + 8, 1);
+	r_write_be32 (signature + 12, CSSLOT_CODEDIRECTORY);
+	r_write_be32 (signature + 16, super_size);
+
+	ut8 *directory = signature + super_size;
+	const ut32 hash_offset = sizeof (CS_CodeDirectory) + sizeof (mach064_identifier);
+#define CD32(field, value) r_write_be32 (directory + r_offsetof (CS_CodeDirectory, field), value)
+	CD32 (magic, CSMAGIC_CODEDIRECTORY);
+	CD32 (length, directory_size);
+	CD32 (version, 0x20400);
+	CD32 (flags, CS_ADHOC);
+	CD32 (hashOffset, hash_offset);
+	CD32 (identOffset, sizeof (CS_CodeDirectory));
+	CD32 (nCodeSlots, slots);
+	CD32 (codeLimit, signature_offset);
+#undef CD32
+	directory[r_offsetof (CS_CodeDirectory, hashSize)] = CS_HASH_SIZE_SHA256;
+	directory[r_offsetof (CS_CodeDirectory, hashType)] = CS_HASHTYPE_SHA256;
+	directory[r_offsetof (CS_CodeDirectory, pageSize)] = 12;
+	r_write_be64 (directory + r_offsetof (CS_CodeDirectory, execSegLimit), text_size);
+	r_write_be64 (directory + r_offsetof (CS_CodeDirectory, execSegFlags), 1); // CS_EXECSEG_MAIN_BINARY
+	memcpy (directory + sizeof (CS_CodeDirectory), mach064_identifier, sizeof (mach064_identifier));
+
+	RHash *hash = r_hash_new (true, R_HASH_SHA256);
+	ut8 *slot = directory + hash_offset;
+	ut32 offset;
+	for (offset = 0; offset < signature_offset; offset += CS_PAGE_SIZE) {
+		const ut8 *digest = r_hash_do_sha256 (hash, image + offset, CS_PAGE_SIZE);
+		memcpy (slot, digest, CS_HASH_SIZE_SHA256);
+		slot += CS_HASH_SIZE_SHA256;
+	}
+	r_hash_free (hash);
+}
+
+static RBuffer *create_arm64(const ut8 *code, int codelen, const ut8 *data, int datalen) {
+	if (!code || codelen <= 0 || (datalen && !data)) {
+		return NULL;
+	}
+	const char dyld[] = "/usr/lib/dyld";
+	const char libsystem[] = "/usr/lib/libSystem.B.dylib";
+	const ut32 dyld_size = R_ROUND (sizeof (struct dylinker_command) + sizeof (dyld), 8);
+	const ut32 libsystem_size = R_ROUND (sizeof (struct dylib_command) + sizeof (libsystem), 8);
+	const ut32 build_version_size = 6 * sizeof (ut32);
+	const ut32 segment_size = sizeof (struct segment_command_64);
+	const ut32 section_size = sizeof (struct section_64);
+	const ut32 commands_size = 3 * segment_size + section_size + dyld_size + libsystem_size
+		+ build_version_size + sizeof (struct entry_point_command) + sizeof (struct linkedit_data_command)
+		+ (datalen? segment_size + section_size: 0);
+	const ut32 code_offset = sizeof (struct mach_header_64) + commands_size;
+	const ut64 base = 0x100000000ULL;
+	const ut32 vm_page_size = 0x4000; // Mach-O segments use 16 KiB alignment, signatures hash 4 KiB pages.
+	const ut32 text_size = R_ROUND ((ut64)code_offset + codelen, vm_page_size);
+	const ut32 data_size = R_ROUND ((ut64)datalen, vm_page_size);
+	ut32 signature_offset, hash_size, file_size;
+	if (r_add_overflow_ut32 (text_size, data_size, &signature_offset)
+		|| r_mul_overflow_ut32 (signature_offset / CS_PAGE_SIZE, CS_HASH_SIZE_SHA256, &hash_size)) {
+		return NULL;
+	}
+	const ut32 directory_size = sizeof (CS_CodeDirectory) + sizeof (mach064_identifier) + hash_size;
+	const ut32 signature_size = R_ROUND (sizeof (struct super_blob_t) + sizeof (struct blob_index_t) + directory_size, 16);
+	if (r_add_overflow_ut32 (signature_offset, signature_size, &file_size)) {
+		return NULL;
+	}
+	ut8 *image = calloc (1, file_size);
+	if (!image) {
+		return NULL;
+	}
+
+	struct mach_header_64 *header = (void *)image;
+	r_write_le32 (&header->magic, MH_MAGIC_64);
+	r_write_le32 (&header->cputype, CPU_TYPE_ARM64);
+	r_write_le32 (&header->cpusubtype, CPU_SUBTYPE_ARM64_ALL);
+	r_write_le32 (&header->filetype, MH_EXECUTE);
+	r_write_le32 (&header->ncmds, datalen? 9: 8);
+	r_write_le32 (&header->sizeofcmds, commands_size);
+	r_write_le32 (&header->flags, MH_NOUNDEFS | MH_DYLDLINK | MH_TWOLEVEL | MH_PIE);
+
+	ut8 *out = image + sizeof (*header);
+	out = mach064_write_segment (out, "__PAGEZERO", 0, base, 0, 0, 0, false);
+	out = mach064_write_segment (out, "__TEXT", base, text_size, 0, text_size, VM_PROT_READ | VM_PROT_EXECUTE, true);
+	out = mach064_write_section (out, "__text", "__TEXT", base + code_offset, code_offset, codelen,
+		S_ATTR_PURE_INSTRUCTIONS | S_ATTR_SOME_INSTRUCTIONS);
+	if (datalen) {
+		out = mach064_write_segment (out, "__DATA", base + text_size, data_size, text_size, data_size, VM_PROT_READ | VM_PROT_WRITE, true);
+		out = mach064_write_section (out, "__data", "__DATA", base + text_size, text_size, datalen, 0);
+		memcpy (image + text_size, data, datalen);
+	}
+	out = mach064_write_segment (out, "__LINKEDIT", base + signature_offset, R_ROUND (signature_size, vm_page_size),
+		signature_offset, signature_size, VM_PROT_READ, false);
+
+	struct dylinker_command *dylinker = (void *)out;
+	r_write_le32 (&dylinker->cmd, LC_LOAD_DYLINKER);
+	r_write_le32 (&dylinker->cmdsize, dyld_size);
+	r_write_le32 (&dylinker->name, sizeof (*dylinker));
+	memcpy (out + sizeof (*dylinker), dyld, sizeof (dyld));
+	out += dyld_size;
+	struct dylib_command *dylib = (void *)out;
+	r_write_le32 (&dylib->cmd, LC_LOAD_DYLIB);
+	r_write_le32 (&dylib->cmdsize, libsystem_size);
+	r_write_le32 (&dylib->dylib.name, sizeof (*dylib));
+	r_write_le32 (&dylib->dylib.compatibility_version, 0x10000);
+	memcpy (out + sizeof (*dylib), libsystem, sizeof (libsystem));
+	out += libsystem_size;
+
+	r_write_le32 (out, LC_BUILD_VERSION);
+	r_write_le32 (out + 4, build_version_size);
+	r_write_le32 (out + 8, 1); // macOS
+	r_write_le32 (out + 12, 0xb0000); // macOS 11.0
+	r_write_le32 (out + 16, 0xb0000);
+	out += build_version_size;
+	struct entry_point_command *entry = (void *)out;
+	r_write_le32 (&entry->cmd, LC_MAIN);
+	r_write_le32 (&entry->cmdsize, sizeof (*entry));
+	r_write_le64 (&entry->entryoff, code_offset);
+	out += sizeof (*entry);
+	struct linkedit_data_command *signature = (void *)out;
+	r_write_le32 (&signature->cmd, LC_CODE_SIGNATURE);
+	r_write_le32 (&signature->cmdsize, sizeof (*signature));
+	r_write_le32 (&signature->dataoff, signature_offset);
+	r_write_le32 (&signature->datasize, signature_size);
+
+	memcpy (image + code_offset, code, codelen);
+	mach064_sign (image, signature_offset, directory_size, text_size);
+	RBuffer *buf = r_buf_new_with_pointers (image, file_size, true);
+	if (!buf) {
+		free (image);
+	}
+	return buf;
+}
+
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
+	if (opt->arch && !strcmp (opt->arch, "arm")) {
+		if (opt->bits != 64) {
+			R_LOG_ERROR ("Mach-O ARM64 creation requires 64-bit code");
+			return NULL;
+		}
+		return create_arm64 (code, codelen, data, datalen);
+	}
 	const bool use_pagezero = true;
 	const bool use_main = true;
 	const bool use_dylinker = true;
