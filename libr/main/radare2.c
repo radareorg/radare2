@@ -1928,9 +1928,20 @@ static int main_radare2(int argc, const char **argv, bool standalone) {
 					RBinSection *s;
 					if (sections) {
 						R_VEC_FOREACH (sections, s) {
-							if (s->perm & R_PERM_X) {
-								// in va mode a file offset is not an address
-								r_core_seek (r, r->io->va? s->vaddr: s->paddr, true);
+							if (!(s->perm & R_PERM_X)) {
+								continue;
+							}
+							// address 0 is valid (relocatable objects map there), an empty section maps nothing
+							const bool va = r->io->va;
+							if (!(va? s->vsize: s->size)) {
+								continue;
+							}
+							ut64 addr = s->paddr;
+							if (va) {
+								addr = (s->paddr == UT64_MAX)? s->vaddr: r_bin_get_vaddr (r->bin, s->paddr, s->vaddr);
+							}
+							if (addr != UT64_MAX) {
+								r_core_seek (r, addr, true);
 								break;
 							}
 						}

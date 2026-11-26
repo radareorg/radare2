@@ -573,3 +573,29 @@ EXPECT=<<EOF
 0x1000
 EOF
 RUN
+
+NAME=mach0 object initial seek with -B at the rebased first executable section
+FILE=bins/mach0/watchos-relocs.obj
+ARGS=-B 0x10000
+CMDS=<<EOF
+s
+pi 1
+EOF
+EXPECT=<<EOF
+0x10000
+push {r7, lr}
+EOF
+RUN
+
+NAME=mach0 object initial seek at its first executable section (io.va=false)
+FILE=bins/mach0/watchos-relocs.obj
+ARGS=-e io.va=false
+CMDS=<<EOF
+s
+pi 1
+EOF
+EXPECT=<<EOF
+0x264
+push {r7, lr}
+EOF
+RUN
