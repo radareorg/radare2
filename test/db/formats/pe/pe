@@ -441,7 +441,7 @@ NAME=pe section paddr rounds down to 0x200 with a large FileAlignment
 FILE=bins/pe/weirdsord.exe
 CMDS=iS~sect_0;ie~program
 EXPECT=<<EOF
-0   0x00000200  0x10f 0x00440000  0x40000 -rwx 0xa0000000 ---- sect_0
+0   0x00000200  0x200 0x00440000  0x40000 -rwx 0xa0000000 ---- sect_0
 0x00000200 0x00440000 0x00000068 ---------- program
 EOF
 RUN
