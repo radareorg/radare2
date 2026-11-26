@@ -3,6 +3,8 @@ echo "# Counters"
 
 printf -- "XXX\t"
 git grep XXX libr | wc -l
+printf -- "if 0\t"
+git grep 'if 0' libr | wc -l
 printf -- "TODO\t"
 git grep TODO libr | wc -l
 printf -- "GLOBALS\t"

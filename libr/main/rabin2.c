@@ -792,18 +792,6 @@ static int rabin2_main(RCons *cons, int argc, const char **argv) {
 	} else {
 		r_libstore_load (bin->libstore);
 	}
-#if 0
-	if ((tmp = r_sys_getenv ("R2_CONFIG"))) {
-		Sdb *config_sdb = sdb_new (NULL, tmp, 0);
-		if (config_sdb) {
-			r_config_unserialize (core.config, config_sdb, NULL);
-			sdb_free (config_sdb);
-		} else {
-			eprintf ("Cannot open file specified in R2_CONFIG\n");
-		}
-		free (tmp);
-	}
-#endif
 	if ((tmp = r_sys_getenv ("RABIN2_DEMANGLE_CMD"))) {
 		// r_config_set (core.config, "cmd.demangle", tmp);
 		r_config_set (core.config, "bin.demangle.usecmd", tmp);

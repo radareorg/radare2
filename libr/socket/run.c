@@ -1416,7 +1416,7 @@ R_API bool r_run_start(RRunProfile *p) {
 		}
 		if (p->_daemon) {
 #if R2__WINDOWS__
-			//		eprintf ("PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
+			R_LOG_ERROR ("PID: Cannot determine pid with 'system' directive. Use 'program'");
 #else
 			pid_t child = r_sys_fork ();
 			if (child == -1) {

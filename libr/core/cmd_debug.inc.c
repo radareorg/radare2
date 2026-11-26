@@ -1452,12 +1452,12 @@ static bool step_until_optype(RCore *core, const char *_optypes) {
 			pc = r_debug_reg_get (core->dbg, "PC");
 			// 'Copy' from r_debug_step_soft
 			if (!core->dbg->iob.read_at) {
-				R_LOG_ERROR ("cannot read");
+				R_LOG_ERROR ("Cannot read");
 				res = false;
 				goto cleanup_after_push;
 			}
 			if (core->dbg->iob.read_at (core->dbg->iob.io, pc, buf, sizeof (buf)) != sizeof (buf)) {
-				R_LOG_ERROR ("cannot read");
+				R_LOG_ERROR ("Cannot read");
 				res = false;
 				goto cleanup_after_push;
 			}
@@ -3863,7 +3863,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
 			__tableRegList (core, core->dbg->reg, str + 1);
 		} else {
-			R_LOG_ERROR ("cannot retrieve registers from pid %d", core->dbg->pid);
+			R_LOG_ERROR ("Cannot retrieve registers from pid %d", core->dbg->pid);
 		}
 		break;
 	case '=': // "dr="
@@ -3878,7 +3878,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					if (pcbits2) {
 						print_owned (core, r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, NULL, '=', use_color)); // xxx detect which one is current usage
 					}
-				} //else eprintf ("cannot retrieve registers from pid %d\n", core->dbg->pid);
+				} // else R_LOG_ERROR ("Cannot retrieve registers from pid %d", core->dbg->pid);
 			} else {
 				RReg *orig = core->dbg->reg;
 				core->dbg->reg = core->anal->reg;
