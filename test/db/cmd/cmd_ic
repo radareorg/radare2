@@ -1696,3 +1696,31 @@ r2name_466f6f3b426172
 r2name_72326e616d655f3436366636663362343236313732
 EOF2
 RUN
+
+NAME=ic. ignores abstract methods for the class range
+FILE=bins/dex/org.radare.radare2installer.dex
+CMDS=<<EOF
+f~0x0000e580~public
+ic. @ 0xe580
+f~0x0000a2ca~abstract
+ic. @ 0xa2ca
+EOF
+EXPECT=<<EOF
+0x0000e580 1 method.public.Lcom_ice_tar_TarEntry.Lcom_ice_tar_TarEntry.method.getDirectoryEntries___Lcom_ice_tar_TarEntry_
+Lcom/ice/tar/TarEntry::Lcom/ice/tar/TarEntry.method.getDirectoryEntries()[Lcom/ice/tar/TarEntry;
+0x0000a2ca 1 method.public.abstract.Lcom_ice_tar_TarInputStream_EntryFactory.Lcom_ice_tar_TarInputStream_EntryFactory.method.createEntry_Ljava_io_File__Lcom_ice_tar_TarEntry_
+Lcom/ice/tar/TarInputStream$EntryFactory::Lcom/ice/tar/TarInputStream$EntryFactory.method.createEntry(Ljava/io/File;)Lcom/ice/tar/TarEntry;
+EOF
+RUN
+
+NAME=ic. ignores native methods for the class range
+FILE=zip://bins/dex/mobipwn-nores.apk//classes.dex
+CMDS=<<EOF
+f~0x00043516~native
+ic. @ 0x43516
+EOF
+EXPECT=<<EOF
+0x00043516 1 method.public.native.Lre_mobipwn_enovella_MainActivity.Lre_mobipwn_enovella_MainActivity.method.init__V
+Lre/mobipwn/enovella/MainActivity::Lre/mobipwn/enovella/MainActivity.method.init()V
+EOF
+RUN
