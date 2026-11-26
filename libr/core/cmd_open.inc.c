@@ -447,7 +447,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		if (input[2] == '?') {
 			r_cons_cmd_help_match (core->cons, help_msg_ob, "obr", 0, true);
 		} else {
-			r_core_bin_rebase (core, r_num_math (core->num, input + 3));
+			r_core_bin_rebase (core, r_num_math (core->num, r_str_trim_head_ro (input + 2)));
 			r_core_cmd0 (core, ".is*");
 		}
 		break;
