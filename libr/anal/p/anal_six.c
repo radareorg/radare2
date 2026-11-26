@@ -4,6 +4,7 @@
 
 #include <r_anal.h>
 #include <r_core.h>
+#include "../refsearch.h"
 
 #define SIX_CMD "six"
 #define SIX_CHUNK_SIZE 0x10000
@@ -12,10 +13,6 @@
 #define SIX_CALLS_CHUNK_SIZE 0x100000
 #define SIX_LOOKAHEAD_SIZE 0x1000
 #define SIX_ARM64_NOP 0xd503201f
-
-static void addref(RAnal *anal, ut64 from, ut64 to, RAnalRefType type) {
-	r_anal_xrefs_set (anal, from, to, type);
-}
 
 static const ut8 *skip_nops(const ut8 *p, const ut8 *end) {
 	while (end - p >= 4 && r_read_le32 (p) == SIX_ARM64_NOP) {
@@ -57,23 +54,23 @@ static const ut8 *resolve_stub(const ut8 *p, const ut8 *end, ut32 reg, ut64 *tar
 
 typedef struct {
 	RAnal *anal;
-	RStrBuf *sb; // matches are listed here when not registering
+	RStrBuf *sb;
+	RefSearch *refs;
+	const RBreakBind *brk;
+	ut64 search;
 	bool register_refs;
 	bool islands;
-	ut64 search;
-	// call mode ("a:sixc", used by "/rc"): only bl, plus b when targets are given
 	bool calls;
-	const ut64 *targets; // sorted
-	size_t ntargets;
 } SixScan;
 
-static int six_cmp_addr(const void *a, const void *b) {
-	const ut64 x = *(const ut64 *)a;
-	const ut64 y = *(const ut64 *)b;
-	return (x > y) - (x < y);
+static inline void six_ref(const SixScan *ss, ut64 from, ut64 to, RAnalRefType type) {
+	if (ss->register_refs) {
+		r_anal_xrefs_set (ss->anal, from, to, type);
+	} else {
+		refsearch_emit (ss->refs, from, to, type);
+	}
 }
 
-// b and bl: branch target, and whether it is a call (bl)
 static inline bool six_is_branch(ut32 v, ut64 addr, ut64 *dst, bool *is_call) {
 	if ((v & 0x7c000000) != 0x14000000) {
 		return false;
@@ -90,14 +87,14 @@ static inline void six_call_ref(const SixScan *ss, ut32 v, ut64 addr) {
 		return;
 	}
 	// tail calls only count against explicit targets, otherwise every jump would be a ref
-	if (!is_call && !ss->ntargets) {
+	if (!is_call && RVecRefSearchRange_empty (&ss->refs->ranges)) {
 		return;
 	}
-	if (ss->ntargets && !bsearch (&dst, ss->targets, ss->ntargets, sizeof (ut64), six_cmp_addr)) {
+	if (ss->register_refs && !refsearch_matches (ss->refs, dst)) {
 		return;
 	}
 	// a b to a target is a tail call: JUMP, as core analysis records tail calls
-	addref (ss->anal, addr, dst, is_call? R_ANAL_REF_TYPE_CALL: R_ANAL_REF_TYPE_JUMP);
+	six_ref (ss, addr, dst, is_call? R_ANAL_REF_TYPE_CALL: R_ANAL_REF_TYPE_JUMP);
 }
 
 static const char *lookup_inst_name(uint32_t opc_size) {
@@ -217,6 +214,7 @@ static void siguza_xrefs_chunked(const SixScan *ss, const ut8 *mem, ut64 addr, i
 	RAnal *anal = ss->anal;
 	RStrBuf *sb = ss->sb;
 	const bool register_refs = ss->register_refs;
+	const bool emit_refs = register_refs || ss->refs;
 	const bool islands = ss->islands;
 	const ut64 search = ss->search;
 	const ut8 *p = mem;
@@ -243,15 +241,15 @@ static void siguza_xrefs_chunked(const SixScan *ss, const ut8 *mem, ut64 addr, i
 			if (branch) {
 				ut64 branch_addr = addr + (branch - p);
 				if (register_refs) {
-					addref (anal, branch_addr, jump, R_ANAL_REF_TYPE_CODE);
+					six_ref (ss, branch_addr, jump, R_ANAL_REF_TYPE_CODE);
 					r_anal_hint_set_type (anal, branch_addr, R_ANAL_OP_TYPE_JMP);
 					r_anal_hint_set_jump (anal, branch_addr, jump);
 				} else if (jump == search) {
 					r_strbuf_appendf (sb, "%#" PFMT64x ": br x%u; %#" PFMT64x "\n", branch_addr, (r_read_le32 (branch) >> 5) & 31, jump);
 				}
 			}
-			if (register_refs) {
-				addref (anal, addr, adrp_resolve (p + 4, e, reg, target), R_ANAL_REF_TYPE_DATA);
+			if (emit_refs) {
+				six_ref (ss, addr, adrp_resolve (p + 4, e, reg, target), R_ANAL_REF_TYPE_DATA);
 			} else if (target == search) {
 				r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "\n", addr, is_adrp? "adrp": "adr", reg, target);
 			} else {
@@ -328,8 +326,8 @@ static void siguza_xrefs_chunked(const SixScan *ss, const ut8 *mem, ut64 addr, i
 			}
 		} else if ((v & 0xbf000000) == 0x18000000 || (v & 0xff000000) == 0x98000000) { // ldr and ldrsw literal
 			int64_t off = (int64_t) ((uint64_t) ((v >> 5) & 0x7ffff) << 45) >> 43;
-			if (register_refs) {
-				addref (anal, addr, addr + off, R_ANAL_REF_TYPE_DATA);
+			if (emit_refs) {
+				six_ref (ss, addr, addr + off, R_ANAL_REF_TYPE_DATA);
 			} else if (addr + off == search) {
 				ut32 reg = v & 0x1f;
 				bool is_ldrsw = (v & 0xff000000) == 0x98000000;
@@ -337,16 +335,16 @@ static void siguza_xrefs_chunked(const SixScan *ss, const ut8 *mem, ut64 addr, i
 				r_strbuf_appendf (sb, "%#" PFMT64x ": %s %s%u, %#" PFMT64x "\n", addr, is_ldrsw? "ldrsw": "ldr", is_64bit? "x": "w", reg, search);
 			}
 		} else if (six_is_branch (v, addr, &dst, &is_call)) { // b and bl
-			if (register_refs) {
+			if (emit_refs) {
 				// a plain b is a code ref, like the conditional branches below
-				addref (anal, addr, dst, is_call? R_ANAL_REF_TYPE_CALL: R_ANAL_REF_TYPE_CODE);
+				six_ref (ss, addr, dst, is_call? R_ANAL_REF_TYPE_CALL: R_ANAL_REF_TYPE_CODE);
 			} else if (dst == search) {
 				r_strbuf_appendf (sb, "%#" PFMT64x ": %s %#" PFMT64x "\n", addr, is_call? "bl": "b", search);
 			}
 		} else if ((v & 0xff000010) == 0x54000000) { // b.cond
 			int64_t off = (int64_t) ((uint64_t) ((v >> 5) & 0x7ffff) << 45) >> 43;
-			if (register_refs) {
-				addref (anal, addr, addr + off, R_ANAL_REF_TYPE_CODE);
+			if (emit_refs) {
+				six_ref (ss, addr, addr + off, R_ANAL_REF_TYPE_CODE);
 			} else if (addr + off == search) {
 				static const char *cond_names[] = {
 					"eq", "ne", "hs", "lo", "mi", "pl", "vs", "vc", "hi", "ls", "ge", "lt", "gt", "le", "al", "nv"
@@ -356,8 +354,8 @@ static void siguza_xrefs_chunked(const SixScan *ss, const ut8 *mem, ut64 addr, i
 			}
 		} else if ((v & 0x7e000000) == 0x34000000) { // cbz and cbnz
 			int64_t off = (int64_t) ((uint64_t) ((v >> 5) & 0x7ffff) << 45) >> 43;
-			if (register_refs) {
-				addref (anal, addr, addr + off, R_ANAL_REF_TYPE_CODE);
+			if (emit_refs) {
+				six_ref (ss, addr, addr + off, R_ANAL_REF_TYPE_CODE);
 			} else if (addr + off == search) {
 				ut32 reg = v & 0x1f;
 				bool is_64bit = (v & 0x80000000) != 0;
@@ -366,8 +364,8 @@ static void siguza_xrefs_chunked(const SixScan *ss, const ut8 *mem, ut64 addr, i
 			}
 		} else if ((v & 0x7e000000) == 0x36000000) { // tbz and tbnz
 			int64_t off = ((int64_t) ((v >> 5) & 0x3fff) << 50) >> 48;
-			if (register_refs) {
-				addref (anal, addr, addr + off, R_ANAL_REF_TYPE_CODE);
+			if (emit_refs) {
+				six_ref (ss, addr, addr + off, R_ANAL_REF_TYPE_CODE);
 			} else if (addr + off == search) {
 				ut32 reg = v & 0x1f;
 				ut32 bit = ((v >> 19) & 0x1f) | ((v >> 26) & 0x20);
@@ -385,18 +383,28 @@ static void siguza_xrefs_chunked(const SixScan *ss, const ut8 *mem, ut64 addr, i
  * @param start Address at which to start looking for xrefs.
  * @param lenbytes Reach of the search for xrefs, in bytes.
  */
+static bool six_stopped(const SixScan *ss) {
+	return ss->brk && (refsearch_stopped (ss->refs) || r_break_check (ss->brk));
+}
+
 static void siguza_xrefs(const SixScan *ss, ut64 start, ut64 lenbytes) {
 	RAnal *anal = ss->anal;
+	if (six_stopped (ss)) {
+		return;
+	}
 	const int chunk = ss->calls? SIX_CALLS_CHUNK_SIZE: SIX_CHUNK_SIZE;
 	const int lookahead = ss->calls? 0: SIX_LOOKAHEAD_SIZE;
 	ut8 *buf = malloc (chunk + lookahead);
 	if (!buf) {
 		R_LOG_ERROR ("Failed to allocate buffer");
+		if (ss->refs) {
+			ss->refs->failed = true;
+		}
 		return;
 	}
 
-	ut64 pos = (ss->islands || ss->calls)? (4 - (start & 3)) & 3: 0;
-	while (pos < lenbytes) {
+	ut64 pos = (ss->islands || ss->calls || ss->brk)? (4 - (start & 3)) & 3: 0;
+	while (pos < lenbytes && !six_stopped (ss)) {
 		int process_len = (int)R_MIN (lenbytes - pos, chunk);
 		ut64 lookahead_rem = lenbytes - pos - process_len;
 		int to_read = process_len + (int)R_MIN (lookahead_rem, lookahead);
@@ -435,7 +443,10 @@ static char *six_help(void) {
 		"| a:sixi                also resolve stub islands and install jump hints (opt-in)\n"
 		"| a:six[i] <target>     list xrefs to target address without changing xrefs or hints\n"
 		"| a:six[i] <target> <len> list xrefs to target from $$ in current executable section or map\n"
-		"| a:sixc <from> <to> [target ..] register call xrefs (bl, and b when targets are given) in [from, to)\n");
+		"| a:sixc <from> <to> [targets...] register call xrefs (bl, and b when targets are given) in [from, to)\n"
+		"| a:sixl[j] [targets...] list code and data xrefs in executable I/O bank regions\n"
+		"| a:sixcl[j] <from> <to> [targets...] list call xrefs, or unique bl destinations with no targets\n"
+		"| Listing targets accept address expressions, inclusive A..B ranges and names from sym.imp. or reloc. flags\n");
 }
 
 static bool parse_num(RAnal *anal, RCore *core, const char *arg, const char *name, ut64 *out) {
@@ -459,87 +470,157 @@ static bool parse_num(RAnal *anal, RCore *core, const char *arg, const char *nam
 	return true;
 }
 
-// "a:sixc <from> <to> [target ..]": register call xrefs in [from, to), matching all
-// targets in one pass. Returns NULL when not on arm64, so callers such as "/rc" can
-// fall back to their generic search.
-static char *six_calls_cmd(RAnal *anal, const char *args) {
-	if (*args && *args != ' ' && *args != '?') {
-		R_LOG_ERROR ("Invalid command 'a:sixc%s'. See 'a:six?' for help", args);
-		return strdup ("");
+static void six_scan_range(const SixScan *ss, RIO *io, ut64 from, ut64 to, int perm) {
+	// Keep instructions that straddle adjacent maps.
+	RInterval itv = { from, to - from };
+	RVecRIORegion *regions = (io && io->va)? r_io_bank_get_regions (io, io->bank, itv): NULL;
+	if (regions) {
+		ut64 run_lo = 0, run_hi = 0;
+		RIORegion *r;
+		R_VEC_FOREACH (regions, r) {
+			const ut64 end = r_itv_end (r->itv);
+			const ut64 lo = R_MAX (r->itv.addr, from);
+			const ut64 hi = (end < r->itv.addr)? to: R_MIN (end, to);
+			if (hi <= lo || (r->perm & perm) != perm) {
+				continue;
+			}
+			if (run_hi > run_lo && lo == run_hi) {
+				run_hi = hi;
+				continue;
+			}
+			if (run_hi > run_lo) {
+				siguza_xrefs (ss, run_lo, run_hi - run_lo);
+			}
+			run_lo = lo;
+			run_hi = hi;
+		}
+		if (run_hi > run_lo) {
+			siguza_xrefs (ss, run_lo, run_hi - run_lo);
+		}
+		RVecRIORegion_free (regions);
+	} else if (perm == R_PERM_R || !io->va) {
+		siguza_xrefs (ss, from, to - from);
+	}
+}
+
+static bool six_parse_targets(RAnal *anal, RCore *core, RefSearch *search, char **words, int count, bool listing) {
+	static const char *const prefixes[] = { "sym.imp.", "reloc." };
+	int i;
+	for (i = 0; i < count; i++) {
+		char *word = words[i];
+		if (!listing) {
+			ut64 addr;
+			if (!parse_num (anal, core, word, "target", &addr)
+					|| !refsearch_add_range (&search->ranges, (RefSearchRange){addr, addr})) {
+				return false;
+			}
+			continue;
+		}
+		const char *name = word;
+		size_t j;
+		for (j = 0; j < R_ARRAY_SIZE (prefixes); j++) {
+			if (r_str_startswith (name, prefixes[j])) {
+				name += strlen (prefixes[j]);
+				break;
+			}
+		}
+		RefSearchRange range;
+		const bool bounds = strstr (word, "..") != NULL;
+		if ((name == word || bounds) && refsearch_parse_range (core->num, word, &range)) {
+			if (!refsearch_add_range (&search->ranges, range)) {
+				return false;
+			}
+			continue;
+		}
+		bool found = false;
+		if (*name && !bounds) {
+			for (j = 0; j < R_ARRAY_SIZE (prefixes); j++) {
+				char *key = r_str_newf ("%s%s", prefixes[j], name);
+				RFlagItem *flag = r_flag_get (core->flags, key);
+				free (key);
+				if (flag) {
+					found = true;
+					if (!refsearch_add_range (&search->ranges, (RefSearchRange){flag->addr, flag->addr})) {
+						return false;
+					}
+				}
+			}
+		}
+		if (!found) {
+			R_LOG_ERROR ("Invalid target '%s'", word);
+			return false;
+		}
+	}
+	return true;
+}
+
+static char *six_scan_cmd(RAnal *anal, const char *args, bool calls, bool listing) {
+	const bool json = listing && *args == 'j';
+	args += json;
+	if (*args && *args != '?' && (listing? !isspace ((ut8)*args): *args != ' ')) {
+		R_LOG_ERROR ("Invalid command 'a:six%s%s%s'. See 'a:six?' for help",
+			calls? "c": "", listing? "l": "", args - json);
+		return strdup (json? "[]": "");
 	}
 	args = r_str_trim_head_ro (args);
 	if (*args == '?') {
 		return six_help ();
 	}
-	if (!is_arm64 (anal)) {
-		return NULL;
+	RCore *core = anal->coreb.core;
+	if (!is_arm64 (anal) || (listing && !core)) {
+		if (!listing) {
+			return NULL;
+		}
+		R_LOG_ERROR ("This command only works on arm64. Please check your asm.{arch,bits}");
+		return strdup (json? "[]": "");
 	}
-	RCore *core = (RCore *)anal->coreb.core;
+	RIO *io = core? core->io: NULL;
 	int argc = 0;
-	char **argv = r_str_argv (args, &argc);
-	if (!argv || argc < 2) {
-		R_LOG_ERROR ("Usage: a:sixc <from> <to> [target ..]");
-		r_str_argv_free (argv);
-		return strdup ("");
+	char **argv = *args? r_str_argv (args, &argc): NULL;
+	const int first = calls? 2: 0;
+	ut64 from = 0;
+	ut64 to = !calls && !io->va? r_io_size (io): UT64_MAX;
+	bool ok = (!*args || argv) && argc >= first;
+	if (!ok && calls) {
+		R_LOG_ERROR ("Usage: %s", listing? "a:sixcl[j] <from> <to> [targets...]": "a:sixc <from> <to> [target ..]");
 	}
-	ut64 from = 0, to = 0;
-	const size_t ntargets = argc - 2;
-	ut64 *targets = ntargets? R_NEWS (ut64, ntargets): NULL;
-	bool ok = (!ntargets || targets)
-		&& parse_num (anal, core, argv[0], "from", &from)
-		&& parse_num (anal, core, argv[1], "to", &to);
-	size_t i;
-	for (i = 0; ok && i < ntargets; i++) {
-		ok = parse_num (anal, core, argv[i + 2], "target", &targets[i]);
-	}
-	if (ok && to > from) {
-		if (ntargets > 1) {
-			qsort (targets, ntargets, sizeof (ut64), six_cmp_addr);
-		}
-		const SixScan ss = {
-			.anal = anal,
-			.register_refs = true,
-			.calls = true,
-			.targets = targets,
-			.ntargets = ntargets,
-		};
-		// scan runs of adjacent readable regions as one range, splitting only at
-		// gaps or unreadable regions: per-region scans would lose an instruction
-		// straddling two maps, and a read across a gap comes back short
-		RIO *io = core? core->io: NULL;
-		RInterval itv = { from, to - from };
-		RVecRIORegion *regions = (io && io->va)? r_io_bank_get_regions (io, io->bank, itv): NULL;
-		if (regions) {
-			ut64 run_lo = 0, run_hi = 0;
-			RIORegion *r;
-			R_VEC_FOREACH (regions, r) {
-				const ut64 end = r_itv_end (r->itv);
-				const ut64 lo = R_MAX (r->itv.addr, from);
-				const ut64 hi = (end < r->itv.addr)? to: R_MIN (end, to);
-				if (hi <= lo || !(r->perm & R_PERM_R)) {
-					continue;
-				}
-				if (run_hi > run_lo && lo == run_hi) {
-					run_hi = hi;
-					continue;
-				}
-				if (run_hi > run_lo) {
-					siguza_xrefs (&ss, run_lo, run_hi - run_lo);
-				}
-				run_lo = lo;
-				run_hi = hi;
-			}
-			if (run_hi > run_lo) {
-				siguza_xrefs (&ss, run_lo, run_hi - run_lo);
-			}
-			RVecRIORegion_free (regions);
-		} else {
-			siguza_xrefs (&ss, from, to - from);
+	if (ok && calls) {
+		ok = parse_num (anal, core, argv[0], "from", &from)
+			&& parse_num (anal, core, argv[1], "to", &to);
+		if (ok && listing && to <= from) {
+			R_LOG_ERROR ("The scan end must be greater than the start");
 		}
 	}
-	free (targets);
+	RStrBuf text = {0};
+	RefSearch search = { .text = &text };
+	if (ok && argc > first) {
+		ok = six_parse_targets (anal, core, &search, argv + first, argc - first, listing);
+	}
 	r_str_argv_free (argv);
-	return strdup ("");
+	if (json) {
+		search.json = anal->coreb.pjWithEncoding? anal->coreb.pjWithEncoding (core): pj_new ();
+		pj_a (search.json);
+	}
+	if (ok && listing && calls && argc == first) {
+		search.seen = ht_uu_new0 ();
+		ok = search.seen != NULL;
+	}
+	const RBreakBind brk = listing? r_cons_break_bind (core->cons): (RBreakBind){0};
+	if (ok && to > from && r_break_begin (&brk)) {
+		refsearch_ranges_sort (&search.ranges);
+		const SixScan ss = {
+			.anal = anal, .refs = &search, .brk = listing? &brk: NULL, .calls = calls, .register_refs = !listing,
+		};
+		six_scan_range (&ss, io, from, to, calls? R_PERM_R: R_PERM_RX);
+		r_break_end (&brk);
+	}
+	refsearch_finish (&search);
+	if (json) {
+		return pj_drain (search.json);
+	}
+	char *result = r_strbuf_drain_nofree (&text);
+	r_str_trim (result);
+	return result;
 }
 
 static char *r_cmdsix_call(RAnal *anal, const char *input) {
@@ -547,8 +628,12 @@ static char *r_cmdsix_call(RAnal *anal, const char *input) {
 		return NULL;
 	}
 	size_t cmd_len = strlen (SIX_CMD);
+	if (input[cmd_len] == 'l') {
+		return six_scan_cmd (anal, input + cmd_len + 1, false, true);
+	}
 	if (input[cmd_len] == 'c') {
-		return six_calls_cmd (anal, input + cmd_len + 1);
+		const bool listing = input[cmd_len + 1] == 'l';
+		return six_scan_cmd (anal, input + cmd_len + 1 + listing, true, listing);
 	}
 	bool islands = input[cmd_len] == 'i';
 	if (islands) {

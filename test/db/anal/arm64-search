@@ -546,6 +546,90 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=a:sixl lists batched code and data refs without registering
+FILE=malloc://0x3000
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 400000947f0000943e000014080000b0081d40f9
+f target=0x100
+axd 0x300 0x20
+a:sixl target 0x200 0x1038
+a:sixlj 0x100..0x200 target 0x1038
+a:sixlj 0x300
+omb+empty
+omb=empty
+a:sixlj target
+omb=default
+axq
+ah
+EOF
+EXPECT=<<EOF
+0x0 -> 0x100 CALL
+0x4 -> 0x200 CALL
+0x8 -> 0x100 CODE
+0xc -> 0x1038 DATA
+[{"from":0,"target":256,"type":"CALL"},{"from":4,"target":512,"type":"CALL"},{"from":8,"target":256,"type":"CODE"},{"from":12,"target":4152,"type":"DATA"}]
+[]
+[]
+0x00000020 -> 0x00000300  DATA:r--
+EOF
+RUN
+
+NAME=a:sixcl lists matching calls and unique direct destinations
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 800000943f0000943e0000147d000094
+a:sixcl 0 0xc 0x100
+a:sixcl 0 0x10
+a:sixclj 4 0xc 0x100
+a:sixclj 0 0x10
+axq
+EOF
+EXPECT=<<EOF
+0x4 -> 0x100 CALL
+0x8 -> 0x100 JUMP
+0x100
+0x200
+[{"from":4,"target":256,"type":"CALL"},{"from":8,"target":256,"type":"JUMP"}]
+[256,512]
+EOF
+RUN
+
+NAME=a:six listings resolve rebased import flags in the active bank
+FILE=bins/mach0/ls-sequoia
+ARGS=-B 0x200000000 -a arm -b 64
+CMDS=<<EOF
+a:sixlj 0x200008198
+a:sixclj 0x200005488 0x20000548c sym.imp.printf
+EOF
+EXPECT=<<EOF
+[{"from":8589965048,"target":8589967768,"type":"DATA"}]
+[{"from":8589956232,"target":8589965048,"type":"CALL"}]
+EOF
+RUN
+
+NAME=a:six listings reject unknown imports in raw sessions
+FILE=malloc://0x100
+ARGS=-n
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+a:sixlj missing_import
+a:sixclj 0 0x20 missing_import
+EOF
+EXPECT=<<EOF
+[]
+[]
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid target 'missing_import'
+ERROR: Invalid target 'missing_import'
+EOF
+RUN
+
 NAME=a:sixc scans the bytes returned by a short read
 FILE=malloc://0x1000
 CMDS=<<EOF
