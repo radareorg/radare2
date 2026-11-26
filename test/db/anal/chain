@@ -1,0 +1,165 @@
+NAME=anal.chain arm64 bl through a b chain
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 04000094c0035fd6 @ 0
+wx 04000014 @ 0x10
+wx 02000014 @ 0x20
+wx 02000014 @ 0x28
+wx 200080d2c0035fd6 @ 0x30
+f sym.target @ 0x30
+aa
+pi 1 @ 0
+ah. @ 0
+axt @ sym.target
+axt @ 0x10
+afl
+EOF
+EXPECT=<<EOF
+bl sym.target
+ 0x00000000 => jump=0x00000030
+fcn.00000000 0x0 [CALL:--x] bl 0x10
+0x00000000    1      8 fcn.00000000
+0x00000030    1      8 sym.target
+EOF
+RUN
+
+NAME=anal.chain=false arm64 bl through a b chain
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e anal.chain=false
+wx 04000094c0035fd6 @ 0
+wx 04000014 @ 0x10
+wx 02000014 @ 0x20
+wx 02000014 @ 0x28
+wx 200080d2c0035fd6 @ 0x30
+f sym.target @ 0x30
+aa
+pi 1 @ 0
+ah. @ 0
+axt @ 0x10
+EOF
+EXPECT=<<EOF
+bl fcn.00000010
+fcn.00000000 0x0 [CALL:--x] bl 0x10
+EOF
+RUN
+
+NAME=anal.chain arm64 tail jump through a b chain
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 200080d203000014 @ 0
+wx 04000014 @ 0x10
+wx 04000014 @ 0x20
+wx 200080d2c0035fd6 @ 0x30
+f sym.target @ 0x30
+af
+af @ 0x10
+pi 1 @ 4
+ah
+axt @ sym.target
+EOF
+EXPECT=<<EOF
+b sym.target
+ 0x00000004 => jump=0x00000030
+fcn.00000000 0x4 [CODE:--x] b 0x10
+EOF
+RUN
+
+NAME=anal.chain arm64 keeps user jump hints
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 04000094c0035fd6 @ 0
+wx 04000014 @ 0x10
+wx 04000014 @ 0x20
+wx 200080d2c0035fd6 @ 0x30
+ahc 0x20 @ 0
+af
+ah. @ 0
+EOF
+EXPECT=<<EOF
+ 0x00000000 => jump=0x00000020
+EOF
+RUN
+
+NAME=anal.chain arm64 cycle
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 040000940b000094c0035fd6 @ 0
+wx 04000014 @ 0x10
+wx fcffff17 @ 0x20
+wx 00000014 @ 0x30
+af
+ah
+axt @ 0x10
+axt @ 0x30
+EOF
+EXPECT=<<EOF
+fcn.00000000 0x0 [CALL:--x] bl 0x10
+fcn.00000010 0x20 [CODE:--x] b 0x10
+fcn.00000000 0x4 [CALL:--x] bl 0x30
+EOF
+RUN
+
+NAME=anal.chain arm64 stops at conditional and indirect jumps
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 040000940b000094c0035fd6 @ 0
+wx 04000014 @ 0x10
+wx 80000054c0035fd6 @ 0x20
+wx 04000014 @ 0x30
+wx 00021fd6 @ 0x40
+f sym.cond @ 0x20
+f sym.imp.stub @ 0x40
+af
+ah
+pi 2 @ 0
+EOF
+EXPECT=<<EOF
+ 0x00000000 => jump=0x00000020
+ 0x00000004 => jump=0x00000040
+bl sym.cond
+bl sym.imp.stub
+EOF
+RUN
+
+NAME=anal.chain x86 call through incremental linking jmp thunk
+FILE=bins/pe/cpp_sample.exe
+CMDS=<<EOF
+aa
+pi 1 @ 0x140001544
+pi 1 @ 0x140001131
+axt @ 0x140001930~0x140001544
+ah. @ 0x140001544
+EOF
+EXPECT=<<EOF
+call fcn.140001930
+jmp fcn.140001930
+fcn.140001510 0x140001544 [CALL:--x] call 0x140001131
+ 0x140001544 => jump=0x140001930
+EOF
+RUN
+
+NAME=anal.chain=false x86 call through incremental linking jmp thunk
+FILE=bins/pe/cpp_sample.exe
+CMDS=<<EOF
+e anal.chain=false
+aa
+pi 1 @ 0x140001544
+ah. @ 0x140001544
+EOF
+EXPECT=<<EOF
+call fcn.140001131
+EOF
+RUN

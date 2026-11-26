@@ -451,6 +451,7 @@ typedef struct r_anal_options_t {
 	bool jmppair; // treat inverse jcc pairs as obfuscation (x86 only)
 	bool loads;
 	bool ignbithints;
+	bool chain; // follow jump chains from call/jmp destinations (fills padding, keeps the ABI)
 	int followdatarefs;
 	int searchstringrefs;
 	int followbrokenfcnsrefs;

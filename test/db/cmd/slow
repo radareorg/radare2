@@ -131181,9 +131181,9 @@ EXPECT=<<EOF
 === aa+hasnext
 34
 === aac-next
-199
+201
 === aac+next
-296
+297
 EOF
 RUN
 

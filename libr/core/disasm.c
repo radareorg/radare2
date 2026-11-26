@@ -6840,6 +6840,24 @@ return true;
 }
 #endif
 
+// encoded destination of a branch whose jump was replaced by a hint (see anal.chain)
+static ut64 ds_unhinted_jump(RDisasmState *ds, ut64 addr) {
+	const RAnalHint *hint = ds->hint;
+	if (!hint || hint->addr != ds->analop.addr || hint->jump != addr || addr == UT64_MAX) {
+		return UT64_MAX;
+	}
+	ut8 buf[32];
+	if (!r_io_read_at (ds->core->io, hint->addr, buf, sizeof (buf))) {
+		return UT64_MAX;
+	}
+	RAnalOp op;
+	r_anal_op_init (&op);
+	const int len = r_anal_op (ds->core->anal, &op, hint->addr, buf, sizeof (buf), R_ARCH_OP_MASK_BASIC);
+	const ut64 jump = (len > 0 && op.jump != addr)? op.jump: UT64_MAX;
+	r_anal_op_fini (&op);
+	return jump;
+}
+
 // R2_600 - TODO: this should be moved into r_parse
 static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	RAnal *anal = ds->core->anal;
@@ -6950,6 +6968,7 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	if (name) {
 		char *nptr;
 		ut64 numval;
+		const ut64 encoded = (optype == R_ANAL_OP_TYPE_CALL || optype == R_ANAL_OP_TYPE_JMP)? ds_unhinted_jump (ds, addr): UT64_MAX;
 		char *hstr = strdup (str);
 		char *ptr = hstr;
 		const int bits = ds->core->rasm->config->bits;
@@ -6987,7 +7006,7 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 			} else {
 				numval = r_num_get (NULL, ptr);
 			}
-			if (numval == addr) {
+			if (numval == addr || numval == encoded) {
 				if (size_suffix && suffix_end) {
 					nptr = suffix_end;
 				} else {
