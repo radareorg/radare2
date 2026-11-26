@@ -1040,12 +1040,18 @@ static bool r_bin_mdmp_patch_pe_headers(RBuffer *pe_buf) {
 	Pe64_read_nt_headers (pe_buf, dos_hdr.e_lfanew, &nt_hdr);
 
 	/* Patch RawData in headers */
-	ut64 sect_hdrs_off = dos_hdr.e_lfanew + 4 + sizeof (Pe64_image_file_header) + nt_hdr.file_header.SizeOfOptionalHeader;
+	ut64 sect_hdrs_off = (ut64)dos_hdr.e_lfanew + 4 + sizeof (Pe64_image_file_header) + nt_hdr.file_header.SizeOfOptionalHeader;
+	const ut64 size = r_buf_size (pe_buf);
 	Pe64_image_section_header section_hdr;
 	for (i = 0; i < nt_hdr.file_header.NumberOfSections; i++) {
-		Pe64_read_image_section_header (pe_buf, sect_hdrs_off + i * sizeof (section_hdr), &section_hdr);
+		const ut64 at = sect_hdrs_off + i * sizeof (section_hdr);
+		if (at + sizeof (section_hdr) > size) {
+			// writing past the end would grow the image copy
+			break;
+		}
+		Pe64_read_image_section_header (pe_buf, at, &section_hdr);
 		section_hdr.PointerToRawData = section_hdr.VirtualAddress;
-		Pe64_write_image_section_header (pe_buf, sect_hdrs_off + i * sizeof (section_hdr), &section_hdr);
+		Pe64_write_image_section_header (pe_buf, at, &section_hdr);
 	}
 
 	return true;
