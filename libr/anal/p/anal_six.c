@@ -157,6 +157,43 @@ static const char *lookup_unprivileged_inst_name(uint32_t opc_size) {
 	return (opc_size < R_ARRAY_SIZE (inst_names))? inst_names[opc_size]: NULL;
 }
 
+// address built by adr/adrp plus up to two add and a load/store immediate, the page when none follow
+static ut64 adrp_resolve(const ut8 *p, const ut8 *e, ut32 reg, ut64 target) {
+	int i;
+	for (i = 0; i < 2; i++) {
+		p = skip_nops (p, e);
+		if (e - p < 4) {
+			return target;
+		}
+		const ut32 v = r_read_le32 (p);
+		if ((v & 0xff8003e0) != (0x91000000 | (reg << 5))) { // 64bit add, match reg
+			break;
+		}
+		target += (ut64)((v >> 10) & 0xfff) << ((v & 0x400000)? 12: 0);
+		reg = v & 0x1f;
+		p += 4;
+	}
+	p = skip_nops (p, e);
+	if (e - p < 4) {
+		return target;
+	}
+	const ut32 v = r_read_le32 (p);
+	if ((v & 0x3e0003e0) != (0x38000000 | (reg << 5))) { // all of str[hb]/ldr[hb], match reg
+		return target;
+	}
+	const ut32 size = (v >> 30) & 0x3;
+	if (!lookup_inst_name ((((v >> 22) & 0x3) << 4) | size)) {
+		return target;
+	}
+	if (v & 0x1000000) { // unsigned offset
+		return target + (((v >> 10) & 0xfff) << size);
+	}
+	if (!(v & 0x00200000) && !(v & 0x400)) { // unscaled/unprivileged
+		return target + ((st64)((ut64)((v >> 12) & 0x1ff) << 55) >> 55);
+	}
+	return target;
+}
+
 // Helper to append memory instruction with optional add prefix
 static void append_mem_instr(RStrBuf *sb, ut64 addr, bool is_adrp, ut32 reg, ut64 target, ut32 reg2, ut32 aoff, const char *inst, const char *rs, ut32 dest_reg, ut64 offset, const char *suffix) {
 	if (aoff) {
@@ -214,7 +251,7 @@ static void siguza_xrefs_chunked(const SixScan *ss, const ut8 *mem, ut64 addr, i
 				}
 			}
 			if (register_refs) {
-				addref (anal, addr, target, R_ANAL_REF_TYPE_DATA);
+				addref (anal, addr, adrp_resolve (p + 4, e, reg, target), R_ANAL_REF_TYPE_DATA);
 			} else if (target == search) {
 				r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "\n", addr, is_adrp? "adrp": "adr", reg, target);
 			} else {

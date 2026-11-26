@@ -527,6 +527,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=a:six registers adrp xrefs to the address built by add and ldr/str
+FILE=malloc://0x3000
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 080000b0081d40f9090000d029410091200940b90a0000b04b010191c0035fd60c0000d01f2003d5800d00f90d0000b0a1815ff80e0000d0c0035fd6
+a:six
+axq
+EOF
+EXPECT=<<EOF
+0x00000000 -> 0x00001038  DATA:r--
+0x00000008 -> 0x00002018  DATA:r--
+0x00000014 -> 0x00001040  DATA:r--
+0x00000020 -> 0x00002018  DATA:r--
+0x0000002c -> 0x00000ff8  DATA:r--
+0x00000034 -> 0x00002000  DATA:r--
+EOF
+RUN
+
 NAME=a:sixc scans the bytes returned by a short read
 FILE=malloc://0x1000
 CMDS=<<EOF
