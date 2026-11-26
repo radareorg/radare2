@@ -84,6 +84,50 @@ typedef int RRef;
 
 #endif
 
+// Where R_REF_TYPE lives inside an object, so refcounting works through void *
+typedef struct {
+	size_t count; // offset of R_REF_NAME, SZT_MAX for plain pointers
+	size_t free; // offset of the free callback
+} RRefLayout;
+
+#define R_REF_LAYOUT_NONE ((RRefLayout){ SZT_MAX, 0 })
+
+#if USE_THREADSAFE_REFS
+#define R_REF_LAYOUT(type) ((RRefLayout){ r_offsetof (type, R_REF_NAME), 0 })
+
+static inline void *r_ref_erased(void *p, RRefLayout layout) {
+	return (p && layout.count != SZT_MAX)? r_ref_ (p, (RRef *)((ut8 *)p + layout.count)): p;
+}
+
+static inline void r_unref_erased(void *p, RRefLayout layout) {
+	if (p && layout.count != SZT_MAX) {
+		r_unref_ (p, (RRef *)((ut8 *)p + layout.count));
+	}
+}
+#else
+#define R_REF_LAYOUT(type) ((RRefLayout){ r_offsetof (type, R_REF_NAME), r_offsetof (type, free) })
+
+static inline void *r_ref_erased(void *p, RRefLayout layout) {
+	if (p && layout.count != SZT_MAX) {
+		(*(RRef *)((ut8 *)p + layout.count))++;
+	}
+	return p;
+}
+
+static inline void r_unref_erased(void *p, RRefLayout layout) {
+	if (!p || layout.count == SZT_MAX) {
+		return;
+	}
+	RRef *count = (RRef *)((ut8 *)p + layout.count);
+	if (*count > 0 && !--*count) {
+		void (*free_cb)(void *) = *(void (**)(void *))((ut8 *)p + layout.free);
+		if (free_cb) {
+			free_cb (p);
+		}
+	}
+}
+#endif
+
 #ifdef __cplusplus
 }
 #endif

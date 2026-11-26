@@ -56,6 +56,7 @@ if get_option('enable_tests')
     'egg_lang',
     'event',
     'flags',
+    'freeze',
     'fs',
     'gdb',
     'glob',
