@@ -24,6 +24,10 @@
 #define R_BIN_ELF_ALL_SYMBOLS (R_BIN_ELF_SYMTAB_SYMBOLS | R_BIN_ELF_DYNSYM_SYMBOLS)
 #define ELFOBJ struct Elf_(obj_t)
 
+#define R_BIN_ELF_EXPORTS_UNKNOWN 0
+#define R_BIN_ELF_EXPORTS_NONE 1
+#define R_BIN_ELF_EXPORTS_SOME 2
+
 #if R_BIN_ELF64
 #define R_BIN_ELF_WORDSIZE 0x8
 #define R_BIN_ELF_WORD_MAX UT64_MAX
@@ -168,6 +172,7 @@ struct Elf_(obj_t) {
 	char *shstrtab;
 
 	RBinElfDynamicInfo dyn_info;
+	ut8 dyn_exports; // R_BIN_ELF_EXPORTS_*, filled by the dynsym walk or the export scan
 
 	ut64 version_info[DT_VERSIONTAGNUM];
 
