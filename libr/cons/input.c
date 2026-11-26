@@ -508,8 +508,11 @@ R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch) {
 #else
 #define P(x) write (1, (x), strlen ((x)));
 #endif
-// XXX no control for max length here?!?!
 R_API int r_cons_fgets(RCons *cons, char *buf, int len, int argc, const char **argv) {
+	R_RETURN_VAL_IF_FAIL (cons && buf, -1);
+	if (len < 1) {
+		return -1;
+	}
 #define RETURN(x) { ret=x; goto beach; }
 	int ret = 0, color = cons->context->pal.input && *cons->context->pal.input;
 	if (cons->echo) {

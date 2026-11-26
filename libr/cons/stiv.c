@@ -4,30 +4,21 @@
 #include <r_util/r_utf8.h>
 
 #define XY(b,x,y) ((b) + (y) * w * components + (x) * components)
-#define ABS(x) (((x)<0)?-(x):(x))
-#define POND(x,y) (ABS((x)) * (y))
 
 typedef void (*Renderer)(RStrBuf *sb, const ut8*, const ut8 *, bool, bool);
 
 static int reduce8(int r, int g, int b) {
-	int colors_len = 8;
-	int select = 0;
-	int odistance = -1;
-	int i, k = 1;
-	const int colors[][3] = {
+	static const ut8 colors[][3] = {
 		{ 0x00,0x00,0x00 }, // black
 		{ 0xd0,0x10,0x10 }, // red
 		{ 0x10,0xe0,0x10 }, // green
 		{ 0xf7,0xf5,0x3a }, // yellow
-		{ 0x10,0x10,0xf0 }, // blue // XXX
+		{ 0x10,0x10,0xf0 }, // blue
 		{ 0xfb,0x3d,0xf8 }, // pink
 		{ 0x10,0xf0,0xf0 }, // turqoise
 		{ 0xf0,0xf0,0xf0 }, // white
 	};
 
-	r /= k; r *= k;
-	g /= k; g *= k;
-	b /= k; b *= k;
 	// B&W
 	if (r < 30 && g < 30 && b < 30) {
 		return 0;
@@ -35,18 +26,20 @@ static int reduce8(int r, int g, int b) {
 	if (r > 200 && g > 200 && b > 200) {
 		return 7;
 	}
-	odistance = -1;
-	for (i = 0; i < colors_len; i++) {
-		int distance =
-			  POND (colors[i][0]-r, r)
-			+ POND (colors[i][1]-g, g)
-			+ POND (colors[i][2]-b, b);
-		if (odistance == -1 || distance < odistance) {
-			odistance = distance;
-			select = i;
+	int best_distance = ST32_MAX;
+	int best = 0;
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (colors); i++) {
+		const int dr = r - colors[i][0];
+		const int dg = g - colors[i][1];
+		const int db = b - colors[i][2];
+		const int distance = dr * dr + dg * dg + db * db;
+		if (distance < best_distance) {
+			best_distance = distance;
+			best = i;
 		}
 	}
-	return select;
+	return best;
 }
 
 static void render_ansi(RStrBuf *sb, const ut8 *c, const ut8 *d, bool foreground, bool background) {

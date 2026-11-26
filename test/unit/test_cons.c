@@ -1174,6 +1174,8 @@ bool test_cons_image_pixel_rows(void) {
 		"grayscale preserves pixel row order");
 	output = r_cons_image (grayscale, sizeof (grayscale), 2, 'A', 3);
 	mu_assert_streq_free (output, "\x1b[30m\x1b[47m▀\x1b[37m\x1b[40m▀\x1b[0m\n", "ANSI pixels set both half colors");
+	output = r_cons_image (pixels, sizeof (pixels), 2, 'A', 3);
+	mu_assert_streq_free (output, "\x1b[31m\x1b[44m▀\x1b[32m\x1b[47m▀\x1b[0m\n", "ANSI primary colors use the matching palette entries");
 	mu_end;
 }
 
@@ -1216,9 +1218,104 @@ bool test_cons_image_braille_colors(void) {
 	mu_end;
 }
 
+#if R2__UNIX__ && !__wasi__
+static int completion_use_matches(R_UNUSED RLineCompletion *completion, R_UNUSED RLineBuffer *buffer, R_UNUSED RLinePromptType prompt_type, R_UNUSED void *user) {
+	return true;
+}
+
+static bool test_cons_completion_preserves_tail(void) {
+	RCons *cons = r_cons_new ();
+	RLine *line = cons->line;
+	line->echo = false;
+	line->completion.run = completion_use_matches;
+	RLineBuffer *buffer = &line->state.buffer;
+	const char *single[] = { "px" };
+	r_line_completion_set (&line->completion, 1, single);
+	const char single_keys[] = "p tail\x01\x06\t\n";
+	mu_assert_true (r_cons_readpush (cons, single_keys, sizeof (single_keys) - 1), "queue Tab after the first character");
+	mu_assert_nullable_streq (r_line_readline (cons), "px tail", "completion preserves overlapping arguments");
+	mu_assert_eq (buffer->index, 2, "cursor stays with the completed word");
+	mu_assert_eq (buffer->length, 7, "length includes trailing arguments");
+
+	const char *multiple[] = { "alpha", "alpine" };
+	r_line_completion_set (&line->completion, 2, multiple);
+	const char multiple_keys[] = "a tail  \x01\x06\t\n";
+	mu_assert_true (r_cons_readpush (cons, multiple_keys, sizeof (multiple_keys) - 1), "queue common-prefix completion");
+	mu_assert_nullable_streq (r_line_readline (cons), "alp tail  ", "common-prefix completion preserves trailing spaces");
+	mu_assert_eq (buffer->index, 3, "cursor follows the common prefix");
+
+	r_line_completion_set (&line->completion, 1, single);
+	mu_assert_true (r_cons_readpush (cons, "\t\n", 2), "queue completion on an empty line");
+	mu_assert_nullable_streq (r_line_readline (cons), "px ", "single completion works on an empty line");
+	r_cons_free (cons);
+	mu_end;
+}
+
+static bool test_cons_fgets_bounds(void) {
+	RCons *cons = r_cons_new ();
+	FILE *input = tmpfile ();
+	mu_assert_notnull (input, "temporary input stream");
+	fputs ("abc\n", input);
+	rewind (input);
+	cons->fdin = input;
+	r_line_set_prompt (cons->line, "");
+	char buf[3] = "zz";
+	mu_assert_eq (r_cons_fgets (cons, buf, 0, 0, NULL), -1, "zero-length read fails");
+	mu_assert_streq (buf, "zz", "zero-length read leaves the buffer intact");
+	mu_assert_eq (r_cons_fgets (cons, buf, sizeof (buf), 0, NULL), 2, "read honors buffer size");
+	mu_assert_streq (buf, "ab", "bounded input is terminated");
+	mu_assert_eq (r_cons_fgets (cons, buf, sizeof (buf), 0, NULL), 1, "remaining input is readable");
+	mu_assert_streq (buf, "c", "the second read trims the newline");
+	fclose (input);
+	r_cons_free (cons);
+	mu_end;
+}
+
+static bool test_cons_pipe_restores_source(void) {
+	RCons *cons = r_cons_new ();
+	char *filename = NULL;
+	int target = r_file_mkstemp ("r2-cons-redirect", &filename);
+	mu_assert ("temporary redirection target", target >= 0);
+	mu_assert_eq (write (target, "old", 3), 3, "initialize target");
+	close (target);
+	int source[2];
+	mu_assert_eq (pipe (source), 0, "open source pipe");
+	int closed_fd = dup (source[1]);
+	mu_assert ("get a spare descriptor", closed_fd >= 0);
+	close (closed_fd);
+	int result = r_cons_pipe_open (cons, filename, closed_fd, false);
+	r_cons_pipe_close_all (cons);
+	mu_assert_eq (result, -1, "a closed descriptor cannot be redirected");
+	size_t length;
+	char *content = r_file_slurp (filename, &length);
+	mu_assert_streq_free (content, "old", "failed redirection preserves the target");
+
+	mu_assert ("redirect an open descriptor", r_cons_pipe_open (cons, filename, source[1], false) >= 0);
+	mu_assert_eq (write (source[1], "new", 3), 3, "write redirected output");
+	r_cons_pipe_close_all (cons);
+	mu_assert_eq (write (source[1], "ok", 2), 2, "write to the restored pipe");
+	close (source[1]);
+	char restored[3] = {0};
+	mu_assert_eq (read (source[0], restored, 2), 2, "read from the restored pipe");
+	close (source[0]);
+	content = r_file_slurp (filename, &length);
+	r_file_rm (filename);
+	free (filename);
+	r_cons_free (cons);
+	mu_assert_streq_free (content, "new", "redirection wrote to the target");
+	mu_assert_streq (restored, "ok", "restored pipe received only its own output");
+	mu_end;
+}
+#endif
+
 bool all_tests(void) {
 #if R2__UNIX__ && LIBC_HAVE_FORK && !__wasi__
 	mu_run_test (test_cons_suspend_raw);
+#endif
+#if R2__UNIX__ && !__wasi__
+	mu_run_test (test_cons_completion_preserves_tail);
+	mu_run_test (test_cons_fgets_bounds);
+	mu_run_test (test_cons_pipe_restores_source);
 #endif
 	mu_run_test (test_cons_image_pixel_rows);
 	mu_run_test (test_cons_image_width);

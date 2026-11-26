@@ -1053,10 +1053,60 @@ static void selection_widget_update(RLine *line) {
 	return;
 }
 
+static void complete_word(RLineBuffer *buffer, const char **argv, int argc, bool opt) {
+	const int cursor = R_DIM (buffer->index, 0, buffer->length);
+	const char separator = opt? '=': ' ';
+	int start = cursor;
+	int after_at = 0;
+	while (start > 0 && buffer->data[start - 1] != separator) {
+		if (!after_at && buffer->data[start - 1] == '@') {
+			after_at = start;
+		}
+		start--;
+	}
+	if (!start) {
+		start = after_at;
+	}
+	if (argc > 1 && !buffer->data[start]) {
+		return;
+	}
+
+	int end = cursor;
+	while (end < buffer->length && buffer->data[end] != ' ') {
+		end++;
+	}
+	const size_t tail_len = buffer->length - end;
+	const size_t room = sizeof (buffer->data) - start - tail_len - 1;
+	const char *match = argv[0];
+	size_t match_len = strlen (match);
+	const bool add_space = argc == 1 && match_len && !tail_len && match[match_len - 1] != R_SYS_DIR[0];
+	if (argc > 1) {
+		match_len = R_MIN (match_len, room);
+		int i;
+		for (i = 1; i < argc && match_len; i++) {
+			size_t j = 0;
+			while (j < match_len && match[j] == argv[i][j]) {
+				j++;
+			}
+			match_len = j;
+		}
+	}
+	if (!match_len || match_len + add_space > room) {
+		return;
+	}
+	int index = start + match_len;
+	memmove (buffer->data + index + add_space, buffer->data + end, tail_len + 1);
+	memcpy (buffer->data + start, match, match_len);
+	if (add_space) {
+		buffer->data[index++] = ' ';
+	}
+	buffer->index = index;
+	buffer->length = index + tail_len;
+}
+
 R_API void r_line_autocomplete(RCons *cons) {
-	char *p;
 	const char **argv = NULL;
-	int argc = 0, i, j, plen, len = 0;
+	int argc = 0, i, len = 0;
 	bool opt = false;
 	int cols = (int) (r_cons_get_size (cons, NULL) * 0.82);
 
@@ -1073,99 +1123,8 @@ R_API void r_line_autocomplete(RCons *cons) {
 		selection_widget_update (line);
 		return;
 	}
-	if (opt) {
-		p = (char *)r_sub_str_lchr (line->state.buffer.data, 0, line->state.buffer.index, '=');
-	} else {
-		p = (char *)r_sub_str_lchr (line->state.buffer.data, 0, line->state.buffer.index, ' ');
-	}
-	if (!p) {
-		p = (char *)r_sub_str_lchr (line->state.buffer.data, 0, line->state.buffer.index, '@'); // HACK FOR r2
-	}
-	if (p) {
-		p++;
-		plen = sizeof (line->state.buffer.data) - (int) (size_t) (p - line->state.buffer.data);
-	} else {
-		p = line->state.buffer.data; // XXX: removes current buffer
-		plen = sizeof (line->state.buffer.data);
-	}
-	/* autocomplete */
-	if (argc == 1) {
-		const char *end_word = r_sub_str_rchr (line->state.buffer.data,
-			line->state.buffer.index,
-			line->state.buffer.length,
-			' ');
-		const char *t = end_word? end_word: "";
-		int largv0 = strlen (r_str_get (argv[0]));
-		size_t len_t = strlen (t);
-		while (len_t > 0 && t[len_t - 1] == ' ') {
-			len_t--;
-		}
-		if ((p - line->state.buffer.data) + largv0 + 1 + len_t < plen) {
-			p[largv0] = '\0';
-			if (len_t > 0) {
-				int tt = largv0;
-				if (*t != ' ') {
-					p[tt++] = ' ';
-				}
-				memmove (p + tt, t, len_t);
-				p[tt + len_t] = '\0';
-			}
-			memcpy (p, argv[0], largv0);
-
-			if (p[largv0 - 1] != R_SYS_DIR[0]) {
-				p[largv0] = ' ';
-				if (!len_t) {
-					p[largv0 + 1] = '\0';
-				}
-			}
-			line->state.buffer.length = strlen (line->state.buffer.data);
-			line->state.buffer.index = line->state.buffer.length;
-		}
-	} else if (argc > 0) {
-		if (*p) {
-			const char *end_word = r_sub_str_rchr (line->state.buffer.data,
-				line->state.buffer.index,
-				line->state.buffer.length,
-				' ');
-			const char *t = end_word? end_word: "";
-			const char *root = argv[0];
-			int min_common_len = strlen (root);
-			size_t len_t = strlen (t);
-			while (len_t > 0 && isspace (t[len_t - 1])) {
-				len_t--;
-			}
-
-			// try to autocomplete argument
-			for (i = 0; i < argc; i++) {
-				j = 0;
-				if (!argv[i]) {
-					break;
-				}
-				while (argv[i][j] == root[j] && root[j] != '\0') {
-					j++;
-				}
-				if (j < min_common_len) {
-					min_common_len = j;
-				}
-				root = argv[i];
-			}
-			// the common prefix, the trailing text and the terminator must fit in the line buffer
-			int room = plen - 1 - (int)len_t;
-			if (min_common_len > room) {
-				min_common_len = R_MAX (room, 0);
-			}
-			if (len_t > 0) {
-				int tt = min_common_len;
-				memmove (p + tt, t, len_t);
-				p[tt + len_t] = '\0';
-			}
-			memmove (p, root, min_common_len);
-			if (!len_t) {
-				p[min_common_len] = '\0';
-			}
-			line->state.buffer.length = strlen (line->state.buffer.data);
-			line->state.buffer.index = (p - line->state.buffer.data) + min_common_len;
-		}
+	if (argc > 0) {
+		complete_word (&line->state.buffer, argv, argc, opt);
 	}
 
 	if (line->prompt_type != R_LINE_PROMPT_DEFAULT || cons->show_autocomplete_widget) {

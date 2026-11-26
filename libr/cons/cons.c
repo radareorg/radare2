@@ -378,7 +378,7 @@ static RCons *cons_new(RConsContext *context) {
 		init_cons_context (cons);
 	}
 	cons->input_state.bufactive = true;
-	cons->rgbstr = r_cons_rgb_str_off; // XXX maybe we can kill that
+	cons->rgbstr = r_cons_rgb_str_off;
 	cons->enable_highlight = true;
 	cons->is_wine = -1;
 	cons->blankline = true;

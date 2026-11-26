@@ -1,117 +1,70 @@
 /* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_cons.h>
-#include <r_th.h>
 
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
 
-#define HONOR_LAST_REDIRECT 0
-#define USE_HACK 0
-
-#if 0
-static bool mydup(const int fd, const int fdn) {
-	if (fd == fdn) {
-		return false;
-	}
-#if __wasi__
-	return false;
-#else
-#  if R2__WINDOWS__
-	int newfd = -1;
-#  else
-	int newfd = sysconf (_SC_OPEN_MAX) - (fd - 2); // portable getdtablesize()
-#  endif
-	if (newfd < 2) {
-		newfd = 2002 - (fd - 2); // fallback
-	}
-	return dup2 (fd, newfd) != -1;
-#endif
-}
-#endif
-
 R_API int r_cons_pipe_open(RCons *cons, const char *file, int fd_src, int append) {
+	R_RETURN_VAL_IF_FAIL (cons && file, -1);
 #if __wasi__
 	cons->wasm_redirect_append = append;
 	free (cons->wasm_redirect_file);
 	cons->wasm_redirect_file = strdup (file);
 	return 0;
 #else
-	if (fd_src < 1) {
+	if (fd_src < 1 || fd_src > ST16_MAX) {
 		return -1;
 	}
 	RConsFdPair *pair;
-#if !HONOR_LAST_REDIRECT
-	// prevent redirecting the same fd twice in the same line
 	R_VEC_FOREACH (&cons->fds, pair) {
 		if (fd_src == pair->fd_src) {
 			R_LOG_WARN ("cannot redirect the same fd twice");
-			// do not permit redirecting output to more than one file
 			return -1;
 		}
 	}
-#endif
-	char *targetFile = (r_str_startswith (file, "~/") || r_str_startswith (file, "~\\"))
+	// Opening the output first could reuse a closed source descriptor.
+	int fd_bak = dup (fd_src);
+	if (fd_bak < 0) {
+		R_LOG_ERROR ("Cannot back up file descriptor %d", fd_src);
+		return -1;
+	}
+	if (fd_bak > ST16_MAX) {
+		close (fd_bak);
+		return -1;
+	}
+	char *target_file = (r_str_startswith (file, "~/") || r_str_startswith (file, "~\\"))
 		? r_file_home (file + 2): strdup (file);
+	if (!target_file) {
+		close (fd_bak);
+		return -1;
+	}
 	const int fd_flags = O_BINARY | O_RDWR | O_CREAT | (append? O_APPEND: O_TRUNC);
-	int fd_new = r_sandbox_open (targetFile, fd_flags, 0644);
+	int fd_new = r_sandbox_open (target_file, fd_flags, 0644);
+	R_LOG_DEBUG ("open (%s) = %d", target_file, fd_new);
+	free (target_file);
 	if (fd_new < 0) {
+		close (fd_bak);
 		R_LOG_ERROR ("ConsPipe cannot open file '%s'", file);
-		free (targetFile);
 		return -1;
 	}
-	R_LOG_DEBUG ("open (%s) = %d", targetFile, fd_new);
-	int fd_bak = fd_src + 32; // XXX wrong assumptions
-	bool is_dual = false;
-#if HONOR_LAST_REDIRECT
-	R_VEC_FOREACH (&cons->fds, pair) {
-		if (fd_src == pair->fd_src) {
-			// do not permit redirecting output to more than one file
-#if USE_HACK
-			int fd_new2 = pair->fd_new + 64;
-			dup2 (pair->fd_bak, fd_new2);
-#else
-			int fd_new2 = dup (pair->fd_bak);
-#endif
-			fd_bak = fd_new2;
-			break;
-		}
+	pair = fd_new <= ST16_MAX? RVecFdPairs_emplace_back (&cons->fds): NULL;
+	if (!pair) {
+		close (fd_new);
+		close (fd_bak);
+		return -1;
 	}
-#endif
-	int res = 0;
-	if (!is_dual) {
-#if USE_HACK
-		res = dup2 (fd_src, fd_bak);
-#else
-		res = fd_bak = dup (fd_src);
-#endif
-		R_LOG_DEBUG ("dup2 %d %d = %d", fd_src, fd_bak, res);
-		close (fd_src);
-		res = dup2 (fd_new, fd_src);
+	int res = dup2 (fd_new, fd_src);
+	if (res < 0) {
+		RVecFdPairs_pop_back (&cons->fds);
+		close (fd_new);
+		close (fd_bak);
+		R_LOG_ERROR ("Cannot redirect file descriptor %d", fd_src);
+		return -1;
 	}
-	if (res == -1) {
-		perror ("dup2");
-	}
+	*pair = (RConsFdPair){ .fd_src = fd_src, .fd_new = fd_new, .fd_bak = fd_bak };
 	R_LOG_DEBUG ("dup2 %d %d = %d", fd_new, fd_src, res);
-	RConsFdPair newPair = {
-		.fd_src = fd_src, // original source file descriptor
-		.fd_new = fd_new, // new file descriptor created to write into the file
-		.fd_bak = fd_bak, // restored file descriptor to be used to recover the original fd into fdn
-	};
-	// eprintf (" %d -> %d\n", fd_src, fd_new);
-	RVecFdPairs_push_back (&cons->fds, &newPair);
-#if 0
-	if (!mydup (fd, fdn)) {
-		R_LOG_ERROR ("Cannot dup stdout to %d", fdn);
-		free (targetFile);
-		return -1;
-	}
-#endif
-	// close (fdn);
-	// res = dup2 (fd, fdn);
-	// eprintf ("dup2 %d %d = %d\n", fd, fdn, res);
-	free (targetFile);
 	return fd_new;
 #endif
 }
