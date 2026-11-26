@@ -1096,7 +1096,12 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 	char *pcmd, cmd[R_CMD_MAXLEN];
 	const char *arg = args;
 
-	for (*cmd = i = j = 0; j < R_CMD_MAXLEN && ptr[j]; i++,j++) {
+	for (*cmd = i = j = 0; ptr[j]; i++, j++) {
+		// expanded arguments make the output index run ahead of the input one
+		if (i + 1 >= sizeof (cmd)) {
+			R_LOG_ERROR ("Expanded macro line is too long");
+			return -1;
+		}
 		if (ptr[j] == '$') {
 			if (ptr[j+1]>='0' && ptr[j+1]<='9') {
 				int wordlen;
@@ -1323,6 +1328,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 					// quit, exits the macro. like a break
 					Gvalue = mac->num->value;
 					if (r < 0) {
+						mac->macro_level--;
 						free (code);
 						free (str);
 						r_cons_break_pop (core->cons);
