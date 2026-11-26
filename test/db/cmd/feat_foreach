@@ -88,3 +88,54 @@ hello
 hello
 EOF
 RUN
+
+NAME=@@i @@b @@f with commands deleting blocks and functions
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 740190c3 @ 16
+wx c3 @ 32
+(delbb;?v $$;afb- 16)
+(delfcn;?v $$;af-)
+s 16
+af
+.(delbb) @@i
+af-
+af
+.(delbb) @@b
+af-
+af
+.(delfcn) @@i
+af
+.(delfcn) @@b
+af
+af @ 32
+.(delfcn) @@f
+afl~?
+af
+af @ 32
+.(delfcn) @@f:fcn
+afl~?
+EOF
+EXPECT=<<EOF
+0x10
+0x12
+0x13
+0x10
+0x12
+0x13
+0x10
+0x12
+0x13
+0x10
+0x12
+0x13
+0x10
+0x20
+0
+0x10
+0x20
+0
+EOF
+RUN

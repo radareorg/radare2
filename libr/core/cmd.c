@@ -5744,10 +5744,10 @@ typedef struct {
 	ut64 size;
 } ForeachListItem;
 
-static void foreach3list_free(void* u) {
-	ForeachListItem *fli = (ForeachListItem*)u;
-	free (fli->name);
-	free (fli);
+static void foreach_list_item_free(void *data) {
+	ForeachListItem *item = data;
+	free (item->name);
+	free (item);
 }
 
 static void append_item(RList *list, const char *name, ut64 addr, ut64 size) {
@@ -5793,7 +5793,7 @@ static void foreach_pairs(RCore *core, const char *cmd, const char *each) {
 
 static RList *foreach3list(RCore *core, char type, const char *glob) {
 	bool va = r_config_get_b (core->config, "io.va");
-	RList *list = r_list_newf (foreach3list_free);
+	RList *list = r_list_newf (foreach_list_item_free);
 	RListIter *iter;
 	int i;
 	switch (type) {
@@ -6181,30 +6181,105 @@ static void cmd_foreach_word(RCore *core, const char *cmd, const char *each, boo
 	r_list_free (lines);
 }
 
-static void atat_i(RCore *core, const char *cmd) {
-	RAnalBlock **iter;
-	RAnalBlock *bb;
-	int i;
+typedef struct {
+	ut64 addr;
+	ut64 size;
+} ForeachTarget;
+
+R_VEC_TYPE (RVecForeachTarget, ForeachTarget);
+
+static bool append_foreach_target(RVecForeachTarget *targets, ut64 addr, ut64 size) {
+	ForeachTarget *target = RVecForeachTarget_emplace_back (targets);
+	if (!target) {
+		return false;
+	}
+	*target = (ForeachTarget){ addr, size };
+	return true;
+}
+
+static bool collect_foreach_targets(RCore *core, char kind, const char *filter, RVecForeachTarget *targets) {
+	if (!core->anal || (filter && !*filter)) {
+		return true;
+	}
+	if (kind == 'f') {
+		RAnalFunction *fcn;
+		RListIter *iter;
+		r_list_foreach (core->anal->fcns, iter, fcn) {
+			if ((!filter || strstr (fcn->name, filter)) && !append_foreach_target (targets, fcn->addr, 0)) {
+				return false;
+			}
+		}
+		return true;
+	}
 	RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->addr);
-	RBitset *seen = r_bitset_new ();
-	if (fcn) {
-		r_anal_function_sort_blocks (fcn);
+	if (!fcn) {
+		return true;
+	}
+	r_anal_function_sort_blocks (fcn);
+	RAnalBlock **iter;
+	if (kind == 'b') {
 		R_VEC_FOREACH (&fcn->bbs, iter) {
-			bb = *iter;
-			for (i = 0; i < bb->ninstr; i++) {
-				ut64 addr = r_anal_block_ninstr (bb, i);
-				if (!r_bitset_set (seen, addr)) {
-					continue;
-				}
-				r_core_seek (core, addr, true);
-				r_core_cmd (core, cmd, 0);
-				if (!foreach_newline (core)) {
-					break;
-				}
+			if (!append_foreach_target (targets, (*iter)->addr, (*iter)->size)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	RBitset *seen = r_bitset_new ();
+	bool success = true;
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		RAnalBlock *bb = *iter;
+		int i;
+		for (i = 0; i < bb->ninstr; i++) {
+			ut64 addr = r_anal_block_ninstr (bb, i);
+			if (r_bitset_set (seen, addr) && !append_foreach_target (targets, addr, 0)) {
+				success = false;
+				goto done;
 			}
 		}
 	}
+done:
 	r_bitset_free (seen);
+	return success;
+}
+
+static void cmd_foreach_anal(RCore *core, const char *cmd, char kind, const char *filter) {
+	RVecForeachTarget targets = {0};
+	RCons *cons = r_core_get_cons (core);
+	if (!collect_foreach_targets (core, kind, filter, &targets) || r_cons_is_breaked (cons)) {
+		RVecForeachTarget_fini (&targets);
+		return;
+	}
+	const bool capture = kind == 'f' && !filter;
+	const int blocksize = core->blocksize;
+	RStrBuf output = {0};
+	ForeachTarget *target;
+	R_VEC_FOREACH (&targets, target) {
+		if (kind == 'b') {
+			r_core_block_size (core, target->size);
+		}
+		r_core_seek (core, target->addr, true);
+		if (capture) {
+			char *text = core_cmd_str_nohtml (core, NULL, cmd);
+			if (text) {
+				r_strbuf_append (&output, text);
+				free (text);
+			}
+		} else {
+			r_core_cmd (core, cmd, 0);
+		}
+		if (!foreach_newline (core)) {
+			break;
+		}
+	}
+	if (capture) {
+		r_cons_print (cons, r_strbuf_get (&output));
+		r_strbuf_fini (&output);
+	}
+	if (kind == 'b') {
+		r_core_block_size (core, blocksize);
+	}
+	RVecForeachTarget_fini (&targets);
 }
 
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
@@ -6239,27 +6314,8 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		r_cons_cmd_help (cons, help_msg_at_at);
 		break;
 	case 'b': // "@@b" - function basic blocks
-		{
-			RAnalBlock **iter;
-			RAnalBlock *bb;
-			RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->addr);
-			int bs = core->blocksize;
-			if (fcn) {
-				r_anal_function_sort_blocks (fcn);
-				R_VEC_FOREACH (&fcn->bbs, iter) {
-					bb = *iter;
-					r_core_block_size (core, bb->size);
-					r_core_seek (core, bb->addr, true);
-					r_core_cmd (core, cmd, 0);
-					if (!foreach_newline (core)) {
-						break;
-					}
-				}
-			}
-			r_core_block_size (core, bs);
-			goto out_finish;
-		}
-		break;
+		cmd_foreach_anal (core, cmd, 'b', NULL);
+		goto out_finish;
 	case 's': // "@@s:" - sequence
 		{
 			char *str = each + 1;
@@ -6297,55 +6353,18 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		}
 		break;
 	case 'i': // "@@i" - function instructions
-		atat_i (core, cmd);
-		//goto out_finish;
+		cmd_foreach_anal (core, cmd, 'i', NULL);
 		break;
 	case 'F': // "@@F" - alias for "@@c:afla"
 		if (each[1] == 'i') { // "@@Fi" as an alias for "@@i"
-			atat_i (core, cmd);
+			cmd_foreach_anal (core, cmd, 'i', NULL);
 		} else {
 			r_core_cmdf (core, "%s @@c:afla", cmd);
 		}
 		break;
 	case 'f': // "@@f"
-		if (each[1] == ':') {
-			RAnalFunction *fcn;
-			RListIter *iter;
-			if (core->anal) {
-				r_list_foreach (core->anal->fcns, iter, fcn) {
-					if (each[2] && strstr (fcn->name, each + 2)) {
-						r_core_seek (core, fcn->addr, true);
-						r_core_cmd (core, cmd, 0);
-						if (!foreach_newline (core)) {
-							break;
-						}
-					}
-				}
-			}
-			goto out_finish;
-		} else {
-			RAnalFunction *fcn;
-			RListIter *iter;
-			if (core->anal) {
-				RStrBuf *sb = r_strbuf_new ("");
-				r_list_foreach (core->anal->fcns, iter, fcn) {
-					r_core_seek (core, fcn->addr, true);
-					char *buf = core_cmd_str_nohtml (core, NULL, cmd);
-					r_strbuf_appendf (sb, "%s", buf);
-					free (buf);
-					if (!foreach_newline (core)) {
-						break;
-					}
-				}
-				char *s = r_strbuf_drain (sb);
-				if (s) {
-					r_cons_print (cons, s);
-					free (s);
-				}
-			}
-			goto out_finish;
-		}
-		break;
+		cmd_foreach_anal (core, cmd, 'f', each[1] == ':'? each + 2: NULL);
+		goto out_finish;
 	case 't': // "@@t"
 		{
 			if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
