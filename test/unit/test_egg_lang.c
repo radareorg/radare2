@@ -24,7 +24,7 @@ static bool test_include_preserves_parser_line(void) {
 	r_log_set_quiet (true);
 	int ret = r_egg_lang_parsechar (egg, ';');
 	r_log_set_quiet (false);
-	mu_assert_eq (ret, 0, "include terminator parsing failed");
+	mu_assert_eq (ret, -1, "missing include was accepted");
 	mu_assert_eq (egg->lang.line, 0x7f7f7f7f, "include handling corrupted adjacent parser state");
 
 	r_egg_free (egg);
@@ -167,9 +167,9 @@ static char *compile_source(const char *arch, int bits, const char *source) {
 }
 
 static bool test_statements_and_directives(void) {
-	char *asm_ = compile_source ("x86", 64, "puts@extern(i32, ptr);\nmain@global(16,0){\n.var0 = 2;\n.var0 * 3;\n.var0;\n}\n");
+	mu_assert_null (compile_source ("x86", 64, "puts@extern(i32, ptr);"), "native backend accepted an extern declaration");
+	char *asm_ = compile_source ("x86", 64, "main@global(16,0){\n.var0 = 2;\n.var0 * 3;\n.var0;\n}\n");
 	mu_assert_notnull (asm_, "x86 compilation failed");
-	mu_assert ("extern emitted a label", !strstr (asm_, "puts:"));
 	mu_assert ("expression statement not evaluated", strstr (asm_, "mul rsi, 3"));
 	mu_assert ("variable statement not resolved", strstr (asm_, "mov rax, [rbp+8]") && !strstr (asm_, ".var0"));
 	free (asm_);

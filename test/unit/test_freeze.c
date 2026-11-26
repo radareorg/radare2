@@ -85,12 +85,11 @@ static bool test_freeze_empty(void) {
 	RFreeze *slot = NULL;
 	RFreeze *frozen = r_freeze_acquire (&slot, NULL, 0, R_REF_LAYOUT_NONE);
 	void *item;
-	size_t i, n = 0;
+	size_t i;
 	r_freeze_detach (&slot);
 	r_freeze_foreach (frozen, i, item) {
-		n++;
+		mu_fail (item? "unexpected item in empty view": "unexpected NULL item in empty view");
 	}
-	mu_assert_eq (n, 0, "empty view");
 	r_freeze_release (frozen);
 	r_freeze_release (NULL);
 	mu_end;
