@@ -82,8 +82,15 @@ On macOS ARM64, run with native Darwin syscalls.
 ragg2 -x -I libr/egg/t/io/darwin-arm64 libr/egg/t/fib.r
 ```
 
-To link with libc on a 64-bit macOS or Linux host, generate LLVM IR and build
-it with Clang.
+Use the same include for a standalone Mach-O executable.
+
+```sh
+ragg2 -F -I libr/egg/t/io/darwin-arm64 -o fib libr/egg/t/fib.r
+./fib
+```
+
+The `io/libc64` include uses `@extern`, which requires the LLVM backend.
+On a 64-bit macOS or Linux host, generate LLVM IR and link with Clang.
 
 ```sh
 ragg2 -a llvm -I libr/egg/t/io/libc64 -o fib.ll libr/egg/t/fib.r

@@ -1204,3 +1204,13 @@ ERROR: expected '}' at the end of the file. 1 left
 ERROR: r_egg_compile failed
 EOF
 RUN
+
+NAME=ragg2 -F rejects the Fibonacci libc include
+FILE=--
+CMDS=ragg2 -F -a arm -b 64 -k darwin -I ../libr/egg/t/io/libc64 ../libr/egg/t/fib.r
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: @extern for 'read' requires the LLVM backend (-a llvm)
+ERROR: r_egg_compile failed
+EOF
+RUN

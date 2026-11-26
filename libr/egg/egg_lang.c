@@ -711,7 +711,7 @@ R_API char *r_egg_mkvar(REgg *egg, RStrs str, int delta) {
 	return r_strbuf_drain (sb);
 }
 
-static void rcc_fun(REgg *egg, char *str) {
+static bool rcc_fun(REgg *egg, char *str) {
 	char *ptr, *ptr2;
 	REggEmit *e = egg->remit;
 	if (CTX) {
@@ -740,6 +740,10 @@ static void rcc_fun(REgg *egg, char *str) {
 				egg->lang.setenviron = r_str_trim_dup (str);
 				egg->lang.slurp = 0;
 			} else if (strstr (ptr, "extern")) {
+				if (!e->declare) {
+					R_LOG_ERROR ("@extern for '%s' requires the LLVM backend (-a llvm)", str);
+					return false;
+				}
 				free (egg->lang.dstvar);
 				egg->lang.dstvar = r_str_trim_dup (str);
 				egg->lang.mode = LANG_MODE_EXTERN;
@@ -802,6 +806,7 @@ static void rcc_fun(REgg *egg, char *str) {
 			}
 		}
 	}
+	return true;
 }
 
 #if 0
@@ -1538,10 +1543,11 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 		}
 		if (egg->lang.slurp) {
 			char *element = r_strbuf_drain_nofree (&egg->lang.elem);
-			if (*element) {
-				rcc_fun (egg, (char *)r_str_trim_head_ro (element));
-			}
+			bool ok = !*element || rcc_fun (egg, (char *)r_str_trim_head_ro (element));
 			free (element);
+			if (!ok) {
+				return -1;
+			}
 		}
 	}
 	if (c != '\t' && c != ' ') {
