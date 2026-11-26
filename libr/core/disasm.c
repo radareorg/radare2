@@ -4385,7 +4385,7 @@ static void ds_print_bytes(RDisasmState *ds) {
 			str = malloc (chrlen + 1);
 			const ut8 *bytes = ds->analop.bytes;
 			for (i = 0; i < chrlen; i++) {
-				if (IS_PRINTABLE (bytes[i])) {
+				if (bytes && IS_PRINTABLE (bytes[i])) {
 					str[i] = bytes[i];
 				} else {
 					str[i] = '.';

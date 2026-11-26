@@ -5083,7 +5083,11 @@ static void abm(RCore *core, int mode) {
 		for (i = 0; i < bb->ninstr; i++) {
 			ut64 at = r_anal_block_ninstr (bb, i);
 			RAnalOp *aop = r_core_anal_op (core, at, 0);
-			char *bytes = r_hex_bin2strdup (aop->bytes_buf, aop->size);
+			if (!aop || !aop->bytes) {
+				r_anal_op_free (aop);
+				continue;
+			}
+			char *bytes = r_hex_bin2strdup (aop->bytes, aop->size);
 			r_strbuf_append (sb0, bytes);
 			free (bytes);
 			if (smart_mask) {
