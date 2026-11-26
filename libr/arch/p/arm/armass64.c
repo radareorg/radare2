@@ -983,12 +983,31 @@ static ut32 cmp(ArmOp *op) {
 static ut32 regsluop(ArmOp *op, int k) {
 	ut32 data = UT32_MAX;
 
-	if (op->operands[1].reg_type & ARM_REG32) {
+	if (!(op->operands[0].type & ARM_GPR) || op->operands[1].reg_type & ARM_REG32) {
 		return data;
 	}
-	if (op->operands[0].reg_type & ARM_REG32) {
-		k -= 0x40;
+	// size (log2 of the access width) and opc come from the suffix: b, h, sb, sh, sw
+	const char *sfx = op->mnemonic + 4;
+	const bool w = op->operands[0].reg_type & ARM_REG32;
+	int opc = (k & 0x4000)? 1: 0;
+	int size;
+	if (!*sfx) {
+		size = w? 2: 3;
+	} else if (!strcmp (sfx, "b") || !strcmp (sfx, "h")) {
+		if (!w) {
+			return data;
+		}
+		size = *sfx == 'b'? 0: 1;
+	} else if (opc && (!strcmp (sfx, "sb") || !strcmp (sfx, "sh") || !strcmp (sfx, "sw"))) {
+		size = sfx[1] == 'b'? 0: sfx[1] == 'h'? 1: 2;
+		if (size == 2 && w) {
+			return data;
+		}
+		opc = w? 3: 2;
+	} else {
+		return data;
 	}
+	k = size << 6 | 0x38 | opc << 14;
 	if (op->operands[2].type & ARM_GPR) {
 		return data;
 	}
@@ -1026,7 +1045,7 @@ static ut32 regsluop(ArmOp *op, int k) {
 static ut32 reglsop(ArmOp *op, int k) {
 	ut32 data = UT32_MAX;
 
-	if (op->operands[1].reg_type & ARM_REG32) {
+	if (!(op->operands[0].type & ARM_GPR) || op->operands[1].reg_type & ARM_REG32) {
 		return data;
 	}
 	if (op->operands[0].reg_type & ARM_REG32) {
