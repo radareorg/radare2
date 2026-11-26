@@ -306,7 +306,7 @@ static void emit_load(REgg *egg, const char *dst, int sz) {
 }
 
 static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, const char *p) {
-	char *op;
+	const char *op;
 	switch (ch) {
 	case '^': op = "eor"; break;
 	case '&': op = "and"; break;
@@ -314,8 +314,8 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	case '-': op = "sub"; break;
 	case '+': op = "add"; break;
 	case '*': op = "mul"; break;
-	case '/': op = "div"; break;
-	default: op = "mov"; break;
+	case '/': op = "sdiv"; break;
+	default: op = NULL; break;
 	}
 	if (!eq) {
 		eq = R_AX;
@@ -323,15 +323,30 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	if (!p) {
 		p = R_AX;
 	}
-	if (ch == '=' && is_memref (p)) {
-		load_value (egg, R_TMP, eq);
-		store_slot (egg, R_TMP, p, vs);
-		return;
-	}
-	if (type == '*') {
-		r_egg_printf (egg, "  %s %s, [%s]\n", op, p, eq);
+	bool store_result = is_memref (p);
+	const char *destination = store_result? R_TMP: p;
+	if (!op) {
+		if (type == '*') {
+			load_deref (egg, destination, eq, vs);
+		} else {
+			load_value (egg, destination, eq);
+		}
 	} else {
-		r_egg_printf (egg, "  %s %s, %s\n", op, p, eq);
+		if (store_result) {
+			load_value (egg, destination, p);
+		}
+		const char *scratch = !strcmp (destination, R_TMP)? R_AX: R_TMP;
+		if (type == '*') {
+			load_deref (egg, scratch, eq, vs);
+			eq = scratch;
+		} else if (!is_reg (eq)) {
+			load_value (egg, scratch, eq);
+			eq = scratch;
+		}
+		r_egg_printf (egg, "  %s %s, %s, %s\n", op, destination, destination, eq);
+	}
+	if (store_result) {
+		store_slot (egg, destination, p, vs);
 	}
 }
 

@@ -1,0 +1,21 @@
+NAME=ragg2 -x runs the Darwin ARM64 hello example
+FILE=-
+CMDS=!ragg2 -x ../libr/egg/t/hello-darwin-arm64.r
+EXPECT=<<EOF
+Hello from Darwin arm64!
+EOF
+RUN
+
+NAME=ragg2 -x runs the Fibonacci example with Darwin syscall declarations
+FILE=-
+CMDS=!ragg2 -x -I ../libr/egg/t/io/darwin-arm64 ../libr/egg/t/fib.r
+EXPECT=<<EOF
+0
+1
+1
+2
+3
+5
+8
+EOF
+RUN

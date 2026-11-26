@@ -42,15 +42,9 @@ language. This is just an assembler-level keyword redefinition.
 
 Includes
 --------
-Use cat(1) or the preprocessor to concatenate multiple files to be compiled.
-It's not a task of a compiler to look for external sources, so it's a
-delegated task right now.. but we will probably add native support for
-spp (merge into)
-
-TODO: this is not yet implemented
-
-  INCDIR@alias("/usr/include/ragg2");
-  sys-osx.r@include(INCDIR);
+Use `io.r@include("");` to load `io.r` from the include search path.
+Add a directory to the search path with `ragg2 -I DIR`. See `t/README.md`
+for an example that selects syscall or libc declarations this way.
 
 Hashbang
 --------

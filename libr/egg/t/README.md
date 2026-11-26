@@ -5,7 +5,7 @@ These are short, self contained .r programs that showcase the syntax
 accepted by ragg2. They are intended as both documentation and as a
 quick sandbox for experimenting with the compiler.
 
-Each file can be compiled with:
+Most files can be compiled with:
 
     ragg2 -a <arch> -b <bits> -k <os> -s FILE.r
 
@@ -25,6 +25,7 @@ Files
 - hello-linux-x64.r  loop that writes "Hello World" using Linux x86-64 syscalls
 - hello-darwin-arm64.r  macOS arm64 hello world using Darwin syscalls
 - hello-llvm.r      native hello world linked with the C runtime by Clang
+- fib.r            first seven Fibonacci numbers with selectable I/O declarations
 - exit.r            inline assembly for the Linux i386 exit syscall
 - arith.r           arithmetic expressions and operator precedence
 - regs.r            direct native-register access via the `.regname` syntax
@@ -42,6 +43,7 @@ Language cheat sheet
     name@global(S,F) { body }        ; function with S byte stackframe
                                       and F bytes reserved for constants
     name@syscall(N);                 ; declare name as a syscall number
+    file.r@include("");              ; load a file from the include search path
     name@alias(value)                ; textual alias: .name -> value
     name@fastcall(addr)              ; call a function at addr via fastcall
     @syscall() { body }              ; override the generated syscall body
@@ -65,6 +67,29 @@ Example compile and inspect
     ragg2 -a esil  -s t/hello-linux-x64.r
     ragg2 -a trace -s t/arith.r
     ragg2 -a x86 -b 64 -s t/regs.r
+
+Run the Fibonacci example from the repository root
+--------------------------------------------------
+
+`fib.r` includes `io.r`, which declares `read(fd, buf, count)`,
+`write(fd, buf, count)`, and `exit(status)`. Use `-I` to select the directory
+that supplies those declarations. The program writes `0`, `1`, `1`, `2`, `3`,
+`5`, and `8` on separate lines.
+
+On macOS ARM64, run with native Darwin syscalls.
+
+```sh
+ragg2 -x -I libr/egg/t/io/darwin-arm64 libr/egg/t/fib.r
+```
+
+To link with libc on a 64-bit macOS or Linux host, generate LLVM IR and build
+it with Clang.
+
+```sh
+ragg2 -a llvm -I libr/egg/t/io/libc64 -o fib.ll libr/egg/t/fib.r
+clang -Wno-override-module fib.ll -o fib
+./fib
+```
 
 Build and run the LLVM example from the repository root
 -------------------------------------------------------
