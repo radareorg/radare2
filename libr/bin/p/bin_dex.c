@@ -2372,13 +2372,16 @@ static RList *dex_fields(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-#define DEX_FIELD(member, name, value, fmt) \
+#define DEX_FIELD(member, name, value, cmt, fmt) \
 	r_list_append (ret, r_bin_field_new (offsetof (DexHeader, member), offsetof (DexHeader, member), \
-		value, sizeof (hdr->member), "dex_" #name, NULL, fmt, false))
-	DEX_FIELD (magic, magic, r_read_le64 (hdr->magic), "[8]c");
-	DEX_FIELD (checksum, checksum, hdr->checksum, "x");
-	DEX_FIELD (signature, signature, 0, "[20]c");
-#define DEX_WORD_FIELD(member, name) DEX_FIELD (member, name, hdr->member, "x");
+		value, sizeof (hdr->member), "dex_" #name, cmt, fmt, false))
+	DEX_FIELD (magic, magic, r_read_le64 (hdr->magic), NULL, "[8]c");
+	DEX_FIELD (checksum, checksum, hdr->checksum, NULL, "x");
+	// SHA-1 is 20 bytes
+	char sig[sizeof (hdr->signature) * 2 + 1];
+	r_hex_bin2str (hdr->signature, sizeof (hdr->signature), sig);
+	DEX_FIELD (signature, signature, 0, sig, "[20]c");
+#define DEX_WORD_FIELD(member, name) DEX_FIELD (member, name, hdr->member, NULL, "x");
 	DEX_HEADER_WORDS (DEX_WORD_FIELD)
 #undef DEX_WORD_FIELD
 #undef DEX_FIELD
