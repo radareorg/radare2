@@ -1724,3 +1724,54 @@ EXPECT=<<EOF
 Lre/mobipwn/enovella/MainActivity::Lre/mobipwn/enovella/MainActivity.method.init()V
 EOF
 RUN
+
+NAME=ic class address follows -B (dex)
+FILE=bins/dex/14d9.dex
+ARGS=-B 0x10000000
+CMDS=<<EOF
+ic~Gps$1$1 ::
+f~class.Lcom_google_progress_Gps_1_1$
+EOF
+EXPECT=<<EOF
+0x1000e5cc [0x1001b878 - 0x1001b8b0]     56 java class 50 Lcom/google/progress/Gps$1$1 :: Ljava/lang/Object;
+0x1000e5cc 1 class.Lcom_google_progress_Gps_1_1
+EOF
+RUN
+
+NAME=ic class address follows the DEX inside an APK
+FILE=apk://bins/dex/14d9.apk
+CMDS=<<EOF
+ic~Gps$1$1 ::
+f~class.Lcom_google_progress_Gps_1_1$
+EOF
+EXPECT=<<EOF
+0x000151c4 [0x00022470 - 0x000224a8]     56 java class 50 Lcom/google/progress/Gps$1$1 :: Ljava/lang/Object;
+0x000151c4 1 class.Lcom_google_progress_Gps_1_1
+EOF
+RUN
+
+NAME=ic class address follows -B (elf)
+FILE=bins/elf/dwarf3_cpp.elf
+ARGS=-B 0x10000000
+CMDS=<<EOF
+ic~Mammal$
+f~class.Mammal$
+EOF
+EXPECT=<<EOF
+0x1000120c [0x100011ee - 0x1000126d]    127 c++ class 0 Mammal
+0x1000120c 1 class.Mammal
+EOF
+RUN
+
+NAME=ic class address 0 stays 0 with -B
+FILE=bins/mach0/WheresMyBrowser
+ARGS=-B 0x10000000
+CMDS=<<EOF
+ic~WKWebViewController$
+f~class.WKWebViewController$
+EOF
+EXPECT=<<EOF
+0x00000000 [0x10028884 - 0x10028884]      0 ? class 29 WKWebViewController
+0x00000000 1 class.WKWebViewController
+EOF
+RUN

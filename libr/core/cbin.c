@@ -4717,6 +4717,10 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 		if (!c || R_STR_ISEMPTY (cname)) {
 			continue;
 		}
+		// move the class address with the binary's base address
+		// e.g. -B or a DEX inside an APK
+		// a class address of 0 means none, keep it 0
+		const ut64 caddr = c->addr? compute_addr (core->bin, UT64_MAX, c->addr, va): 0;
 		char *name = strdup (cname);
 		r_flag_name_filter (core->flags, name);
 		ut64 at_min = UT64_MAX;
@@ -4736,13 +4740,13 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 			}
 		}
 		if (at_min == UT64_MAX) {
-			at_min = c->addr;
-			at_max = c->addr; // XXX + size?
+			at_min = caddr;
+			at_max = caddr; // XXX + size?
 		}
 
 		if (IS_MODE_SET (mode)) {
 			char *classname = r_str_newf ("class.%s", name);
-			r_flag_set (core->flags, classname, c->addr, 1);
+			r_flag_set (core->flags, classname, caddr, 1);
 			if (!names_only) {
 				R_VEC_FOREACH (&c->methods, sym) {
 					ut64 maddr = compute_addr (core->bin, sym->paddr, sym->vaddr, va);
@@ -4788,7 +4792,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 		} else if (IS_MODE_SIMPLE (mode)) {
 			char *supers = csv_supers (c->super);
 			r_cons_printf (core->cons, "0x%08" PFMT64x " [0x%08" PFMT64x " - 0x%08" PFMT64x "] %s %s%s%s\n",
-				c->addr, at_min, at_max, r_bin_lang_tostring (c->attr.lang), cname, *supers? " ": "", supers);
+				caddr, at_min, at_max, r_bin_lang_tostring (c->attr.lang), cname, *supers? " ": "", supers);
 			free (supers);
 		} else if (IS_MODE_CLASSDUMP (mode)) {
 			if (c) {
@@ -4926,7 +4930,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 			if (c->attr.size > 0) {
 				pj_kN (pj, "instance_size", c->attr.size);
 			}
-			pj_kn (pj, "addr", c->addr);
+			pj_kn (pj, "addr", caddr);
 			const char *lang = r_bin_lang_tostring (c->attr.lang);
 			if (lang && *lang != '?') {
 				pj_ks (pj, "lang", lang);
@@ -5053,7 +5057,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 			int m = 0;
 			const char *cl = r_bin_lang_tostring (c->attr.lang);
 			r_cons_printf (core->cons, "0x%08" PFMT64x " [0x%08" PFMT64x " - 0x%08" PFMT64x "] %6" PFMT64d " %s class %d %s",
-				c->addr, at_min, at_max, (at_max - at_min), cl, c->index, cname);
+				caddr, at_min, at_max, (at_max - at_min), cl, c->index, cname);
 			if (r_list_empty (c->super)) {
 				r_cons_newline (core->cons);
 			} else {
