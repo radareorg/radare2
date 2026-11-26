@@ -1,0 +1,47 @@
+NAME=leak arch plugins: any.as, lua, ppc.gnu, dis, x86.nz and dalvik
+FILE=malloc://512
+ARGS=-wn
+CMDS=<<EOF
+e log.level=0
+e scr.color=0
+%R2_PPC_AS=
+e asm.arch=any.as
+e asm.cpu=ppc
+e asm.bits=32
+pa nop
+?e ok
+e asm.cpu=
+e asm.arch=lua
+pad 03000000
+e asm.arch=ppc.gnu
+e asm.bits=32
+pad a602087c
+e asm.arch=dis
+pad ff
+pad 0000
+e asm.arch=x86.nz
+e asm.bits=32
+pa mov eax, [eax+0x12g*2]
+?e ok
+wx 6465780a303335003c224b3c6be00a4805dc932078ebf894a68d8c10b081209dfc00000070000000785634120000000000000000ec0000000300000070000000020000007c000000010000008400000000000000000000000100000090000000010000009800000044000000b8000000b8000000bf000000c2000000000000000100000001000000010000000000000000000000020000000000000001000000ffffffff00000000ffffffff00000000c800000000000000054c666f6f3b00015600036261720000000001000009d00002000000010000000000000005000000fa100000000000000e000000010000000010000001000000ec000000
+obf
+e asm.arch=dalvik
+pd 2 @ 0xe0
+e io.cache=true
+wx fb01 @ 0xe0
+pd 2 @ 0xe0
+EOF
+EXPECT=<<EOF
+ok
+loadbool 0 0 0
+mflr r0
+invalid
+invalid
+invalid
+ok
+            0x000000e0      fa10000000..   invoke-polymorphic {v0}, Lfoo.bar()V, ()V
+            0x000000e8      0e00           return-void
+            0x000000e0      fb01000000..   invoke-polymorphic/range {v0..v0}, Lfoo.bar()V, ()V
+            0x000000e8      0e00           return-void
+EOF
+RUN
