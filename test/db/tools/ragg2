@@ -209,10 +209,12 @@ main:
   sub sp, sp, 32
 # rcc_fun 1 (printf)
 # encode filtered string (fnord\n) (printf)
-  adr x0, 8
-  b 12
+  adr x0, .Lstring_165
+  b .Lafter_string_165
+.Lstring_165:
 .string "fnord\n"
 .fill 1, 1, 0
+.Lafter_string_165:
   str x0, [sp, 8]
 # call in egg->lang.mode 0
   ldr x0, [sp, 8]

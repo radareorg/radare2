@@ -109,12 +109,14 @@ static void emit_init(REgg *egg) {
 }
 
 static char *emit_syscall(REgg *egg, int num) {
+	const char *syscall_reg = R_AX;
 	int svc = 0;
 	switch (egg->os) {
 	case R_EGG_OS_DARWIN:
 	case R_EGG_OS_OSX:
 	case R_EGG_OS_IOS:
 	case R_EGG_OS_MACOS:
+		syscall_reg = "x16";
 		svc = 0x80;
 		break;
 	case R_EGG_OS_WATCHOS:
@@ -124,7 +126,7 @@ static char *emit_syscall(REgg *egg, int num) {
 		svc = 0;
 		break;
 	}
-	return r_str_newf (": mov " R_AX ", `.arg`\n: svc 0x%x\n", svc);
+	return r_str_newf (": mov %s, `.arg`\n: svc 0x%x\n", syscall_reg, svc);
 }
 
 static void emit_frame(REgg *egg, int sz) {
@@ -167,16 +169,17 @@ static void emit_set_string(REgg *egg, const char *dstvar, RStrs str) {
 	if (rest) {
 		rest = 4 - rest;
 	}
-	int total_data = slen + rest;
-	// use adr to get string address, then branch over the data
-	r_egg_printf (egg, "  adr x0, 8\n");
-	r_egg_printf (egg, "  b %d\n", 4 + total_data); // skip over data
+	ut64 label_id = r_buf_size (egg->buf);
+	r_egg_printf (egg, "  adr x0, .Lstring_%" PFMT64u "\n", label_id);
+	r_egg_printf (egg, "  b .Lafter_string_%" PFMT64u "\n", label_id);
+	r_egg_printf (egg, ".Lstring_%" PFMT64u ":\n", label_id);
 	char *s = r_str_escape_raw ((const ut8 *)str.a, slen - 1);
 	r_egg_printf (egg, ".string \"%s\"\n", s);
 	free (s);
 	if (rest) {
 		r_egg_printf (egg, ".fill %d, 1, 0\n", rest);
 	}
+	r_egg_printf (egg, ".Lafter_string_%" PFMT64u ":\n", label_id);
 	{
 		char *p = r_egg_mkvar (egg, r_strs_from (dstvar), 0);
 		r_egg_printf (egg, "  str x0, [%s]\n", p);
