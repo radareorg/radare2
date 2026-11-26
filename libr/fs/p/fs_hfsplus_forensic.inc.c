@@ -103,7 +103,7 @@ R_VEC_TYPE (RVecHfsAttribute, HfsAttribute);
 typedef struct {
 	RFSRoot *root;
 	GrubFS *grub;
-	ut64 base, size, allocation;
+	ut64 base, size, allocation, limit;
 	ut32 block_size, blocks, volume_flags, journal;
 	HfsFork bitmap, startup, catalog_slack;
 	HfsTree catalog, overflow, attributes;
@@ -117,6 +117,7 @@ typedef struct {
 	ut32 bitmap_size;
 	ut8 bitmap_cache[4096];
 	bool bitmap_known, geometry, native, classic, case_sensitive, ready, owners_complete;
+	bool alternate, header_conflict;
 } HfsFS;
 
 typedef struct {
@@ -137,6 +138,7 @@ static void hfs_fork_fini(HfsFork *fork) {
 
 static bool hfs_disk(HfsFS *fs, ut64 offset, ut8 *buffer, int length) {
 	return length >= 0 && offset <= fs->size && (ut64)length <= fs->size - offset
+		&& (!fs->limit || (offset <= fs->limit && (ut64)length <= fs->limit - offset))
 		&& fs->root->iob.read_at (fs->root->iob.io, fs->root->delta + fs->base + offset, buffer, length) == length;
 }
 
@@ -354,7 +356,7 @@ static bool hfs_tree_map(HfsTree *tree, const ut8 *data, ut32 length) {
 	return true;
 }
 
-static bool hfs_tree_init(HfsFS *fs, HfsTree *tree) {
+static bool hfs_tree_header(HfsFS *fs, HfsTree *tree) {
 	ut8 header[120];
 	if (!hfs_fork_read (fs, &tree->fork, 0, header, sizeof (header)) || header[8] != 1
 			|| r_read_be16 (header + 10) != 3) {
@@ -370,6 +372,13 @@ static bool hfs_tree_init(HfsFS *fs, HfsTree *tree) {
 	if (tree->node_size < 512 || (tree->node_size & (tree->node_size - 1)) || !tree->nodes || tree->depth > 32
 			|| tree->nodes > tree->fork.size / tree->node_size || tree->root >= tree->nodes
 			|| tree->first >= tree->nodes || tree->last >= tree->nodes) {
+		return false;
+	}
+	return true;
+}
+
+static bool hfs_tree_init(HfsFS *fs, HfsTree *tree) {
+	if (!hfs_tree_header (fs, tree)) {
 		return false;
 	}
 	tree->allocated = r_bitset_new ();
@@ -764,6 +773,12 @@ static bool hfs_bucket_append(HtUP *index, ut64 id, void *entry) {
 
 static bool hfs_add_entry(HfsFS *fs, HfsEntry *entry) {
 	entry->key = hfs_name_key (fs, entry->name);
+	if (fs->alternate) {
+		entry->flags |= R_FS_FILE_HEURISTIC;
+	}
+	if (fs->header_conflict) {
+		entry->flags |= R_FS_FILE_CONFLICT | R_FS_FILE_PARTIAL;
+	}
 	entry->streams = r_list_new ();
 	entry->parent_id = UT64_MAX;
 	if (!entry->key || !entry->streams || ht_up_find (fs->ids, entry->id, NULL)
@@ -1483,7 +1498,8 @@ static void hfs_prepare(HfsFS *fs) {
 	fs->versions = ht_up_new (NULL, hfs_children_free, NULL);
 	fs->inodes = ht_up_new (NULL, hfs_children_free, NULL);
 	fs->stream_ids = ht_up_new0 ();
-	fs->owners_complete = (fs->volume_flags & (1 << 8)) && !(fs->volume_flags & (1 << 11));
+	fs->owners_complete = !fs->header_conflict && (fs->volume_flags & (1 << 8)) && !(fs->volume_flags & (1 << 11));
+	fs->owners_complete &= (!fs->limit || fs->size <= fs->limit) && fs->bitmap.size >= ((ut64)fs->blocks + 7) / 8;
 	if (!fs->entries || !fs->threads || !fs->streams || !fs->ids || !fs->live || !fs->children
 			|| !fs->directories || !fs->thread_index || !fs->stream_ids || !fs->versions || !fs->inodes) {
 		fs->owners_complete = false;
@@ -1547,6 +1563,9 @@ static void hfs_prepare(HfsFS *fs) {
 }
 
 static int hfs_allocated(HfsFS *fs, ut32 block) {
+	if (fs->header_conflict || (fs->limit && fs->allocation + ((ut64)block + 1) * fs->block_size > fs->limit)) {
+		return -1;
+	}
 	ut64 byte = block / 8;
 	if (byte >= fs->bitmap.size) {
 		return -1;
@@ -1559,14 +1578,7 @@ static int hfs_allocated(HfsFS *fs, ut32 block) {
 	return fs->bitmap_known? (fs->bitmap_cache[byte - fs->bitmap_page] >> (7 - block % 8)) & 1: -1;
 }
 
-static bool hfs_initialize(HfsFS *fs) {
-	ut8 header[512];
-	ut64 address;
-	if (r_add_overflow_ut64 (fs->root->delta, 1536, &address)
-			|| fs->root->iob.read_at (fs->root->iob.io, fs->root->delta + 1024, header, sizeof (header)) != sizeof (header)) {
-		return false;
-	}
-	fs->classic = !strcmp (FSNAME, "hfs");
+static bool hfs_header_decode(HfsFS *fs, const ut8 *header) {
 	if (fs->classic) {
 		fs->block_size = r_read_be32 (header + 20);
 		fs->blocks = r_read_be16 (header + 18);
@@ -1602,20 +1614,6 @@ static bool hfs_initialize(HfsFS *fs) {
 			((ut64)catalog_size + fs->block_size - 1) / fs->block_size * fs->block_size, header + 150);
 		return true;
 	}
-	ut64 embedded_size = UT64_MAX;
-	if (r_read_be16 (header) == 0x4244) {
-		ut32 block_size = r_read_be32 (header + 20), start = r_read_be16 (header + 28);
-		if ((r_read_be16 (header + 124) != 0x482b && r_read_be16 (header + 124) != 0x4858)
-				|| block_size < 512 || (block_size & (block_size - 1))) {
-			return false;
-		}
-		fs->base = (ut64)start * 512 + (ut64)r_read_be16 (header + 126) * block_size;
-		embedded_size = (ut64)r_read_be16 (header + 128) * block_size;
-		if (r_add_overflow_ut64 (fs->root->delta, fs->base, &address) || address > UT64_MAX - 1536
-				|| fs->root->iob.read_at (fs->root->iob.io, address + 1024, header, sizeof (header)) != sizeof (header)) {
-			return false;
-		}
-	}
 	ut32 magic = r_read_be16 (header);
 	fs->block_size = r_read_be32 (header + 40);
 	if ((magic != 0x482b && magic != 0x4858) || fs->block_size < 512 || (fs->block_size & (fs->block_size - 1))) {
@@ -1625,7 +1623,7 @@ static bool hfs_initialize(HfsFS *fs) {
 	fs->blocks = r_read_be32 (header + 44);
 	fs->size = (ut64)fs->blocks * fs->block_size;
 	if ((magic == 0x482b? r_read_be16 (header + 2) != 4: r_read_be16 (header + 2) != 5)
-			|| fs->size < 2048 || fs->size > embedded_size
+			|| fs->size < 2048
 			|| fs->root->delta > UT64_MAX - fs->base || fs->size > UT64_MAX - fs->root->delta - fs->base) {
 		return false;
 	}
@@ -1638,6 +1636,148 @@ static bool hfs_initialize(HfsFS *fs) {
 	hfs_fork_init (fs, &fs->attributes.fork, header + 352);
 	hfs_fork_init (fs, &fs->startup, header + 432);
 	return true;
+}
+
+static void hfs_header_fini(HfsFS *fs) {
+	hfs_fork_fini (&fs->bitmap);
+	hfs_fork_fini (&fs->startup);
+	hfs_fork_fini (&fs->catalog.fork);
+	hfs_fork_fini (&fs->overflow.fork);
+	hfs_fork_fini (&fs->attributes.fork);
+}
+
+static bool hfs_header_metadata(HfsFS *fs) {
+	return fs->bitmap.status == R_FS_WALK_COMPLETE && fs->bitmap.size >= ((ut64)fs->blocks + 7) / 8
+		&& fs->catalog.fork.status == R_FS_WALK_COMPLETE && fs->overflow.fork.status == R_FS_WALK_COMPLETE
+		&& fs->attributes.fork.status == R_FS_WALK_COMPLETE && fs->startup.status == R_FS_WALK_COMPLETE;
+}
+
+static bool hfs_header_usable(HfsFS *fs) {
+	return (!fs->limit || fs->size <= fs->limit) && hfs_header_metadata (fs)
+		&& hfs_tree_header (fs, &fs->catalog) && hfs_tree_header (fs, &fs->overflow)
+		&& (!fs->attributes.fork.size || hfs_tree_header (fs, &fs->attributes));
+}
+
+static bool hfs_header_identity(bool classic, const ut8 *left, const ut8 *right) {
+	ut32 created = classic? 2: 16, uuid = classic? 116: 104;
+	return (!r_read_be32 (left + created) || !r_read_be32 (right + created)
+			|| r_read_be32 (left + created) == r_read_be32 (right + created))
+		&& (!r_read_be64 (left + uuid) || !r_read_be64 (right + uuid) || !memcmp (left + uuid, right + uuid, 8));
+}
+
+static bool hfs_header_geometry(HfsFS *left, HfsFS *right) {
+	return left->size == right->size && left->allocation == right->allocation
+		&& left->block_size == right->block_size && left->case_sensitive == right->case_sensitive;
+}
+
+static bool hfs_header_layout(bool classic, const ut8 *left, const ut8 *right) {
+	return classic? !memcmp (left + 14, right + 14, 2) && !memcmp (left + 130, right + 130, 32)
+		: !memcmp (left + 112, right + 112, 400) && !memcmp (left + 12, right + 12, 4);
+}
+
+static bool hfs_initialize(HfsFS *fs) {
+	ut8 header[512] = {0}, selected[512];
+	ut64 start = fs->root->delta, boundary = 0;
+	if (start > UT64_MAX - 1536) {
+		return false;
+	}
+	RIORegion region;
+	if (fs->root->iob.get_region_at && fs->root->iob.get_region_at (fs->root->iob.io, &region, start)
+			&& region.itv.addr <= start && region.itv.size != UT64_MAX && region.itv.size <= UT64_MAX - region.itv.addr) {
+		ut64 end = region.itv.addr + region.itv.size;
+		if (end > start) {
+			boundary = end - start;
+		}
+	}
+	bool readable = (!boundary || boundary >= 1536)
+		&& fs->root->iob.read_at (fs->root->iob.io, start + 1024, header, sizeof (header)) == sizeof (header);
+	if (!readable) {
+		memset (header, 0, sizeof (header));
+	}
+	fs->classic = !strcmp (FSNAME, "hfs");
+	if (!fs->classic && readable && r_read_be16 (header) == 0x4244) {
+		ut32 block = r_read_be32 (header + 20);
+		if ((r_read_be16 (header + 124) != 0x482b && r_read_be16 (header + 124) != 0x4858)
+				|| block < 512 || (block & (block - 1))) {
+			return false;
+		}
+		fs->base = (ut64)r_read_be16 (header + 28) * 512 + (ut64)r_read_be16 (header + 126) * block;
+		ut64 embedded = (ut64)r_read_be16 (header + 128) * block;
+		if (embedded < 2048 || fs->base > UT64_MAX - start - 1536
+				|| (boundary && (fs->base > boundary || embedded > boundary - fs->base))) {
+			return false;
+		}
+		start += fs->base;
+		boundary = embedded;
+		memset (header, 0, sizeof (header));
+		readable = fs->root->iob.read_at (fs->root->iob.io, start + 1024, header, sizeof (header)) == sizeof (header);
+		if (!readable) {
+			memset (header, 0, sizeof (header));
+		}
+	}
+	fs->limit = boundary;
+	bool primary = readable && hfs_header_decode (fs, header);
+	bool usable = primary && hfs_header_usable (fs);
+	ut32 block = r_read_be32 (header + (fs->classic? 20: 40));
+	ut64 declared = fs->classic? (ut64)r_read_be16 (header + 28) * 512 + (ut64)r_read_be16 (header + 18) * block + 1024
+		: (ut64)r_read_be32 (header + 44) * block;
+	if (block < 512 || (fs->classic? block % 512: block & (block - 1)) || declared < 2048
+			|| declared > UT64_MAX - start || (boundary && declared > boundary)) {
+		declared = 0;
+	}
+	ut64 ends[2] = { boundary, declared };
+	HfsFS *chosen = fs;
+	unsigned i;
+	for (i = 0; i < R_ARRAY_SIZE (ends); i++) {
+		ut64 end = ends[i];
+		if (end < 2048 || (i && end == boundary) || end > UT64_MAX - start) {
+			continue;
+		}
+		ut8 backup[512];
+		if (fs->root->iob.read_at (fs->root->iob.io, start + end - 1024, backup, sizeof (backup)) != sizeof (backup)) {
+			continue;
+		}
+		HfsFS *other = R_NEW0 (HfsFS);
+		other->root = fs->root;
+		other->classic = fs->classic;
+		other->base = fs->base;
+		other->limit = boundary? boundary: end;
+		if (!hfs_header_decode (other, backup) || !hfs_header_usable (other)
+				|| other->size > end - (other->classic? 1024: 0)
+				|| end - other->size - (other->classic? 1024: 0) >= other->block_size) {
+			hfs_header_fini (other);
+			free (other);
+			continue;
+		}
+		bool conflict = (primary && !hfs_header_geometry (fs, other))
+			|| (readable && !hfs_header_identity (fs->classic, header, backup));
+		if (!usable && chosen == fs) {
+			chosen = other;
+			memcpy (selected, backup, sizeof (selected));
+			chosen->alternate = true;
+			chosen->header_conflict = conflict || (primary && hfs_header_metadata (fs) && !hfs_header_layout (fs->classic, header, backup));
+			if (declared && readable) {
+				ut32 flags = fs->classic? r_read_be16 (header + 10): r_read_be32 (header + 4);
+				chosen->volume_flags &= flags | ~(1U << 8);
+				chosen->volume_flags |= flags & (1 << 11);
+			}
+			continue;
+		}
+		chosen->header_conflict |= conflict || (chosen != fs && (!hfs_header_geometry (chosen, other)
+			|| !hfs_header_layout (fs->classic, selected, backup) || !hfs_header_identity (fs->classic, selected, backup)));
+		hfs_header_fini (other);
+		free (other);
+	}
+	if (chosen != fs) {
+		hfs_header_fini (fs);
+		*fs = *chosen;
+		free (chosen);
+		R_LOG_WARN ("Using alternate %s volume metadata", fs->classic? "HFS": "HFS+");
+	}
+	if (fs->header_conflict) {
+		R_LOG_WARN ("Conflicting HFS volume metadata: retaining inspection only");
+	}
+	return primary || fs->alternate;
 }
 
 static ut64 hfs_lookup(HfsFS *fs, const char *path) {

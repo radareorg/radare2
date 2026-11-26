@@ -307,8 +307,8 @@ and the existing mgx command with the same ownership checks.
 .Pp
 Dirty or damaged metadata retains readable inspection while incomplete ownership
 prevents checked recovery and orphan classification. Cached metadata describes
-a read-only mounted snapshot; remount after changing the image. Alternate-MDB
-fallback and bootstrapping a self-fragmented overflow tree remain separate work.
+a read-only mounted snapshot; remount after changing the image. Bootstrapping
+a self-fragmented overflow tree remains separate work.
 When allocation geometry is incomplete but the ordinary reader can still mount
 the volume, ordinary browsing remains available and forensic operations report
 unsupported rather than inventing allocation or recovery results.
@@ -370,9 +370,26 @@ accepts a checksummed empty journal; it does not replay transactions or recover
 historical journal versions. Reads never synthesize missing HFS+ file data.
 Cached metadata and stream IDs describe a read-only mounted snapshot; remount
 and enumerate IDs again after changing the backing image. Compressed data-fork
-recovery, journal-history recovery and alternate-header fallback remain separate
-work. Raw compression attributes and resource
-forks can be extracted through the stream namespace.
+recovery and journal-history recovery remain separate work. Raw compression
+attributes and resource forks can be extracted through the stream namespace.
+.Pp
+Classic HFS and HFS+/HFSX try the alternate MDB or volume header when the primary
+cannot supply usable volume metadata. Candidates must have valid geometry,
+bounded special-file mappings and readable B-tree headers. A usable primary
+remains authoritative; a backup write counter does not establish freshness.
+Alternate-based entries are HEURISTIC and a warning identifies the fallback.
+Conflicting volume identities, geometry or ambiguous replacement mappings retain
+inspection with PARTIAL and CONFLICT flags, but prevent checked recovery,
+orphan classification and assertions that allocation blocks are free.
+Readable dirty-volume evidence also prevents checked recovery.
+.Pp
+Backup lookup uses the containing IO region boundary or plausible primary-header
+geometry, and the embedded volume boundary for an intact HFS+ wrapper. It does
+not scan the disk or repair either copy. A completely erased primary requires
+a known boundary; a damaged wrapper can prevent locating its embedded volume.
+If the primary signature is lost, mount explicitly with m /mount hfs OFFSET or
+m /mount hfsplus OFFSET because automatic filesystem identification uses the
+primary signature. No new API, command or configuration setting is required.
 .Pp
 .Ft int
 .Fn r_fs_ranges "RFS *fs" "const char *mountpoint" "ut32 flags" "RFSRangeCb cb" "void *user"

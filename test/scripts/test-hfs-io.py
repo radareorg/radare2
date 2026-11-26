@@ -21,7 +21,14 @@ EXPECTED = b'D' * BLOCK + b'E' * BLOCK + b'F' * BLOCK + b'G' * 17
 
 class Binding(C.Structure):
     _fields_ = [('init', C.c_int)] + [(name, C.c_void_p) for name in (
-        'io', 'desc_use', 'desc_get', 'desc_info', 'desc_size', 'open', 'open_at', 'close', 'read_at')]
+        'io', 'desc_use', 'desc_get', 'desc_info', 'desc_size', 'open', 'open_at', 'close', 'read_at',
+        'write_at', 'overlay_write_at', 'system', 'fd_open', 'fd_close', 'fd_seek', 'fd_size', 'fd_resize',
+        'fd_read', 'fd_write', 'fd_read_at', 'fd_write_at', 'fd_get_name', 'fd_get_map', 'fd_remap',
+        'is_valid_offset', 'addr_is_mapped', 'get_region_at')]
+
+class Region(C.Structure):
+    _fields_ = [('address', C.c_uint64), ('size', C.c_uint64), ('perm', C.c_int), ('sperm', C.c_int)]
+
 
 class File(C.Structure):
     _fields_ = [('name', C.c_void_p), ('path', C.c_void_p), ('off', C.c_uint64),
@@ -32,6 +39,7 @@ class Range(C.Structure):
     _fields_ = [('logical', C.c_uint64), ('physical', C.c_uint64), ('size', C.c_uint64), ('flags', C.c_uint32)]
 
 Callback = C.CFUNCTYPE(C.c_bool, C.POINTER(Range), C.c_void_p)
+GetRegion = C.CFUNCTYPE(C.c_bool, C.c_void_p, C.POINTER(Region), C.c_uint64)
 ReadAt = C.CFUNCTYPE(C.c_int, C.c_void_p, C.c_uint64, C.c_void_p, C.c_int)
 
 
@@ -97,7 +105,7 @@ def collect_call(call):
 
 
 class Image:
-    def __init__(self, image, delta=0, aliases=(), failed=(), mounted=True):
+    def __init__(self, image, delta=0, aliases=(), failed=(), mounted=True, bounded=False):
         self.image = bytearray(delta) + image
         self.buffer = (C.c_ubyte * len(self.image)).from_buffer(self.image)
         self.reads = []
@@ -119,6 +127,17 @@ class Image:
         binding = Binding.from_address(self.fs)
         binding.init = 1
         binding.read_at = C.cast(read_at, C.c_void_p).value
+        if bounded:
+            @GetRegion
+            def get_region(_, region, address):
+                if address < delta or address >= len(self.image):
+                    return False
+                region.contents.address = delta
+                region.contents.size = len(self.image) - delta
+                region.contents.perm = region.contents.sperm = 4
+                return True
+            self.region_callback = get_region
+            binding.get_region_at = C.cast(get_region, C.c_void_p).value
         assert bool(mount(self.fs, b'hfs', b'/hfs', delta)) == mounted
 
     def __enter__(self):
@@ -344,6 +363,7 @@ print('PASS: unreadable allocation bitmaps report unknown space and never author
 for field, value in ((0, 0), (20, 0), (20, 513), (28, 0), (124, 0x482b)):
     image = bytearray(ORIGINAL)
     (put32 if field == 20 else put16)(image, 1024 + field, value)
+    image[-1024:-1022] = bytes(2)
     with Image(image, mounted=False):
         pass
 print('PASS: invalid classic geometry and HFS+ wrappers are rejected before legacy parsing')
@@ -351,6 +371,7 @@ print('PASS: invalid classic geometry and HFS+ wrappers are rejected before lega
 for field in (14, 18):
     image = bytearray(ORIGINAL)
     put16(image, 1024 + field, 0)
+    image[-1024:-1022] = bytes(2)
     with Image(image) as disk:
         handle = open_path(disk.fs, b'/hfs/live.txt', False)
         assert handle
@@ -375,3 +396,101 @@ with Image(image, delta=4096) as disk:
     offset = info['allocation'] + 96 * info['block']
     assert state == 1 and found == [(offset, 4096 + offset, info['block'], 6)]
 print('PASS: non-power-of-two allocation blocks and non-aligned allocation origins map correctly')
+
+for field, value in ((0, 0), (20, 513), (18, 0), (14, 0)):
+    image = bytearray(ORIGINAL)
+    (put32 if field == 20 else put16)(image, 1024 + field, value)
+    with Image(image, bounded=True) as disk:
+        payload(disk, IDS['vanished.bin'], EXPECTED, flags=2)
+        assert next(flags for number, _, flags in disk.listing(view=1) if number == 20) & 2
+print('PASS: alternate MDBs restore damaged signatures and allocation geometry and mark recovered metadata heuristic')
+
+image = bytearray(ORIGINAL)
+image[1024:1536] = bytes(512)
+with Image(image, delta=4096, bounded=True) as disk:
+    payload(disk, IDS['vanished.bin'], EXPECTED, flags=2)
+    assert all(offset + size <= len(disk.image) for offset, size in disk.reads)
+with Image(image, mounted=False):
+    pass
+print('PASS: a missing primary MDB is recovered only with a known volume boundary and preserves mount offsets')
+
+with Image(bytearray(ORIGINAL), bounded=True, failed=((1024, 1536),)) as disk:
+    payload(disk, IDS['vanished.bin'], EXPECTED, flags=2)
+print('PASS: unreadable primary MDB bytes do not prevent validated backup recovery')
+
+image = bytearray(ORIGINAL)
+put16(image, 1024 + 150, 0xffff)
+with Image(image, bounded=True) as disk:
+    payload(disk, IDS['vanished.bin'], EXPECTED, flags=2)
+print('PASS: an out-of-bounds primary catalog descriptor is replaced by a usable alternate mapping')
+
+image = bytearray(ORIGINAL)
+put16(image, 1024 + 150, 60)
+with Image(image, bounded=True) as disk:
+    payload(disk, b'/hfs/live.txt', b'Live HFS file\n', status=-1, conflict=True)
+    payload(disk, IDS['vanished.bin'], EXPECTED, flags=2, status=-1, prefix=0, conflict=True)
+    assert collect_call(lambda cb: ranges(disk.fs, b'/hfs', 1, cb, None)) == (-1, [])
+    assert collect_call(lambda cb: ranges(disk.fs, b'/hfs', 4, cb, None)) == (-1, [])
+print('PASS: coherent but conflicting catalog mappings preserve backup inspection without claiming safe free or orphan space')
+
+image = bytearray(ORIGINAL)
+put16(image, 1024 + 150, 0xffff)
+put16(image, 1024 + 10, 0)
+with Image(image, bounded=True) as disk:
+    payload(disk, b'/hfs/live.txt', b'Live HFS file\n')
+    payload(disk, IDS['vanished.bin'], EXPECTED, flags=2, status=-1, prefix=0)
+print('PASS: a clean alternate MDB cannot override dirty-volume evidence in the primary')
+
+image = bytearray(ORIGINAL)
+put32(image, 1024 + 2, 1700000000)
+put32(image, len(image) - 1024 + 2, 1700000001)
+with Image(image, bounded=True) as disk:
+    payload(disk, IDS['vanished.bin'], EXPECTED, flags=2, status=-1, prefix=0, conflict=True)
+print('PASS: different volume identities prevent checked recovery even when both headers are readable')
+
+image = bytearray(ORIGINAL)
+old_catalog = INFO['allocation'] + 32 * BLOCK
+image[old_catalog:old_catalog + 8 * NODE] = image[INFO['catalog']:INFO['catalog'] + 8 * NODE]
+put16(image, len(image) - 1024 + 150, 32)
+put32(image, len(image) - 1024 + 70, 0xffffffff)
+with Image(image, bounded=True) as disk:
+    assert next(flags for number, _, flags in disk.listing(view=1) if number == 20) == 0
+    payload(disk, IDS['vanished.bin'], EXPECTED, flags=2)
+print('PASS: usable primary metadata stays authoritative despite a different backup layout or larger write counter')
+
+image = bytearray(ORIGINAL)
+put16(image, len(image) - 1024, 0)
+with Image(image, bounded=True) as disk:
+    payload(disk, IDS['vanished.bin'], EXPECTED, flags=2)
+image[1024:1536] = bytes(512)
+with Image(image, bounded=True, mounted=False):
+    pass
+print('PASS: a broken alternate is ignored and two unusable MDB copies do not create a mount')
+
+image = bytearray(gzip.decompress((FIXTURES / 'hfs-1536.img.gz').read_bytes()))
+backup = bytes(image[-1024:-512])
+image[-1024:-512] = bytes(512)
+image.extend(bytes(512))
+image[-1024:-512] = backup
+image[1024:1536] = bytes(512)
+with Image(image, bounded=True) as disk:
+    expected = b'D' * 1536 + b'E' * 1536 + b'F' * 1536 + b'G' * 17
+    payload(disk, MANIFEST['hfs-1536']['ids']['vanished.bin'], expected, flags=2)
+print('PASS: alternate MDB placement follows the volume boundary rather than assuming allocation-end alignment')
+
+with Image(bytearray(ORIGINAL[:1024]), bounded=True, mounted=False) as disk:
+    assert not disk.reads
+print('PASS: a known truncated header boundary prevents out-of-range primary reads')
+
+image = bytearray(ORIGINAL)
+put16(image, 1024, 0)
+with Image(image) as disk:
+    payload(disk, IDS['vanished.bin'], EXPECTED, flags=2)
+print('PASS: surviving primary geometry locates an alternate without an IO region callback')
+
+image = bytearray(ORIGINAL)
+put16(image, 1024 + 18, 1)
+with Image(image, bounded=True) as disk:
+    payload(disk, IDS['vanished.bin'], EXPECTED, flags=2, status=-1, prefix=0, conflict=True)
+    assert collect_call(lambda cb: ranges(disk.fs, b'/hfs', 1, cb, None)) == (-1, [])
+print('PASS: conflicting allocation geometry retains backup inspection without authorizing free space')

@@ -222,3 +222,48 @@ EXPECT=<<EOF2
 EOF2
 EXPECT_ERR=
 RUN
+
+NAME=hfsplus mounts erased primary metadata through a validated alternate
+FILE=gzip://bins/fs/hfsplus-forensic/hfsplus.img.gz
+ARGS=-n
+CMDS=<<EOF2
+e io.cache=true
+w0 512 @ 0x400
+m /h hfsplus 0
+miej /h/live.txt
+mgx /h 0x800000000000231c -
+EOF2
+EXPECT=<<EOF2
+{"ranges":[{"logical":0,"physical":40960,"size":15,"flags":2}],"status":"complete","flags":2}
+Deleted from catalog slack
+EOF2
+EXPECT_ERR=<<EOF2
+WARN: Using alternate HFS+ volume metadata
+EOF2
+RUN
+
+NAME=hfsplus retains inspection when the alternate would replace ambiguous mappings
+FILE=gzip://bins/fs/hfsplus-forensic/hfsplus.img.gz
+ARGS=-n
+CMDS=<<EOF2
+e io.cache=true
+wx 000000c8 @ 0x520
+m /h hfsplus 0
+mc /h/live.txt
+mfuj /h free
+mfuj /h orphan
+EOF2
+EXPECT=<<EOF2
+Live HFS+ file
+
+{"ranges":[],"status":"error"}
+{"ranges":[],"status":"error"}
+EOF2
+EXPECT_ERR=<<EOF2
+WARN: Using alternate HFS+ volume metadata
+WARN: Conflicting HFS volume metadata: retaining inspection only
+WARN: Incomplete HFS+ ownership: retaining readable catalog evidence
+ERROR: Filesystem range enumeration: error
+ERROR: Filesystem range enumeration: error
+EOF2
+RUN
