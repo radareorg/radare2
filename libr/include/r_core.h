@@ -349,7 +349,7 @@ typedef struct r_esil_cmds_t {
 	char *step;
 	char *step_out;
 	char *ioer;
-	char *mdev_range;
+	RRange *mdev_range;
 } REsilCmds;
 
 typedef struct r_esil_stepback_t {

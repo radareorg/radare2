@@ -53,8 +53,7 @@ bool test_r_range_new_from_string(void) {
 	r_range_free (rgs);
 
 	rgs = r_range_new_from_string ("..");
-	mu_assert_eq (r_list_length (rgs->ranges), 0, "bare dots adds nothing");
-	r_range_free (rgs);
+	mu_assert_null (rgs, "invalid input fails construction");
 
 	rgs = r_range_new_from_string ("6-5");
 	mu_assert_true (range_has (rgs, 1, 2), "dash is subtraction");
@@ -62,10 +61,51 @@ bool test_r_range_new_from_string(void) {
 	mu_end;
 }
 
+bool test_r_range_roundtrip(void) {
+	RRange *rgs = r_range_new_from_string ("0x10..0x1f,0x40,0xfffffffffffffffe");
+	char *text = r_range_tostring (rgs);
+	RRange *copy = r_range_new_from_string (text);
+	mu_assert_notnull (copy, "serialized ranges can be parsed");
+	mu_assert_eq (r_range_size (copy), 18, "round trip preserves size");
+	mu_assert_true (range_has (copy, 0x10, 0x20), "round trip preserves range");
+	mu_assert_true (range_has (copy, 0x40, 0x41), "round trip preserves singleton");
+	mu_assert_true (range_has (copy, UT64_MAX - 1, UT64_MAX), "largest representable endpoint");
+	mu_assert_true (r_range_contains (copy, 0x1f), "contains inclusive input end");
+	mu_assert_false (r_range_contains (copy, 0x20), "contains excludes stored end");
+	mu_assert_null (r_range_item_get (copy, 0x20), "lookup agrees with contains");
+	mu_assert_false (r_range_contains (copy, UT64_MAX), "largest stored end remains exclusive");
+	free (text);
+	r_range_free (copy);
+	r_range_free (rgs);
+	mu_assert_null (r_range_new_from_string ("0xffffffffffffffff"), "reject unrepresentable singleton");
+	mu_assert_null (r_range_new_from_string ("1,0..-1"), "reject unrepresentable range after valid item");
+	mu_end;
+}
+
+static int range_count(void *user, int value) {
+	int *count = user;
+	(*count)++;
+	return 1;
+}
+
+bool test_r_str_range_foreach(void) {
+	int count = 0;
+	r_str_range_foreach ("0x100000000..0x100000001", range_count, &count);
+	r_str_range_foreach ("0..-1", range_count, &count);
+	mu_assert_eq (count, 0, "reject bounds outside int before invoking callback");
+	r_str_range_foreach ("2147483647", range_count, &count);
+	mu_assert_eq (count, 1, "accept largest int without overflowing iteration");
+	r_str_range_foreach ("1,3..4,7", range_count, &count);
+	mu_assert_eq (count, 5, "iterate inclusive ranges and singletons");
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_str_range_in);
 	mu_run_test (test_r_str_range_in_invalid);
 	mu_run_test (test_r_range_new_from_string);
+	mu_run_test (test_r_range_roundtrip);
+	mu_run_test (test_r_str_range_foreach);
 	return tests_passed != tests_run;
 }
 
