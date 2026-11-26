@@ -824,14 +824,18 @@ static bool deserialize_checkpoints_cb(void *user, const char *id, const char *v
 		}
 		baby = r_json_get (child, "bytes");
 		CHECK_TYPE (baby, R_JSON_STRING);
-		ut8 *bytes = sdb_decode (baby->str_value, NULL);
-
+		int bytes_len = 0;
+		ut8 *bytes = sdb_decode (baby->str_value, &bytes_len);
+		if (!bytes || bytes_len != size) {
+			free (bytes);
+			continue;
+		}
 		RRegArena *a = r_reg_arena_new (size);
 		if (!a) {
 			free (bytes);
 			continue;
 		}
-		memcpy (a->bytes, bytes, a->size);
+		memcpy (a->bytes, bytes, size);
 		checkpoint.arena[arena] = a;
 		free (bytes);
 	}
@@ -858,12 +862,18 @@ static bool deserialize_checkpoints_cb(void *user, const char *id, const char *v
 			const RJson *sharedj = r_json_get (child, "shared");
 			CHECK_TYPE (sharedj, R_JSON_BOOLEAN);
 
+			int data_len = 0;
+			ut8 *data = sdb_decode (dataj->str_value, &data_len);
+			if (!data || (ut64)data_len != sizej->num.u_value) {
+				free (data);
+				continue;
+			}
 			RDebugSnap *snap = R_NEW0 (RDebugSnap);
 			snap->name = strdup (namej->str_value);
 			snap->addr = addrj->num.u_value;
 			snap->addr_end = addr_endj->num.u_value;
-			snap->size = sizej->num.u_value;
-			snap->data = sdb_decode (dataj->str_value, NULL);
+			snap->size = data_len;
+			snap->data = data;
 			snap->perm = permj->num.s_value;
 			snap->user = userj->num.s_value;
 			snap->shared = sharedj->num.u_value;
