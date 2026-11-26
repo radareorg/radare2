@@ -1,0 +1,17 @@
+# Does and Donts
+
+This pattern helps define the rules for writing and reviewing code
+with llms by taking human generated data from prs.
+
+## First Prompt
+
+in doc/rules directory i want you to write a MUST.md and DONT.md files
+which should contain coding recommendations extracted from human code
+reviews from the pullrequests of radareorg/radare2 repository, this way
+we can enhance the code review instructions as well as the coding
+capabilities to improve the skills and other rules the agents need to
+know to do better patches. use the gh cli tool.
+
+## Second Prompt
+
+Find conflicts between MUST.md and DONT.md 
