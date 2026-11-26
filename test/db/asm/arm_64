@@ -395,6 +395,13 @@ a "stur w2, [x8, -133]" 02b117b8
 a "stur w2, [x8, -256]" 020110b8
 a "stur w2, [x8, 113]" 021107b8
 a "stur w2, [x8, 236]" 02c10eb8
+a "sturb w1, [x0, 3]" 01300038
+a "sturh w1, [x0, 3]" 01300078
+a "ldurb w2, [x3, 0x10]" 62004138
+a "ldurh w1, [x0, -2]" 01e05f78
+a "ldursb x1, [x0, -1]" 01f09f38
+a "ldursh x5, [sp, 8]" e5838078
+a "ldursw x1, [x0, 4]" 014080b8
 a "stur w3, [x7, -10]" e3601fb8
 a "stur w3, [x7, -133]" e3b017b8
 a "stur w3, [x7, -256]" e30010b8
