@@ -65,3 +65,16 @@ EXPECT=<<EOF
 survived
 EOF
 RUN
+
+NAME=?ep renders aligned slices at an odd diameter
+FILE=malloc://64
+CMDS=<<EOF
+e scr.color=0
+e hex.cols=5
+?ep 50 50,lower upper~lower,upper
+EOF
+EXPECT=<<EOF
+  111111     00 - lower
+  000000     11 - upper
+EOF
+RUN

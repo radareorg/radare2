@@ -5,17 +5,11 @@
 #include <math.h>
 #define PI 3.1415
 
-#if 1
-#define A(c) out[(x+half) + ((y+half) * (half*2))] = c
-#else
-printf ("%c%c", c, c);
-#endif
-
-static void drawPieChart(char *out, int diameter, int numSlices, int sliceSizes[], const char **text) {
+static void drawPieChart(char *out, int size, int numSlices, int sliceSizes[]) {
 	int totalDegrees = 0;
 	char sliceChars[] = "0123456789";
 	int sliceCharCount = sizeof (sliceChars) / sizeof (sliceChars[0]);
-	int radius = diameter / 2;
+	int radius = size / 2;
 	int x, y, i;
 
 	// Calculate the start and end angle for each slice
@@ -32,43 +26,31 @@ static void drawPieChart(char *out, int diameter, int numSlices, int sliceSizes[
 		sliceAngles[numSlices] = 360;
 	}
 
-	int half = radius;
-	// Draw the pie chart
-	for (y = -radius; y <= radius; y++) {
-		for (x = -radius; x <= radius; x++) {
-			double distance = sqrt (x * x + y * y);
-			// Check if the current point is within the circle
+	for (y = 0; y < size; y++) {
+		const int dy = y - radius;
+		for (x = 0; x < size; x++) {
+			const int dx = x - radius;
+			double distance = sqrt (dx * dx + dy * dy);
+			char ch = ' ';
 			if (distance < radius) {
-				double angle = atan2(y, x) * 180 / PI;
+				double angle = atan2 (dy, dx) * 180 / PI;
 				if (angle < 0) {
 					angle += 360;
 				}
-				int sliceIndex = -1;
 				for (i = 0; i < numSlices; i++) {
 					if (angle >= sliceAngles[i] && angle < sliceAngles[i+1]) {
-						sliceIndex = i;
+						ch = sliceChars[i % sliceCharCount];
 						break;
 					}
 				}
-				if (sliceIndex != -1) {
-					const char ch = sliceChars[sliceIndex % sliceCharCount];
-					A (ch);
-				//	printf ("%c%c", ch, ch);
-				} else {
-					A (' ');
-				//	printf ("  "); // Should not happen, but just in case
-				}
-			} else {
-				A (' ');
-				// printf ("  ");
 			}
+			out[y * size + x] = ch;
 		}
-		// printf ("\n");
 	}
 }
 
 R_API void r_print_pie(RPrint * R_NULLABLE p, int nvalues, int *values, const char **text, int size) {
-	if (size < 1 || size > 0x400) {
+	if (size < 1 || size > R_PRINT_MAX_COLS) {
 		R_LOG_WARN ("Invalid pie chart size");
 		return;
 	}
@@ -77,12 +59,12 @@ R_API void r_print_pie(RPrint * R_NULLABLE p, int nvalues, int *values, const ch
 		nvalues = 9;
 	}
 	ut8 *nv = calloc (nvalues, sizeof (ut8));
-	char *out = calloc (size + 1, size + 1);
+	char *out = calloc (size, size);
 	if (!out) {
 		free (nv);
 		return;
 	}
-	drawPieChart (out, size, nvalues, values, text);
+	drawPieChart (out, size, nvalues, values);
 
 	const bool use_colors = p? p->flags & R_PRINT_FLAGS_COLOR: false;
 	const char *fg_colors[10] = {
@@ -123,7 +105,7 @@ R_API void r_print_pie(RPrint * R_NULLABLE p, int nvalues, int *values, const ch
 	if (nv && out && p) {
 		for (y = 0; y < size; y++) {
 			for (x = 0; x < size; x++) {
-				const char ch = out[x + (y * size)];
+				const char ch = out[y * size + x];
 				if (use_colors && isdigit (ch)) {
 					const int index = ch - '0';
 					// r_print_printf (p, "%s··"Color_RESET, fg_colors[index]);

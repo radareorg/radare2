@@ -11,6 +11,8 @@
 extern "C" {
 #endif
 
+#define R_PRINT_MAX_COLS 1024
+
 #define R_PRINT_FLAGS_COLOR    0x00000001
 #define R_PRINT_FLAGS_ADDRMOD  0x00000002
 #define R_PRINT_FLAGS_CURSOR   0x00000004
