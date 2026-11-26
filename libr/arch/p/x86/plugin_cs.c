@@ -3223,19 +3223,8 @@ static void set_access_info(RArchSession *as, RAnalOp *op, csh handle, cs_insn *
 	op->access = ret;
 }
 
-#define CREATE_SRC_DST(op) \
-	src0 = RVecRArchValue_emplace_back (&(op)->srcs); \
-	src1 = RVecRArchValue_emplace_back (&(op)->srcs); \
-	src2 = RVecRArchValue_emplace_back (&(op)->srcs); \
-	dst = RVecRArchValue_emplace_back (&(op)->dsts);
-
-// defines every field of the emplaced val, also for an absent operand
 static void set_src_dst(RArchSession *as, RAnalValue *val, csh handle, cs_insn *insn, int x) {
 	if (!val) {
-		return;
-	}
-	*val = (RAnalValue){0};
-	if (x >= INSOPS) {
 		return;
 	}
 	switch (INSOP (x).type) {
@@ -3294,7 +3283,7 @@ static bool load_store_writes_mem(cs_insn *insn) {
 }
 
 static void op_fillval(RArchSession *a, RAnalOp *op, csh handle, cs_insn *insn, int mode) {
-	RAnalValue *dst, *src0, *src1, *src2;
+	int i;
 	set_access_info (a, op, handle, insn, mode);
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_MOV:
@@ -3317,11 +3306,10 @@ static void op_fillval(RArchSession *a, RAnalOp *op, csh handle, cs_insn *insn, 
 	case R_ANAL_OP_TYPE_NOT:
 	case R_ANAL_OP_TYPE_ACMP:
 	case R_ANAL_OP_TYPE_CAST:
-		CREATE_SRC_DST (op);
-		set_src_dst (a, dst, handle, insn, 0);
-		set_src_dst (a, src0, handle, insn, 1);
-		set_src_dst (a, src1, handle, insn, 2);
-		set_src_dst (a, src2, handle, insn, 3);
+		// operand 0 is the destination, the next three the sources
+		for (i = 0; i < INSOPS && i < 4; i++) {
+			set_src_dst (a, RVecRArchValue_emplace_back (i? &op->srcs: &op->dsts), handle, insn, i);
+		}
 		break;
 	case R_ANAL_OP_TYPE_DIV:
 	case R_ANAL_OP_TYPE_MUL:

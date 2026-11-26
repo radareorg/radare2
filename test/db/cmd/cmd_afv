@@ -190,16 +190,23 @@ arg int64_t arg1 @ rdi
 EOF
 RUN
 
-NAME=afv x86.zydis dec reads the argument
+NAME=afv x86.zydis dec reads the argument and sub reg,reg writes it
 FILE=malloc://64
 ARGS=-a x86.zydis -b 64
 CMDS=<<EOF
-wx 48ffcf4889f8c3
-af
-afv
+wx 48ffcf4889f8c3 @ 0x00
+wx 4829ff4889f8c3 @ 0x10
+af @ 0x00
+af @ 0x10
+?e dec rdi
+afv @ 0x00
+?e sub rdi, rdi
+afv @ 0x10
 EOF
 EXPECT=<<EOF
+dec rdi
 arg int64_t arg1 @ rdi
+sub rdi, rdi
 EOF
 RUN
 
