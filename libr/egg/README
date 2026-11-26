@@ -14,6 +14,9 @@ The compiler generates assembly code for x86-{32,64} and arm. But it aims
 to support more platforms. This code is the compiled with r_asm and
 injected into a tiny binary with r_bin.
 
+The llvm backend emits LLVM IR for an external Clang toolchain. See
+t/README.md for a portable RCC program that links against the C runtime.
+
 You may like to use r_egg to create standalone binaries, position-
 independent raw eggs to be injected on running processes or to patch
 on-disk binaries.

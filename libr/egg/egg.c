@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2011-2026 - pancake */
 
-#include <r_egg.h>
+#include "egg_private.h"
 #include <config.h>
 
 R_LIB_VERSION(r_egg);
@@ -145,7 +145,12 @@ R_API bool r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const 
 	egg->os = os? r_str_hash (os): R_EGG_OS_DEFAULT;
 	// eprintf ("%s -> %x (linux=%x) (darwin=%x)\n", os, egg->os, R_EGG_OS_LINUX, R_EGG_OS_DARWIN);
 	//  TODO: setup egg->arch for all archs
-	if (!strcmp (arch, "x86")) {
+	if (!strcmp (arch, "llvm")) {
+		egg->arch = 0;
+		egg->bits = bits;
+		egg->endian = endian;
+		egg->remit = &emit_llvm;
+	} else if (!strcmp (arch, "x86")) {
 		egg->arch = R_SYS_ARCH_X86;
 		switch (bits) {
 		case 32:
@@ -345,6 +350,10 @@ R_API void r_egg_printf(REgg *egg, const char *fmt, ...) {
 }
 
 R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
+	if (egg->remit == &emit_llvm) {
+		R_LOG_ERROR ("Use clang to compile the generated LLVM IR");
+		return false;
+	}
 	char *code = r_buf_tostring (egg->buf);
 	if (R_STR_ISEMPTY (code)) {
 		free (code);
@@ -400,6 +409,15 @@ R_API bool r_egg_assemble(REgg *egg) {
 
 R_API bool r_egg_compile(REgg *egg) {
 	R_RETURN_VAL_IF_FAIL (egg, false);
+	const bool llvm = egg->remit == &emit_llvm;
+	if (llvm) {
+		r_egg_lang_fini (egg);
+		memset (&egg->lang, 0, sizeof (egg->lang));
+		egg->context = 0;
+		if (!egg_llvm_begin (egg)) {
+			return false;
+		}
+	}
 	r_buf_seek (egg->src, 0, R_BUF_SET);
 	char b;
 	int r = r_buf_read (egg->src, (ut8 *)&b, sizeof (b));
@@ -420,6 +438,9 @@ R_API bool r_egg_compile(REgg *egg) {
 	if (egg->context > 0) {
 		R_LOG_ERROR ("expected '}' at the end of the file. %d left", egg->context);
 		return false;
+	}
+	if (llvm) {
+		return egg_llvm_finish (egg);
 	}
 	if (egg->remit && egg->remit->finalize) {
 		egg->remit->finalize (egg);

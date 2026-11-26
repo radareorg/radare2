@@ -13,6 +13,7 @@ OBJS+=emit_x64.o
 OBJS+=emit_ppc.o
 OBJS+=emit_ppc64.o
 OBJS+=emit_esil.o
+OBJS+=emit_llvm.o
 OBJS+=emit_trace.o
 OBJS+=egg_cfile.o
 

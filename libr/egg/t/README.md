@@ -15,16 +15,17 @@ Useful backends for experimenting:
                        emits (great for understanding the compiler)
     -a esil            stack based intermediate language, readable
                        and directly consumable by the r2 ESIL VM
+    -a llvm            textual LLVM IR for Clang
     -a x86 -b 32/64    native x86 / x86-64 assembly
     -a arm -b 32/64    native ARM / AArch64 assembly
 
 Files
 -----
 
-- hi.r              smallest possible "write then exit" program
-- hello.r           loop that repeatedly writes "Hello World"
-- exit.r            raw inline assembly mixed with the high-level language
-- write.r           syscall declarations with string literals
+- hello-linux-x64.r  loop that writes "Hello World" using Linux x86-64 syscalls
+- hello-darwin-arm64.r  macOS arm64 hello world using Darwin syscalls
+- hello-llvm.r      native hello world linked with the C runtime by Clang
+- exit.r            inline assembly for the Linux i386 exit syscall
 - arith.r           arithmetic expressions and operator precedence
 - regs.r            direct native-register access via the `.regname` syntax
 - alias.r           register aliases defined with the `@alias` directive
@@ -61,6 +62,62 @@ Language cheat sheet
 Example compile and inspect
 ---------------------------
 
-    ragg2 -a esil  -s t/hi.r
+    ragg2 -a esil  -s t/hello-linux-x64.r
     ragg2 -a trace -s t/arith.r
     ragg2 -a x86 -b 64 -s t/regs.r
+
+Build and run the LLVM example from the repository root
+-------------------------------------------------------
+
+```sh
+ragg2 -a llvm -o hello.ll libr/egg/t/hello-llvm.r
+clang -Wno-override-module hello.ll -o hello
+./hello
+```
+
+Clang selects the target and links the C runtime. Use `clang --target=TRIPLE`
+with a toolchain and libraries for that target to cross-link the same IR.
+
+An external call needs a declaration before its first use. In
+`puts@extern(i32, ptr);`, the first type is the return type and the remaining
+types are the fixed argument types. The supported types are `i32`, `i64`,
+`ptr`, and `void` for a return value. Use `main@global()` to define the program
+entry point and a final `0;` for a successful exit status.
+
+RCC functions use 64-bit values and refer to parameters by index starting
+with `.arg0`. Each `.varN` identifies an independent slot. Locals and string
+literals are allocated by the backend. The LLVM backend supports arithmetic,
+direct calls, `if` and `else`, and `while`. Using native registers as RCC
+variables and overriding the `@syscall()` body require a native backend.
+
+For `name@syscall(N)`, LLVM passes the literal number `N` to the target's
+libc `syscall()` on Linux and macOS. Match the numbers to the target OS and
+architecture, and use `-k` and `-b` to select its libc calling convention.
+With neither option, `ragg2` uses the host OS and bit width. These defaults
+apply to the Darwin example on macOS arm64.
+
+```sh
+ragg2 -a llvm -o hello.ll libr/egg/t/hello-darwin-arm64.r
+clang -Wno-override-module hello.ll -o hello
+./hello
+```
+
+On Linux x86-64, use `hello-linux-x64.r` instead. Use the `@extern` example
+for portable C runtime calls across targets with different syscall numbers.
+
+Consecutive `:` lines inside a function are assembled together with the same
+assembler as `rasm2` and emitted as LLVM `.byte` directives. The assembler
+defaults to the host architecture. Pass `-c llvm.asm.arch=x86 -b 32` for an
+i386 block and select `i386-linux-gnu` in Clang.
+
+```sh
+ragg2 -a llvm -k linux -c llvm.asm.arch=x86 -b 32 -o exit.ll libr/egg/t/exit.r
+clang -Wno-override-module --target=i386-linux-gnu -c exit.ll -o exit.o
+```
+
+Assembly blocks use block-local labels and need to preserve the stack pointer,
+frame pointer, and registers outside the emitted clobber list. They
+cannot reference the compiler's RCC variables by name.
+
+From the library, select `"llvm"` in `r_egg_setup()`, load the RCC source,
+call `r_egg_compile()`, and read the text using `r_egg_get_assembly()`.

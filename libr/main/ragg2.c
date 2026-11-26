@@ -77,10 +77,12 @@ static int usage(RCons *cons, int v) {
 	"             [-S string] [-f fmt] [-nN dword] [-dDw off:hex] [-e expr] file|f.asm|-\n");
 	if (v) {
 		r_cons_printf (cons,
-			" -a [arch]       select architecture (x86, mips, arm, ppc)\n"
+			" -a [arch]       select architecture or backend (x86, arm, ppc, esil, trace, llvm)\n"
+			"                 llvm outputs RCC as LLVM IR for clang\n"
 			" -b [bits]       register size (32, 64, ..)\n"
 			" -B [hexpairs]   append some hexpair bytes\n"
 			" -c [k=v]        set configuration options\n"
+			"                 llvm.asm.arch selects the LLVM inline assembler (defaults to host)\n"
 			" -C [file]       append contents of file\n"
 			" -d [off:dword]  patch dword (4 bytes) at given offset\n"
 			" -D [off:qword]  patch qword (8 bytes) at given offset\n"
@@ -440,6 +442,16 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	if (opt.ind != argc) {
 		file = argv[opt.ind];
 	}
+	const bool llvm = !strcmp (arch, "llvm");
+	if (llvm) {
+		if (show_execute || show_raw || show_str || bytes || str || contents || shellcode || encoder || padding || pattern
+				|| append || !r_list_empty (es->e->patches) || strcmp (format, "raw")) {
+			R_LOG_ERROR ("LLVM IR output requires RCC source and supports text output only");
+			goto fail;
+		}
+		show_asm = true;
+		show_hex = false;
+	}
 
 	if (bits == 64) {
 		if (!strcmp (format, "mach0")) {
@@ -466,7 +478,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 
 	// PPC32 and PPC64 ELFv1 are big-endian by convention. ppc64le will need
 	// explicit endian selection once RArchConfig integration lands (egg.c TODO).
-	const int egg_endian = (arch && !strcmp (arch, "ppc"))? 1: 0;
+	const int egg_endian = llvm? R_SYS_ENDIAN: !strcmp (arch, "ppc");
 	r_egg_setup (es->e, arch, bits, egg_endian, os);
 	if (file) {
 		if (R_STR_ISEMPTY (file)) {
@@ -479,12 +491,9 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				if (!fgets (buf, sizeof (buf), stdin)) {
 					break;
 				}
-				if (feof (stdin)) {
-					break;
-				}
 				r_egg_load (es->e, buf, 0);
 			}
-		} else if (strstr (file, ".c")) {
+		} else if (!llvm && strstr (file, ".c")) {
 			char *fileSanitized = strdup (file);
 			r_str_sanitize (fileSanitized);
 			char *textFile = r_egg_cfile_parser (fileSanitized, arch, os, bits);
@@ -508,9 +517,9 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			free (textFile);
 			free (buf);
 		} else {
-			if (strstr (file, ".s") || strstr (file, ".asm")) {
+			if (!llvm && (strstr (file, ".s") || strstr (file, ".asm"))) {
 				fmt = 'a';
-			} else if (strstr (file, ".bin") || strstr (file, ".raw")) {
+			} else if (!llvm && (strstr (file, ".bin") || strstr (file, ".raw"))) {
 				fmt = 'r';
 			} else {
 				fmt = 0;
@@ -590,13 +599,13 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 					o = q;
 				}
 				*o = 0;
-				fd = openfile (p, ISEXEC);
+				fd = openfile (p, !llvm && ISEXEC);
 			} else {
-				fd = openfile ("a.out", ISEXEC);
+				fd = openfile ("a.out", !llvm && ISEXEC);
 			}
 			free (p);
 		} else {
-			fd = openfile ("a.out", ISEXEC);
+			fd = openfile ("a.out", !llvm && ISEXEC);
 		}
 		if (fd == -1) {
 			R_LOG_ERROR ("cannot open file '%s'", opt.arg);
@@ -607,7 +616,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		if (fd != -1) {
 			close (fd);
 		}
-		fd = openfile (ofile, ISEXEC);
+		fd = openfile (ofile, !llvm && ISEXEC);
 		if (fd == -1) {
 			R_LOG_ERROR ("cannot open file '%s'", ofile);
 			goto fail;

@@ -34,13 +34,25 @@ ragg2 can generate shellcodes from C code. The final code can be linked with rab
 .Sh OPTIONS
 .Bl -tag -width Fl
 .It Fl a Ar arch
-Select architecture (x86, mips, arm)
+Select an architecture or output backend (x86, arm, ppc, esil, trace, llvm).
+The
+.Cm llvm
+backend emits textual LLVM IR from RCC source for Clang.
+For numeric RCC syscalls on Linux and macOS, use
+.Fl k
+and
+.Fl b
+to match the target libc ABI, and use the syscall numbers for that target.
 .It Fl b Ar bits
 Register size (32, 64, ..)
 .It Fl B Ar hexpairs
 Append some hexpair bytes
 .It Fl c Ar k=v
 Set configuration options
+The
+.Cm llvm.asm.arch
+option selects the assembler for LLVM inline assembly.
+It defaults to the host architecture.
 .It Fl C Ar file
 Append contents of file
 .It Fl d Ar off:dword
@@ -86,7 +98,7 @@ Debruijn pattern offset
 .It Fl r
 Show raw bytes instead of hexpairs
 .It Fl s
-Show assembler
+Show the generated assembly or intermediate representation.
 .It Fl S Ar string
 Append a string
 .It Fl v
@@ -124,6 +136,20 @@ Using r_egg language:
   $ ragg2 -O -F hi.r
   $ ./hi
   hi!
+.Pp
+Generate LLVM IR from RCC and link a native executable:
+.Bd -literal -offset indent
+puts@extern(i32, ptr);
+main@global() {
+  puts("Hello, world!");
+  0;
+}
+
+$ ragg2 -a llvm -o hello.ll hello.r
+$ clang -Wno-override-module hello.ll -o hello
+$ ./hello
+Hello, world!
+.Ed
 .Pp
 Using C language:
 .Pp

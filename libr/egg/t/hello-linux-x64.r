@@ -1,7 +1,7 @@
-/* classic hello world with a while-loop counter */
+/* Linux x86-64 hello world with a while-loop counter */
 
-write@syscall(4);
-exit@syscall(1);
+write@syscall(1);
+exit@syscall(60);
 
 main@global(128) {
 	.var0 = 4;
