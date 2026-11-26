@@ -1942,8 +1942,18 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 						}
 						r_list_foreach (bo->classes, iter, cls) {
 							method = NULL;
+							bool nocode_hit = false;
 							R_VEC_FOREACH (&cls->methods, sym) {
 								ut64 at = iova? sym->vaddr: sym->paddr;
+								if (sym->attr.flags & (R_BIN_ATTR_ABSTRACT | R_BIN_ATTR_NATIVE)) {
+									// abstract/native methods have no code,
+									// match only their exact address
+									if (addr == at) {
+										method = r_bin_name_tostring (sym->name);
+										nocode_hit = true;
+									}
+									continue;
+								}
 								if (at < min) {
 									min = at;
 								}
@@ -1954,7 +1964,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 									method = r_bin_name_tostring (sym->name);
 								}
 							}
-							if (addr >= min && addr < max) {
+							if ((addr >= min && addr < max) || nocode_hit) {
 								const char *kname = r_bin_name_tostring (cls->name);
 								if (method) {
 									r_cons_printf (core->cons, "%s::%s\n", kname, method);
