@@ -116,6 +116,9 @@ static bool core_esil_mem_switch(void *core, ut32 idx) {
 }
 
 static bool core_esil_mem_read(void *core, ut64 addr, ut8 *buf, int len) {
+	if (len < 1) {
+		return false;
+	}
 	if ((UT64_MAX - len + 1) < addr) {
 		if (!core_esil_mem_read (core, 0ULL, buf + (UT64_MAX - addr + 1), len - (UT64_MAX - addr + 1))) {
 			return false;
@@ -138,6 +141,9 @@ static bool core_esil_mem_read(void *core, ut64 addr, ut8 *buf, int len) {
 }
 
 static bool core_esil_mem_write(void *core, ut64 addr, const ut8 *buf, int len) {
+	if (len < 1) {
+		return false;
+	}
 	if ((UT64_MAX - len + 1) < addr) {
 		if (!core_esil_mem_write (core, 0ULL, buf + (UT64_MAX - addr + 1), len - (UT64_MAX - addr + 1))) {
 			return false;

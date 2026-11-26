@@ -485,7 +485,7 @@ static bool esilbreak_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len)
 		return true;
 	}
 	// ignore writes in stack
-	if (myvalid (core, addr) && r_io_read_at (core->io, addr, (ut8*)buf, len)) {
+	if (len > 0 && myvalid (core, addr)) {
 		if (!is_stack (core->io, addr)) {
 			r_anal_xrefs_set (core->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_WRITE);
 			anal_global_access (core, ctx->op, addr, len, UT64_MAX);

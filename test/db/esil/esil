@@ -257,6 +257,63 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=esil poke some (register wider than 64 bits)
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e asm.cpu=sve2048
+e io.cache=true
+wx 11223344556677881122334455667788 @ 0x100
+"ae z0,1,0x100,=[*]"
+p8 16 @ 0x100
+"ae x0,1,0x100,=[*]"
+p8 16 @ 0x100
+EOF
+EXPECT=<<EOF
+11223344556677881122334455667788
+00000000000000001122334455667788
+EOF
+RUN
+
+NAME=esil poke some (register wider than 64 bits in aae)
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e asm.cpu=sve2048
+e io.cache=true
+wx 1f2003d5 @ 0
+wow 41 @ 0x100!256
+"ahe z0,1,0x100,=[*]" @ 0
+aae 4 @ 0
+p8 8 @ 0x100
+EOF
+EXPECT=<<EOF
+4141414141414141
+EOF
+RUN
+
+NAME=esil poke some (register narrower than 8 bits)
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 9090 @ 0x80
+aei
+aeim
+ar PC=0x80
+ar eax=0x69686766
+"ahe eax,1,0x100,=[*]" @ 0x80
+"ahe cf,1,0x40,=[*]" @ 0x81
+aes
+p8 4 @ 0x100
+aes
+ar PC
+EOF
+EXPECT=<<EOF
+66676869
+0x00000082
+EOF
+RUN
+
 NAME=esil peek some (32-bits ARM little endian)
 FILE=malloc://512
 ARGS=-a arm -b 32

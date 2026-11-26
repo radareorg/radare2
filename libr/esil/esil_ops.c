@@ -1048,8 +1048,12 @@ static bool esil_poke_some(REsil *esil) {
 					}
 					r_esil_get_parm_size (esil, foo, &tmp, &regsize);
 					isregornum (esil, foo, &num64);
-					r_write_ble (b, num64, esil_is_big_endian (esil), regsize);
 					const int size_bytes = regsize / 8;
+					if (size_bytes < 1 || size_bytes > (int)sizeof (b)) {
+						R_LOG_DEBUG ("Invalid register size in poke");
+						return false;
+					}
+					r_write_ble (b, num64, esil_is_big_endian (esil), regsize);
 					if (!r_esil_mem_write (esil, ptr, b, size_bytes)) {
 						return false;
 					}
