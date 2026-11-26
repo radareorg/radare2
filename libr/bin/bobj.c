@@ -880,6 +880,9 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	bf->bo = bo;
 	// reloading moves or frees the symbols and methods these caches point to
 	symbol_cache_cleanup (bo);
+	// same for the relocs of a previous load, the plugin may not return new ones
+	RVecRBinReloc_free (bo->relocs);
+	bo->relocs = NULL;
 
 	if (p->info) {
 		r_bin_info_free (bo->info);
