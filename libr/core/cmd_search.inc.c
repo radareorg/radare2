@@ -3,6 +3,7 @@
 #if R_INCLUDE_BEGIN
 
 #include <sdb/ht_uu.h>
+#include "refsearch.h"
 
 static int cmd_search(void *data, const char *input);
 
@@ -117,7 +118,7 @@ static RCoreHelpMessage help_msg_slash = {
 	"/p", "[?][p] patternsize", "search for pattern of given size",
 	"/P", " patternsize", "search similar blocks",
 	"/s", "[*] [threshold]", "find sections by grouping blocks with similar entropy",
-	"/r", "[?][aerscwx] [addr ..]", "search for code references",
+	"/r", "[?][aercswx][l[j]] [targets...]", "search for code references",
 	// moved into /as "/s", "", "search for all syscalls in a region (EXPERIMENTAL)",
 	"/v", "[1248] value", "look for an `cfg.bigendian` 32bit value",
 	"/V", "[1248] min max", "look for an `cfg.bigendian` 32bit value in range",
@@ -213,7 +214,7 @@ static RCoreHelpMessage help_msg_slash_k = {
 };
 
 static RCoreHelpMessage help_msg_slash_r = {
-	"Usage:", "/r[acerswx] [address]", " search references to one or more addresses",
+	"Usage:", "/r[acerswx][l[j]] [targets...]", "search references to one or more addresses",
 	"/r", " [addr ..]", "search all references or limit them to the given addresses",
 	"/ra", " [addr ..]", "search all references or limit them to the given addresses",
 	"/rc", " [addr ..]", "search call references or limit them to the given addresses",
@@ -223,6 +224,15 @@ static RCoreHelpMessage help_msg_slash_r = {
 	"/ru", "[*qj]", "search for UDS CAN database tables (binbloom)",
 	"/rw", "", "find write references",
 	"/rx", "", "find exec references",
+	"/rl[j]", " [targets...]", "list code and data references without registering them",
+	"/ral[j]", " [targets...]", "list code and data references without registering them",
+	"/rcl[j]", " [targets...]", "list call references, or unique call destinations without targets",
+	"/rel[j]", " [targets...]", "list references found with ESIL",
+	"/rsl[j]", " [targets...]", "list string references found with ESIL",
+	"/rrl[j]", " [targets...]", "list read references",
+	"/rwl[j]", " [targets...]", "list write references",
+	"/rxl[j]", " [targets...]", "list exec references",
+	"", "", "Listing targets accept address expressions and inclusive A..B ranges",
 	NULL
 };
 
@@ -2389,6 +2399,60 @@ static void esilsearch_targets(RCore *core, RSearchParameters *param, const RVec
 		}
 	}
 	r_core_seek (core, curseek, true);
+}
+
+static bool refsearch_list(RCore *core, RSearchParameters *param, int mode, const char *args) {
+	RStrBuf text = {0};
+	RefSearch search = { .json = param->pj, .text = &text, .maxhits = core->search->maxhits };
+	int argc = 0;
+	char **argv = *args? r_str_argv (args, &argc): NULL;
+	bool ok = !*args || argv;
+	int i;
+	for (i = 0; ok && i < argc; i++) {
+		RefSearchRange range;
+		if (refsearch_parse_range (core->num, argv[i], &range)) {
+			ok = refsearch_add_range (&search.ranges, range);
+		} else {
+			R_LOG_ERROR ("Invalid target '%s'", argv[i]);
+			ok = false;
+		}
+	}
+	r_str_argv_free (argv);
+	refsearch_ranges_sort (&search.ranges);
+	if (ok && mode == 'c' && !argc) {
+		search.seen = ht_uu_new0 ();
+		ok = search.seen != NULL;
+	}
+	if (search.json) {
+		pj_a (search.json);
+	}
+	if (ok) {
+		r_cons_break_push (core->cons, NULL, NULL);
+		const bool backwards = core->search->bckwrds;
+		RListIter *iter = backwards? param->boundaries->tail: param->boundaries->head;
+		for (; iter && !refsearch_stopped (&search) && !r_cons_is_breaked (core->cons);
+				iter = backwards? iter->p: iter->n) {
+			RIOMap *map = iter->data;
+			const ut64 from = r_io_map_begin (map);
+			ut64 to = r_io_map_end (map);
+			if (backwards && core->addr) {
+				to = R_MIN (to, core->addr);
+			}
+			if (to > from) {
+				if (mode == 'e' || mode == 's') {
+					r_core_esil_ref_search (core, &search, from, to, mode == 's');
+				} else {
+					r_core_ref_search (core, &search, from, to, mode);
+				}
+			}
+		}
+		r_cons_break_pop (core->cons);
+	}
+	refsearch_finish (&search);
+	r_cons_print (core->cons, r_strbuf_get (&text));
+	r_strbuf_fini (&text);
+	core->search->nhits = search.hits;
+	return ok && !search.failed;
 }
 
 static void cmd_search_aF(RCore *core, const char *input) {
@@ -4711,6 +4775,33 @@ reread:
 		break;
 	case 'r': // "/r" and "/re"
 		{
+		const char *suffix = input + 1;
+		int mode = 0;
+		if (*suffix && strchr ("acesrwx", *suffix)) {
+			mode = *suffix++;
+		}
+		if (*suffix == 'l') {
+			suffix++;
+			const bool json = *suffix == 'j';
+			suffix += json;
+			if (*suffix == '?') {
+				r_cons_cmd_help (core->cons, help_msg_slash_r);
+			} else if (*suffix && !isspace ((ut8)*suffix)) {
+				r_core_return_invalid_command (core, "/r", *suffix);
+				status = R_CMD_RC_FAILURE;
+			} else {
+				if (json != (param.outmode == R_MODE_JSON)) {
+					pj_free (param.pj);
+					param.pj = json? r_core_pj_new (core): NULL;
+					param.outmode = json? R_MODE_JSON: 0;
+				}
+				if (!refsearch_list (core, &param, mode, r_str_trim_head_ro (suffix))) {
+					status = R_CMD_RC_FAILURE;
+				}
+			}
+			dosearch = false;
+			break;
+		}
 		RVecSearchAddr targets;
 		const char *args = r_str_trim_head_ro (input + 2);
 		switch (input[1]) {

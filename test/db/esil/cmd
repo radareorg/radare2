@@ -277,3 +277,77 @@ EXPECT_ERR=<<EOF
 ERROR: Cannot reinitialize the ESIL VM while it is in use
 EOF
 RUN
+NAME=/rel lists ESIL references without registering them or writing IO
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e search.in=io.maps
+e search.from=0
+e search.to=0x11
+wx 8b05fa0000008905f4000000e80f010000
+wx 78563412 @ 0x100
+s 0x20
+ar rax=0x42
+/relj 0x100 0x120
+s
+ar rax
+p8 4 @ 0x100
+axq
+ah
+afl
+EOF
+EXPECT=<<EOF
+[{"from":0,"target":256,"type":"DATA"},{"from":6,"target":256,"type":"DATA"},{"from":12,"target":288,"type":"CALL"}]
+0x20
+0x00000042
+78563412
+EOF
+RUN
+
+NAME=/rsl counts distinct ESIL string refs without creating flags or metadata
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e search.in=io.maps
+e search.from=0
+e search.to=0xe
+e search.maxhits=2
+wx 488b05f9000000488d0552010000
+wv8 0x140 @ 0x100
+wz string-one @ 0x140
+wz string-two @ 0x160
+/rslj 0x140..0x160
+f~str.
+Cs
+axq
+EOF
+EXPECT=<<EOF
+[{"from":0,"target":320,"type":"STRN"},{"from":7,"target":352,"type":"STRN"}]
+EOF
+RUN
+
+NAME=/rl and /rel honor bitness hints with private decoder state
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e search.in=io.maps
+e search.from=0
+e search.to=8
+wx 8b050001000089c0
+ahb 32 @ 0
+ar rax=0x42
+/rlj 0x100
+/relj 0x100
+e asm.bits
+ar rax
+EOF
+EXPECT=<<EOF
+[{"from":0,"target":256,"type":"DATA"}]
+[{"from":0,"target":256,"type":"DATA"}]
+64
+0x00000042
+EOF
+RUN
