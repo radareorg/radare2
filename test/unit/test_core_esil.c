@@ -543,7 +543,28 @@ bool test_x86_vector_address_size(void) {
 	mu_end;
 }
 
+bool test_mdev_range_config(void) {
+	RCore *core = r_core_new ();
+	mu_assert_notnull (r_config_set (core->config, "esil.mdev.range", "0x110-0x10..0x100+0xf,0x200"), "parse expressions when configuring mdev");
+	RRange *range = core->esil.cmds.mdev_range;
+	mu_assert_true (r_range_contains (range, 0x100), "cached range start");
+	mu_assert_true (r_range_contains (range, 0x10f), "cached inclusive end");
+	mu_assert_false (r_range_contains (range, 0x110), "cached range excludes next byte");
+	mu_assert_true (r_range_contains (range, 0x200), "cached singleton");
+	r_config_set (core->config, "esil.mdev.range", "1,0..-1");
+	mu_assert_streq (r_config_get (core->config, "esil.mdev.range"), "0x110-0x10..0x100+0xf,0x200", "reject unrepresentable endpoint");
+	mu_assert_ptreq (core->esil.cmds.mdev_range, range, "failed update preserves previous ranges");
+	mu_assert_notnull (r_config_set (core->config, "esil.mdev.range", "0x300"), "replace cached ranges");
+	mu_assert_false (r_range_contains (core->esil.cmds.mdev_range, 0x100), "replacement removes old range");
+	mu_assert_true (r_range_contains (core->esil.cmds.mdev_range, 0x300), "replacement installs new range");
+	mu_assert_notnull (r_config_set (core->config, "esil.mdev.range", ""), "clear device ranges");
+	mu_assert_false (r_range_contains (core->esil.cmds.mdev_range, 0x300), "empty range disables interception");
+	r_core_free (core);
+	mu_end;
+}
+
 int main(int argc, char **argv) {
+	mu_run_test (test_mdev_range_config);
 	mu_run_test (test_core_fault_state);
 	mu_run_test (test_vector_debug_sync);
 	mu_run_test (test_wide_register_restore);

@@ -22,8 +22,10 @@ R_API RRange *r_range_new(void) {
 }
 
 R_API RRange *r_range_free(RRange *r) {
-	r_list_purge (r->ranges);
-	free (r);
+	if (r) {
+		r_list_free (r->ranges);
+		free (r);
+	}
 	return NULL;
 }
 
@@ -78,8 +80,11 @@ R_API ut64 r_range_size(RRange *rgs) {
 }
 
 R_API RRange *r_range_new_from_string(const char *string) {
+	R_RETURN_VAL_IF_FAIL (string, NULL);
 	RRange *rgs = r_range_new ();
-	r_range_add_from_string (rgs, string);
+	if (!r_range_add_from_string (rgs, string) && *string) {
+		return r_range_free (rgs);
+	}
 	return rgs;
 }
 
@@ -93,56 +98,120 @@ R_API char *r_range_tostring(RRange *rgs) {
 		if (second) {
 			r_strbuf_append (sb, ",");
 		}
-		r_strbuf_appendf (sb, "0x%08"PFMT64x"-0x%08"PFMT64x, r->fr, r->to);
+		r_strbuf_appendf (sb, "0x%08"PFMT64x"..0x%08"PFMT64x, r->fr, r->to - 1);
 		second = true;
 	}
 	return r_strbuf_drain (sb);
 }
 
+typedef bool (*RangeItemCallback)(void *user, ut64 from, ut64 to);
+
+static bool parse_number(char *s, ut64 *n) {
+	r_str_trim (s);
+	if (!*s) {
+		return false;
+	}
+	const char *err = NULL;
+	*n = r_num_math_err (NULL, s, &err);
+	return !err;
+}
+
+// parse "N,A..B,..." calling cb with inclusive bounds until it returns false
+static bool range_parse(const char *str, RangeItemCallback cb, void *user) {
+	if (!*str) {
+		return true;
+	}
+	char *s = strdup (str);
+	if (!s) {
+		return false;
+	}
+	char *item = s;
+	bool ok = true;
+	while (ok && item) {
+		char *next = strchr (item, ',');
+		if (next) {
+			*next++ = 0;
+		}
+		ut64 from = 0, to;
+		char *dots = strstr (item, "..");
+		if (dots) {
+			*dots = 0;
+			ok = parse_number (item, &from) && parse_number (dots + 2, &to) && from <= to;
+		} else {
+			ok = parse_number (item, &from);
+			to = from;
+		}
+		if (ok) {
+			ok = cb (user, from, to);
+		}
+		item = next;
+	}
+	free (s);
+	return ok;
+}
+
+static bool range_add_cb(void *user, ut64 from, ut64 to) {
+	if (to == UT64_MAX) {
+		return false;
+	}
+	r_range_add (user, from, to + 1, 1);
+	return true;
+}
+
 R_API int r_range_add_from_string(RRange *rgs, const char *string) {
-	ut64 addr, addr2;
-	int i, len = strlen (string) + 1;
-	char *str, *ostr = malloc (len);
-	if (!ostr) {
+	R_RETURN_VAL_IF_FAIL (rgs && string, 0);
+	if (!range_parse (string, range_add_cb, rgs)) {
+		R_LOG_ERROR ("Invalid range");
 		return 0;
 	}
-	char *p = str = ostr;
-	char *p2 = NULL;
+	return rgs->changed;
+}
 
-	memcpy (str, string, len);
-	for (i = 0; i < len; i++) {
-		switch (str[i]) {
-		case '-':
-			str[i] = '\0';
-			p2 = p;
-			p = str + i + 1;
-			break;
-		case ',':
-			str[i] = '\0';
-			if (p2) {
-				addr = r_num_get (NULL, p);
-				addr2 = r_num_get (NULL, p2);
-				r_range_add (rgs, addr, addr2, 1);
-				p2 = NULL;
-			} else {
-				addr = r_num_get (NULL, p);
-				r_range_add (rgs, addr, addr + 1, 1);
-			}
-			p = str + i + 1;
-			str[i] = ',';
-			break;
-		}
+typedef struct {
+	ut64 addr;
+	bool found;
+} RangeInContext;
+
+static bool range_in_cb(void *user, ut64 from, ut64 to) {
+	RangeInContext *ctx = user;
+	ctx->found = ctx->addr >= from && ctx->addr <= to;
+	return !ctx->found;
+}
+
+R_API bool r_str_range_in(const char *r, ut64 addr) {
+	if (!r) {
+		return false;
 	}
-	if (p2) {
-		addr = r_num_get (NULL, p);
-		addr2 = r_num_get (NULL, p2);
-		r_range_add (rgs, addr, addr2, 1);
-	} else if (p) {
-		addr = r_num_get (NULL, p);
-		r_range_add (rgs, addr, addr + 1, 1);
+	RangeInContext ctx = { .addr = addr };
+	if (!range_parse (r, range_in_cb, &ctx) && !ctx.found) {
+		R_LOG_ERROR ("Invalid range");
 	}
-	free (ostr);
-	return rgs? rgs->changed: 0;
+	return ctx.found;
+}
+
+typedef struct {
+	RStrRangeCallback cb;
+	void *user;
+} RangeForeachContext;
+
+static bool range_foreach_cb(void *user, ut64 from, ut64 to) {
+	if (to > ST32_MAX) {
+		return false;
+	}
+	RangeForeachContext *ctx = user;
+	ut64 i = from;
+	do {
+		ctx->cb (ctx->user, (int)i);
+	} while (i++ < to);
+	return true;
+}
+
+R_API void r_str_range_foreach(const char *r, RStrRangeCallback cb, void *u) {
+	R_RETURN_IF_FAIL (r && cb);
+	RangeForeachContext ctx = { cb, u };
+	if (!range_parse (r, range_foreach_cb, &ctx)) {
+		R_LOG_ERROR ("Invalid range");
+	}
 }
 
 #if 0
@@ -260,14 +329,7 @@ R_API void r_range_merge(RRange *rgs, RRange *r) {
 
 //int ranges_is_used(ut64 addr)
 R_API int r_range_contains(RRange *rgs, ut64 addr) {
-	RRangeItem *r;
-	RListIter *iter;
-	r_list_foreach (rgs->ranges, iter, r) {
-		if (addr >= r->fr && addr <= r->to) {
-			return true;
-		}
-	}
-	return false;
+	return r_range_item_get (rgs, addr) != NULL;
 }
 
 static int cmp_ranges(void *a, void *b) {

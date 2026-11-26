@@ -21,6 +21,7 @@ typedef struct r_range_t {
 } RRange;
 
 R_API RRange *r_range_new(void);
+// Text bounds are inclusive; UT64_MAX endpoints cannot be stored in RRange.
 R_API RRange *r_range_new_from_string(const char *string);
 R_API RRange *r_range_free(RRange *r);
 R_API RRangeItem *r_range_item_get(RRange *r, ut64 addr);

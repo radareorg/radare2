@@ -81,6 +81,7 @@ if get_option('enable_tests')
     'r2pipe',
     'r2r',
     'radiff2_gdiff',
+    'range',
     'rbtree',
     'native_reg',
     'reg',

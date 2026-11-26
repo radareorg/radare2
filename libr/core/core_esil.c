@@ -132,7 +132,7 @@ static bool core_esil_mem_read(void *core, ut64 addr, ut8 *buf, int len) {
 
 	const REsilCmds *cmds = &c->esil.cmds;
 	if (R_STR_ISNOTEMPTY (cmds->mdev) && cmds->mdev_range &&
-		r_str_range_in (cmds->mdev_range, addr)) {
+		r_range_contains (cmds->mdev_range, addr)) {
 		return core_esil_cmd (c, cmds->mdev, c->esil.sb.old_pc, 0);
 	}
 	const bool ret = r_io_read_at (c->io, addr, buf, len);
@@ -156,7 +156,7 @@ static bool core_esil_mem_write(void *core, ut64 addr, const ut8 *buf, int len) 
 	}
 	const REsilCmds *cmds = &c->esil.cmds;
 	if (R_STR_ISNOTEMPTY (cmds->mdev) && cmds->mdev_range &&
-		r_str_range_in (cmds->mdev_range, addr)) {
+		r_range_contains (cmds->mdev_range, addr)) {
 		return core_esil_cmd (c, cmds->mdev, c->esil.sb.old_pc, 1);
 	}
 	if (c->esil.cfg & R_CORE_ESIL_RO) {
@@ -249,7 +249,8 @@ static void core_esil_cmds_fini(REsilCmds *cmds) {
 	R_FREE (cmds->mdev);
 	R_FREE (cmds->todo);
 	R_FREE (cmds->ioer);
-	R_FREE (cmds->mdev_range);
+	r_range_free (cmds->mdev_range);
+	cmds->mdev_range = NULL;
 }
 
 static void core_esil_stepback_fini(REsil *esil, REsilStepback *sb) {

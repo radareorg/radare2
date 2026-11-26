@@ -74,6 +74,31 @@ ERROR: ESIL stopped at 0x00000001: invalid instruction (invalid)
 EOF
 RUN
 
+NAME=cmd.esil.mdev with inclusive esil.mdev.range
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e io.cache=1
+e cmd.esil.mdev=?e mdev
+e esil.mdev.range=0x100..0x10f,0x200
+wx 8a0425080100008a04250f0100008a0425100100008a042500020000
+aes
+aes
+aes
+aes
+EOF
+EXPECT=<<EOF
+mdev 0 0
+mdev 7 0
+mdev 21 0
+EOF
+EXPECT_ERR=<<EOF
+ERROR: ESIL stopped at 0x00000000: read error (read-err at 0x00000108)
+ERROR: ESIL stopped at 0x00000007: read error (read-err at 0x0000010f)
+ERROR: ESIL stopped at 0x00000015: read error (read-err at 0x00000200)
+EOF
+RUN
+
 NAME=aec stops at unmapped pc
 FILE=malloc://512
 ARGS=-a x86 -b 64
