@@ -141,11 +141,16 @@ FILE=bins/fs/hfs-oobread.img
 CMDS=<<EOF
 m
 md /
+mfuj /root orphan
 EOF
-EXPECT=
+EXPECT=<<EOF
+hfs	0x0	/root
+m /root
+{"ranges":[],"status":"error"}
+EOF
 EXPECT_ERR=<<EOF
-Cannot find the HFS root directory
-ERROR: Cannot mount /root
+WARN: Incomplete HFS ownership: retaining readable catalog evidence
+ERROR: Filesystem range enumeration: error
 EOF
 RUN
 

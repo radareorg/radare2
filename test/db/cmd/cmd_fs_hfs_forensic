@@ -1,0 +1,127 @@
+NAME=Classic HFS discovers retained catalog names and thread-only evidence
+FILE=gzip://bins/fs/hfs-forensic/hfs.img.gz
+CMDS=<<EOF2
+mdxj /root 0
+EOF2
+EXPECT=<<EOF2
+[{"type":"file","size":1553,"name":"vanished.bin","id":9223372036854777870,"deleted":true,"flags":3},{"type":"directory","size":0,"name":"gone","id":9223372036854777992,"deleted":true,"flags":3},{"type":"file","size":6,"name":"child.txt","id":9223372036854778074,"deleted":true,"flags":3},{"type":"file","size":11,"name":"lost-child","id":9223372036854778490,"deleted":true,"flags":3},{"type":"file","size":23,"name":"slack.txt","id":9223372036854779012,"deleted":true,"flags":3},{"type":"file","size":0,"name":"thread-only","id":9223372036854778382,"deleted":true,"flags":7},{"type":"directory","size":0,"name":"lost-dir","id":9223372036854778436,"deleted":true,"flags":7}]
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=Classic HFS maps retained overflow extents and recovers resource forks and catalog slack files
+FILE=gzip://bins/fs/hfs-forensic/hfs.img.gz
+CMDS=<<EOF2
+mie /root 0x800000000000080e
+mgx /root 0x80000000000008da -
+mgx /root 0x8000000000000c84 -
+mgx /root 0x4000000000000007 -
+EOF2
+EXPECT=<<EOF2
+0x00000000 0x0000da00 512 0x1
+0x00000200 0x0000de00 512 0x1
+0x00000400 0x0000e200 512 0x1
+0x00000600 0x0000e600 17 0x1
+child
+Catalog slack recovery
+deleted resource
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=Classic HFS reconstructs deleted ancestry from retained directory threads
+FILE=gzip://bins/fs/hfs-forensic/hfs.img.gz
+CMDS=<<EOF2
+mdxr /root
+EOF2
+EXPECT=<<EOF2
+0x8000000000000888 d 0 /root/gone
+0x80000000000008da f 6 /root/gone/child.txt
+0x8000000000000a44 d 0 /root/lost-dir
+0x8000000000000a7a f 11 /root/lost-dir/lost-child
+0x8000000000000c84 f 23 /root/slack.txt
+0x8000000000000a0e f 0 /root/thread-only
+0x800000000000080e f 1553 /root/vanished.bin
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=Classic HFS exposes fork slack and resolves its physical ownership
+FILE=gzip://bins/fs/hfs-forensic/hfs.img.gz
+CMDS=<<EOF2
+mdj /root/live.txt/..namedfork
+mie /root/live.txt/..namedfork/data-slack
+mfo /root/live.txt/..namedfork 0xaa0f
+mc /root/CAFÉ
+EOF2
+EXPECT=<<EOF2
+[{"type":"file","size":14,"name":"data","id":20,"deleted":false,"flags":0},{"type":"file","size":9,"name":"rsrc","id":4611686018427387908,"deleted":false,"flags":0},{"type":"file","size":1010,"name":"data-slack","id":4611686018427387909,"deleted":false,"flags":0},{"type":"file","size":503,"name":"rsrc-slack","id":4611686018427387910,"deleted":false,"flags":0}]
+0x00000000 0x0000aa0e 1010 0x2
+/root/live.txt/..namedfork/data-slack
+MacRoman
+
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=Classic HFS maps unused catalog leaf regions without exposing offset tables
+FILE=gzip://bins/fs/hfs-forensic/hfs.img.gz
+CMDS=<<EOF2
+miej /root/..namedfork/catalog-slack
+EOF2
+EXPECT=<<EOF2
+{"ranges":[{"logical":0,"physical":9996,"size":236,"flags":2},{"logical":236,"physical":10492,"size":254,"flags":2},{"logical":490,"physical":11908,"size":376,"flags":2}],"status":"complete","flags":0}
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=Classic HFS distinguishes orphan and bad blocks and searches unallocated regions
+FILE=gzip://bins/fs/hfs-forensic/hfs.img.gz
+CMDS=<<EOF2
+mfuj /root orphan
+mfuj /root bad
+e fs.cwd=/root
+e search.in=fs.free
+e search.from=0xd200
+e search.to=0xd211
+e search.verbose=false
+/xj 4652454520484653
+EOF2
+EXPECT=<<EOF2
+{"ranges":[{"logical":51712,"physical":51712,"size":512,"flags":6}],"status":"complete"}
+{"ranges":[{"logical":50688,"physical":50688,"size":512,"flags":8}],"status":"complete"}
+[{"addr":53760,"type":"hexpair","data":"4652454520484653"}]
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=Classic HFS recovers a cleared catalog name from a retained file thread
+FILE=gzip://bins/fs/hfs-forensic/hfs.img.gz
+CMDS=<<EOF2
+e io.cache=true
+wx 00 @ 0x2a14
+mdx /root
+EOF2
+EXPECT=<<EOF2
+x 0x8000000000000888 gone
+x 0x8000000000000a44 lost-dir
+x 0x8000000000000c84 slack.txt
+x 0x8000000000000a0e thread-only
+x 0x800000000000080e vanished.bin
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=Classic HFS supports non-power-of-two allocation blocks
+FILE=gzip://bins/fs/hfs-forensic/hfs-1536.img.gz
+CMDS=<<EOF2
+mie /root 0x800000000000080e
+EOF2
+EXPECT=<<EOF2
+0x00000000 0x00027a00 1536 0x1
+0x00000600 0x00028600 1536 0x1
+0x00000c00 0x00029200 1536 0x1
+0x00001200 0x00029e00 17 0x1
+EOF2
+EXPECT_ERR=
+RUN

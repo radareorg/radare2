@@ -266,6 +266,53 @@ streams. Ordinary path reads
 retain the existing reader as a fallback where supported. These operations do
 not replay LogFile or USN journal records.
 .Pp
+For classic HFS, use the hfs plugin. Live IDs are catalog node IDs (CNIDs);
+retained candidates use bit 63 plus their catalog-relative byte offset.
+The native reader scans free/unreachable catalog nodes and live-leaf slack,
+retaining file and directory types. Directory ID 0 discovers candidates
+without requiring surviving parent paths. Retained catalog threads can restore
+cleared filenames and directory ancestry when the association is unambiguous.
+Missing names use cnid-N placeholders. A thread without its file record supplies
+name evidence but cannot authorize recovery of missing contents.
+.Pp
+Classic names use MacRoman decoding and HFS byte-order equivalence. Control
+characters, percent and slash are escaped as %XX. Other legacy script encodings
+remain separate work. File and resource forks include the three initial extents
+and unambiguous retained overflow mappings. Checked extraction requires free
+allocation bits, no live owner, no reused CNID and complete metadata ownership;
+missing or reused mappings retain only the checked prefix.
+.Pp
+Free/allocated/orphan/bad/unknown ranges cover the allocation area described by
+the MDB. They exclude boot blocks, the MDB, bitmap and trailing volume regions
+outside that area. Offsets include the allocation-area origin and mount delta.
+Allocation blocks can be any supported multiple of 512 bytes.
+.Bd -literal -offset indent
+mdxj /root 0
+mgx /root DELETED_ID output
+mfuj /root free
+mfuj /root orphan
+mdj /root/live.txt/..namedfork
+mie /root/live.txt/..namedfork/data-slack
+mie /root/..namedfork/catalog-slack
+.Ed
+The virtual fork directory exposes data, rsrc, data-slack and rsrc-slack where
+present. Fork slack is the storage between logical EOF and the recorded physical
+EOF, including clump preallocation; ordinary file reads stop at logical EOF.
+The root's catalog-slack stream concatenates unused regions of validated active
+catalog leaves, excluding their offset tables. Extent enumeration preserves each
+region's physical address. These bytes are evidence, not proof of deletion.
+Use existing mg or mc commands for raw slack extraction and mfo with the virtual
+fork directory to locate its owner. Deleted fork/slack streams use snapshot IDs
+and the existing mgx command with the same ownership checks.
+.Pp
+Dirty or damaged metadata retains readable inspection while incomplete ownership
+prevents checked recovery and orphan classification. Cached metadata describes
+a read-only mounted snapshot; remount after changing the image. Alternate-MDB
+fallback and bootstrapping a self-fragmented overflow tree remain separate work.
+When allocation geometry is incomplete but the ordinary reader can still mount
+the volume, ordinary browsing remains available and forensic operations report
+unsupported rather than inventing allocation or recovery results.
+.Pp
 For HFS+ and HFSX, use the hfsplus plugin. Live IDs are catalog node IDs
 (CNIDs). Retained catalog candidates use bit 63 set plus their byte offset
 within the catalog file, distinguishing remnants with the same CNID.
@@ -323,8 +370,8 @@ accepts a checksummed empty journal; it does not replay transactions or recover
 historical journal versions. Reads never synthesize missing HFS+ file data.
 Cached metadata and stream IDs describe a read-only mounted snapshot; remount
 and enumerate IDs again after changing the backing image. Compressed data-fork
-recovery, journal-history recovery, alternate-header fallback and classic HFS
-forensic callbacks remain separate work. Raw compression attributes and resource
+recovery, journal-history recovery and alternate-header fallback remain separate
+work. Raw compression attributes and resource
 forks can be extracted through the stream namespace.
 .Pp
 .Ft int
