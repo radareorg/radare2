@@ -589,15 +589,32 @@ static void apply_name(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad)
 		}
 		return;
 	}
+	const ut64 addr = fcn->addr;
 	if (!r_anal_function_rename (fcn, name)) {
 		return;
 	}
+	// cmd.fcn.rename can delete the function
+	fcn = r_anal_get_function_at (core->anal, addr);
 	// set alternate spelling as realname for the function flag if available
-	if (R_STR_ISNOTEMPTY (alt)) {
+	if (fcn && R_STR_ISNOTEMPTY (alt)) {
 		RFlagItem *nf = r_flag_get (core->flags, fcn->name);
 		if (nf) {
 			r_flag_item_set_realname (core->flags, nf, alt);
 		}
+	}
+}
+
+// name, types and vars run hooks that can delete fcn, so resolve it again after each step
+static void apply_sign(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad) {
+	const ut64 addr = fcn->addr;
+	apply_name (core, fcn, it, rad);
+	if (it->types && (fcn = r_anal_get_function_at (core->anal, addr))) {
+		char *tmp = r_str_newf ("%s;", it->types);
+		r_anal_str_to_fcn (core->anal, fcn, tmp);
+		free (tmp);
+	}
+	if (it->vars && (fcn = r_anal_get_function_at (core->anal, addr))) {
+		r_anal_function_set_var_prot (fcn, it->vars);
 	}
 }
 
@@ -630,15 +647,7 @@ static int searchBytesHitCB(RSignItem *it, RSearchKeyword *kw, ut64 addr, void *
 	apply_flag (ctx->core, it, addr, kw->keyword_length, kw->count, "bytes", ctx->rad);
 	if (ctx->bytes_only) {
 		if (fcn) {
-			char *tmp = NULL;
-			apply_name (ctx->core, fcn, it, ctx->rad);
-			if (it->types && (tmp = r_str_newf ("%s;", it->types))) { // apply types
-				r_anal_str_to_fcn (ctx->core->anal, fcn, tmp);
-				free (tmp);
-			}
-			if (it->vars) {
-				r_anal_function_set_var_prot (fcn, it->vars);
-			}
+			apply_sign (ctx->core, fcn, it, ctx->rad);
 		}
 		ctx->bytes_count++;
 	}
@@ -705,15 +714,7 @@ static int fcnMatchCB(RSignItem *it, RAnalFunction *fcn, RSignType *types, void 
 	}
 
 	if (!collides) {
-		char *tmp = NULL;
-		apply_name (ctx->core, fcn, it, ctx->rad);
-		if (it->types && (tmp = r_str_newf ("%s;", it->types))) { // apply types
-			r_anal_str_to_fcn (ctx->core->anal, fcn, tmp);
-			free (tmp);
-		}
-		if (it->vars) {
-			r_anal_function_set_var_prot (fcn, it->vars);
-		}
+		apply_sign (ctx->core, fcn, it, ctx->rad);
 	}
 	return 1;
 }

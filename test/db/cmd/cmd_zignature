@@ -2357,3 +2357,33 @@ EXPECT=<<EOF
 0
 EOF
 RUN
+
+NAME=z/ survives a cmd.fcn.rename hook deleting the function
+FILE=bins/elf/ls
+CMDS=<<EOF
+aa
+zaf main mysig
+afn fcn.renamed @ main
+e cmd.fcn.rename=af-*
+z/
+afl~?
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN
+
+NAME=z. survives a cmd.fcn.rename hook deleting the function
+FILE=bins/elf/ls
+CMDS=<<EOF
+aa
+zaf main mysig
+afn fcn.renamed @ main
+e cmd.fcn.rename=af-*
+z.@main
+afl~?
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN
