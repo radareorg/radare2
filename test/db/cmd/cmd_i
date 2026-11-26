@@ -4232,3 +4232,16 @@ static   true
 true
 EOF
 RUN
+
+NAME=i static false when bin.limit cuts the dynsym walk before the first export
+FILE=bins/elf/x86_64-import-addend-range.so
+ARGS=-e bin.limit=3
+CMDS=<<EOF
+i~^static
+ij~{bin.static}
+EOF
+EXPECT=<<EOF
+static   false
+false
+EOF
+RUN

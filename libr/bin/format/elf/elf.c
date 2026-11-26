@@ -2478,7 +2478,7 @@ static bool is_suspicious_library_export(const char *name) {
 static bool has_public_visibility_leaks(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, false);
 	const bool executable_like = eo->ehdr.e_type == ET_EXEC ||
-		(eo->ehdr.e_type == ET_DYN && !Elf_(is_static) (eo) && has_interp_program_header (eo));
+		(eo->ehdr.e_type == ET_DYN && has_interp_program_header (eo));
 	const bool library_like = eo->ehdr.e_type == ET_DYN && !has_interp_program_header (eo);
 	if (!executable_like && !library_like) {
 		return false;
@@ -2573,43 +2573,7 @@ char *Elf_(intrp)(ELFOBJ *eo) {
 	return NULL;
 }
 
-static ut64 get_phdr_symtab_count(ELFOBJ *eo);
-static ut64 get_phdr_symtab_upper_bound(ELFOBJ *eo, ut64 addr_sym_table);
-
-// a defined global or weak dynamic symbol, which a dynamic linker can bind to
-static bool has_dynamic_exports(ELFOBJ *eo) {
-	const RBinElfDynamicInfo *di = &eo->dyn_info;
-	if (di->dt_symtab == R_BIN_ELF_ADDR_MAX) {
-		return false;
-	}
-	const ut64 start = Elf_(v2p) (eo, di->dt_symtab);
-	if (start == UT64_MAX || start >= eo->size) {
-		return false;
-	}
-	ut64 n = (get_phdr_symtab_upper_bound (eo, start) - start) / sizeof (Elf_(Sym));
-	const ut64 exact = get_phdr_symtab_count (eo);
-	if (exact && exact < n) {
-		n = exact;
-	}
-	ut64 i;
-	for (i = 1; i < n; i++) {
-		const ut64 at = start + i * sizeof (Elf_(Sym));
-#if R_BIN_ELF64
-		const ut8 info = r_buf_read8_at (eo->b, at + 4);
-		const ut16 shndx = r_buf_read_ble16_at (eo->b, at + 6, eo->endian);
-#else
-		const ut8 info = r_buf_read8_at (eo->b, at + 12);
-		const ut16 shndx = r_buf_read_ble16_at (eo->b, at + 14, eo->endian);
-#endif
-		const int bind = ELF_ST_BIND (info);
-		const int type = ELF_ST_TYPE (info);
-		const bool global = bind == STB_GLOBAL || bind == STB_WEAK || bind == STB_GNU_UNIQUE;
-		if (global && shndx != SHN_UNDEF && type != STT_SECTION && type != STT_FILE) {
-			return true;
-		}
-	}
-	return false;
-}
+static bool has_dynamic_exports(ELFOBJ *eo);
 
 bool Elf_(is_static)(ELFOBJ *eo) {
 	if (!eo->phdr) {
@@ -5223,6 +5187,44 @@ static void fill_symbol_bind_and_type(ELFOBJ *eo, struct r_bin_elf_symbol_t *ret
 	ret->type = type2str (eo, ret, sym);
 }
 
+// a symtab without an exact size ends at the first entry with an unknown bind or type
+static bool is_invalid_dynsym(Elf_(Sym) *sym) {
+	return !strcmp (bind2str (sym), R_BIN_BIND_UNKNOWN_STR) ||
+		!strcmp (type2str (NULL, NULL, sym), R_BIN_TYPE_UNKNOWN_STR);
+}
+
+// a defined global or weak dynamic symbol, which a dynamic linker can bind to
+static bool is_dynamic_export(const Elf_(Sym) *sym) {
+	const int bind = ELF_ST_BIND (sym->st_info);
+	const int type = ELF_ST_TYPE (sym->st_info);
+	const bool global = bind == STB_GLOBAL || bind == STB_WEAK || bind == STB_GNU_UNIQUE;
+	return global && sym->st_shndx != SHN_UNDEF && type != STT_SECTION && type != STT_FILE;
+}
+
+static bool read_dynsym(ELFOBJ *eo, ut64 at, Elf_(Sym) *sym) {
+	ut8 s[sizeof (Elf_(Sym))] = {0};
+	if (r_buf_read_at (eo->b, at, s, sizeof (Elf_(Sym))) < 1) {
+		return false;
+	}
+	int j = 0;
+#if R_BIN_ELF64
+	sym->st_name = READ32 (s, j);
+	sym->st_info = READ8 (s, j);
+	sym->st_other = READ8 (s, j);
+	sym->st_shndx = READ16 (s, j);
+	sym->st_value = READ64 (s, j);
+	sym->st_size = READ64 (s, j);
+#else
+	sym->st_name = READ32 (s, j);
+	sym->st_value = READ32 (s, j);
+	sym->st_size = READ32 (s, j);
+	sym->st_info = READ8 (s, j);
+	sym->st_other = READ8 (s, j);
+	sym->st_shndx = READ16 (s, j);
+#endif
+	return true;
+}
+
 typedef struct {
 	int type;
 	int nsym;
@@ -5230,6 +5232,7 @@ typedef struct {
 	RVecRBinElfSymbol *ret;
 	ut64 addr_sym_table;
 	ut64 max_ordinal; // highest retained dynsym ordinal, 0 when none
+	bool truncated; // nsym was cut by eo->limit
 } ReadPhdrSymbolState;
 
 static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
@@ -5237,31 +5240,14 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 	RVecRBinElfSymbol *ret = state->ret; // TODO: rename to elf_symbols_vec
 	ut64 addr_sym_table = state->addr_sym_table;
 	int i;
+	// the all-symbols walk records the export flag, and records none only when it saw the whole table
+	const bool harvest = type == R_BIN_ELF_ALL_SYMBOLS;
+	bool whole_table = !state->truncated;
 	for (i = 1; i < state->nsym; i++) {
-		// Read in one entry
-		ut8 s[sizeof (Elf_(Sym))] = {0};
-		int r = r_buf_read_at (eo->b, addr_sym_table + i * sizeof (Elf_(Sym)), s, sizeof (Elf_(Sym)));
-		if (r < 1) {
+		Elf_(Sym) new_symbol = {0};
+		if (!read_dynsym (eo, addr_sym_table + i * sizeof (Elf_(Sym)), &new_symbol)) {
 			return false;
 		}
-
-		int j = 0;
-		Elf_(Sym) new_symbol = {0};
-#if R_BIN_ELF64
-		new_symbol.st_name = READ32 (s, j);
-		new_symbol.st_info = READ8 (s, j);
-		new_symbol.st_other = READ8 (s, j);
-		new_symbol.st_shndx = READ16 (s, j);
-		new_symbol.st_value = READ64 (s, j);
-		new_symbol.st_size = READ64 (s, j);
-#else
-		new_symbol.st_name = READ32 (s, j);
-		new_symbol.st_value = READ32 (s, j);
-		new_symbol.st_size = READ32 (s, j);
-		new_symbol.st_info = READ8 (s, j);
-		new_symbol.st_other = READ8 (s, j);
-		new_symbol.st_shndx = READ16 (s, j);
-#endif
 		bool is_vaddr = false;
 		bool is_imported = new_symbol.st_shndx == STN_UNDEF;
 		ut64 tsize = 0;
@@ -5291,11 +5277,11 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 			continue;
 		}
 
-		// Since we don't know the size of the sym table in this case,
-		// let's stop at the first invalid entry
-		if (!strcmp (bind2str (&new_symbol), R_BIN_BIND_UNKNOWN_STR) ||
-			!strcmp (type2str (NULL, NULL, &new_symbol), R_BIN_TYPE_UNKNOWN_STR)) {
+		if (is_invalid_dynsym (&new_symbol)) {
 			break;
+		}
+		if (harvest && is_dynamic_export (&new_symbol)) {
+			eo->dyn_exports = R_BIN_ELF_EXPORTS_SOME;
 		}
 
 		ut64 tmp_offset = Elf_(v2p) (eo, toffset);
@@ -5310,6 +5296,7 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 			// an entry dereferencing the strtab beyond its capacity
 			// can't be a symbol, so this is the end of the table
 			R_LOG_DEBUG ("Symbol name outside the strtab section");
+			whole_table = false;
 			break;
 		}
 		if (!*symname) {
@@ -5344,6 +5331,9 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 				break;
 			}
 		}
+	}
+	if (harvest && whole_table && eo->dyn_exports == R_BIN_ELF_EXPORTS_UNKNOWN) {
+		eo->dyn_exports = R_BIN_ELF_EXPORTS_NONE;
 	}
 	return true;
 }
@@ -5395,38 +5385,63 @@ static ut64 get_phdr_symtab_upper_bound(ELFOBJ *eo, ut64 addr_sym_table) {
 	return bound;
 }
 
+// DT_SYMTAB entry count up to the next table, so no adjacent metadata decodes as symbols; 0 when unreadable
+static ut64 get_phdr_symtab_nsym(ELFOBJ *eo, ut64 *addr_sym_table) {
+	const RBinElfDynamicInfo *di = &eo->dyn_info;
+	if (di->dt_symtab == R_BIN_ELF_ADDR_MAX) {
+		return 0;
+	}
+	const ut64 start = Elf_(v2p) (eo, di->dt_symtab);
+	if (start == UT64_MAX || start >= eo->size) {
+		return 0;
+	}
+	const ut64 end = get_phdr_symtab_upper_bound (eo, start);
+	if (end <= start) {
+		return 0;
+	}
+	// the class fixes the entry size, a DT_SYMENT that differs is malformed
+	ut64 nsym = (end - start) / sizeof (Elf_(Sym));
+	const ut64 nexact = get_phdr_symtab_count (eo);
+	if (nexact && nexact < nsym) {
+		nsym = nexact;
+	}
+	*addr_sym_table = start;
+	return nsym;
+}
+
+// the dynsym walk of load_symbols usually records the flag, this scan covers files it skipped
+static bool has_dynamic_exports(ELFOBJ *eo) {
+	if (eo->dyn_exports == R_BIN_ELF_EXPORTS_UNKNOWN) {
+		ut64 start = 0;
+		const ut64 nsym = get_phdr_symtab_nsym (eo, &start);
+		eo->dyn_exports = R_BIN_ELF_EXPORTS_NONE;
+		ut64 i;
+		for (i = 1; i < nsym; i++) {
+			Elf_(Sym) sym = {0};
+			if (!read_dynsym (eo, start + i * sizeof (Elf_(Sym)), &sym) || is_invalid_dynsym (&sym)) {
+				break;
+			}
+			if (is_dynamic_export (&sym)) {
+				eo->dyn_exports = R_BIN_ELF_EXPORTS_SOME;
+				break;
+			}
+		}
+	}
+	return eo->dyn_exports == R_BIN_ELF_EXPORTS_SOME;
+}
+
 static RVecRBinElfSymbol* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 	R_RETURN_VAL_IF_FAIL (eo, NULL);
 
 	if (!eo->phdr || !eo->phnum) {
 		return NULL;
 	}
-	const RBinElfDynamicInfo *di = &eo->dyn_info;
-	if (di->dt_symtab == R_BIN_ELF_ADDR_MAX) {
+	ut64 addr_sym_table = 0;
+	const ut64 nsym_table = get_phdr_symtab_nsym (eo, &addr_sym_table);
+	if (nsym_table < 1 || nsym_table > ST32_MAX) {
 		return NULL;
 	}
-
-	ut64 addr_sym_table = Elf_(v2p) (eo, di->dt_symtab);
-	if (addr_sym_table == UT64_MAX) {
-		return NULL;
-	}
-
-	ut64 symtab_end = get_phdr_symtab_upper_bound (eo, addr_sym_table);
-	if (symtab_end <= addr_sym_table) {
-		return NULL;
-	}
-
-	// Stop at the next table boundary so the phdr fallback does not decode
-	// adjacent dynamic metadata as synthetic dynsym entries.
-	// the class fixes the entry size, a DT_SYMENT that differs is malformed
-	int nsym = (symtab_end - addr_sym_table) / sizeof (Elf_(Sym));
-	const ut64 nexact = get_phdr_symtab_count (eo);
-	if (nexact && nexact < (ut64)nsym) {
-		nsym = (int)nexact;
-	}
-	if (nsym < 1) {
-		return NULL;
-	}
+	int nsym = (int)nsym_table;
 	ut32 size = 0;
 	if (!UT32_MUL (&size, nsym, sizeof (Elf_ (Sym)))) {
 		return NULL;
@@ -5444,11 +5459,13 @@ static RVecRBinElfSymbol* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 	}
 
 	const int limit = eo->limit;
+	bool truncated = false;
 	if (type != R_BIN_ELF_IMPORT_SYMBOLS && limit > 0 && nsym > limit) {
 		R_LOG_WARN ("eo.limit reached for phdr symbols");
 		nsym = limit;
+		truncated = true;
 	}
-	ReadPhdrSymbolState state = { .type = type, .ret = ret, .nsym = nsym, .addr_sym_table = addr_sym_table, .max_ordinal = 0, };
+	ReadPhdrSymbolState state = { .type = type, .ret = ret, .nsym = nsym, .addr_sym_table = addr_sym_table, .max_ordinal = 0, .truncated = truncated, };
 	if (!_read_symbols_from_phdr (eo, &state)) {
 		RVecRBinElfSymbol_free (ret);
 		return NULL;
