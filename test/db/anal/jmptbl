@@ -1086,6 +1086,49 @@ case.3: 0x0000011a
 EOF
 RUN
 
+NAME=switch case at the stub of a loc function keeps the function for its callers
+FILE=malloc://1024
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx e81b000000e846000000e833000000e91c000000 @ 0x100
+wx 488d157900000083f805c390909090b0 @ 0x120
+wx b8ffe09090e906000000 @ 0x130
+wx 48b8e919000000909090c3 @ 0x140
+wx 7401c3e9d9ffffff @ 0x150
+wx e8dbffffffe806000000e891000000c3 @ 0x160
+wx 488d154900000083f801c39090909090ffe0 @ 0x170
+wx 80ffffff80ffffff80ffffff80ffffff80ffffff80ffffff @ 0x1a0
+wx 71ffffff71ffffff @ 0x1c0
+wx c3 @ 0x200
+af @ 0x100
+afl~0x00000131
+afbi @ 0x170~cases:,case.
+EOF
+EXPECT=<<EOF
+0x00000131    1      9 switch.0x00000131
+cases: 2
+case.0: 0x00000131
+case.1: 0x00000131
+EOF
+RUN
+
+NAME=afbt keeps a loc function whose only block is the switch case
+FILE=malloc://1024
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx c0035fd6 @ 0x10
+wx 10000000 @ 0x100
+af+ 0x10 f l
+afb+ 0x10 0x10 4
+s 0x10
+afbt tbl=0x100 esz=4 n=1 base=0
+afl
+EOF
+EXPECT=<<EOF
+0x00000010    1      4 f
+EOF
+RUN
+
 NAME=arm64 byte jump table in a readable map
 FILE=malloc://0x1000
 ARGS=-a arm -b 64

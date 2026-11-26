@@ -653,34 +653,21 @@ static bool add_switch_case_block(RAnal *anal, RAnalFunction *fcn, ut64 case_add
 	return true;
 }
 
-static bool reset_switch_case_stub(RAnal *anal, RAnalBlock *block) {
-	RList *fcns = r_list_new ();
-	if (!fcns) {
+// rescan instruction-less blocks unless another function starts there; never free functions mid-walk
+static bool is_switch_case_stub(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block) {
+	if (block->ninstr > 0) {
 		return false;
 	}
-	RListIter *iter;
-	RAnalFunction *fcn;
-	r_list_foreach (block->fcns, iter, fcn) {
-		r_list_append (fcns, fcn);
-	}
-	r_anal_delete_block (block);
-	r_list_foreach (fcns, iter, fcn) {
-		if (fcn->type == R_ANAL_FCN_TYPE_LOC && RVecAnalBlockPtr_empty (&fcn->bbs)) {
-			r_anal_function_delete (anal, fcn);
-		}
-	}
-	r_list_free (fcns);
-	return true;
+	RAnalFunction *entry_of = r_anal_get_function_at (anal, block->addr);
+	return !entry_of || entry_of == fcn;
 }
 
 R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr, int stack) {
 	R_RETURN_VAL_IF_FAIL (anal && fcn && case_addr != UT64_MAX && case_addr, false);
 	RAnalBlock *block = r_anal_get_block_at (anal, case_addr);
 	if (block) {
-		if (block->ninstr < 1) {
-			if (!reset_switch_case_stub (anal, block)) {
-				return false;
-			}
+		if (is_switch_case_stub (anal, fcn, block)) {
+			r_anal_delete_block (block);
 		} else {
 			if (!block_belongs_to_function (block, fcn)) {
 				r_anal_function_add_block (fcn, block);
