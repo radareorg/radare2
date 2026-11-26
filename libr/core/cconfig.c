@@ -4910,7 +4910,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("esil.romem", "false", &cb_romem, "set memory as read-only for ESIL");
 	SETB ("esil.stats", "false", "statistics from ESIL emulation stored in sdb");
 	SETCB ("esil.nonull", "false", &cb_esilnonull, "prevent memory read, memory write at null pointer");
-	SETCB ("esil.mdev.range", "", &cb_mdevrange, "specify a range of memory to be handled by cmd.esil.mdev");
+	SETCB ("esil.mdev.range", "", &cb_mdevrange, "comma separated addresses or inclusive ranges (0x100..0x1ff) handled by cmd.esil.mdev");
 	SETB ("esil.dfg.mapinfo", "false", "use mapinfo for esil dfg");
 	SETB ("esil.dfg.maps", "false", "set ro maps for esil dfg");
 

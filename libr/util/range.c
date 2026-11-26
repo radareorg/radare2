@@ -99,50 +99,107 @@ R_API char *r_range_tostring(RRange *rgs) {
 	return r_strbuf_drain (sb);
 }
 
-R_API int r_range_add_from_string(RRange *rgs, const char *string) {
-	ut64 addr, addr2;
-	int i, len = strlen (string) + 1;
-	char *str, *ostr = malloc (len);
-	if (!ostr) {
-		return 0;
-	}
-	char *p = str = ostr;
-	char *p2 = NULL;
+typedef bool (*RangeItemCallback)(void *user, ut64 from, ut64 to);
 
-	memcpy (str, string, len);
-	for (i = 0; i < len; i++) {
-		switch (str[i]) {
-		case '-':
-			str[i] = '\0';
-			p2 = p;
-			p = str + i + 1;
-			break;
-		case ',':
-			str[i] = '\0';
-			if (p2) {
-				addr = r_num_get (NULL, p);
-				addr2 = r_num_get (NULL, p2);
-				r_range_add (rgs, addr, addr2, 1);
-				p2 = NULL;
-			} else {
-				addr = r_num_get (NULL, p);
-				r_range_add (rgs, addr, addr + 1, 1);
-			}
-			p = str + i + 1;
-			str[i] = ',';
+static bool parse_number(char *s, ut64 *n) {
+	r_str_trim (s);
+	if (!*s) {
+		return false;
+	}
+	const char *err = NULL;
+	*n = r_num_math_err (NULL, s, &err);
+	return !err;
+}
+
+// parse "N,A..B,..." calling cb with inclusive bounds until it returns false
+static bool range_parse(const char *str, RangeItemCallback cb, void *user) {
+	if (!*str) {
+		return true;
+	}
+	char *s = strdup (str);
+	if (!s) {
+		return false;
+	}
+	char *item = s;
+	bool ok = true;
+	while (ok && item) {
+		char *next = strchr (item, ',');
+		if (next) {
+			*next++ = 0;
+		}
+		ut64 from, to;
+		char *dots = strstr (item, "..");
+		if (dots) {
+			*dots = 0;
+			ok = parse_number (item, &from) && parse_number (dots + 2, &to) && from <= to;
+		} else {
+			ok = parse_number (item, &from);
+			to = from;
+		}
+		if (ok && !cb (user, from, to)) {
 			break;
 		}
+		item = next;
 	}
-	if (p2) {
-		addr = r_num_get (NULL, p);
-		addr2 = r_num_get (NULL, p2);
-		r_range_add (rgs, addr, addr2, 1);
-	} else if (p) {
-		addr = r_num_get (NULL, p);
-		r_range_add (rgs, addr, addr + 1, 1);
+	free (s);
+	return ok;
+}
+
+static bool range_add_cb(void *user, ut64 from, ut64 to) {
+	r_range_add ((RRange *)user, from, (to == UT64_MAX)? to: to + 1, 1);
+	return true;
+}
+
+R_API int r_range_add_from_string(RRange *rgs, const char *string) {
+	R_RETURN_VAL_IF_FAIL (rgs && string, 0);
+	if (!range_parse (string, range_add_cb, rgs)) {
+		R_LOG_ERROR ("Invalid range");
 	}
-	free (ostr);
-	return rgs? rgs->changed: 0;
+	return rgs->changed;
+}
+
+typedef struct {
+	ut64 addr;
+	bool found;
+} RangeInContext;
+
+static bool range_in_cb(void *user, ut64 from, ut64 to) {
+	RangeInContext *ctx = user;
+	ctx->found = ctx->addr >= from && ctx->addr <= to;
+	return !ctx->found;
+}
+
+R_API bool r_str_range_in(const char *r, ut64 addr) {
+	if (!r) {
+		return false;
+	}
+	RangeInContext ctx = { .addr = addr };
+	if (!range_parse (r, range_in_cb, &ctx)) {
+		R_LOG_ERROR ("Invalid range");
+	}
+	return ctx.found;
+}
+
+typedef struct {
+	RStrRangeCallback cb;
+	void *user;
+} RangeForeachContext;
+
+static bool range_foreach_cb(void *user, ut64 from, ut64 to) {
+	RangeForeachContext *ctx = user;
+	ut64 i = from;
+	do {
+		ctx->cb (ctx->user, (int)i);
+	} while (i++ < to);
+	return true;
+}
+
+R_API void r_str_range_foreach(const char *r, RStrRangeCallback cb, void *u) {
+	R_RETURN_IF_FAIL (r && cb);
+	RangeForeachContext ctx = { cb, u };
+	if (!range_parse (r, range_foreach_cb, &ctx)) {
+		R_LOG_ERROR ("Invalid range");
+	}
 }
 
 #if 0
