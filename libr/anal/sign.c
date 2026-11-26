@@ -2152,7 +2152,22 @@ static bool foreachCB(void *user, const char *k, const char *v) {
 static inline bool local_foreach_item(RAnal *a, RSignForeachCallback cb, const RSpace *sp, bool freeit, void *user) {
 	R_RETURN_VAL_IF_FAIL (a && cb, false);
 	struct ctxForeachCB ctx = { a, cb, sp, freeit, user };
-	return sdb_foreach (a->sdb_zigns, foreachCB, &ctx);
+	// walk a copy, callbacks can run commands (cmd.log) that change or free the database
+	SdbList *zigns = sdb_foreach_list (a->sdb_zigns, false);
+	if (!zigns) {
+		return false;
+	}
+	bool keep_going = true;
+	SdbListIter *iter;
+	SdbKv *kv;
+	ls_foreach (zigns, iter, kv) {
+		keep_going = foreachCB (&ctx, sdbkv_key (kv), sdbkv_value (kv));
+		if (!keep_going) {
+			break;
+		}
+	}
+	ls_free (zigns);
+	return keep_going;
 }
 
 static bool r_sign_foreach_nofree(RAnal *a, RSignForeachCallback cb, void *user) {

@@ -2302,3 +2302,24 @@ za a b 9090
 za a C b:y g:a g:z
 EOF
 RUN
+
+NAME=z walks a copy when a cmd.log hook changes the zignatures
+FILE=-
+CMDS=<<EOF
+za a b 4141
+'k anal/zigns/zign|*|b-=|b:4242
+'e cmd.log=e cmd.log=;z-*;za c b 4343
+z
+?e --
+z
+EOF
+EXPECT=<<EOF
+a:
+  bytes: 4141
+  mask: ffff
+--
+c:
+  bytes: 4343
+  mask: ffff
+EOF
+RUN
