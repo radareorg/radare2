@@ -1914,6 +1914,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=z/f restores the flag space when there are no functions
+FILE=malloc://64
+ARGS=-e log.level=1
+CMDS=<<EOF
+fs hidden
+f hidden_flag
+fs visible
+f visible_flag
+z/f
+f
+EOF
+EXPECT=<<EOF
+0x00000000 1 visible_flag
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=forty-one functions colliding on bytes and graph keep their names
 FILE=malloc://64
 ARGS=-a x86 -b 64 -e zign.minsz=1 -e zign.mincc=0
@@ -2321,5 +2338,22 @@ a:
 c:
   bytes: 4343
   mask: ffff
+EOF
+RUN
+
+NAME=z/ survives a cmd.log hook deleting functions
+FILE=bins/elf/ls
+CMDS=<<EOF
+aa
+zaf main mysig
+k anal/zigns/badkey=x
+e zign.bytes=false
+e log.level=1
+e cmd.log=af-*
+z/
+afl~?
+EOF
+EXPECT=<<EOF
+0
 EOF
 RUN

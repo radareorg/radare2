@@ -874,9 +874,10 @@ static bool search(RCore *core, bool rad, bool only_func) {
 	}
 
 	// Function search
+	bool metric_search_failed = false;
 	if (!ctx.bytes_only) {
 		R_LOG_INFO ("searching function metrics");
-		r_sign_metric_search (core->anal, &sm);
+		metric_search_failed = r_sign_metric_search (core->anal, &sm) < 0;
 	}
 
 	if (rad) {
@@ -886,6 +887,11 @@ static bool search(RCore *core, bool rad, bool only_func) {
 			R_LOG_ERROR ("cannot restore flagspace");
 			return false;
 		}
+	}
+	if (metric_search_failed) {
+		R_LOG_ERROR ("cannot allocate function address snapshot");
+		r_core_return_code (core, R_CMD_RC_FAILURE);
+		return false;
 	}
 	print_ctx_hits (&ctx);
 	return ctx.count > 0;
