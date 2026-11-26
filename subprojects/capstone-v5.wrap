@@ -1,7 +1,7 @@
 [wrap-git]
 url = https://github.com/capstone-engine/capstone.git
-revision = 2461ca7372067eeb6197f0df048f767a8db3bca3
+revision = 53cd8b3d01bcdcbab52017a314beea3fcea696a3
 patch_directory = capstone-v5
 directory = capstone-v5
-diff_files = capstone-v5/capstone-patches/fix-x86-16.patch, capstone-v5/capstone-patches/fix-arm-post-index.patch, capstone-v5/capstone-patches/fix-x86-att-detail.patch, capstone-v5/capstone-patches/fix-sh-unistd-collision.patch, capstone-v5/capstone-patches/fix-x86-rotate-mem-access.patch, capstone-v5/capstone-patches/fix-x86-unsigned-imm-size.patch, capstone-v5/capstone-patches/fix-x86-comisd-mem-size.patch
+diff_files = capstone-v5/capstone-patches/fix-x86-16.patch, capstone-v5/capstone-patches/fix-arm-post-index.patch, capstone-v5/capstone-patches/fix-x86-att-detail.patch, capstone-v5/capstone-patches/fix-sh-unistd-collision.patch, capstone-v5/capstone-patches/fix-x86-rotate-mem-access.patch, capstone-v5/capstone-patches/fix-x86-unsigned-imm-size.patch, capstone-v5/capstone-patches/disable-deprecation-warning.patch
 depth = 1

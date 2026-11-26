@@ -1,6 +1,6 @@
 [wrap-git]
 url = https://github.com/capstone-engine/capstone.git
-revision = 04fd70b5456c20fc27d1f2b62d6ed0820fc6b081
+revision = 6a37b560a20cd8bd605a0de4cd112816d54cacc0
 patch_directory = capstone-next
 directory = capstone-next
 diff_files = capstone-next/capstone-patches/fix-x86-16.patch

@@ -10,14 +10,15 @@ WRAP_wrap_git_diff_files:=sdb/archive-create.patch,sdb/fix-query-ns-dump.patch
 .PHONY: sdb sdb_clean sdb_all
 
 sdb:
-	if [ ! -d "sdb" ] || ! (cd "sdb" 2>/dev/null && test "$$(git rev-parse HEAD 2>/dev/null)" = "$$(git rev-parse --verify 'refs/acr-wrap/2.6.2^{commit}' 2>/dev/null || git rev-parse --verify '2.6.2^{commit}' 2>/dev/null)"); then rm -rf "sdb"; ${MAKE} sdb_all; fi
+	if [ ! -d "sdb" ] || ! (cd "sdb" 2>/dev/null && test "$$(git rev-parse HEAD 2>/dev/null)" = "$$(git rev-parse --verify 'refs/acr-wrap/2.6.2^{commit}' 2>/dev/null || git rev-parse --verify '2.6.2^{commit}' 2>/dev/null)" && test "$$(cat .git/acr-wrap-diff-files 2>/dev/null)" = 'sdb/archive-create.patch,sdb/fix-query-ns-dump.patch'); then rm -rf "sdb"; ${MAKE} sdb_all; fi
 
 sdb_all:
 	git clone --no-checkout --depth=1 https://github.com/radareorg/sdb.git sdb
 	cd sdb && git fetch --depth=1 origin 2.6.2:refs/acr-wrap/2.6.2
 	cd sdb && git checkout FETCH_HEAD
 	cp -rf packagefiles/sdb/* sdb
-	for a in sdb/archive-create.patch sdb/fix-query-ns-dump.patch ; do echo "patch -d sdb -p1 < $$a" ; patch -d sdb -p1 < $$a ; done
+	for a in sdb/archive-create.patch sdb/fix-query-ns-dump.patch ; do echo "patch -d sdb -p1 < $$a" ; patch -d sdb -p1 < $$a || exit 1 ; done
+	echo 'sdb/archive-create.patch,sdb/fix-query-ns-dump.patch' > sdb/.git/acr-wrap-diff-files
 
 sdb_clean:
 	rm -rf sdb
