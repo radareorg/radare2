@@ -84,6 +84,7 @@ if get_option('enable_tests')
     'rbtree',
     'native_reg',
     'reg',
+    'search',
     'seek_history',
     'sign',
     'skiplist',

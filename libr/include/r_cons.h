@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <r_types.h>
+#include <r_bind.h>
 #include <r_th.h>
 #include <r_util/pj.h>
 #include <r_util/r_graph.h>
@@ -66,10 +67,6 @@ extern "C" {
 R_LIB_VERSION_HEADER(r_cons);
 
 #define R_CONS_CMD_DEPTH 100
-
-#ifndef R2_BIND_H
-typedef const char *const RCoreHelpMessage[];
-#endif
 
 typedef struct r_cons_code_colors_t {
 	char *string; // = Color_YELLOW;
@@ -1259,6 +1256,8 @@ R_API void r_cons_breakword(RCons *cons, const char * R_NULLABLE s);
 R_API bool r_cons_is_breaked(RCons *cons);
 R_API void r_cons_break_push(RCons *cons, RConsBreak cb, void *user);
 R_API void r_cons_break_pop(RCons *cons);
+// Borrows cons. Keep its context active for the duration of each scope.
+R_API RBreakBind r_cons_break_bind(RCons *cons);
 
 // visual
 R_API void r_cons_visual_flush(RCons *cons);

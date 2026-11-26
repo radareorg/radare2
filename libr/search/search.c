@@ -690,17 +690,20 @@ R_API int r_search_update(RSearch *s, ut64 from, const ut8 *buf, long len) {
 }
 
 // like r_search_update but uses s->iob, does not need to loop as much
-R_API int r_search_update_read(RSearch *s, ut64 from, ut64 to) {
-	R_RETURN_VAL_IF_FAIL (s && s->iob.read_at && s->consb.is_breaked, -1);
+static int search_update_read(RSearch *s, ut64 from, ut64 to, const RBreakBind *brk) {
+	R_RETURN_VAL_IF_FAIL (s->iob.read_at, -1);
+	if (r_break_check (brk)) {
+		return 0;
+	}
 	switch (s->mode) {
 	case R_SEARCH_PATTERN:
-		return search_pattern (s, from, to);
+		return search_pattern (s, from, to, brk);
 	case R_SEARCH_REGEXP:
-		return search_regex_read (s, from, to);
+		return search_regex_read (s, from, to, brk);
 	case R_SEARCH_RABIN_KARP:
-		return search_rk (s, from, to);
+		return search_rk (s, from, to, brk);
 	case R_SEARCH_TIRE:
-		return search_tire (s, from, to);
+		return search_tire (s, from, to, brk);
 	case R_SEARCH_STRING:
 		R_LOG_TODO ("Not implemented");
 		return 0;
@@ -710,9 +713,23 @@ R_API int r_search_update_read(RSearch *s, ut64 from, ut64 to) {
 	}
 }
 
+static bool search_cons_break_check(void *user) {
+	RConsBind *consb = user;
+	return consb->is_breaked (consb->cons);
+}
+
+R_API int r_search_update_read(RSearch *s, ut64 from, ut64 to) {
+	R_RETURN_VAL_IF_FAIL (s && s->consb.is_breaked, -1);
+	const RBreakBind brk = { .user = &s->consb, .check = search_cons_break_check };
+	return search_update_read (s, from, to, &brk);
+}
+
 // TODO: show progress
-R_API int r_search_maps(RSearch *s, RList *maps) {
-	R_RETURN_VAL_IF_FAIL (s && s->consb.is_breaked && maps, -1);
+R_API int r_search_maps_with_break(RSearch *s, RList *maps, const RBreakBind *brk) {
+	R_RETURN_VAL_IF_FAIL (s && maps, -1);
+	if (!r_break_begin (brk)) {
+		return -1;
+	}
 	RListIter *iter;
 	RIOMap *m;
 	ut64 prevto = UT64_MAX;
@@ -720,8 +737,8 @@ R_API int r_search_maps(RSearch *s, RList *maps) {
 	int ret = 0;
 
 	r_list_foreach_prev (maps, iter, m) {
-		if (s->consb.is_breaked (s->consb.cons)) {
-			break;
+		if (r_break_check (brk)) {
+			goto beach;
 		}
 		ut64 from = r_io_map_begin (m);
 		ut64 to = r_io_map_end (m);
@@ -732,9 +749,10 @@ R_API int r_search_maps(RSearch *s, RList *maps) {
 		}
 		if (prevto != UT64_MAX && prevfrom != UT64_MAX) {
 			// do last search
-			int tmp = r_search_update_read (s, prevfrom, prevto);
+			int tmp = search_update_read (s, prevfrom, prevto, brk);
 			if (tmp < 0) {
-				return tmp;
+				ret = tmp;
+				goto beach;
 			}
 			ret += tmp;
 		}
@@ -742,13 +760,18 @@ R_API int r_search_maps(RSearch *s, RList *maps) {
 		prevfrom = from;
 	}
 	if (prevto != UT64_MAX && prevfrom != UT64_MAX) {
-		int tmp = r_search_update_read (s, prevfrom, prevto);
-		if (tmp < 0) {
-			return tmp;
-		}
-		ret += tmp;
+		int tmp = search_update_read (s, prevfrom, prevto, brk);
+		ret = tmp < 0? tmp: ret + tmp;
 	}
+beach:
+	r_break_end (brk);
 	return ret;
+}
+
+R_API int r_search_maps(RSearch *s, RList *maps) {
+	R_RETURN_VAL_IF_FAIL (s && s->consb.is_breaked, -1);
+	const RBreakBind brk = { .user = &s->consb, .check = search_cons_break_check };
+	return r_search_maps_with_break (s, maps, &brk);
 }
 
 static int listcb(RSearchKeyword *k, void *user, ut64 addr) {

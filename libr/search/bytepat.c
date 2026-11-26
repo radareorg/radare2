@@ -52,7 +52,7 @@ static int is_fi_present(fnditem* n, unsigned char* blk , int patlen) {
 	return false;
 }
 
-R_IPI bool search_pattern(RSearch *s, ut64 from, ut64 to) {
+R_IPI bool search_pattern(RSearch *s, ut64 from, ut64 to, const RBreakBind *brk) {
 	R_RETURN_VAL_IF_FAIL (s, false);
 	ut8 block[BSIZE+MAX_PATLEN], sblk[BSIZE+MAX_PATLEN + 1];
 	ut64 addr, bact, bytes, intaddr, bproc = 0;
@@ -74,13 +74,8 @@ R_IPI bool search_pattern(RSearch *s, ut64 from, ut64 to) {
 	// bact = from
 	// bytes = to
 	// bproc = from2
-	while (bact < bytes) {
+	while (bact < bytes && !r_break_check (brk)) {
 		addr = bact;
-#if 0
-		if (r_print_is_interrupted ()) {
-			break;
-		}
-#endif
 		bproc = bact + patlen ;
 		nr = ((bytes - bproc) < BSIZE)?(bytes - bproc):BSIZE;
 		rb = s->iob.read_at (s->iob.io, addr, sblk, nr);
@@ -92,7 +87,9 @@ R_IPI bool search_pattern(RSearch *s, ut64 from, ut64 to) {
 		intaddr = bact;
 		cnt = 0;
 		while (bproc < bytes) {
-			// TODO: handle ^C here
+			if (r_break_check (brk)) {
+				goto beach;
+			}
 			nr = ((bytes - bproc) < BSIZE)?(bytes - bproc):BSIZE;
 			nr += (patlen - (nr % patlen)); // tamany de bloc llegit multiple superior de tamany busqueda
 			rb = s->iob.read_at (s->iob.io, bproc, block, nr);
@@ -125,6 +122,7 @@ R_IPI bool search_pattern(RSearch *s, ut64 from, ut64 to) {
 		}
 		bact += (moar > 0)? patlen: 1;
 	}
+beach:
 	eprintf ("\n");
 	fini_fi (root);
 	return true;

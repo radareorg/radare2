@@ -565,13 +565,20 @@ R_API void r_cons_break_clear(RCons *cons) {
 	ctx->breaked = false;
 }
 
-R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBreak cb, void *user, bool sig) {
+static bool cons_context_break_push(RCons *cons, RConsContext *context, RConsBreak cb, void *user, bool sig) {
 	if (!context || !context->break_stack) {
-		return;
+		return false;
 	}
-	// if we don't have any element in the stack start the signal
+	const bool first = r_stack_is_empty (context->break_stack);
 	RConsBreakStack *b = R_NEW0 (RConsBreakStack);
-	if (r_stack_is_empty (context->break_stack)) {
+	b->event_interrupt = context->event_interrupt;
+	b->event_interrupt_data = context->event_interrupt_data;
+	if (!r_stack_push (context->break_stack, b)) {
+		break_stack_free (b);
+		return false;
+	}
+	if (first) {
+		context->breaked = false;
 #if R2__UNIX__
 		if (!context->unbreakable && !cons->is_embedded) {
 			if (sig && r_cons_context_is_main (cons, context)) {
@@ -579,15 +586,14 @@ R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBr
 			}
 		}
 #endif
-		context->breaked = false;
 	}
-	// save the actual state
-	b->event_interrupt = context->event_interrupt;
-	b->event_interrupt_data = context->event_interrupt_data;
-	r_stack_push (context->break_stack, b);
-	// configure break
 	context->event_interrupt = cb;
 	context->event_interrupt_data = user;
+	return true;
+}
+
+R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBreak cb, void *user, bool sig) {
+	cons_context_break_push (cons, context, cb, user, sig);
 }
 
 R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig) {
@@ -1712,6 +1718,33 @@ R_API void r_cons_break_pop(RCons *cons) {
 	}
 	r_cons_context_break_pop (cons, ctx, true);
 	r_th_lock_leave (cons->lock);
+}
+
+static bool cons_break_bind_begin(void *user) {
+	RCons *cons = user;
+	r_th_lock_enter (cons->lock);
+	RConsContext *ctx = cons->context;
+	const bool ok = cons_context_break_push (cons, ctx, ctx->event_interrupt, ctx->event_interrupt_data, true);
+	r_th_lock_leave (cons->lock);
+	return ok;
+}
+
+static bool cons_break_bind_check(void *user) {
+	return r_cons_is_breaked (user);
+}
+
+static void cons_break_bind_end(void *user) {
+	r_cons_break_pop (user);
+}
+
+R_API RBreakBind r_cons_break_bind(RCons *cons) {
+	R_RETURN_VAL_IF_FAIL (cons, ((RBreakBind){0}));
+	return (RBreakBind) {
+		.user = cons,
+		.begin = cons_break_bind_begin,
+		.check = cons_break_bind_check,
+		.end = cons_break_bind_end,
+	};
 }
 
 R_API void *r_cons_sleep_begin(RCons *cons) {

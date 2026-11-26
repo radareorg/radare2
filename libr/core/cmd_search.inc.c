@@ -5785,7 +5785,8 @@ again:
 		if (search->mode != R_SEARCH_PATTERN) {
 			r_search_set_read_cb (search, &_cb_hit_sz, &param);
 		}
-		r_search_maps (search, param.boundaries);
+		const RBreakBind brk = r_cons_break_bind (core->cons);
+		r_search_maps_with_break (search, param.boundaries, &brk);
 		if (param.outmode == R_MODE_JSON) {
 			pj_end (param.pj);
 		}

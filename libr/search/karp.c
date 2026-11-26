@@ -117,7 +117,7 @@ static inline int rk_many(RSearch *srch, ut64 from, ut64 to) {
 	return -1;
 }
 
-R_IPI int search_rk(RSearch *srch, ut64 from, ut64 to) {
+R_IPI int search_rk(RSearch *srch, ut64 from, ut64 to, const RBreakBind *brk) {
 	int cnt = r_list_length (srch->kws);
 	R_RETURN_VAL_IF_FAIL (cnt > 0, -1);
 
@@ -175,7 +175,7 @@ R_IPI int search_rk(RSearch *srch, ut64 from, ut64 to) {
 		}
 
 		addr += i;
-		if (addr >= to - klen || srch->consb.is_breaked (srch->consb.cons)) {
+		if (addr >= to - klen || r_break_check (brk)) {
 			break;
 		}
 

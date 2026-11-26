@@ -9,9 +9,30 @@
 extern "C" {
 #endif
 
-#ifndef R2_CONS_H
+typedef struct r_break_bind_t {
+	void *user;
+	bool (*begin)(void *user);
+	bool (*check)(void *user);
+	void (*end)(void *user);
+} RBreakBind;
+
+// Balance every successful begin with an end.
+static inline bool r_break_begin(const RBreakBind *brk) {
+	return !brk || !brk->begin || brk->begin (brk->user);
+}
+
+// Keep reporting cancellation until the scope ends.
+static inline bool r_break_check(const RBreakBind *brk) {
+	return brk && brk->check && brk->check (brk->user);
+}
+
+static inline void r_break_end(const RBreakBind *brk) {
+	if (brk && brk->end) {
+		brk->end (brk->user);
+	}
+}
+
 typedef const char * const RCoreHelpMessage[];
-#endif
 
 typedef int (*RCoreCmd)(void *core, const char *cmd);
 typedef int (*RCoreCmdF)(void *user, const char *fmt, ...) R_PRINTF_CHECK(2, 3);

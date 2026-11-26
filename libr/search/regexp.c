@@ -4,7 +4,7 @@
 #include "search.h"
 #include <r_regex.h>
 
-R_IPI int search_regex_read(RSearch *s, ut64 from, ut64 to) {
+R_IPI int search_regex_read(RSearch *s, ut64 from, ut64 to, const RBreakBind *brk) {
 	RSearchKeyword *kw;
 	RListIter *iter;
 	RRegexMatch match;
@@ -35,7 +35,7 @@ R_IPI int search_regex_read(RSearch *s, ut64 from, ut64 to) {
 		// TODO: allow user to configure according to the maximum expected
 		// match length to prevent FN on matches that span boundaries.
 		while (addr < to) { // get buffer
-			if (s->consb.is_breaked (s->consb.cons)) {
+			if (r_break_check (brk)) {
 				goto beach;
 			}
 

@@ -593,6 +593,36 @@ bool test_cons_timeout_does_not_restart_expired_deadline(void) {
 	mu_end;
 }
 
+static void count_interrupt(void *user) {
+	int *count = user;
+	(*count)++;
+}
+
+static bool test_cons_break_bind(void) {
+	RCons *parent = r_cons_new ();
+	mu_assert_notnull (parent, "parent console");
+	RCons *cons = r_cons_new_child (parent);
+	mu_assert_notnull (cons, "embedded console");
+	int interrupts = 0;
+	r_cons_break_push (cons, count_interrupt, &interrupts);
+	r_cons_break_timeout (cons, 10);
+	const ut64 deadline = cons->timeout;
+	const RBreakBind brk = r_cons_break_bind (cons);
+	mu_assert_true (r_break_begin (&brk), "open nested break scope");
+	mu_assert_false (r_break_check (&brk), "no initial interruption");
+	r_cons_context_break (cons->context);
+	mu_assert_true (r_break_check (&brk), "observe console interruption");
+	mu_assert_eq (interrupts, 1, "outer interrupt callback remains active");
+	r_break_end (&brk);
+	mu_assert_eq (r_stack_size (cons->context->break_stack), 1, "outer scope remains active");
+	mu_assert_eq (cons->timeout, deadline, "outer deadline remains active");
+	mu_assert_true (r_cons_is_breaked (cons), "outer scope observes interruption");
+	r_cons_break_pop (cons);
+	r_cons_free (cons);
+	r_cons_free (parent);
+	mu_end;
+}
+
 bool test_cons_json_path_grep_buffer(void) {
 	RCons *cons = r_cons_new ();
 	mu_assert_notnull (cons, "r_cons_new()");
@@ -1206,6 +1236,7 @@ bool all_tests(void) {
 	mu_run_test (test_cons_multiple_roots_across_threads);
 	mu_run_test (test_cons_timeout_keeps_earliest_deadline);
 	mu_run_test (test_cons_timeout_does_not_restart_expired_deadline);
+	mu_run_test (test_cons_break_bind);
 	mu_run_test (test_cons_json_path_grep_buffer);
 	mu_run_test (test_cons_grep_icase_does_not_mutate_word);
 	mu_run_test (test_cons_cmd_help_uses_context_color);

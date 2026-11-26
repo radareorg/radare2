@@ -133,7 +133,7 @@ static inline int build_tire(RSearch *srch, RTireNode **root) {
 	return max;
 }
 
-R_IPI int search_tire(RSearch *srch, ut64 from, ut64 to) {
+R_IPI int search_tire(RSearch *srch, ut64 from, ut64 to, const RBreakBind *brk) {
 	R_RETURN_VAL_IF_FAIL (r_list_length (srch->kws) > 0, -1);
 
 	RTireNode *_root[256] = { 0 };
@@ -194,7 +194,7 @@ R_IPI int search_tire(RSearch *srch, ut64 from, ut64 to) {
 
 		//  printf ("finished searching 0x%lx bytes from 0x%lx", finger - buf, addr); // DENNIS
 		addr += finger - buf;
-		if (addr >= to - maxkey || srch->consb.is_breaked (srch->consb.cons)) {
+		if (addr >= to - maxkey || r_break_check (brk)) {
 			break;
 		}
 		// printf ("Next up, addr 0x%lx", addr); // DENNIS
