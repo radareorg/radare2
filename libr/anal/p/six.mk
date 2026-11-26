@@ -9,4 +9,4 @@ ${OBJ_SIX}: anal_six.c
 
 ${TARGET_SIX}: ${OBJ_SIX}
 	${CC} $(call libname,anal_six) ${LDFLAGS} \
-		${CFLAGS} -o anal_six.${EXT_SO} ${OBJ_SIX}
+		${CFLAGS} -L$(LTOP)/cons -lr_cons -L$(LTOP)/flag -lr_flag -o anal_six.${EXT_SO} ${OBJ_SIX}
