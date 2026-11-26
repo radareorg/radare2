@@ -641,7 +641,8 @@ static const char *dyncc_from_static_loc(RAnal *anal, const char *loc) {
 		r_strf_var (name, 64, "^%s", p);
 		return r_str_constpool_get (&anal->constpool, name);
 	}
-	return loc;
+	// callers keep the location across decodes, and a bits hint reloads the sdb that owns it
+	return r_str_constpool_get (&anal->constpool, loc);
 }
 
 static const char *dyncc_arg_home(RAnal *anal, const RAnalDynCC *d, int n, int home, int argc) {
@@ -1337,13 +1338,10 @@ R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n) {
 		}
 	}
 	const char *ret = sdb_const_getf (DB, NULL, "cc.%s.ret%d", convention, n);
-	if (ret) {
-		return ret;
+	if (!ret && n == 0) {
+		ret = sdb_const_getf (DB, NULL, "cc.%s.ret", convention);
 	}
-	if (n == 0) {
-		return sdb_const_getf (DB, NULL, "cc.%s.ret", convention);
-	}
-	return NULL;
+	return r_str_constpool_get (&anal->constpool, ret);
 }
 
 // where a floating-point result comes back, beside the integer ret sequence
@@ -1352,7 +1350,7 @@ R_API const char *r_anal_cc_fpret(RAnal *anal, const char *convention, int n) {
 	if (n >= R_ANAL_CC_MAXARG) {
 		return NULL;
 	}
-	return sdb_const_getf (DB, NULL, "cc.%s.fpret%d", convention, n);
+	return r_str_constpool_get (&anal->constpool, sdb_const_getf (DB, NULL, "cc.%s.fpret%d", convention, n));
 }
 
 R_IPI int r_anal_cc_stack_pop(RAnal *anal, const char *convention) {
@@ -1564,7 +1562,7 @@ R_API bool r_anal_cc_isclobber(RAnal *anal, const char *cc, const char *reg) {
 
 R_API const char *r_anal_cc_default(RAnal *anal) {
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
-	return sdb_const_get (DB, "default.cc", 0);
+	return r_str_constpool_get (&anal->constpool, sdb_const_get (DB, "default.cc", 0));
 }
 
 R_API void r_anal_set_cc_default(RAnal *anal, const char *cc) {
@@ -1574,7 +1572,7 @@ R_API void r_anal_set_cc_default(RAnal *anal, const char *cc) {
 
 R_API const char *r_anal_syscc_default(RAnal *anal) {
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
-	return sdb_const_get (DB, "default.syscc", 0);
+	return r_str_constpool_get (&anal->constpool, sdb_const_get (DB, "default.syscc", 0));
 }
 
 R_API void r_anal_set_syscc_default(RAnal *anal, const char *cc) {

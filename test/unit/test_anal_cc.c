@@ -614,6 +614,29 @@ bool test_r_anal_cc_func_fallback(void) {
 	mu_end;
 }
 
+// analysis keeps these names across instruction decodes, and a bits hint reloads the cc db underneath them
+bool test_r_anal_cc_interned(void) {
+	RAnal *anal = r_anal_new ();
+	r_anal_cc_set (anal, "r0 arm(r0, r1, stack)");
+	sdb_set (anal->sdb_cc, "cc.arm.fpret0", "d0", 0);
+	r_anal_set_cc_default (anal, "arm");
+	const char *arg0 = r_anal_cc_argloc (anal, "arm", 0, 0, 0);
+	mu_assert_ptreq (arg0, r_str_constpool_get (&anal->constpool, "r0"), "argloc returns the interned name");
+	RAnalCCArgSlot slot;
+	mu_assert_true (r_anal_cc_argslot (anal, "arm", 1, 0, false, &slot), "argslot resolves");
+	mu_assert_ptreq (slot.reg, r_str_constpool_get (&anal->constpool, "r1"), "argslot returns the interned name");
+	mu_assert_ptreq (r_anal_cc_ret (anal, "arm", 0), arg0, "ret returns the interned name");
+	mu_assert_ptreq (r_anal_cc_fpret (anal, "arm", 0), r_str_constpool_get (&anal->constpool, "d0"), "fpret returns the interned name");
+	mu_assert_ptreq (r_anal_cc_default (anal), r_str_constpool_get (&anal->constpool, "arm"), "default cc is interned");
+	r_anal_cc_reset (anal);
+	r_anal_cc_set (anal, "r0 arm(r2, r3)");
+	mu_assert_streq (arg0, "r0", "name outlives a cc db reload");
+	mu_assert_streq (slot.reg, "r1", "slot register outlives a cc db reload");
+	mu_assert_streq (r_anal_cc_argloc (anal, "arm", 0, 0, 0), "r2", "reloaded db resolves the new location");
+	r_anal_free (anal);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_anal_cc_set);
 	mu_run_test (test_r_anal_cc_set_self_err);
@@ -637,6 +660,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_anal_cc_argval_stack);
 	mu_run_test (test_r_anal_cc_free_unhooks);
 	mu_run_test (test_r_anal_cc_func_fallback);
+	mu_run_test (test_r_anal_cc_interned);
 	return tests_passed != tests_run;
 }
 
