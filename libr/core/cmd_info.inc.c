@@ -352,7 +352,11 @@ static void pair(RCore *core, const char *a, const char *b) {
 	r_cons_printf (core->cons, "%s%s%s\n", a, ws, b);
 }
 
-static void classdump_keys(RCore *core, RBinObject *bo) {
+static ut64 rebase_addr(RBinFile *bf, bool va, ut64 paddr, ut64 vaddr) {
+	return va? r_bin_file_get_vaddr (bf, paddr, vaddr): paddr;
+}
+
+static void classdump_keys(RCore *core, RBinFile *bf) {
 	if (r_config_get_b (core->config, "bin.classes.namesonly")) {
 		return;
 	}
@@ -362,18 +366,18 @@ static void classdump_keys(RCore *core, RBinObject *bo) {
 	RBinField *f;
 	RBinSymbol *m;
 	RListIter *iter;
-	r_list_foreach (bo->classes, iter, k) {
+	r_list_foreach (bf->bo->classes, iter, k) {
 		const char *kname = r_bin_name_tostring2 (k->name, pref);
 		R_VEC_FOREACH (&k->fields, f) {
 			const char *kind = r_bin_field_kindstr (f);
 			const char *fname = r_bin_name_tostring2 (f->name, 'f');
-			const ut64 addr = iova? f->vaddr: f->paddr;
+			const ut64 addr = rebase_addr (bf, iova, f->paddr, f->vaddr);
 			r_cons_printf (core->cons, "klass.%s.field.%s.%s=0x%" PFMT64x "\n", kname, kind, fname, addr);
 		}
 		R_VEC_FOREACH (&k->methods, m) {
 			char *attr = r_bin_attr_tostring (m->attr.flags, true);
 			const char *mname = r_bin_name_tostring2 (m->name, 'f');
-			const ut64 addr = iova? m->vaddr: m->paddr;
+			const ut64 addr = rebase_addr (bf, iova, m->paddr, m->vaddr);
 			r_cons_printf (core->cons, "klass.%s.method.%s.%s=0x%" PFMT64x "\n", kname, r_str_get (attr), mname, addr);
 			free (attr);
 		}
@@ -1086,14 +1090,14 @@ static void cmd_ic_comma(RCore *core, const char *input) {
 			const char *kname = r_bin_name_tostring (klass->name);
 			RBinSymbol *method;
 			R_VEC_FOREACH (&klass->methods, method) {
-				char *addr = r_str_newf ("0x%08" PFMT64x, iova? method->vaddr: method->paddr);
+				char *addr = r_str_newf ("0x%08" PFMT64x, rebase_addr (bf, iova, method->paddr, method->vaddr));
 				const char *origin_str = r_bin_class_origin_tostring (klass->origin);
 				r_table_add_row (t, addr, "method", kname, method->name, origin_str, NULL);
 				free (addr);
 			}
 			RBinField *field;
 			R_VEC_FOREACH (&klass->fields, field) {
-				char *addr = r_str_newf ("0x%08" PFMT64x, iova? field->vaddr: field->paddr);
+				char *addr = r_str_newf ("0x%08" PFMT64x, rebase_addr (bf, iova, field->paddr, field->vaddr));
 				const char *origin_str = r_bin_class_origin_tostring (klass->origin);
 				r_table_add_row (t, addr, "field", kname, field->name, origin_str, NULL);
 				free (addr);
@@ -1655,8 +1659,9 @@ static char *cmd_ic_sdb_name(const char *name) {
 	return encoded;
 }
 
-static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_array, bool va, int idx, const char *cls_name, int *count, bool is_doublerad) {
+static void cmd_ic0(RCore *core, RBinFile *bf, int mode, PJ *pj, bool is_array, bool va, int idx, const char *cls_name, int *count, bool is_doublerad) {
 	const bool iova = va; // r_config_get_b (core->config, "io.va");
+	RBinObject *obj = bf->bo;
 	const int pref = r_config_get_b (core->config, "asm.demangle")? 'd': 0;
 	const bool names_only = r_config_get_b (core->config, "bin.classes.namesonly");
 	RListIter *iter;
@@ -1683,7 +1688,7 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 					if (!name) {
 						continue;
 					}
-					r_cons_printf (core->cons, "'acm %s %s 0x%08" PFMT64x "\n", sk, name, iova? sym->vaddr: sym->paddr);
+					r_cons_printf (core->cons, "'acm %s %s 0x%08" PFMT64x "\n", sk, name, rebase_addr (bf, iova, sym->paddr, sym->vaddr));
 					free (name);
 				}
 			}
@@ -1704,7 +1709,7 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 			if (!names_only) {
 				bool first = true;
 				R_VEC_FOREACH (&cls->methods, sym) {
-					r_cons_printf (core->cons, "%s0x%" PFMT64x, first? "": " ", iova? sym->vaddr: sym->paddr);
+					r_cons_printf (core->cons, "%s0x%" PFMT64x, first? "": " ", rebase_addr (bf, iova, sym->paddr, sym->vaddr));
 					first = false;
 				}
 			}
@@ -1730,7 +1735,7 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 					R_VEC_FOREACH (&cls->methods, sym) {
 						char *flags = r_core_bin_attr_tostring (core, sym->attr.flags, true);
 						const char *name = r_bin_name_tostring (sym->name);
-						r_cons_printf (core->cons, "0x%08" PFMT64x " method %s %-4s %s\n", iova? sym->vaddr: sym->paddr, kname, flags, name);
+						r_cons_printf (core->cons, "0x%08" PFMT64x " method %s %-4s %s\n", rebase_addr (bf, iova, sym->paddr, sym->vaddr), kname, flags, name);
 						free (flags);
 					}
 				}
@@ -1750,7 +1755,7 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 				R_VEC_FOREACH (&cls->methods, sym) {
 					char *flags = r_core_bin_attr_tostring (core, sym->attr.flags, true);
 					const char *name = r_bin_name_tostring (sym->name);
-					r_cons_printf (core->cons, "0x%08" PFMT64x " method %s %-4s %s\n", iova? sym->vaddr: sym->paddr, kname, flags, name);
+					r_cons_printf (core->cons, "0x%08" PFMT64x " method %s %-4s %s\n", rebase_addr (bf, iova, sym->paddr, sym->vaddr), kname, flags, name);
 					free (flags);
 				}
 			}
@@ -1902,7 +1907,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 						r_list_foreach (bo->classes, iter, cls) {
 							const char *kname = r_bin_name_tostring (cls->name);
 							R_VEC_FOREACH (&cls->methods, sym) {
-								ut64 addr = iova? sym->vaddr: sym->paddr;
+								ut64 addr = rebase_addr (bf, iova, sym->paddr, sym->vaddr);
 								if (addr == 0 || addr == UT64_MAX) {
 									continue;
 								}
@@ -1913,16 +1918,16 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 					}
 					break;
 				case 'k': // "ick"
-					classdump_keys (core, bo);
+					classdump_keys (core, bf);
 					break;
 				case 'l': // "icl"
 					if (r_str_startswith (input, "lc")) {
-						cmd_ic0 (core, bo, 'c', pj, is_array, va, idx, cls_name, &count, is_doublerad);
+						cmd_ic0 (core, bf, 'c', pj, is_array, va, idx, cls_name, &count, is_doublerad);
 					} else if (!names_only) {
 						r_list_foreach (bo->classes, iter, cls) {
 							bool first = true;
 							R_VEC_FOREACH (&cls->methods, sym) {
-								r_cons_printf (core->cons, "%s0x%" PFMT64x, first? "": " ", iova? sym->vaddr: sym->paddr);
+								r_cons_printf (core->cons, "%s0x%" PFMT64x, first? "": " ", rebase_addr (bf, iova, sym->paddr, sym->vaddr));
 								first = false;
 							}
 							if (!RVecRBinSymbol_empty (&cls->methods)) {
@@ -1944,7 +1949,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 							method = NULL;
 							bool nocode_hit = false;
 							R_VEC_FOREACH (&cls->methods, sym) {
-								ut64 at = iova? sym->vaddr: sym->paddr;
+								ut64 at = rebase_addr (bf, iova, sym->paddr, sym->vaddr);
 								if (sym->attr.flags & (R_BIN_ATTR_ABSTRACT | R_BIN_ATTR_NATIVE)) {
 									// abstract/native methods have no code,
 									// match only their exact address
@@ -1987,7 +1992,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 					if (mode == '*') {
 						mode |= R_MODE_RADARE;
 					} else if (mode == 'k') { // "icck"
-						classdump_keys (core, bo);
+						classdump_keys (core, bf);
 						r_list_free (objs);
 						return;
 					}
@@ -2020,7 +2025,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 					break;
 				case ' ': // "ic"
 				case 0: // "ic"
-					cmd_ic0 (core, bo, mode, pj, is_array, va, idx, cls_name, &count, is_doublerad);
+					cmd_ic0 (core, bf, mode, pj, is_array, va, idx, cls_name, &count, is_doublerad);
 					break;
 				default:
 					r_core_return_invalid_command (core, "ic", mode);
