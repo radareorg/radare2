@@ -1,5 +1,5 @@
 NAME=C55x branch and call targets
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=tms320
 e asm.cpu=c55x

@@ -177,7 +177,7 @@ EOF
 RUN
 
 NAME=arm 16 BE 4 bytes instruction
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 16
 CMDS=<<EOF
 e cfg.bigendian=1
@@ -505,7 +505,7 @@ EOF
 RUN
 
 NAME=arm subrel <256
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 0c009fe5
 e asm.arch=arm
@@ -1026,7 +1026,7 @@ EOF
 RUN
 
 NAME=arm show registers in table
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1151,7 +1151,7 @@ EOF
 RUN
 
 NAME=thumb bx lr
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 000090e50fe0a0e113ff2fe1000090e51eff2fe1
 e asm.arch=arm

@@ -300,7 +300,7 @@ RUN
 
 
 NAME=Types and link in project file
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/

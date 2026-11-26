@@ -473,7 +473,7 @@ jobs:
       shell: cmd
       run: |
         cd prefix\bin
-        radare2 -qc "?e Hello" -
+        radare2 -qc "?e Hello" malloc://512
   w32-mingw:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     name: w32-mingw

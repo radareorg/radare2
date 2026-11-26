@@ -328,7 +328,7 @@ EOF
 RUN
 
 NAME=dsc subcache naming the cache itself is rejected
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 o dsc://bins/dsc/self-subcache
 EOF
@@ -340,7 +340,7 @@ EOF
 RUN
 
 NAME=dsc iSS reports per image segment bounds
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 o dsc://bins/mach0/dyld_shared_cache_arm64-macOS
 iSS~__LINKEDIT

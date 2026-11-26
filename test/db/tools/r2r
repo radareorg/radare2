@@ -1,5 +1,5 @@
 NAME=Only EXPECT_ERR<<EOF
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pf?cat_sat_on_keyboard
 pf?CAT_SAT_ON_KEYBOARD
@@ -11,7 +11,7 @@ EOF
 RUN
 
 NAME=EXPECT<<EOF empty and EXPECT_ERR<<EOF non-empty
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pf?cat_sat_on_keyboard
 pf?CAT_SAT_ON_KEYBOARD
@@ -25,7 +25,7 @@ RUN
 
 NAME=BROKEN=0 with comment
 BROKEN=0 # Use BROKEN=0 to unbreak this. Don't remove this line!
-FILE=-
+FILE=malloc://512
 CMDS=?e Test for BROKEN=0
 EXPECT=<<EOF
 Test for BROKEN=0

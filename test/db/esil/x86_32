@@ -1,5 +1,5 @@
 NAME=2step push x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -21,7 +21,7 @@ EOF
 RUN
 
 NAME=movsb 1 byte x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -50,7 +50,7 @@ EOF
 RUN
 
 NAME=mov eax, 1 x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -69,7 +69,7 @@ EOF
 RUN
 
 NAME=rep movsb string x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -101,7 +101,7 @@ EOF
 RUN
 
 NAME=mov byte [0x20000000], 0x64 x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -123,7 +123,7 @@ EOF
 RUN
 
 NAME=mov eax, [esp + 4] x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -145,7 +145,7 @@ EOF
 RUN
 
 NAME=mov [esp + 4], eax x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -167,7 +167,7 @@ EOF
 RUN
 
 NAME=rep movsb 0x1000 randombytes x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -201,7 +201,7 @@ EOF
 RUN
 
 NAME=lodsb ++ x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -226,7 +226,7 @@ EOF
 RUN
 
 NAME=lodsb -- x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -251,7 +251,7 @@ EOF
 RUN
 
 NAME=lodsw ++ x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -276,7 +276,7 @@ EOF
 RUN
 
 NAME=lodsw -- x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -301,7 +301,7 @@ EOF
 RUN
 
 NAME=lodsd ++ x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -326,7 +326,7 @@ EOF
 RUN
 
 NAME=lodsd -- x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -351,7 +351,7 @@ EOF
 RUN
 
 NAME=stosb ++ x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -376,7 +376,7 @@ EOF
 RUN
 
 NAME=stosb -- x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -401,7 +401,7 @@ EOF
 RUN
 
 NAME=stosw ++ x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -426,7 +426,7 @@ EOF
 RUN
 
 NAME=stosw -- x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -451,7 +451,7 @@ EOF
 RUN
 
 NAME=stosd ++ x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -476,7 +476,7 @@ EOF
 RUN
 
 NAME=stosd -- x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -501,7 +501,7 @@ EOF
 RUN
 
 NAME=shr eax(9) >> 1 x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -526,7 +526,7 @@ EOF
 RUN
 
 NAME=shr eax(0x1b) >> 1 x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -551,7 +551,7 @@ EOF
 RUN
 
 NAME=shr eax(5) >> 2 x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -576,7 +576,7 @@ EOF
 RUN
 
 NAME=shr byte [esp + 4], 2 x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -600,7 +600,7 @@ EOF
 RUN
 
 NAME=add byte [esp + 4], 0xa x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -624,7 +624,7 @@ EOF
 RUN
 
 NAME=add eax, [esp + 4] x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -646,7 +646,7 @@ EOF
 RUN
 
 NAME=add dword [0x20000000], eax x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -668,7 +668,7 @@ EOF
 RUN
 
 NAME=add byte cf,zf check x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -693,7 +693,7 @@ EOF
 RUN
 
 NAME=add word cf,zf check x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -718,7 +718,7 @@ EOF
 RUN
 
 NAME=add dword cf,zf check x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -743,7 +743,7 @@ EOF
 RUN
 
 NAME=adc byte cf,zf check x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -769,7 +769,7 @@ EOF
 RUN
 
 NAME=adc word cf,zf check x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -795,7 +795,7 @@ EOF
 RUN
 
 NAME=adc dword cf,zf check x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -821,7 +821,7 @@ EOF
 RUN
 
 NAME=dec byte [edi] check zf x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -847,7 +847,7 @@ EOF
 RUN
 
 NAME=dec byte [edi] check sf x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -873,7 +873,7 @@ EOF
 RUN
 
 NAME=inc byte [edi] check zf x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -901,7 +901,7 @@ EOF
 RUN
 
 NAME=inc byte [edi] check sf x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -927,7 +927,7 @@ EOF
 RUN
 
 NAME=adc [esi + 0x14], ecx x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -951,7 +951,7 @@ EOF
 RUN
 
 NAME=div cl x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -971,7 +971,7 @@ EOF
 RUN
 
 NAME=pushal(pushad in intel documentation) x86_32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -1012,7 +1012,7 @@ EOF
 RUN
 
 NAME=popal(popad in intel documentation) x86_32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -1064,7 +1064,7 @@ EOF
 RUN
 
 NAME=pop x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -1092,7 +1092,7 @@ EOF
 RUN
 
 NAME=pushd followed by popfd x86-32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -1179,7 +1179,7 @@ EOF
 RUN
 
 NAME=call [esp]
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 aei
@@ -1228,7 +1228,7 @@ EOF
 RUN
 
 NAME=cmova eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1244,7 +1244,7 @@ EOF
 RUN
 
 NAME=cmova eax, ecx aer zf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1260,7 +1260,7 @@ EOF
 RUN
 
 NAME=cmova eax, ecx aer cf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1276,7 +1276,7 @@ EOF
 RUN
 
 NAME=cmovae eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1292,7 +1292,7 @@ EOF
 RUN
 
 NAME=cmovae eax, ecx aer cf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1308,7 +1308,7 @@ EOF
 RUN
 
 NAME=cmovb eax, ecx aer zf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1324,7 +1324,7 @@ EOF
 RUN
 
 NAME=cmovb eax, ecx aer cf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1340,7 +1340,7 @@ EOF
 RUN
 
 NAME=cmovbe eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1356,7 +1356,7 @@ EOF
 RUN
 
 NAME=cmovbe eax, ecx aer cf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1372,7 +1372,7 @@ EOF
 RUN
 
 NAME=cmovc eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1388,7 +1388,7 @@ EOF
 RUN
 
 NAME=cmovc eax, ecx aer cf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1404,7 +1404,7 @@ EOF
 RUN
 
 NAME=cmove eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1420,7 +1420,7 @@ EOF
 RUN
 
 NAME=cmove eax, ecx aer zf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1436,7 +1436,7 @@ EOF
 RUN
 
 NAME=cmovg eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1452,7 +1452,7 @@ EOF
 RUN
 
 NAME=cmovg eax, ecx aer sf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1468,7 +1468,7 @@ EOF
 RUN
 
 NAME=cmovge eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1484,7 +1484,7 @@ EOF
 RUN
 
 NAME=cmovge eax, ecx aer sf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1500,7 +1500,7 @@ EOF
 RUN
 
 NAME=cmovl eax, ecx aer sf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1516,7 +1516,7 @@ EOF
 RUN
 
 NAME=cmovl eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1532,7 +1532,7 @@ EOF
 RUN
 
 NAME=cmovle eax, ecx aer zf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1548,7 +1548,7 @@ EOF
 RUN
 
 NAME=cmovle eax, ecx aer sf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1564,7 +1564,7 @@ EOF
 RUN
 
 NAME=cmovle eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1580,7 +1580,7 @@ EOF
 RUN
 
 NAME=cmovna eax, ecx aer cf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1596,7 +1596,7 @@ EOF
 RUN
 
 NAME=cmovna eax, ecx aer zf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1612,7 +1612,7 @@ EOF
 RUN
 
 NAME=cmovna eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1628,7 +1628,7 @@ EOF
 RUN
 
 NAME=cmovnae eax, ecx aer cf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1644,7 +1644,7 @@ EOF
 RUN
 
 NAME=cmovnae eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1660,7 +1660,7 @@ EOF
 RUN
 
 NAME=cmovnb eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1676,7 +1676,7 @@ EOF
 RUN
 
 NAME=cmovnb eax, ecx aer cf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1692,7 +1692,7 @@ EOF
 RUN
 
 NAME=cmovnbe eax, ecx aer cf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1708,7 +1708,7 @@ EOF
 RUN
 
 NAME=cmovnbe eax, ecx aer zf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1724,7 +1724,7 @@ EOF
 RUN
 
 NAME=cmovnbe eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1740,7 +1740,7 @@ EOF
 RUN
 
 NAME=cmovnc eax, ecx aer cf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1756,7 +1756,7 @@ EOF
 RUN
 
 NAME=cmovnc eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1772,7 +1772,7 @@ EOF
 RUN
 
 NAME=cmovne eax, ecx aer zf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1788,7 +1788,7 @@ EOF
 RUN
 
 NAME=cmovne eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1804,7 +1804,7 @@ EOF
 RUN
 
 NAME=cmovng eax, ecx aer zf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1820,7 +1820,7 @@ EOF
 RUN
 
 NAME=cmovng eax, ecx aer sf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1836,7 +1836,7 @@ EOF
 RUN
 
 NAME=cmovng eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1852,7 +1852,7 @@ EOF
 RUN
 
 NAME=cmovnge eax, ecx aer sf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1868,7 +1868,7 @@ EOF
 RUN
 
 NAME=cmovnge eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1884,7 +1884,7 @@ EOF
 RUN
 
 NAME=cmovnl eax, ecx aer sf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1900,7 +1900,7 @@ EOF
 RUN
 
 NAME=cmovnl eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1916,7 +1916,7 @@ EOF
 RUN
 
 NAME=cmovnle eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1932,7 +1932,7 @@ EOF
 RUN
 
 NAME=cmovnle eax, ecx aer zf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1948,7 +1948,7 @@ EOF
 RUN
 
 NAME=cmovno eax, ecx aer of=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1964,7 +1964,7 @@ EOF
 RUN
 
 NAME=cmovno eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1980,7 +1980,7 @@ EOF
 RUN
 
 NAME=cmovnp eax, ecx aer pf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -1996,7 +1996,7 @@ EOF
 RUN
 
 NAME=cmovnp eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -2012,7 +2012,7 @@ EOF
 RUN
 
 NAME=cmovns eax, ecx aer sf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -2028,7 +2028,7 @@ EOF
 RUN
 
 NAME=cmovns eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -2044,7 +2044,7 @@ EOF
 RUN
 
 NAME=cmovnz eax, ecx aer zf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -2060,7 +2060,7 @@ EOF
 RUN
 
 NAME=cmovnz eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -2076,7 +2076,7 @@ EOF
 RUN
 
 NAME=cmovo eax, ecx aer of=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -2092,7 +2092,7 @@ EOF
 RUN
 
 NAME=cmovo eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -2108,7 +2108,7 @@ EOF
 RUN
 
 NAME=cmovp eax, ecx aer pf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -2124,7 +2124,7 @@ EOF
 RUN
 
 NAME=cmovp eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -2140,7 +2140,7 @@ EOF
 RUN
 
 NAME=cmovpe eax, ecx aer pf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -2156,7 +2156,7 @@ EOF
 RUN
 
 NAME=cmovpe eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -2172,7 +2172,7 @@ EOF
 RUN
 
 NAME=cmovpo eax, ecx aer pf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -2188,7 +2188,7 @@ EOF
 RUN
 
 NAME=cmovpo eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -2204,7 +2204,7 @@ EOF
 RUN
 
 NAME=cmovs eax, ecx aer sf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -2220,7 +2220,7 @@ EOF
 RUN
 
 NAME=cmovs eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -2236,7 +2236,7 @@ EOF
 RUN
 
 NAME=cmovz eax, ecx aer zf=1
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -2252,7 +2252,7 @@ EOF
 RUN
 
 NAME=cmovz eax, ecx
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
@@ -2268,7 +2268,7 @@ EOF
 RUN
 
 NAME=push esp (push old value of esp, as in IA-32 documentation) x86_32
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e io.va=true
 e asm.arch=x86
@@ -2291,7 +2291,7 @@ EOF
 RUN
 
 NAME=pdj: bts dword [esp], eax (#12575)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -2432,7 +2432,7 @@ EOF
 RUN
 
 NAME=cmc
-FILE=-
+FILE=malloc://512
 EXPECT=<<EOF
 0x00000000
 0x00000001
@@ -2451,7 +2451,7 @@ EOF
 RUN
 
 NAME=push esp,,pop esp
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 aei

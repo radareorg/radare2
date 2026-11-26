@@ -1,5 +1,5 @@
 NAME=pFb.test simple protobuf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 0a 2e 0a 07 56 69 6e 63 65 6e 74 10 09 1a 10 56 69 6e 63 65 6e 74 40 74 65 73 74 2e 63 6f 6d 22 0f 0a 0b 31 35 30 31 31 31 31 31 31 31 31 10 02
 pFb
@@ -18,7 +18,7 @@ EOF
 RUN
 
 NAME=pFb.test simple protobuf (verbose)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 0a 2e 0a 07 56 69 6e 63 65 6e 74 10 09 1a 10 56 69 6e 63 65 6e 74 40 74 65 73 74 2e 63 6f 6d 22 0f 0a 0b 31 35 30 31 31 31 31 31 31 31 31 10 02
 pFbv
@@ -37,7 +37,7 @@ EOF
 RUN
 
 NAME=pFbj.test simple protobuf (json)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 0a 2e 0a 07 56 69 6e 63 65 6e 74 10 09 1a 10 56 69 6e 63 65 6e 74 40 74 65 73 74 2e 63 6f 6d 22 0f 0a 0b 31 35 30 31 31 31 31 31 31 31 31 10 02
 pFbj~{}
@@ -61,7 +61,7 @@ RUN
 
 
 NAME=pFbJ.test simple protobuf (quiet json)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 0a 2e 0a 07 56 69 6e 63 65 6e 74 10 09 1a 10 56 69 6e 63 65 6e 74 40 74 65 73 74 2e 63 6f 6d 22 0f 0a 0b 31 35 30 31 31 31 31 31 31 31 31 10 02
 pFbJ~{}

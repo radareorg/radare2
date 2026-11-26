@@ -1,5 +1,5 @@
 NAME=visual marks scroll with arrows page keys and mouse wheel before deletion
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.wheel=false
 e scr.wheel.speed=2
@@ -37,7 +37,7 @@ EOF
 RUN
 
 NAME=visual marks preserve letter shortcuts and seek after scrolling
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.wheel=false
 e scr.feedback=0
@@ -75,7 +75,7 @@ EOF
 RUN
 
 NAME=visual marks crop narrow and one-row terminals
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.wheel=false
 e scr.cols=24
@@ -163,7 +163,7 @@ EOF
 RUN
 
 NAME=visual_dw
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 Vc10dwq @e:scr.interactive=true > /dev/null
 pd 20~dword?
@@ -174,7 +174,7 @@ EOF
 RUN
 
 NAME=Vc+cq
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.interactive=true
 Vc+cq
@@ -186,7 +186,7 @@ EOF
 RUN
 
 NAME=visual hex scroll
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.interactive=true
 e asm.arch=x86
@@ -201,7 +201,7 @@ EOF
 RUN
 
 NAME=visual op scroll
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -216,7 +216,7 @@ EOF
 RUN
 
 NAME=visual arm64 op scroll up aligns
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 e scr.interactive=true
@@ -231,7 +231,7 @@ EOF
 RUN
 
 NAME=visual invalid arm64 instructions keep scrolling
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 e scr.interactive=true
@@ -246,7 +246,7 @@ EOF
 RUN
 
 NAME=visual short instructions respect code alignment
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 e scr.interactive=true
@@ -261,7 +261,7 @@ EOF
 RUN
 
 NAME=visual folded function scrolls to its end
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 e scr.interactive=true
@@ -278,7 +278,7 @@ EOF
 RUN
 
 NAME=panels invalid arm64 instructions keep scrolling
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
@@ -296,7 +296,7 @@ EOF
 RUN
 
 NAME=visual arm64 string meta scroll down aligns after end
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 e scr.interactive=true
@@ -322,7 +322,7 @@ EOF
 RUN
 
 NAME=visual arm64 string meta scroll up from aligned code
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 e scr.interactive=true
@@ -348,7 +348,7 @@ EOF
 RUN
 
 NAME=visual cmd.visual disasm scroll aligns
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 e scr.interactive=true
@@ -364,7 +364,7 @@ EOF
 RUN
 
 NAME=visual arm32 middle flag disasm scroll
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 32
 CMDS=<<EOF
 e scr.interactive=true
@@ -389,7 +389,7 @@ EOF
 RUN
 
 NAME=visual arm32 middle bb disasm scroll
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 32
 CMDS=<<EOF
 e scr.interactive=true
@@ -417,7 +417,7 @@ EOF
 RUN
 
 NAME=visual arm32 metadata and middle flag scroll up
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 32
 CMDS=<<EOF
 e scr.interactive=true
@@ -439,7 +439,7 @@ EOF
 RUN
 
 NAME=visual string meta scroll up rows
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.interactive=true
 e asm.arch=x86
@@ -462,7 +462,7 @@ EOF
 RUN
 
 NAME=visual hex pP scroll
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -477,7 +477,7 @@ EOF
 RUN
 
 NAME=visual noninteractive
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.interactive=false
 V
@@ -490,7 +490,7 @@ EOF
 RUN
 
 NAME=panels edit menu skips separator and toggles io.cache
-FILE=-
+FILE=malloc://512
 TIMEOUT=10
 CMDS=<<EOF
 e scr.wheel=false
@@ -509,7 +509,7 @@ EOF
 RUN
 
 NAME=panels settings submenu preserves order and callbacks
-FILE=-
+FILE=malloc://512
 TIMEOUT=10
 CMDS=<<EOF
 e scr.wheel=false
@@ -524,7 +524,7 @@ EOF
 RUN
 
 NAME=panels graph analysis recovers missing function and switches to tiny
-FILE=-
+FILE=malloc://512
 TIMEOUT=10
 ARGS=-a x86 -b 64
 CMDS=<<EOF
@@ -571,7 +571,7 @@ EOF
 RUN
 
 NAME=panels graph options refresh cached output and preserve cache preference
-FILE=-
+FILE=malloc://512
 TIMEOUT=10
 ARGS=-a x86 -b 64
 CMDS=<<EOF
@@ -617,7 +617,7 @@ EOF
 RUN
 
 NAME=panels graph contents submenu selects named renderers and Empty
-FILE=-
+FILE=malloc://512
 TIMEOUT=10
 ARGS=-a x86 -b 64
 CMDS=<<EOF
@@ -668,7 +668,7 @@ EOF
 RUN
 
 NAME=panels custom graph command keeps its explicit address
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
@@ -694,7 +694,7 @@ EOF
 RUN
 
 NAME=panels refresh reruns a cached command once without changing cache mode
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
 e scr.wheel=false
@@ -735,7 +735,7 @@ EOF
 RUN
 
 NAME=panels functions menu analyzes program and refreshes cached functions
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
@@ -760,7 +760,7 @@ EOF
 RUN
 
 NAME=panels graph follows selected block and preserves manual scrolling
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
@@ -815,7 +815,7 @@ EOF
 RUN
 
 NAME=panels hexdump mouse selects ASCII and hexadecimal editing columns
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.wheel=false
 e scr.utf8=false
@@ -840,7 +840,7 @@ EOF
 RUN
 
 NAME=panels hexdump context preserves selected range when cancelled and copied
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.wheel=false
 e scr.utf8=false
@@ -864,7 +864,7 @@ EOF
 RUN
 
 NAME=panels hexdump context Insert preserves ASCII selection
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.wheel=false
 e scr.utf8=false
@@ -884,7 +884,7 @@ EOF
 RUN
 
 NAME=panels opening a new panel clears the previous byte selection
-FILE=-
+FILE=malloc://512
 TIMEOUT=10
 CMDS=<<EOF
 e scr.wheel=false

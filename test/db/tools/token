@@ -34,7 +34,7 @@ EOF
 RUN
 
 NAME=smily punk token test 2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w int function(int argc, char **argv) { puts("Hello World"); return 32; }
 prz~:)

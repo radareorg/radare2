@@ -100,7 +100,7 @@ EOF
 RUN
 
 NAME=s0x
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s0x33
 s
@@ -111,7 +111,7 @@ EOF
 RUN
 
 NAME=seek far offset
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s 0x7fffff8000b54000 ; ?v $$
 s 0x8fffff8000b54000 ; ?v $$
@@ -134,7 +134,7 @@ EOF
 RUN
 
 NAME=seek invalid symbol keeps offset
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s 0x42
 s noSuchSymbolEndingT
@@ -149,7 +149,7 @@ EOF
 RUN
 
 NAME=seek opcodes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -164,7 +164,7 @@ EOF
 RUN
 
 NAME=seek opcodes advances over invalid instructions
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 wx 0f040f040f040f040f040f040f040f04
@@ -262,7 +262,7 @@ EOF
 RUN
 
 NAME=seek silent
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s 0x100
 s
@@ -291,7 +291,7 @@ EOF
 RUN
 
 NAME=seek silent to register
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -460,7 +460,7 @@ EOF
 RUN
 
 NAME=relative tmp seek
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s 0x10
 ?v $$ @ +0x10
@@ -471,7 +471,7 @@ EOF
 RUN
 
 NAME=relative large seek
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s
 s+0x1000000000
@@ -484,7 +484,7 @@ EOF
 RUN
 
 NAME=relative plus alias
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 +3
 s
@@ -512,7 +512,7 @@ EOF
 RUN
 
 NAME=partial seek history issue
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s
 s..33
@@ -561,7 +561,7 @@ EOF
 RUN
 
 NAME=seek history string formats
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 f start @ 0
 f mark @ 0x10

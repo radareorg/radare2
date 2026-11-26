@@ -62,7 +62,7 @@ EOF
 RUN
 
 NAME=pmd rejects negative and oversized lengths
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pmd -1
 pmd 0x80000000

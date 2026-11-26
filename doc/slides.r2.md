@@ -510,7 +510,7 @@ subject to the new page count. Resize also redraws immediately.
 ## The presentation is still a radare2 session
 
 ```text
-   r2 -i doc/slides.r2.md -
+   r2 -i doc/slides.r2.md malloc://512
 
    . doc/slides.r2.md
 

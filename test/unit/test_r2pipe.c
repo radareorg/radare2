@@ -4,7 +4,7 @@
 #include "minunit.h"
 
 static bool test_r2pipe(void) {
-	R2Pipe *r = r2pipe_open ("radare2 -N -q0 -");
+	R2Pipe *r = r2pipe_open ("radare2 -N -q0 malloc://512");
 	mu_assert ("r2pipe can spawn", r);
 	char *hello = r2pipe_cmd (r, "?e hello world");
 	if (hello) {

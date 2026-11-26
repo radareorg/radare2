@@ -1,5 +1,5 @@
 NAME=ac
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ac Flatline
 acll
@@ -15,7 +15,7 @@ EOF
 RUN
 
 NAME=acm
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ac Flatline
 acm Flatline PrayerPosition 0x1337 0x42 0x4242
@@ -40,7 +40,7 @@ EOF
 RUN
 
 NAME=acm-
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ac Flatline
 acm Flatline PrayerPosition 0x1337 0x42
@@ -94,7 +94,7 @@ EOF
 RUN
 
 NAME=acmn
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ac Flatline
 acm Flatline PrayerPosition 0x1337 0x42
@@ -133,7 +133,7 @@ EOF
 RUN
 
 NAME=ac-
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ac Album
 ac PeripheryAlbum
@@ -235,7 +235,7 @@ EOF
 RUN
 
 NAME=acb
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ac PeripherySong
 ac NiceSong
@@ -267,7 +267,7 @@ EOF
 RUN
 
 NAME=acb duplicate base with sanitized name
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ac Song.int.
 ac Flatline
@@ -300,7 +300,7 @@ EOF
 RUN
 
 NAME=acb-
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ac PeripherySong
 ac NiceSong
@@ -344,7 +344,7 @@ EOF
 RUN
 
 NAME=acv
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ac Deadwing
 acv Deadwing 0x1337
@@ -372,7 +372,7 @@ EOF
 RUN
 
 NAME=acv-
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ac Deadwing
 acv Deadwing 0x1337
@@ -413,7 +413,7 @@ EOF
 RUN
 
 NAME=acn
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ac Album
 ac PorcupineTreeAlbum
@@ -483,7 +483,7 @@ EOF
 RUN
 
 NAME=acn with sanitized names
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ac Album.int.
 ac Deadwing
@@ -512,7 +512,7 @@ EOF
 RUN
 
 NAME=acl*
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ac Album
 ac PorcupineTreeAlbum
@@ -535,7 +535,7 @@ EOF
 RUN
 
 NAME=aclj
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ac PorcupineTreeAlbum
 ac Deadwing
@@ -581,7 +581,7 @@ EOF
 RUN
 
 NAME=acll class_name
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ac Flatline
 ac Sandstorm

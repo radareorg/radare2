@@ -1,5 +1,5 @@
 NAME=rap.reverse defaults to enabled
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e rap.reverse
 et rap.reverse
@@ -11,7 +11,7 @@ EOF
 RUN
 
 NAME=rap.reverse can be disabled with -e
-FILE=-
+FILE=malloc://512
 ARGS=-e rap.reverse=false
 CMDS=e rap.reverse
 EXPECT=<<EOF
@@ -20,7 +20,7 @@ EOF
 RUN
 
 NAME=e,
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e,key/cols/value,key/str/color
 EOF
@@ -44,7 +44,7 @@ EOF
 RUN
 
 NAME=ed* honors R2_RCFILE
-FILE=-
+FILE=malloc://512
 ENV=R2_RCFILE=scripts/no-nl-at-eof.r2;HOME=scripts/no-nl-at-eof.r2;USERPROFILE=scripts/no-nl-at-eof.r2
 CMDS=ed*
 EXPECT=<<EOF
@@ -53,7 +53,7 @@ EOF
 RUN
 
 NAME=deprecated cmd.onsyscall aliases cmd.syscall.enter
-FILE=-
+FILE=malloc://512
 ARGS=-e log.level=0
 CMDS=<<EOF
 e cmd.onsyscall=echo deprecated
@@ -65,7 +65,7 @@ EOF
 RUN
 
 NAME=et
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 et asm.slow
 et asm.bits
@@ -81,7 +81,7 @@ EOF
 RUN
 
 NAME=e-dot
-FILE=-
+FILE=malloc://512
 CMDS=e zoom.
 EXPECT=<<EOF
 zoom.byte = h
@@ -157,7 +157,7 @@ EOF
 RUN
 
 NAME=e asm.bytes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bytes=?
 e asm.bytes
@@ -169,7 +169,7 @@ EOF
 RUN
 
 NAME=e hex.cols
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e hex.cols=?
 e hex.cols
@@ -261,7 +261,7 @@ EOF
 RUN
 
 NAME=e asm.cpu validation
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 16
 CMDS=<<EOF
 e asm.cpu=V8
@@ -289,7 +289,7 @@ EOF
 RUN
 
 NAME=e asm.syntax
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx eb0e
 e asm.arch=x86
@@ -302,7 +302,7 @@ EOF
 RUN
 
 NAME=multiple assignments
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 "e  scr.highlight= scr.highlight.grep  =scr.rainbow =true "
 e scr.highlight
@@ -329,7 +329,7 @@ EOF
 RUN
 
 NAME=bin.resraw defaults to false and can be enabled
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e bin.resraw
 e bin.resraw=true

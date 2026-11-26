@@ -60,7 +60,7 @@ EOF
 RUN
 
 NAME=sum
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 f a@3
 ?v a+3
@@ -77,7 +77,7 @@ EOF
 RUN
 
 NAME=binary
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ?e
 !rax2 Bxff3f0000fcff
@@ -91,7 +91,7 @@ EOF
 RUN
 
 NAME=invalid nums
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.interactive=true
 e asm.arch=x86

@@ -12,7 +12,7 @@ EOF
 RUN
 
 NAME=md r2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 m r2 /r2
 mc /r2/seek
@@ -24,7 +24,7 @@ EOF
 RUN
 
 NAME=md r2 seek
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 m r2 /r2
 mc /r2/seek
@@ -878,7 +878,7 @@ EOF
 RUN
 
 NAME=cat r2fs bsize
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 m r2 /r2
 mc /r2/bsize
@@ -890,7 +890,7 @@ EOF
 RUN
 
 NAME=cat r2fs cfg
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 m r2 /r2
 mc /r2/cfg/file/info
@@ -1186,7 +1186,7 @@ EOF
 RUN
 
 NAME=mount searches traverse virtual roots and respect directory scope
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 m /one tmp
 m /two tmp
@@ -1209,7 +1209,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mount filesystem at slash is searched once
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 m / tmp
 mw /a hello
@@ -1227,7 +1227,7 @@ EXPECT_ERR=
 RUN
 
 NAME=CLt source tree without a mount
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 CL 0x100 src/z.c:1
 CL 0x110 src/include/a.h:2
@@ -1305,7 +1305,7 @@ EXPECT_ERR=
 RUN
 
 NAME=CL trees with no DWARF and invalid source paths
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 CLt
 CLuj

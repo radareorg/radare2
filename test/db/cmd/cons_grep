@@ -772,7 +772,7 @@ EOF
 RUN
 
 NAME=ij.json.grep.inv
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ij~{}~fo
 EOF
@@ -858,7 +858,7 @@ EOF
 RUN
 
 NAME=vigrepcount
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ?vi 123-123~?^0
 ?vi 123-123~?^0$
@@ -872,7 +872,7 @@ EOF
 RUN
 
 NAME=grep json pager modifier does not read a freed buffer
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ?e [[[[[[["A"]]]]]]]~{}..
 EOF
@@ -915,7 +915,7 @@ EOF
 RUN
 
 NAME=ascii art grep on empty output does not crash
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s 0~?ea
 b 16~?ea
@@ -927,7 +927,7 @@ EOF
 RUN
 
 NAME=Markdown grep renders headings and inline formatting
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.color=0
 e scr.utf8=false
@@ -942,7 +942,7 @@ EOF
 RUN
 
 NAME=Markdown grep honors terminal width and UTF-8
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.color=0
 e scr.cols=12
@@ -964,7 +964,7 @@ EOF
 RUN
 
 NAME=Markdown grep on empty output does not crash
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s 0~:D
 b 16~:D
@@ -976,7 +976,7 @@ EOF
 RUN
 
 NAME=syntax highlight replaces existing ANSI colors
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ecd
 e scr.color=1
@@ -999,7 +999,7 @@ EOF
 RUN
 
 NAME=syntax highlight recognizes stdint types
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ecd
 e scr.color=1
@@ -1031,7 +1031,7 @@ EOF
 RUN
 
 NAME=syntax highlight recognizes labels at column zero
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ecd
 e scr.color=1
@@ -1071,7 +1071,7 @@ EOF
 RUN
 
 NAME=json indent with a truecolor palette
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.color=3
 ?e '{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":{"a":1}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}},"AA":1}'~{}~AA
@@ -1082,7 +1082,7 @@ EOF
 RUN
 
 NAME=json indent with escaped backslash before the closing quote
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ?e '{"k":"v\\\\","b":[true,"x\\"y"]}'~{}
 ?e '{"k":"v\\\\","c":"x\\"y"}'~{:

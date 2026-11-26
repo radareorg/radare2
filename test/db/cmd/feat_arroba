@@ -132,7 +132,7 @@ EOF
 RUN
 
 NAME=@e:
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.color=false
 e scr.color @e:scr.color=true
@@ -143,7 +143,7 @@ EOF
 RUN
 
 NAME=@a:
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.arch @a:arm
@@ -154,7 +154,7 @@ EOF
 RUN
 
 NAME=@e: @ addr
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.color=false
 s 0
@@ -168,7 +168,7 @@ EOF
 RUN
 
 NAME=@ addr @e
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.color @ 0x42 @e:scr.color=false 
 e scr.color @ 0x1337 @e:scr.color=true
@@ -184,7 +184,7 @@ EOF
 RUN
 
 NAME=@a: @ addr @e:
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch @a:x86 @ 0x42 @e:scr.color=false
 e asm.arch @a:arm @ 0x1337 @e:scr.color=true
@@ -204,7 +204,7 @@ EOF
 RUN
 
 NAME=@e:a=b,c=d with a==c
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.pseudo=false
 e asm.pseudo @e:asm.pseudo=true,asm.pseudo=true
@@ -217,7 +217,7 @@ EOF
 RUN
 
 NAME=@e:a=b @e:c=d with a==c
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.pseudo=false
 e asm.pseudo @e:asm.pseudo=true @e:asm.pseudo=true

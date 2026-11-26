@@ -2,7 +2,7 @@
 NAME=utf8 (possibly malformed) filenames with non-printable chars
 # Backtick substitution doubles backslashes for legacy wtf/o argument parsing.
 BROKEN=1
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 cd `e dir.tmp`
 e io.cache=true

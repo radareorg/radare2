@@ -1,5 +1,5 @@
 NAME=hash_comments_noop
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 #	~?
 # ~?

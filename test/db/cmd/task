@@ -1,5 +1,5 @@
 NAME=&
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 & ?e Hello\nfrom\na task!
 && 1
@@ -15,7 +15,7 @@ EOF
 RUN
 
 NAME=& + grep
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 '& ?e Hello\nfrom\na task!~task
 && 1
@@ -29,7 +29,7 @@ EOF
 RUN
 
 NAME=& + grep 2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 '& ?e Hello\nfrom\na task!~task
 && 1
@@ -43,7 +43,7 @@ EOF
 RUN
 
 NAME=& list
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 & ?e hello
 & ?e world
@@ -89,7 +89,7 @@ EOF
 RUN
 
 NAME=& nested context echo
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 '& echo $(echo nested); echo second
 '& 'echo "raw task"
@@ -130,7 +130,7 @@ EOF
 RUN
 
 NAME=& webserver command help
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 '& =h?~http server
 && 1

@@ -18,7 +18,7 @@ EOF
 RUN
 
 NAME=ec* fgbg
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 eco sepia
 ec*
@@ -99,7 +99,7 @@ EOF
 RUN
 
 NAME=ansicon ecs
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.color=1
 e scr.ansicon=true
@@ -129,7 +129,7 @@ EOF
 RUN
 
 NAME=ecd and eco bright
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.color=1
 ecd
@@ -286,7 +286,7 @@ EOF
 RUN
 
 NAME=ec* and attributes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 eco bright
 ec*~pop
@@ -306,7 +306,7 @@ EOF
 RUN
 
 NAME=ecHi
-FILE=-
+FILE=malloc://512
 CMDS=ecHi xxxx
 EXPECT_ERR=<<EOF
 ERROR: Invalid color code (bgonly xxxx)
@@ -315,7 +315,7 @@ EOF
 RUN
 
 NAME=eco filters raw commands and preserves allowed colors
-FILE=-
+FILE=malloc://512
 ENV=XDG_DATA_HOME=scripts
 CMDS=<<EOF
 eco cmdfilter
@@ -335,7 +335,7 @@ EXPECT_ERR=
 RUN
 
 NAME=eco rejects encoded palette commands and command separators
-FILE=-
+FILE=malloc://512
 ENV=XDG_DATA_HOME=scripts
 CMDS=<<EOF
 eco cmdfilter-encoded
@@ -349,7 +349,7 @@ EXPECT_ERR=
 RUN
 
 NAME=eco repeated loads preserve unfiltered raw commands and temporary seeks
-FILE=-
+FILE=malloc://512
 ENV=XDG_DATA_HOME=scripts
 CMDS=<<EOF
 eco cmdfilter
@@ -377,7 +377,7 @@ EXPECT_ERR=
 RUN
 
 NAME=str palette key and deprecated ai.ascii alias color code strings
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.color=3
 ec str rgb:123456

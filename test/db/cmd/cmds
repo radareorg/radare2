@@ -129,7 +129,7 @@ EOF
 RUN
 
 NAME=r2 asm with pa
-FILE=-
+FILE=malloc://512
 BROKEN=1
 CMDS=<<EOF
 e asm.arch=x86
@@ -143,7 +143,7 @@ EOF
 RUN
 
 NAME=r2 asm with pa
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -166,7 +166,7 @@ EOF
 RUN
 
 NAME=hash comment and simple quote
-FILE=-
+FILE=malloc://512
 CMDS=?e 'before # after'
 EXPECT=<<EOF
 before # after

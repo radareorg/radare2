@@ -1,5 +1,5 @@
 #!/usr/bin/node
-// $ r2 -qc '#!pipe node pipe-node.js' -
+// $ r2 -qc '#!pipe node pipe-node.js' malloc://512
 
 var isMain = process.argv[1] == __filename;
 

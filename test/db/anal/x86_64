@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=x86-64 static calling convention stack pop
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e anal.arch=x86
@@ -33,7 +33,7 @@ EOF
 RUN
 
 NAME=x86-64 static calling convention preserve sets
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e anal.arch=x86
@@ -104,7 +104,7 @@ EOF
 RUN
 
 NAME=anal.ijmp missing branch bug
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -124,7 +124,7 @@ EOF
 RUN
 
 NAME=x86_64 rust niche jmptbl autosize stops before adjacent table
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -144,7 +144,7 @@ EOF
 RUN
 
 NAME=x86_64 nested jmptbl keeps switch metadata after split
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -2134,7 +2134,7 @@ EOF
 RUN
 
 NAME=anal vars crash
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 af
 afvr-*
@@ -2145,7 +2145,7 @@ EOF
 RUN
 
 NAME=anal vars crash 2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.var.summary=0
 e asm.bits=64
@@ -2450,7 +2450,7 @@ EOF
 RUN
 
 NAME=ax-
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ax 10 20
 axq
@@ -2463,7 +2463,7 @@ EOF
 RUN
 
 NAME=ax-@
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s 20
 ax 10
@@ -2477,7 +2477,7 @@ EOF
 RUN
 
 NAME=ax-*
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ax 10
 ax
@@ -2522,7 +2522,7 @@ EOF
 RUN
 
 NAME=x86 ref issue
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -2535,7 +2535,7 @@ EOF
 RUN
 
 NAME=aoj pushf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -2617,7 +2617,7 @@ EOF
 RUN
 
 NAME=delete references with ax-
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ax 10 20
 axq
@@ -2719,7 +2719,7 @@ EOF
 RUN
 
 NAME=axs
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 axs 0x10
 axq
@@ -2848,7 +2848,7 @@ EOF
 RUN
 
 NAME=r_anal_function_split_bb FITFCNSZ fix (#12008)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -2912,7 +2912,7 @@ EOF
 RUN
 
 NAME=overlapping basic blocks and anal.jmp.mid
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -3301,7 +3301,7 @@ EOF
 RUN
 
 NAME=so -N and overlapping basic blocks
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -3324,7 +3324,7 @@ EOF
 RUN
 
 NAME=a8 analyze bytes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -3430,7 +3430,7 @@ EOF
 RUN
 
 NAME=sar on x86-64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -3455,7 +3455,7 @@ EOF
 RUN
 
 NAME=aes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -3975,7 +3975,7 @@ EOF
 RUN
 
 NAME=x86_64 show registers in table
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -4020,7 +4020,7 @@ EOF
 RUN
 
 NAME=lea pseudo improvements (pseudo disabled)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.var.summary=0
 e asm.arch=x86
@@ -4062,7 +4062,7 @@ EOF
 RUN
 
 NAME=lea pseudo improvements (pseudo enabled)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.var.summary=0
 e asm.arch=x86
@@ -4129,7 +4129,7 @@ EOF
 RUN
 
 NAME=af-* removes function flags
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bytes=true
@@ -4187,7 +4187,7 @@ EOF
 RUN
 
 NAME=Use after free segfault in aft
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -4243,7 +4243,7 @@ EOF
 RUN
 
 NAME=array stack var renders interior accesses as name[i]
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 e asm.arch=x86
 e asm.bits=64
@@ -4415,7 +4415,7 @@ EOF
 RUN
 
 NAME=Stack frame larger than 8 KiB
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64 -e anal.vars.stackname=true
 CMDS=<<EOF
 wx 4881ec0830000048897c24084889b424f82f0000488b842410b000004881c408300000c3
@@ -4444,7 +4444,7 @@ EOF
 RUN
 
 NAME=Frame pointer local deeper than 8 KiB
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64 -e anal.vars.stackname=true
 CMDS=<<EOF
 wx 554889e54881ec003000004889bd08d0ffffc9c3
@@ -4462,7 +4462,7 @@ EOF
 RUN
 
 NAME=Callee stack pops of 8 KiB or more are ignored
-FILE=-
+FILE=malloc://512
 ARGS=-a x86.zydis -b 64
 CMDS=<<EOF
 wx 53554154e8170000004889442408415c5d5bc3 @ 0

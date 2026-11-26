@@ -1,5 +1,5 @@
 NAME=C55x+ rejects reserved Smem modes before wrapping operands
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=tms320
 e asm.cpu=c55x+
@@ -27,7 +27,7 @@ EOF
 RUN
 
 NAME=C55x+ rejects truncated instructions and Smem extensions
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=tms320
 e asm.cpu=c55x+
@@ -57,7 +57,7 @@ EOF
 RUN
 
 NAME=C55x+ Smem extensions preserve instruction boundaries
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=tms320
 e asm.cpu=c55x+
@@ -86,7 +86,7 @@ EOF
 RUN
 
 NAME=C55x+ parallel packets include Smem extensions in either instruction
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=tms320
 e asm.cpu=c55x+
@@ -113,7 +113,7 @@ EOF
 RUN
 
 NAME=C55x+ byte fallback prints the byte after a qualifier
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=tms320
 e asm.cpu=c55x+
@@ -129,7 +129,7 @@ EOF
 RUN
 
 NAME=C55x+ rejects unknown registers and conditions
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=tms320
 e asm.cpu=c55x+
@@ -161,7 +161,7 @@ EOF
 RUN
 
 NAME=C55x+ rejects reserved and unknown mmap operands
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=tms320
 e asm.cpu=c55x+
@@ -179,7 +179,7 @@ EOF
 RUN
 
 NAME=C55x+ control flow analysis
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=tms320
 e asm.cpu=c55x+
@@ -299,7 +299,7 @@ EOF
 RUN
 
 NAME=C55x+ pseudo keeps every operand
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=tms320
 e asm.cpu=c55x+

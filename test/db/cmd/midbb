@@ -83,7 +83,7 @@ EOF
 RUN
 
 NAME=asm.bbmiddle json
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -533,7 +533,7 @@ EOF
 RUN
 
 NAME=asm.bbmiddle and pdi
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -568,7 +568,7 @@ EOF
 RUN
 
 NAME=asm.bbmiddle and pif
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64

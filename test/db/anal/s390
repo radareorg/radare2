@@ -166,7 +166,7 @@ RUN
 
 NAME=aoj 4140f008
 REQUIRE=cs5
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=s390
 e asm.bits=64
@@ -214,7 +214,7 @@ RUN
 
 NAME=aoj 4140f008 (cs6)
 REQUIRE=cs6
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=s390
 e asm.bits=64
@@ -261,7 +261,7 @@ EOF
 RUN
 
 NAME=s390 pseudo parser
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=s390
 e asm.bits=64

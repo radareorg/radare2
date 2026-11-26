@@ -1,5 +1,5 @@
 NAME=leak tcc rejected parameter list
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e log.level=0
 e types.plugin=tcc
@@ -19,7 +19,7 @@ EOF
 RUN
 
 NAME=leak class attribute delete
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e log.level=0
 ac Foo

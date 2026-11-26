@@ -1,5 +1,5 @@
 NAME=disasm cmp ascii
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 wx 3c6f 3d1027
@@ -12,7 +12,7 @@ EOF
 RUN
 
 NAME=infinite x/i disasm bug
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
@@ -25,7 +25,7 @@ EOF
 RUN
 
 NAME=flags subst bug
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
@@ -41,7 +41,7 @@ EOF
 RUN
 
 NAME=flags subst bug 2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
@@ -73,7 +73,7 @@ EOF
 RUN
 
 NAME=pD@x:90
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch = x86
 e asm.bits= 32
@@ -85,7 +85,7 @@ EOF
 RUN
 
 NAME=pd@x:90
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch = x86
 e asm.bits= 32
@@ -97,7 +97,7 @@ EOF
 RUN
 
 NAME=pd@x:90909090
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch = x86
 e asm.bits= 32
@@ -112,7 +112,7 @@ EOF
 RUN
 
 NAME=pd@x:909090
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch = x86
 e asm.bits= 32
@@ -126,7 +126,7 @@ EOF
 RUN
 
 NAME=pd 4;?=
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 00000000000000000000
 e asm.arch=x86
@@ -144,7 +144,7 @@ EOF
 RUN
 
 NAME=pd 4 > /dev/null; ?=
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 00000000000000000000
 e asm.arch=x86
@@ -158,7 +158,7 @@ EOF
 RUN
 
 NAME=wx e9010f;?v $l
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx e9010f
 e asm.arch=x86
@@ -175,7 +175,7 @@ EOF
 RUN
 
 NAME=dis-16/32/64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx e99300 e869390000 e828350000
 e asm.arch=x86
@@ -198,7 +198,7 @@ EOF
 RUN
 
 NAME=unaligned thumb code
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 00000000
 e asm.bits=16
@@ -211,7 +211,7 @@ EOF
 RUN
 
 NAME=unaligned arm code
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 00000000
 e asm.bits=32
@@ -224,7 +224,7 @@ EOF
 RUN
 
 NAME=unaligned x86 issue
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 00000000
 e asm.arch=arm
@@ -241,7 +241,7 @@ EOF
 RUN
 
 NAME=reflines on last line
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -259,7 +259,7 @@ EOF
 RUN
 
 NAME=byte spacing and align in disasm
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32

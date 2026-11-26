@@ -1,5 +1,5 @@
 NAME=intreg $$
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s 10
 ar PC=$$

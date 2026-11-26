@@ -19,7 +19,7 @@ EOF
 RUN
 
 NAME=pd movabs string
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64

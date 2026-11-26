@@ -35,7 +35,7 @@ args() {
 if [ -z "${OPS}" ]; then
 	OPS=`r2 -qc aoml --`
 	if [ -z "${OPS}" ]; then
-		OPS="r2 -a $R2_ARCH -b $R2_BITS -qc'wR;piD~!invalid' -"
+		OPS="r2 -a $R2_ARCH -b $R2_BITS -qc'wR;piD~!invalid' malloc://512"
 		if [ -z "${OPS}" ]; then
 			OPS="mov push jmp call ret"
 		fi

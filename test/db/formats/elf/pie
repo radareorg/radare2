@@ -27,7 +27,7 @@ EOF
 RUN
 
 NAME=ELF: rabin2 entrypoint with baddr
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rabin2 -I -B 0x300000 bins/elf/analysis/pie | grep baddr
 !rabin2 -e -B 0x300000 bins/elf/analysis/pie

@@ -1,5 +1,5 @@
 NAME=js tests, variable scoping
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 js var a = 123
 js r2.log(a)
@@ -16,7 +16,7 @@ EOF
 RUN
 
 NAME=qjs caught stack overflow retains the backtrace
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'js Error.stackTraceLimit = 2; function recurse() { recurse(); } try { recurse(); } catch (e) { console.error(e); }
 'js console.log("still alive")
@@ -32,7 +32,7 @@ EOF
 RUN
 
 NAME=qjs console.error retains Error stacks and accepts plain values
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'js function fail() { throw new Error("trace-test"); } try { fail(); } catch (e) { console.error(e); }
 'js console.error("plain", 42)
@@ -48,7 +48,7 @@ EOF
 RUN
 
 NAME=qjs rejected evaluation promises retain stacks and handled ones stay quiet
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'js Promise.reject(new Error("promise-test"))
 'js Promise.reject(new Error("handled")).catch(() => console.log("handled"))
@@ -63,7 +63,7 @@ EOF
 RUN
 
 NAME=qjs core callback errors retain the backtrace
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'js r2.plugin("core", function () { return { name: "qjs-stack", call: function crash(input) { if (input === "tqjscrash") { throw new Error("callback-test"); } return false; } }; });
 tqjscrash
@@ -78,7 +78,7 @@ EOF
 RUN
 
 NAME=qjs long backtraces retain the script entry beyond the log buffer size
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'js function dive(n) { if (n) return dive(n - 1); throw new Error("long-trace"); } dive(40);
 EOF
@@ -87,7 +87,7 @@ REGEXP_ERR=at <eval>
 RUN
 
 NAME=js! from a running script must not free the live runtime
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'js var a = 123; r2.cmd("js!"); r2.log(a)
 'js r2.cmd("js 1"), r2.cmd("#!!"); r2.log(a)
@@ -109,7 +109,7 @@ EOF
 RUN
 
 NAME=qjs echo binding output paths
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'js r2.log(r2.cmd("echo \"bound value\"").trim())
 'js console.log(r2.cmd("?e adapter value").trim())
@@ -122,7 +122,7 @@ EXPECT_ERR=
 RUN
 
 NAME=qjs async test
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'js import("r2pipe").then((r2pipe)=> {console.log(r2pipe.open());}).catch(console.error);
 EOF
@@ -133,7 +133,7 @@ EXPECT_ERR=
 RUN
 
 NAME=qjs generic HTTP binding and argument errors
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'js console.log(typeof r2.http)
 'js try { r2.http("GET", "http://localhost/"); } catch (e) { console.log(e.name + ": " + e.message); }
@@ -148,7 +148,7 @@ EXPECT_ERR=
 RUN
 
 NAME=qjs HTTP respects sandbox denial
-FILE=-
+FILE=malloc://512
 ARGS=-e log.level=0
 CMDS=<<EOF
 'js r2.cmd("e cfg.sandbox.grain=none;e cfg.sandbox=true"); for (const method of ["GET", "POST"]) { try { r2.http(method, "http://192.0.2.1/", ""); } catch (e) { console.log(e.name + ": " + e.message); } }
@@ -161,7 +161,7 @@ EXPECT_ERR=
 RUN
 
 NAME=sandbox needs the script grain to run scripts
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=all,!script
 e cfg.sandbox=true
@@ -181,7 +181,7 @@ EOF
 RUN
 
 NAME=sandbox with the script grain runs scripts
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.sandbox.grain=script
 e cfg.sandbox=true
@@ -193,7 +193,7 @@ EOF
 RUN
 
 NAME=qjs loading, running and unloading of core plugins
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 Lc~qjs?
 ?e
@@ -254,7 +254,7 @@ EOF
 RUN
 
 NAME=qjs loading and unloading of arch plugins
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 La~qjs?
 ?e
@@ -313,7 +313,7 @@ EOF
 RUN
 
 NAME=js ec changes
-FILE=-
+FILE=malloc://512
 ARGS=-e scr.color=1
 CMDS=<<EOF
 'js r2.cmd("ec call blue");console.log(r2.cmd("ec*~call"));r2.cmd("ec call red");console.log(r2.cmd("ec*~call"))
@@ -330,7 +330,7 @@ EXPECT_ERR=
 RUN
 
 NAME=qjs r2pipe2 helpers
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s 0x10
 'js const ok = r2.cmd2At("?v $$", 0x33).value === 0x33 && Number(r2.callAt("?v $$", 0x44).trim()) === 0x44 && r2.call2("?v $$").value === 0x10 && r2.call2At("?v $$", 0x55).value === 0x55 && !r2.call2j("?Vj").error && typeof r2.call2j("?Vj").res === "object"; console.log(ok ? "ok" : "no");

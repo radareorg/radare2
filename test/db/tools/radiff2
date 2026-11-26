@@ -1,5 +1,5 @@
 NAME=radiff2 -n
-FILE=-
+FILE=malloc://512
 CMDS=!radiff2 -n bins/other/radiff2/radiff2_c_1 bins/other/radiff2/radiff2_c_2
 EXPECT=<<EOF
 1
@@ -7,7 +7,7 @@ EOF
 RUN
 
 NAME=radiff2 -a -O x86
-FILE=-
+FILE=malloc://512
 CMDS=!radiff2 -a x86 -O bins/other/radiff2/radiff2_c_1 bins/other/radiff2/radiff2_c_2
 EXPECT=<<EOF
 0x00000000 91 => 90 0x00000000
@@ -15,7 +15,7 @@ EOF
 RUN
 
 NAME=radiff2 -B 0x420000
-FILE=-
+FILE=malloc://512
 CMDS=!radiff2 -a x86 -B 0x420000 -O bins/other/radiff2/radiff2_c_1 bins/other/radiff2/radiff2_c_2
 EXPECT=<<EOF
 0x00420000 91 => 90 0x00420000
@@ -23,7 +23,7 @@ EOF
 RUN
 
 NAME=radiff2 -g
-FILE=-
+FILE=malloc://512
 CMDS=!!radiff2 -g main -m d bins/other/radiff2/false bins/other/radiff2/true~digrap
 EXPECT=<<EOF
 digraph code {
@@ -31,7 +31,7 @@ EOF
 RUN
 
 NAME=radiff2 -v~commit?"
-FILE=-
+FILE=malloc://512
 CMDS=!!radiff2 -v~commit?
 EXPECT=<<EOF
 1
@@ -39,7 +39,7 @@ EOF
 RUN
 
 NAME=radiff2 -h~Usage?"
-FILE=-
+FILE=malloc://512
 CMDS=!!radiff2 -h~Usage?
 EXPECT=<<EOF
 1
@@ -47,7 +47,7 @@ EOF
 RUN
 
 NAME=radiff2 string comparison
-FILE=-
+FILE=malloc://512
 CMDS=!!radiff2 -iz bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
 0x00000000 48656c6c => 41414141 0x00000000
@@ -55,7 +55,7 @@ EOF
 RUN
 
 NAME=radiff2 unified string comparison
-FILE=-
+FILE=malloc://512
 CMDS=!!radiff2 -qu -iz bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
 -0x00000000:48 65 6c 6c 
@@ -64,7 +64,7 @@ EOF
 RUN
 
 NAME=radiff2 unified single byte changes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !radiff2 -qu bins/other/radiff2/radiff2_c_1 bins/other/radiff2/radiff2_c_2
 !radiff2 -qu hex://610062 hex://610162
@@ -78,7 +78,7 @@ EOF
 RUN
 
 NAME=radiff2 -o reports file offsets
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !radiff2 -q -o 4 hex://68656c6c6f20776f726c64 hex://68786c6c6f207778726c64
 !radiff2 -r -o 4 hex://68656c6c6f20776f726c64 hex://68786c6c6f207778726c64
@@ -109,7 +109,7 @@ EOF
 RUN
 
 NAME=radiff2 -d -D -o disassembles from both offsets
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !radiff2 -dqD -a x86 -b 64 -o 2:4 hex://585890 hex://59595959c3
 EOF
@@ -122,7 +122,7 @@ EOF
 RUN
 
 NAME=radiff2 -D -iz -o matches the output without -o
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !radiff2 -qD -iz bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1 2> /dev/null
 !radiff2 -qD -iz -o 4 bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1 2> /dev/null
@@ -150,7 +150,7 @@ EOF
 RUN
 
 NAME=radiff2 -f bdiff -o copies from the first file
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !radiff2 -f bdiff -o 2:4 hex://5858616263 hex://59595959786279 | rax2 -S
 EOF
@@ -160,7 +160,7 @@ EOF
 RUN
 
 NAME=radiff2 unified string context
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !radiff2 -u hex://610062 hex://610162
 !radiff2 -u hex://6162636465 hex://6158635965
@@ -187,7 +187,7 @@ EOF
 RUN
 
 NAME=radiff2 gnu unified string comparison
-FILE=-
+FILE=malloc://512
 CMDS=!!radiff2 -U -iz bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1 | tail -n 2
 EXPECT=<<EOF
 -Hello world!
@@ -196,7 +196,7 @@ EOF
 RUN
 
 NAME=radiff2 -U shows the input names
-FILE=-
+FILE=malloc://512
 CMDS=!radiff2 -U hex://610a62 hex://610a63
 EXPECT=<<EOF
 --- hex://610a62
@@ -211,7 +211,7 @@ EOF
 RUN
 
 NAME=radiff2 -AC (elf files)
-FILE=-
+FILE=malloc://512
 CMDS=!!radiff2 -AC bins/other/radiff2/true bins/other/radiff2/false~?\(1.000000\)
 EXPECT=<<EOF
 50
@@ -219,7 +219,7 @@ EOF
 RUN
 
 NAME=radiff2 -AAC (elf files)
-FILE=-
+FILE=malloc://512
 CMDS=!!radiff2 -AAC bins/other/radiff2/true bins/other/radiff2/false~?\(1.000000\)
 EXPECT=<<EOF
 54
@@ -227,7 +227,7 @@ EOF
 RUN
 
 NAME=radiff2 -AC (mach0 fat files)
-FILE=-
+FILE=malloc://512
 CMDS=!!radiff2 -AC bins/other/radiff2/hellocxx-osx-fat-intel_1 bins/other/radiff2/hellocxx-osx-fat-intel_2~?\(1.000000\)
 EXPECT=<<EOF
 16
@@ -235,7 +235,7 @@ EOF
 RUN
 
 NAME=radiff2 -f1 (GDIFF support) #1
-FILE=-
+FILE=malloc://512
 CMDS=!!radiff2 -f1 bins/other/radiff2/radiff2_c_1 bins/other/radiff2/radiff2_c_2 | rax2 -S
 EXPECT=<<EOF
 d1ffd1ff04019000
@@ -243,7 +243,7 @@ EOF
 RUN
 
 NAME=radiff2 empty first file
-FILE=-
+FILE=malloc://512
 CMDS=!radiff2 "" bins/other/radiff2/radiff2_c_2
 EXPECT_ERR=<<EOF
 ERROR: Cannot open empty path
@@ -251,7 +251,7 @@ EOF
 RUN
 
 NAME=radiff2 empty second file
-FILE=-
+FILE=malloc://512
 CMDS=!radiff2 bins/other/radiff2/radiff2_c_1 ""
 EXPECT_ERR=<<EOF
 ERROR: Cannot open empty path
@@ -305,7 +305,7 @@ END
 RUN
 
 NAME=radiff2 -x ignores a stale R2CONS
-FILE=-
+FILE=malloc://512
 ENV=R2CONS=4416884320
 CMDS=<<EOF
 !radiff2 -x malloc://4 malloc://4
@@ -320,7 +320,7 @@ EOF
 RUN
 
 NAME=tools spawned after an in-process tool do not crash
-FILE=-
+FILE=malloc://512
 CMDS=radiff2 malloc://8 malloc://8;!ragg2 -B 90;!rasm2 -a x86 -b 32 -d 90;?e alive
 EXPECT=<<EOF
 90
@@ -330,7 +330,7 @@ EOF
 RUN
 
 NAME=radiff2 disassembly expands changed immediates
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !radiff2 -qD -a x86 -b 64 hex://90b801000000c3 hex://90b802000000c3
 EOF
@@ -343,7 +343,7 @@ EOF
 RUN
 
 NAME=radiff2 disassembly with eval has no leading blank lines
-FILE=-
+FILE=malloc://512
 CMDS=!radiff2 -e bin.relocs.apply=true -qD -a x86 -b 64 hex://90 hex://c3
 EXPECT=<<EOF
 --- 0x00000000  90
@@ -354,7 +354,7 @@ EOF
 RUN
 
 NAME=radiff2 disassembly merges fragments of one instruction
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !radiff2 -qD -a x86 -b 64 hex://b801000203c3 hex://b804000506c3
 EOF
@@ -367,7 +367,7 @@ EOF
 RUN
 
 NAME=radiff2 disassembly uses instruction addresses and base
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !radiff2 -qD -a x86 -b 64 hex://90e800000000c3 hex://90e801000000c3
 !radiff2 -qD -a x86 -b 64 -B 0x1000 hex://90740490c3 hex://90eb0490c3
@@ -385,7 +385,7 @@ EOF
 RUN
 
 NAME=radiff2 disassembly keeps separate changes aligned
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !radiff2 -qD -a x86 -b 64 hex://b80100000090b802000000c3 hex://b80300000090b804000000c3
 EOF
@@ -402,7 +402,7 @@ EOF
 RUN
 
 NAME=radiff2 disassembly honors independent offsets and lengths
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !radiff2 -qD -a x86 -b 64 -o 1:2 -l 5 hex://90b801000000c3 hex://9090b802000000c3
 EOF
@@ -415,7 +415,7 @@ EOF
 RUN
 
 NAME=radiff2 disassembly bounds short inputs
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !radiff2 -qD -a x86 -b 64 hex://90 hex://c3
 !radiff2 -qD -a x86 -b 64 hex://0f hex://90
@@ -434,7 +434,7 @@ EOF
 RUN
 
 NAME=radiff2 disassembly expands fixed width instructions
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !radiff2 -qD -a arm -b 32 hex://0100a0e31eff2fe1 hex://0200a0e31eff2fe1
 EOF
@@ -447,7 +447,7 @@ EOF
 RUN
 
 NAME=radiff2 disassembly follows different instruction lengths
-FILE=-
+FILE=malloc://512
 CMDS=!radiff2 -qD -a x86 -b 64 hex://b801000000900f1f00c3 hex://90b802000000909090c3
 EXPECT=<<EOF
 --- 0x00000000  b801000000900f1f00
@@ -464,7 +464,7 @@ EOF
 RUN
 
 NAME=radiff2 paired graph reports a changed block in both directions at zero
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 !!radiff2 -g 0,0 -m p -a x86 -b 64 -e scr.color=0 hex://b801000000c3 hex://b802000000c3~{left[0].blocks[0].diff}
 !!radiff2 -g 0,0 -m p -a x86 -b 64 -e scr.color=0 hex://b801000000c3 hex://b802000000c3~{right[0].blocks[0].diff_addr}
@@ -476,7 +476,7 @@ EOF2
 RUN
 
 NAME=radiff2 sparse hex ranges collapse equal data and retain one-sided tails
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 !!radiff2 -xj hex://00112233 hex://0011223344
 !!radiff2 -xj malloc://8192 malloc://8192
@@ -488,7 +488,7 @@ EOF2
 RUN
 
 NAME=radiff2 JSON hex rows allow separate offsets and lengths
-FILE=-
+FILE=malloc://512
 CMDS=!!radiff2 -f hexjson -o 2:1 -l 1:2 hex://00112233 hex://44223344
 EXPECT=<<EOF2
 {"offset_a":2,"offset_b":1,"size_a":1,"size_b":2,"rows":[{"offset":0,"left":"22","right":"2233"}]}
@@ -496,7 +496,7 @@ EOF2
 RUN
 
 NAME=radiff2 unified binary patch contains all delta hunks
-FILE=-
+FILE=malloc://512
 CMDS=!radiff2 -dX hex://6162630a73616d650a6465660a hex://4142430a73616d650a4445460a
 EXPECT=<<EOF2
 --- hex://6162630a73616d650a6465660a

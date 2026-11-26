@@ -1,5 +1,5 @@
 NAME=ds help changing seek
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 s 8;ds? > /dev/null
 s

@@ -68,15 +68,17 @@ indent-check:
 	$(MAKE) -C indent check-indent
 
 rc:
-	echo q | r2 -c '?V' -
-	echo q12 | r2 -c '?V' - ; if [ $$? = 12 ]; then echo "Test q12" OK ; exit 0 ; else exit 1 ; fi
-	echo q2 | r2 - ; if [ $$? = 2 ]; then echo "Test - q2 OK" ; exit 0 ; else exit 1 ; fi
-	echo q2 | r2 -cq - ; if [ $$? = 2 ]; then echo "Test -cq q2 OK" ; exit 0 ; else exit 1 ; fi
+	test "$$(printf 'A\000B' | r2 -NNqc 'p8 3' -)" = 410042
+	test "$$(printf 'AB' | r2 -NNqc 's 1;p8 1;p8 1 @ 0' -- -)" = "$$(printf '42\n41')"
+	echo q | r2 -c '?V' malloc://512
+	echo q12 | r2 -c '?V' malloc://512 ; if [ $$? = 12 ]; then echo "Test q12" OK ; exit 0 ; else exit 1 ; fi
+	echo q2 | r2 malloc://512 ; if [ $$? = 2 ]; then echo "Test q2 OK" ; exit 0 ; else exit 1 ; fi
+	echo q2 | r2 -cq malloc://512 ; if [ $$? = 2 ]; then echo "Test -cq q2 OK" ; exit 0 ; else exit 1 ; fi
 	echo q | r2 /bin/ls # bins/fuzzed/pe12
-	r2 -qcq2 - ; if [ $$? = 2 ]; then echo "Test q2 OK" ; exit 0 ; else exit 1 ; fi
-	r2 -qcq -
-	r2 -qqcq -
-	echo q2 | r2 -qqcq - # input is ignored
+	r2 -qcq2 malloc://512 ; if [ $$? = 2 ]; then echo "Test q2 OK" ; exit 0 ; else exit 1 ; fi
+	r2 -qcq malloc://512
+	r2 -qqcq malloc://512
+	echo q2 | r2 -qqcq malloc://512 # input is ignored
 
 symstall:
 

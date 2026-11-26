@@ -232,7 +232,7 @@ EOF
 RUN
 
 NAME=swift cxx lambda thunk with deep substitution
-FILE=-
+FILE=malloc://512
 CMDS=!rabin2 -D cxx '__ZZZL26getExistentialTypeMetadataN5swift23ProtocolClassConstraintEPKNS_14TargetMetadataINS_9InProcessEEEmPKNS_27TargetProtocolDescriptorRefIS2_EEENK3$_3clEvENUlPvE_8__invokeESB_'
 EXPECT=<<EOF
 getExistentialTypeMetadata(swift::ProtocolClassConstraint, swift::TargetMetadata<swift::InProcess> const*, unsigned long, swift::TargetProtocolDescriptorRef<swift::InProcess> const*)::$_3::operator()() const::{lambda(void*)#1}::__invoke(void*)

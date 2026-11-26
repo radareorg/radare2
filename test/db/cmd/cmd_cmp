@@ -1,5 +1,5 @@
 NAME=cmp files
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 cmp bins/elf/ls bins/elf/ls
 ?v $?

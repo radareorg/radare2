@@ -1,5 +1,5 @@
 NAME=test pDj missing newline issue
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -45,7 +45,7 @@ EOF
 RUN
 
 NAME=empty irj should print empty array
-FILE=-
+FILE=malloc://512
 CMDS=irj
 EXPECT=<<EOF
 []

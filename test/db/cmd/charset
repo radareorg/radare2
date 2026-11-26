@@ -1,5 +1,5 @@
 NAME=Scanned charset strings preserve question marks
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx c8c5d3d3d66fe6d6d9d3c400
 e bin.charset=ebcdic37
@@ -11,7 +11,7 @@ EOF
 RUN
 
 NAME=bin charset overrides environment and can be cleared
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 %RABIN2_CHARSET=ascii
 wx c8c5d3d3d600
@@ -31,7 +31,7 @@ EOF
 RUN
 
 NAME=bin charset rejects non charset plugins
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e bin.charset=ebcdic37
 e bin.charset=aes
@@ -46,7 +46,7 @@ EOF
 RUN
 
 NAME=ebcdic37 rabin env
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.charset=ebcdic37
 %RABIN2_CHARSET
@@ -60,7 +60,7 @@ EOF
 RUN
 
 NAME=ebcdic37
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 10
 wx c89693814094a495849615
@@ -94,7 +94,7 @@ EOF
 RUN
 
 NAME=rival charset
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.charset=pokered
 "w <RIVAL>"
@@ -106,7 +106,7 @@ EOF
 RUN
 
 NAME=e cfg.charset
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.charset=?
 b 32
@@ -146,7 +146,7 @@ EOF
 RUN
 
 NAME=ps and psz
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.charset=?
 b 32
@@ -217,7 +217,7 @@ EOF
 RUN
 
 NAME=ps and psz with write
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 7f7f7f7f7f7f7f7f92a4aba5e3b1a4afaba8a2a0b3a8ada67f7f7f7fa0b1a1a8b3b1a0b1b87fa2aea3a47f7f7f7f7f7fa1b87f8cb182a7a4a4b9a47f9c9b7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f
 e cfg.charset=pokered
@@ -241,7 +241,7 @@ RUN
 
 
 NAME=ps on iso8859_1
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 4141410041414101
 e cfg.charset=iso8859_1
@@ -253,7 +253,7 @@ EOF
 RUN
 
 NAME=ps on katakana
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.charset=katakana
 w radare
@@ -266,7 +266,7 @@ EOF
 RUN
 
 NAME=ps and psz on ascii
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.charset=ascii
 wx 41424301
@@ -378,7 +378,7 @@ RUN
 
 # XXX this is not really working
 NAME=jis7
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -e cfg.charset=jis7
 wx 21212122414243303132;px 32

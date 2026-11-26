@@ -1,5 +1,5 @@
 NAME=pp
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=false
 pp0 4
@@ -41,7 +41,7 @@ EOF
 RUN
 
 NAME=pp little endian
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=false
 pp2 4
@@ -56,7 +56,7 @@ EOF
 RUN
 
 NAME=pp big endian
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=true
 pp2 4
@@ -71,7 +71,7 @@ EOF
 RUN
 
 NAME=ppd rejects lengths over blocksize_max
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ppd 0x100000010
 ppd 16

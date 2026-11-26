@@ -130,7 +130,7 @@ EOF
 RUN
 
 NAME=att mov imm val/ptr fields (issue 24192)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -145,7 +145,7 @@ EOF
 RUN
 
 NAME=att mov imm esil correct order (issue 24192)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -159,7 +159,7 @@ EOF
 RUN
 
 NAME=att mov reg esil correct order (issue 24192)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -173,7 +173,7 @@ EOF
 RUN
 
 NAME=att mov mem write esil and direction (issue 24192)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -188,7 +188,7 @@ EOF
 RUN
 
 NAME=att mov mem read esil and direction (issue 24192)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -217,7 +217,7 @@ EOF
 RUN
 
 NAME=intel mov imm val/ptr fields (reference)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -232,7 +232,7 @@ EOF
 RUN
 
 NAME=intel mov imm esil (reference)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -246,7 +246,7 @@ EOF
 RUN
 
 NAME=att add stack val field (issue 24192)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64

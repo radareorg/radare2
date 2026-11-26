@@ -1,5 +1,5 @@
 NAME=uname
-FILE=-
+FILE=malloc://512
 CMDS=!uname
 EXPECT=<<EOF
 Linux

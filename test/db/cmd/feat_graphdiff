@@ -1,5 +1,5 @@
 NAME=graphdiff segfault
-FILE=-
+FILE=malloc://512
 CMDS=cg / 2>/dev/null
 EXPECT=<<EOF
 EOF

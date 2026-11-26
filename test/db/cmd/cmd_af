@@ -724,7 +724,7 @@ EOF
 RUN
 
 NAME=afbt help
-FILE=-
+FILE=malloc://512
 CMDS=afbt?
 EXPECT=<<EOF
 | afbt [tableaddr] [elem_sz] [count] [seg]  analyze function jumptable
@@ -732,7 +732,7 @@ EOF
 RUN
 
 NAME=afbt invalid suffix
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 afbtx
 s 0
@@ -743,7 +743,7 @@ EOF
 RUN
 
 NAME=afbt display modes reject args
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 afbtj tbl=0x10
 afbt* tbl=0x10
@@ -756,7 +756,7 @@ EOF
 RUN
 
 NAME=duplicate af+
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 af+ 0x1337 func
 af+ 0x1337 func
@@ -773,7 +773,7 @@ EOF
 RUN
 
 NAME=function naming
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -888,7 +888,7 @@ EOF
 RUN
 
 NAME=af warns on non-executable map
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -915,7 +915,7 @@ EOF
 RUN
 
 NAME=af analyzes non-executable map with anal.in=io.maps
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64

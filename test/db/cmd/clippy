@@ -1,5 +1,5 @@
 NAME=clippy
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -e scr.utf8=0
 -e scr.utf8.curvy=0
@@ -18,7 +18,7 @@ RUN
 
 
 NAME=mini clippy
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -e scr.utf8=0
 -e scr.utf8.curvy=0
@@ -32,7 +32,7 @@ EOF
 RUN
 
 NAME=clippy utf8
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -e scr.utf8=0
 -e scr.utf8.curvy=0
@@ -52,7 +52,7 @@ RUN
 
 
 NAME=clippy emoji
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -e scr.utf8=0
 -e scr.utf8.curvy=0
@@ -71,7 +71,7 @@ RUN
 
 
 NAME=clippy emoji
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 -e scr.utf8=0
 -e scr.utf8.curvy=0

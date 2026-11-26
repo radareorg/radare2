@@ -1,5 +1,5 @@
 NAME=mc missing arguments and malformed commands
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 m /tmp tmp
 mc
@@ -22,7 +22,7 @@ EOF2
 RUN
 
 NAME=mc whitespace, empty files and return code reset
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 m /tmp tmp
 mw /tmp/data hello
@@ -48,7 +48,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mc and mg help reset return code
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 ?=1
 mc?
@@ -69,7 +69,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mg multi-block ranges and overwrite
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 m /tmp tmp
 mw /tmp/r2r-mg-range 0123456789
@@ -112,7 +112,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mg rejects invalid arguments and preserves destination
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 e log.level=0
 m /tmp tmp
@@ -159,7 +159,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mg empty file and destination failure
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 e log.level=0
 m /tmp tmp
@@ -184,7 +184,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mg directory and base64 path
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 m /tmp tmp
 md+ /tmp/dir
@@ -231,7 +231,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mg POSIX range contents across blocks
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 mkdir r2r-mg-posix-dir
 echo 0123456789 > r2r-mg-posix-dir/r2r-mg-posix
@@ -253,7 +253,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mg cached r2 filesystem contents
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 m /r2 r2
 s 0x1234
@@ -330,7 +330,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mount reads use cached filesystem content
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 m /r2 r2
 s 0x1234
@@ -352,7 +352,7 @@ EXPECT_ERR=
 RUN
 
 NAME=r2 filesystem paths and data are not parsed as commands
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 e log.level=0
 m /r2 r2
@@ -377,7 +377,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mount empty files do not read or replace the clipboard
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 e log.level=0
 m /tmp tmp
@@ -427,7 +427,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mount context quoted paths, data and escaped spaces
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 m "/tmp space" tmp
 md+ "/tmp space/dir name"
@@ -450,7 +450,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mount context quoted options and offset expression
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 m tmp "/quoted mount" "1 + 2" "label=a  b"
 m
@@ -470,7 +470,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mount context write requires quoting multiple words
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 m /tmp tmp
 mw /tmp/file original
@@ -490,7 +490,7 @@ EOF2
 RUN
 
 NAME=mount context mg quoted filename and range
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 m /tmp tmp
 mw "/tmp/r2r-mount space" 0123456789
@@ -509,7 +509,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mount context find captures quoted paths
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 m /tmp tmp
 mw "/tmp/a b" abc
@@ -528,7 +528,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mount context binary escapes retain argument length
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 m /tmp tmp
 'mw /tmp/binary "A\x00B"
@@ -546,7 +546,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mount and host commands return consistent status
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 e log.level=0
 m /tmp tmp 0x1_0000 && echo mounted
@@ -616,7 +616,7 @@ EOF2
 RUN
 
 NAME=mktemp preserves literal arguments and returns the created path
-FILE=-
+FILE=malloc://512
 REQUIRE=unix
 CMDS=<<EOF2
 m /host posix
@@ -640,7 +640,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mktemp errors update status and take the failure branch
-FILE=-
+FILE=malloc://512
 REQUIRE=unix
 CMDS=<<EOF2
 e log.level=0
@@ -663,7 +663,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mount attached arguments share quoting and arity rules
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 e log.level=0
 m "/quoted mount" tmp
@@ -689,7 +689,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mount expressions and explicit plugin options are unambiguous
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 f mount_offset=7
 m /named tmp mount_offset
@@ -710,7 +710,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mount numeric consumers reject invalid expressions
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 e log.level=0
 m /tmp tmp
@@ -732,7 +732,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mount base64 paths share validation for listing and dumping
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 e log.level=0
 m /tmp tmp
@@ -753,7 +753,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mount plugin commands preserve their own grammar and reset status
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 e log.level=0
 ?=1
@@ -779,7 +779,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mdt sorted directory tree and depth limit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 m /tree tmp
 md+ /tree/z
@@ -805,7 +805,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mdt root mounts and empty directory
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 m /z tmp
 m /a tmp
@@ -826,7 +826,7 @@ EXPECT_ERR=
 RUN
 
 NAME=mdt rejects missing paths and invalid depth
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 mdt /missing
 ?v $?
@@ -852,7 +852,7 @@ EOF2
 RUN
 
 NAME=mdt honors scr.utf8 and preserves UTF-8 names
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF2
 m /tree tmp
 md+ /tree/a

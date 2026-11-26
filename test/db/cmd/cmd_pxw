@@ -81,7 +81,7 @@ EOF
 RUN
 
 NAME=pxq foo-bar
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 f foo=10
 f bar=2
@@ -93,7 +93,7 @@ EOF
 RUN
 
 NAME=pxq -300
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 0x100
 pxq -272

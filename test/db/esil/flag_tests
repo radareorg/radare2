@@ -1,5 +1,5 @@
 NAME=64bit Integer comparison [-1 == 1 (op1 < op2)]
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch = x86
 e asm.bits = 64
@@ -18,7 +18,7 @@ EOF
 RUN
 
 NAME=64bit Integer comparison [1 == -1 (op1 > op2)]
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch = x86
 e asm.bits = 64
@@ -37,7 +37,7 @@ EOF
 RUN
 
 NAME=32bit Integer addition with overflow [0x80000000 + 0x80000000]
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch = x86
 e asm.bits = 64
@@ -56,7 +56,7 @@ EOF
 RUN
 
 NAME=32bit Integer Addition [0x90000000 + 0x70000000]
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch = x86
 e asm.bits = 64
@@ -75,7 +75,7 @@ EOF
 RUN
 
 NAME=32bit Integer Addition [0x70000000 + 0x90000000]
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch = x86
 e asm.bits = 64
@@ -94,7 +94,7 @@ EOF
 RUN
 
 NAME=signed compare check. a > b [2 > 1]
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch = x86
 e asm.bits = 64
@@ -106,7 +106,7 @@ EOF
 RUN
 
 NAME=signed compare check. a < b [2 < 1]
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch = x86
 e asm.bits = 64
@@ -118,7 +118,7 @@ EOF
 RUN
 
 NAME=unsigned compare check. a < b [-1 < 1]
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch = x86
 e asm.bits = 64
@@ -130,7 +130,7 @@ EOF
 RUN
 
 NAME=unsigned compare check. a > b [-1 > 1]
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch = x86
 e asm.bits = 64
@@ -142,7 +142,7 @@ EOF
 RUN
 
 NAME=signed division traps
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 "ae 32,0,/"
 "ae 0,32,/"

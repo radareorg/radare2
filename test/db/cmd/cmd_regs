@@ -159,7 +159,7 @@ EOF
 RUN
 
 NAME=Generic ARM64 register display and diff retain big-endian scalable lanes
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64 -e asm.cpu=sve384 -e cfg.bigendian=true
 CMDS=<<EOF
 arv z0 0=0x11
@@ -182,7 +182,7 @@ EOF
 RUN
 
 NAME=Generic 512-bit register display respects target byte order
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64 -e asm.cpu=sve512 -e cfg.bigendian=true
 CMDS=<<EOF
 arv z0 0=0x0123456789abcdef
@@ -197,7 +197,7 @@ EOF
 RUN
 
 NAME=Register differences retain scalar changes above bit 31
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 ar rax=0x10000000000

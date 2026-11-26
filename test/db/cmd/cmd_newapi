@@ -33,7 +33,7 @@ EOF
 RUN
 
 NAME=echo context command
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 echo "Hello;world" ";you rock"
 echo -n no-newline
@@ -102,7 +102,7 @@ EOF
 RUN
 
 NAME=echo and ?e parsed escaping
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 echo one\ two
 echo "line\nnext"
@@ -138,7 +138,7 @@ EOF
 RUN
 
 NAME=echo help alias
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 echo -h
 EOF
@@ -153,7 +153,7 @@ EOF
 RUN
 
 NAME=echo rejects invalid suffix
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 echoz invalid command i should have an error || ?e REJECTED
 EOF
@@ -166,7 +166,7 @@ EOF
 RUN
 
 NAME=?e fallback commands and status
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ?e:QQ==
 ?e

@@ -195,7 +195,7 @@ EOF
 RUN
 
 NAME=rcall
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
@@ -318,7 +318,7 @@ EOF
 RUN
 
 NAME=ao mte big endian
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64 -e cfg.bigendian=true
 CMDS=<<EOF
 wx 0c09a09109018291e813c89a
@@ -384,7 +384,7 @@ EOF
 RUN
 
 NAME=Variable analysis with stp/preindexed str
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 e anal.vars.stackname=true
@@ -406,7 +406,7 @@ EOF
 RUN
 
 NAME=Variable analysis with paired loads and stores
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64 -e anal.vars.stackname=true
 CMDS=<<EOF
 wx f30f1ef8e92342a9eb334769ed3b44a8e92301a9c0035fd6
@@ -436,7 +436,7 @@ EOF
 RUN
 
 NAME=Variable analysis pair strides follow the register width
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64 -e anal.vars.stackname=true
 CMDS=<<EOF
 wx e10b4229e00741ade007446de10b0a29e00703adc0035fd6
@@ -472,7 +472,7 @@ EOF
 RUN
 
 NAME=Variable analysis matches both halves of a pair exactly
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64 -e anal.vars.stackname=true
 CMDS=<<EOF
 wx e0c300f8e10b4229c0035fd6
@@ -487,7 +487,7 @@ EOF
 RUN
 
 NAME=Variable analysis with a single load and a post-indexed ldp
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64 -e anal.vars.stackname=true
 CMDS=<<EOF
 wx f30f1ef8e91740f9fd7bc1a8c0035fd6
@@ -503,7 +503,7 @@ EOF
 RUN
 
 NAME=Stack frame with shifted immediates
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64 -e anal.vars.stackname=true
 CMDS=<<EOF
 wx ff0740d1ff4301d1e02708f9e1074091ff430191ff074091200440911f044071c0035fd6
@@ -560,7 +560,7 @@ EOF
 RUN
 
 NAME=siguzas arm64 six rejects command suffix
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 a:sixref
 a:sixisland
@@ -1581,7 +1581,7 @@ EOF_EXPECT
 RUN
 
 NAME=sub with a non-sp destination keeps the stack depth
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64 -e anal.vars.stackname=true
 CMDS=<<EOF
 wx ff8300d1000400d1e00300f9ff830091c0035fd6
@@ -1600,7 +1600,7 @@ EOF
 RUN
 
 NAME=arm.v35 add and sub with a non-sp destination keep the stack depth
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 REQUIRE=arm.v35
 CMDS=<<EOF

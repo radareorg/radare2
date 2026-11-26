@@ -21,7 +21,7 @@ EOF
 RUN
 
 NAME=jump with compress instruction
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=riscv
 e asm.bits=32
@@ -38,7 +38,7 @@ EOF
 RUN
 
 NAME=branch with compress instruction
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=riscv
 e asm.bits=32

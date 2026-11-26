@@ -32,7 +32,7 @@ EOF
 RUN
 
 NAME=m68k link frame sizes
-FILE=-
+FILE=malloc://512
 ARGS=-a m68k -e asm.cpu=68020 -e asm.bytes=false -e asm.stackptr=true
 CMDS=<<EOF
 wx 480efffedcbb4e56fff04e75

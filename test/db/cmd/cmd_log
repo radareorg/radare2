@@ -1,5 +1,5 @@
 NAME=T hello
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 T hello
 T
@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=T-*
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 T hello
 T-*
@@ -21,7 +21,7 @@ EOF
 RUN
 
 NAME=T hello world
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 T hello
 T world
@@ -34,7 +34,7 @@ EOF
 RUN
 
 NAME=T-1
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 T hello
 T world
@@ -47,7 +47,7 @@ EOF
 RUN
 
 NAME=T-2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 T hello
 T world
@@ -59,7 +59,7 @@ EOF
 RUN
 
 NAME=T-3
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 T hello
 T world

@@ -40,7 +40,7 @@ RUN
 
 
 NAME=html filter with escapes at the end of the output
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.color=1
 e scr.html=true
@@ -106,7 +106,7 @@ EOF
 RUN
 
 NAME=html substitutions preserve spaces and newlines
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.html=true
 ?e `?e a b`
@@ -174,7 +174,7 @@ EOF
 RUN
 
 NAME=html base64 transforms use plain input
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.html=true
 ?e a b |E

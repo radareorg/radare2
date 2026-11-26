@@ -1,5 +1,5 @@
 NAME=pf xxi=123
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pf foo=xxi foo bar cow
 pf.foo
@@ -21,7 +21,7 @@ EOF
 RUN
 
 NAME=pf xxi.cow=123
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pf foo=[2]xxi foo bar cow
 pf.foo.cow
@@ -35,7 +35,7 @@ EOF
 RUN
 
 NAME=pf array with one write
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pf foo=[3]x foo
 .pf.foo.foo=1
@@ -47,7 +47,7 @@ EOF
 RUN
 
 NAME=pf array not in meta
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pf foo=[3]x foo
 .pf.foo.foo=1
@@ -63,7 +63,7 @@ EOF
 RUN
 
 NAME=pf xxd print happy
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pf foo=xxd foo bar cow
 w hello happy world
@@ -82,7 +82,7 @@ EOF
 RUN
 
 NAME=pf xxd print
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pf foo=[2]xxd foo bar cow
 w hello happy world

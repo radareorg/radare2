@@ -1,5 +1,5 @@
 NAME=ara swap
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -16,7 +16,7 @@ EOF
 RUN
 
 NAME=ara swap 2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -36,7 +36,7 @@ EOF
 RUN
 
 NAME=ara push
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -51,7 +51,7 @@ EOF
 RUN
 
 NAME=ara pop
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -75,7 +75,7 @@ EOF
 RUN
 
 NAME=arcc+tcc
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -114,7 +114,7 @@ EOF
 RUN
 
 NAME=aras keeps borrowed arena bytes alive across ara- and arw
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64

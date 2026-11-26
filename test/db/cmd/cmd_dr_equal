@@ -1,5 +1,5 @@
 NAME=dr= double 0x bug
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=dr=~?0x0x
 EXPECT=<<EOF

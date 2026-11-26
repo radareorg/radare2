@@ -1,5 +1,5 @@
 NAME=rarun2 -v 
-FILE=-
+FILE=malloc://512
 CMDS=!rarun2 -v | grep -c birth
 EXPECT=<<EOF
 1
@@ -7,7 +7,7 @@ EOF
 RUN
 
 NAME=rarun2 -h
-FILE=-
+FILE=malloc://512
 CMDS=!rarun2 -h | grep -c Usage
 EXPECT=<<EOF
 1
@@ -15,7 +15,7 @@ EOF
 RUN
 
 NAME=rarun2 repeat
-FILE=-
+FILE=malloc://512
 CMDS=!rarun2 arg1='@16@A' -- echo
 EXPECT=<<EOF
 AAAAAAAAAAAAAAAA
@@ -23,7 +23,7 @@ EOF
 RUN
 
 NAME=rarun2 repeat invalid num
-FILE=-
+FILE=malloc://512
 CMDS=!rarun2 arg1='@yeet@A' -- echo
 EXPECT_ERR=<<EOF
 ERROR: Invalid num in @<num>@<pattern> expr
@@ -31,7 +31,7 @@ EOF
 RUN
 
 NAME=rarun2 repeat missing pattern
-FILE=-
+FILE=malloc://512
 CMDS=!rarun2 arg1='@16@' -- echo
 EXPECT_ERR=<<EOF
 ERROR: Missing pattern in @<num>@<pattern> expr
@@ -39,7 +39,7 @@ EOF
 RUN
 
 NAME=rarun2 null input
-FILE=-
+FILE=malloc://512
 CMDS=!rarun2 input='AAAA\x00\x00AAAA' -- rax2 -S
 EXPECT=<<EOF
 41414141000041414141
@@ -47,19 +47,19 @@ EOF
 RUN
 
 NAME=rarun2 bang expr input
-FILE=-
+FILE=malloc://512
 CMDS=!rarun2 input='!printf ABCD' -- cat
 EXPECT=ABCD
 RUN
 
 NAME=rarun2 backtick expr input
-FILE=-
+FILE=malloc://512
 CMDS=!rarun2 input='`printf ABCD`' -- cat
 EXPECT=ABCD
 RUN
 
 NAME=rarun2 backtick expr err
-FILE=-
+FILE=malloc://512
 CMDS=!rarun2 input='`printf ABCD' -- cat
 EXPECT_ERR=<<EOF
 ERROR: Unterminated backtick expr in input
@@ -68,19 +68,19 @@ EOF
 RUN
 
 NAME=rarun2 backtick expr empty
-FILE=-
+FILE=malloc://512
 CMDS=!rarun2 input='``' -- cat
 EXPECT=
 RUN
 
 NAME=rarun2 single quotes input
-FILE=-
+FILE=malloc://512
 CMDS=!rarun2 input="'ABCD'" -- cat
 EXPECT=ABCD
 RUN
 
 NAME=rarun2 single quotes err
-FILE=-
+FILE=malloc://512
 CMDS=!rarun2 input="'AAAA" -- cat
 EXPECT_ERR=<<EOF
 ERROR: Unterminated string literal in input: ' expected
@@ -89,13 +89,13 @@ EOF
 RUN
 
 NAME=rarun2 double quotes input
-FILE=-
+FILE=malloc://512
 CMDS=!rarun2 input='"ABCD"' -- cat
 EXPECT=ABCD
 RUN
 
 NAME=rarun2 double quotes err
-FILE=-
+FILE=malloc://512
 CMDS=!rarun2 input='"AAAA' -- cat
 EXPECT_ERR=<<EOF
 ERROR: Unterminated string literal in input: " expected
@@ -104,37 +104,37 @@ EOF
 RUN
 
 NAME=rarun2 double quotes escape
-FILE=-
+FILE=malloc://512
 CMDS=!rarun2 input='"\x41"' -- cat
 EXPECT=A
 RUN
 
 NAME=rarun2 colon expr
-FILE=-
+FILE=malloc://512
 CMDS=!rarun2 input=':41424344' -- cat
 EXPECT=ABCD
 RUN
 
 NAME=rarun2 colon expr empty
-FILE=-
+FILE=malloc://512
 CMDS=!rarun2 input=':' -- cat
 EXPECT=
 RUN
 
 NAME=rarun2 colon bang expr
-FILE=-
+FILE=malloc://512
 CMDS=!rarun2 input=':!printf 41424344' -- cat
 EXPECT=ABCD
 RUN
 
 NAME=rarun2 colon bang expr padding
-FILE=-
+FILE=malloc://512
 CMDS=!rarun2 input=':!printf "  4142 4344 "' -- cat
 EXPECT=ABCD
 RUN
 
 NAME=rarun2 colon bang invalid hex
-FILE=-
+FILE=malloc://512
 CMDS=!rarun2 input=':!printf sogga' -- cat
 EXPECT_ERR=<<EOF
 ERROR: Invalid hexpair string

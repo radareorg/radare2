@@ -1,5 +1,5 @@
 NAME=zs unset
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 zs test1
 za foo1 b aabbccdd
@@ -96,7 +96,7 @@ EOF
 RUN
 
 NAME=zsr newname
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 zs test1
 za foo1 b aabbccdd
@@ -128,7 +128,7 @@ EOF
 RUN
 
 NAME=zsr newname (duplicated name)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 zs test1
 za foo1 b aabbccdd
@@ -160,7 +160,7 @@ EOF
 RUN
 
 NAME=zsr newname (root zs)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 zs test1
 za foo1 b aabbccdd
@@ -191,7 +191,7 @@ EOF
 RUN
 
 NAME=z-
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 zs test
 za foo b aa
@@ -243,7 +243,7 @@ EOF
 RUN
 
 NAME=z-*
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 zs test1
 za foo1 b aabbccdd
@@ -265,7 +265,7 @@ EOF
 RUN
 
 NAME=za b and binmasks
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 za test b .abbc.dd..
 z
@@ -278,7 +278,7 @@ EOF
 RUN
 
 NAME=za b zero mask
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 za test b ....
 z
@@ -288,7 +288,7 @@ EOF
 RUN
 
 NAME=za g
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 za test g cc=1 nbbs=2 edges=3 ebbs=4
 z
@@ -300,7 +300,7 @@ EOF
 RUN
 
 NAME=za o
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 za test o 0x8048123
 z
@@ -312,7 +312,7 @@ EOF
 RUN
 
 NAME=za r
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 za test r sym1 sym3 sym2
 z
@@ -1515,7 +1515,7 @@ EOF
 RUN
 
 NAME=manually add signatures
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 zs *
 za main b 41574156415541544189fc554889f5534883ec48488b3e64488b042528000000488944243831c067e8b3f40000488d35b6570100bf06000000ff1531ee0100488d3500590100488d3dc4580100ff1565ec0100488d3db7580100ff1538ec0100488d3d499e0000c705e7f001000200000067e899320100c6059a0102000148b80000000000000080488905410202008b05abf00100c705d10002000000000048c705360202000000000048c70523020200ffffffffc6057c0102000083f8020f849c0e000083f8030f85da010000c705c001020000000000be0700000031ff67e81b0a0100c605a301020000488d3d65580100c7059701020000000000c7058901020000000000c6057f01020000c6057701020000c7055501020000000000c6053601020000c7052801020001000000c6051f01020000c6051701020000c705080102000000000048c705f50002000000000048c705e200020000000000c6056001020000ff1575ea01004989c54885c07438b904000000488d15618a0100488d35dae701004889c767e84192000085c00f880c0900004898488d15408a010031ff8b348267e85509010048c7055a00020050000000488d3da9570100ff151dea01004989c54885c074098038000f85060900004c8d6c242031c0be13540000bf010000004c89eaff156aeb010083f8ff740e0f:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000ff000000000000ffffffffffff0000000000ff000000000000ff000000000000ff0000000000ff000000000000ff0000000000ff000000000000ff000000000000000000ffff00000000ff000000000000ffffffffffffffffffffff000000000000ff0000000000ff000000000000000000ff00000000000000000000ff00000000000000000000ff000000000000ff0000ffff00000000ff0000ffff00000000ff000000000000000000ffffffffffffffffff00000000ff000000000000ff000000000000ff000000000000000000ff000000000000000000ff000000000000ff000000000000ff000000000000000000ff000000000000ff000000000000000000ff000000000000ff000000000000ff000000000000000000ff00000000000000000000ff00000000000000000000ff000000000000ff0000000000ffffffffffffff00ffffffffffff000000000000ff000000000000ffffffffff00000000ffffffff00000000ffffff000000000000ffffffffffffff00000000ff00000000000000000000ff000000000000ff0000000000ffffffffffffff00ffffffffff00000000ffffffffffffffff00000000ffffffffffffffffff0000000000ffffffff00ff
@@ -1591,7 +1591,7 @@ EOF
 RUN
 
 NAME=verify za overwrites old
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 za main b 11111111111111111111111111111111
 za main n sym.name1
@@ -1628,7 +1628,7 @@ EOF
 RUN
 
 NAME=zac creates collision signatures
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 za sym.collide1 g cc=1 nbbs=2 edges=3 ebbs=4 bbsum=5
 za sym.collide1 b 4433444444444444:ff00ffffffffffff
@@ -1942,7 +1942,7 @@ EOF
 RUN
 
 NAME=Types with . accepted
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 za foo t void sym.__isoc99_sscanf (  ..., int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg7, int64_t arg8 )
 z
@@ -1954,7 +1954,7 @@ EOF
 RUN
 
 NAME=Types with parens accepted
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 za foo t void sym.bsearch (const void *key, const void *base, size_t nmemb, size_t size, int (*compar)(const void *const void *))
 z
@@ -2032,7 +2032,7 @@ EOF
 RUN
 
 NAME=Saves and loads sdb zignatures without sdb extension
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 rm .tmp_file
 za s1 x xref1
@@ -2059,7 +2059,7 @@ EOF
 RUN
 
 NAME=Saves and loads r2 zignatures without r2 extension
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 rm .tmp_file2
 za s1 x xref1
@@ -2087,7 +2087,7 @@ RUN
 
 
 NAME=z* sanitizes script fields
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 za foo b aa
 za foo c a${b}c~d
@@ -2124,7 +2124,7 @@ EOF
 RUN
 
 NAME=zf? help
-FILE=-
+FILE=malloc://512
 CMDS=zf?
 EXPECT=<<EOF
 Usage: zf[dlsz] filename   # Manage FLIRT signatures
@@ -2138,7 +2138,7 @@ EOF
 RUN
 
 NAME=za R/d rejected by a bad zignspace name
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 zs 1a
 za foo R QUJD

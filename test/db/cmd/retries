@@ -1,5 +1,5 @@
 NAME=t/retries
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 10
 pd~?

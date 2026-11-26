@@ -163,7 +163,7 @@ Example commands tests for the other `db/` folders:
 	RUN
 
 * **NAME** is the name of the test, it must be unique
-* **FILE** is the path of the file used for the test
+* **FILE** is the path or I/O URI of the file used for the test. It defaults to `malloc://512`.
 * **ARGS** (optional) are the command line argument passed to r2 (e.g -b 16)
 * **CMDS** are the commands to be executed by the test
 * **EXPECT** is the expected output of the test

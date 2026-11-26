@@ -1,5 +1,5 @@
 NAME=panels layout grows after leaving graph with q and shrinks after space
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
@@ -34,7 +34,7 @@ EOF
 RUN
 
 NAME=panels layout grows after leaving graph with space and shrinks after q
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
@@ -69,7 +69,7 @@ EOF
 RUN
 
 NAME=panels horizontal scrollbar clicks and drags cached contents
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
 "$probe=?e START_ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz_0123456789_END"
@@ -109,7 +109,7 @@ EOF
 RUN
 
 NAME=panels resizing and refreshing update horizontal scroll bounds
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
 "$probe=?e START_ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz_0123456789_END"
@@ -147,7 +147,7 @@ EOF
 RUN
 
 NAME=panels vertical scrollbar indexes cached rows and preserves dragging
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
 "$probe=px 2048"
@@ -181,7 +181,7 @@ EOF
 RUN
 
 NAME=panels hexdump address drag scrolls both ways and stops at zero
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
 e scr.utf8=false
@@ -221,7 +221,7 @@ EOF
 RUN
 
 NAME=panels scrollbars only occupy space when content overflows
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
 "$probe=?e 0123456789012345678901234567890123456789012345678901 @@=0 1 2 3 4 5 6 7 8 9 10 11 12 13 14"
@@ -279,7 +279,7 @@ EOF
 RUN
 
 NAME=panels resizing hides unneeded vertical scrollbar and resets scrolling
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
 "$probe=?v $$+0xabc00000 @@=0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15"
@@ -314,7 +314,7 @@ EOF
 RUN
 
 NAME=panels hexdump address drag after selection keeps panning over bytes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 "$capture=v @e:scr.interactive=true > $panel"
 e scr.utf8=false

@@ -17,7 +17,7 @@ EOF
 RUN
 
 NAME=rasm2 binary input
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 !!rasm2 -a arm -b 64 -d Bx01000000_00000000_00000010_10001011
@@ -34,7 +34,7 @@ EOF
 RUN
 
 NAME=rasm2 i4004
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !!rasm2 -L~4004
 EOF
@@ -44,7 +44,7 @@ EOF
 RUN
 
 NAME=rasm2 arm asm/dis endian
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a arm -b32 "mov r0, 3"
 !rasm2 -a arm -b32 -e "mov r0, 3"
@@ -60,7 +60,7 @@ EOF
 RUN
 
 NAME=rasm2 -x hex dwords
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a arm -b32 -x "mov r0, 3"
 !rasm2 -a arm -b32 -e -x "mov r0, 3"
@@ -80,7 +80,7 @@ EOF
 RUN
 
 NAME=1: rasm2
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a arm -b32 "mov r0, 3"
 EXPECT=<<EOF
 0300a0e3
@@ -88,7 +88,7 @@ EOF
 RUN
 
 NAME=rasm2 blx arm/thumb
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -s 0x4000 -a arm -b 16 -d 80f018ea
 EXPECT=<<EOF
 blx 0x84434
@@ -96,7 +96,7 @@ EOF
 RUN
 
 NAME=rasm2 blx arm/thumb 2
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -s 0x4000 -a arm -b 16 -d 80f018ea
 EXPECT=<<EOF
 blx 0x84434
@@ -104,7 +104,7 @@ EOF
 RUN
 
 NAME=rasm2 arm/thumb branch errors
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a arm -b 16 "b.n 8"
 !rasm2 -a arm -b 16 "b.w 8"
@@ -133,7 +133,7 @@ EOF
 RUN
 
 NAME=2: rasm2
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 64 -d "5589e583ec2083f8000f8507000000b800000000eb05b80100000083c4205dc3"
 EXPECT=<<EOF
 push rbp
@@ -151,7 +151,7 @@ EOF
 RUN
 
 NAME=rasm2 #1167
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 64 "cmp rax,rbx"
 EXPECT=<<EOF
 4839d8
@@ -159,7 +159,7 @@ EOF
 RUN
 
 NAME=rasm2 #1167 2
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 64 "test rax, rbx"
 EXPECT=<<EOF
 4885d8
@@ -167,7 +167,7 @@ EOF
 RUN
 
 NAME=rasm2 #1167 3
-FILE=-
+FILE=malloc://512
 REQUIRE=gas linux x86
 CMDS=!rasm2 -S att -a any.as -c x86 -b 64 "test %rbx, %rax"
 EXPECT=<<EOF
@@ -176,7 +176,7 @@ EOF
 RUN
 
 NAME=rasm2 -S att -a any.as -c x86 -b 64 movq %rdx, %rax
-FILE=-
+FILE=malloc://512
 REQUIRE=gas linux x86
 CMDS=!rasm2 -S att -a any.as -c x86 -b 64 "movq %rdx, %rax"
 EXPECT=<<EOF
@@ -185,7 +185,7 @@ EOF
 RUN
 
 NAME=rasm2 #1167 4
-FILE=-
+FILE=malloc://512
 REQUIRE=gas linux x86
 CMDS=!rasm2 -S intel -a any.as -c x86 -b 64 "test rax, rbx"
 EXPECT=<<EOF
@@ -194,7 +194,7 @@ EOF
 RUN
 
 NAME=rasm2 #1167 5
-FILE=-
+FILE=malloc://512
 REQUIRE=gas linux x86
 CMDS=!rasm2 -S att -a any.as -c x86 -b 64 "add \$33, %rbx"
 EXPECT=<<EOF
@@ -203,7 +203,7 @@ EOF
 RUN
 
 NAME=rasm2 #1167 6
-FILE=-
+FILE=malloc://512
 REQUIRE=gas linux x86
 CMDS=!rasm2 -S intel -a any.as -c x86 -b 64 "add rbx, 33"
 EXPECT=<<EOF
@@ -212,7 +212,7 @@ EOF
 RUN
 
 NAME=rasm2 #1900
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a x86 -b 32 "mov [0x33], eax"
 !rasm2 -a x86 -b 32 "mov eax, 33"
@@ -226,7 +226,7 @@ EOF
 RUN
 
 NAME=rasm2 #1900 (detect syntax error - case 1)
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 32 "mov hello, eax"
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -235,7 +235,7 @@ EOF
 RUN
 
 NAME=rasm2 #1900 (detect syntax error - case 2)
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 32 "mov 33, eax"
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -244,7 +244,7 @@ EOF
 RUN
 
 NAME=rasm2 #1900 (detect syntax error - case 3)
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 32 "mov eax, hello"
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -253,7 +253,7 @@ EOF
 RUN
 
 NAME=rasm2 arm32 rejects invalid push/pop, cps and mov operands
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a arm -b 32 "push {r0, r1}, r2"
 !rasm2 -a arm -b 32 "pop {r0}, lsl"
@@ -272,7 +272,7 @@ EOF
 RUN
 
 NAME=rasm2 x86_32 overlarge operand
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 32 "mov eax, 0x1122334455"
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -281,7 +281,7 @@ EOF
 RUN
 
 NAME=rasm2 arm32 compare immediate with no rotated 8 bit encoding
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a arm -b 32 "tst r0, 0x101"
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -290,7 +290,7 @@ EOF
 RUN
 
 NAME=rasm2 x86_64 overlarge operand
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a x86 -b 64 "mov rax, 0x112233445566778899"
 !rasm2 -a x86 -b 64 "mov eax, 0x1122334455"
@@ -303,7 +303,7 @@ EOF
 RUN
 
 NAME=rasm2 #9197
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a arm -b 64 "ldur x1, [x29, -8]"
 EXPECT=<<EOF
 a1835ff8
@@ -311,7 +311,7 @@ EOF
 RUN
 
 NAME=rasm2 -h~Usage?"
-FILE=-
+FILE=malloc://512
 CMDS=!!rasm2 -h~Usage?
 EXPECT=<<EOF
 1
@@ -319,7 +319,7 @@ EOF
 RUN
 
 NAME=rasm2 -C
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -C -a x86 -b 32 "mov eax, 33"
 EXPECT=<<EOF
 "\xb8\x21\x00\x00\x00"
@@ -327,7 +327,7 @@ EOF
 RUN
 
 NAME=rasm2 -d
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -d -a x86 -b 32 "b821000000"
 EXPECT=<<EOF
 mov eax, 0x21
@@ -335,7 +335,7 @@ EOF
 RUN
 
 NAME=rasm2 tms320 c55x smem extension
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a tms320 -c c55x -b 32 -d f41134127856 2>/dev/null
 EXPECT=<<EOF
 and 0x3412, abs16(0x7856)
@@ -343,7 +343,7 @@ EOF
 RUN
 
 NAME=rasm2 -D
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -D -a x86 -b 32 "b821000000"
 EXPECT=<<EOF
 0x00000000   5               b821000000  mov eax, 0x21
@@ -351,7 +351,7 @@ EOF
 RUN
 
 NAME=rasm2 -s
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -S att -a x86 -b 32 -D "31ed"
 EXPECT=<<EOF
 0x00000000   2                     31ed  xorl %ebp, %ebp
@@ -359,7 +359,7 @@ EOF
 RUN
 
 NAME=rasm2 -s
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -S att -s 0xa -a x86 -b 32 -D "31ed"
 EXPECT=<<EOF
 0x0000000a   2                     31ed  xorl %ebp, %ebp
@@ -367,7 +367,7 @@ EOF
 RUN
 
 NAME=rasm2 -F pseudo
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 32 -s 0xa -F x86.pseudo -D 31ed
 EXPECT=<<EOF
 0x0000000a   2                     31ed  ebp = 0
@@ -375,7 +375,7 @@ EOF
 RUN
 
 NAME=rasm2 -F
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -s 0xa -a x86 -b 32 -D 31ed
 EXPECT=<<EOF
 0x0000000a   2                     31ed  xor ebp, ebp
@@ -383,7 +383,7 @@ EOF
 RUN
 
 NAME=rasm2 -F -s order bug
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 32 -s 0xa -D 31ed
 EXPECT=<<EOF
 0x0000000a   2                     31ed  xor ebp, ebp
@@ -391,7 +391,7 @@ EOF
 RUN
 
 NAME=rasm2 -B
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b16 -B "xor al, 0x34";ps
 EXPECT=<<EOF
 44
@@ -400,7 +400,7 @@ RUN
 
 
 NAME=rasm2 -v~birth?"
-FILE=-
+FILE=malloc://512
 CMDS=!!rasm2 -v~birth?
 EXPECT=<<EOF
 1
@@ -408,7 +408,7 @@ EOF
 RUN
 
 NAME=rasm2 -w
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -w -a x86 -b 32 "mov"
 EXPECT=<<EOF
 moves data from src to dst
@@ -416,7 +416,7 @@ EOF
 RUN
 
 NAME=rasm2  dissassemble ARM32 binary file
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -DB -a arm -s 0x200 -b 32 -f bins/other/rasm2/testARM32.bin
 EXPECT=<<EOF
 0x00000200   4                 4661b0e1  asrs r6, r6, 2
@@ -433,7 +433,7 @@ EOF
 RUN
 
 NAME=rasm2  dissassemble ARM32 binary file with skip
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -DB -a arm -s 0x200 -b 32 -f bins/other/rasm2/testARM32.bin -i 4
 EXPECT=<<EOF
 0x00000200   4                 f087bd08  popeq {r4, r5, r6, r7, r8, sb, sl, pc}
@@ -449,7 +449,7 @@ EOF
 RUN
 
 NAME=rasm2 endian test 1
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -e -a arm -b 32 -d 0ad0a0e1
 EXPECT=<<EOF
 beq 0xff42838c
@@ -457,7 +457,7 @@ EOF
 RUN
 
 NAME=rasm2 endian test 2
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -e -a arm -b 32 -d fff0a0e3
 EXPECT=<<EOF
 invalid
@@ -465,7 +465,7 @@ EOF
 RUN
 
 NAME=rasm2  SPP include directive
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 32 -p -I . -f bins/other/rasm2/asm/include.asm
 EXPECT=<<EOF
 9083e80341bb00000000cd80c3
@@ -543,7 +543,7 @@ EOF
 RUN
 
 NAME=rasm2 SPP error stops assembly after nested conditionals
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 32 -p -f bins/other/rasm2/asm/nest.asm
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -553,7 +553,7 @@ EOF
 RUN
 
 NAME=rasm2 x86.asm.32
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -f bins/elf/analysis/hello.asm
 EXPECT=<<EOF
 ba0e000000b918000000bb01000000b804000000cd80b801000000cd8048656c6c6f2c20776f726c64210a00
@@ -561,7 +561,7 @@ EOF
 RUN
 
 NAME=rasm2 bswap x64 #8095
-FILE=-
+FILE=malloc://512
 CMDS="!rasm2 -a x86 -b 64 \"bswap rax;bswap rbx;bswap rcx;bswap rdx\""
 EXPECT=<<EOF
 480fc8480fcb480fc9480fca
@@ -569,7 +569,7 @@ EOF
 RUN
 
 NAME=rasm2 bswap x64 #8095 (quoted instruction sequence)
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 64 "bswap rax;bswap rbx;bswap rcx;bswap rdx"
 EXPECT=<<EOF
 480fc8480fcb480fc9480fca
@@ -577,7 +577,7 @@ EOF
 RUN
 
 NAME=rasm2 mov eax, [eax * 2 + 8]
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 32 "mov eax, [eax * 2 + 8]"
 EXPECT=<<EOF
 8b044508000000
@@ -585,7 +585,7 @@ EOF
 RUN
 
 NAME=rasm2 -a x86 -b 64 -A 0x55
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 64 -A 0x55
 EXPECT=<<EOF
 offset:   0x00000000
@@ -599,7 +599,7 @@ EOF
 RUN
 
 NAME=rasm2 -c
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a arm -b 16 -d -c cortex 0x80f30988
 EXPECT=<<EOF
 msr psp, r0
@@ -607,14 +607,14 @@ EOF
 RUN
 
 NAME=rasm2 -k
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -k darwin 0x90
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=rasm2 -a x86 -b 64 -E 0x55
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 64 -E 0x55
 EXPECT=<<EOF
 rbp,8,rsp,-,=[8],8,rsp,-=
@@ -622,7 +622,7 @@ EOF
 RUN
 
 NAME=rasm2 -E with hex starting with a letter
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a x86 -b 64 -E c3
 !rasm2 -a x86 -b 64 -E -d c3
@@ -638,7 +638,7 @@ EOF
 RUN
 
 NAME=rasm2 -a x86 -b 64 -Aj 0x55
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 64 -Aj 0x55
 EXPECT=<<EOF
 [{"opcode":0,"bytes":"55","type":"rpush","stackop":"unknown","esil":"rbp,8,rsp,-,=[8],8,rsp,-=","stackptr":8}]
@@ -646,7 +646,7 @@ EOF
 RUN
 
 NAME=rasm2 -LL
-FILE=-
+FILE=malloc://512
 REQUIRE=unix
 CMDS=<<EOF
 !rasm2 -LL | grep -c null
@@ -657,7 +657,7 @@ EOF
 RUN
 
 NAME=rasm2 -L
-FILE=-
+FILE=malloc://512
 REQUIRE=unix
 CMDS=!rasm2 -L | grep -c arm.gnu
 EXPECT=<<EOF
@@ -666,7 +666,7 @@ EOF
 RUN
 
 NAME=rasm2 -L internal grep
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !!rasm2 -L~arm?
 !!rasm2 -L~arm.gnu?
@@ -678,7 +678,7 @@ EOF
 RUN
 
 NAME=rasm2 -qL
-FILE=-
+FILE=malloc://512
 REQUIRE=unix
 CMDS=!rasm2 -qL | grep -c arm
 EXPECT=<<EOF
@@ -687,7 +687,7 @@ EOF
 RUN
 
 NAME=rasm2 -v
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -v  | grep -c birth
 EXPECT=<<EOF
 1
@@ -695,7 +695,7 @@ EOF
 RUN
 
 NAME=rasm2 -a x86 -b 64 -r push ebp
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 64 -r push ebp
 EXPECT=<<EOF
 e asm.arch=x86
@@ -707,7 +707,7 @@ EOF
 RUN
 
 NAME=rasm -a sh -e -d
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a sh -e -d "8d00 000b 2029 8ffb 0009 420b 31e0"
 EXPECT=<<EOF
 bt.s 0x00000004
@@ -721,7 +721,7 @@ EOF
 RUN
 
 NAME=rasm -a sh -e -D
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a sh -e -D "8d00 000b 2029 8ffb 0009 420b 31e0"
 EXPECT=<<EOF
 0x00000000   2                     8d00  bt.s 0x00000004
@@ -735,7 +735,7 @@ EOF
 RUN
 
 NAME=rasm -a sh -d
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a sh -d "8d00 000b 2029 8ffb 0009 420b 31e0"
 EXPECT=<<EOF
 mov.w @(r0,r8), r0
@@ -749,7 +749,7 @@ EOF
 RUN
 
 NAME=rasm -a sh -D
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a sh -D "8d00 000b 2029 8ffb 0009 420b 31e0"
 EXPECT=<<EOF
 0x00000000   2                     8d00  mov.w @(r0,r8), r0
@@ -763,7 +763,7 @@ EOF
 RUN
 
 NAME=rasm -a sh -eD
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a sh -eD "8d00 000b 2029 8ffb 0009 420b 31e0"
 EXPECT=<<EOF
 0x00000000   2                     8d00  bt.s 0x00000004
@@ -777,7 +777,7 @@ EOF
 RUN
 
 NAME=rasm2 -a ppc -b 64 "std r31, -8(r1)"
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a ppc -b 64 "std r31, -8(r1)"
 EXPECT=<<EOF
 f8ffe1fb
@@ -785,7 +785,7 @@ EOF
 RUN
 
 NAME=rasm2 -a ppc -b 64 -d f8ffe1fb
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a ppc -b 64 -d f8ffe1fb
 EXPECT=<<EOF
 std r31, -8(r1)
@@ -793,7 +793,7 @@ EOF
 RUN
 
 NAME=rasm2 -a ppc -b 32 -e "mr r10, r4"
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a ppc -b 32 -e "mr r10, r4"
 EXPECT=<<EOF
 7c8a2378
@@ -801,7 +801,7 @@ EOF
 RUN
 
 NAME=rasm2 -a ppc -b 32 -d 78238a7c
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a ppc -b 32 -d 78238a7c
 EXPECT=<<EOF
 mr r10, r4
@@ -810,7 +810,7 @@ RUN
 
 # Coverage: ppc.nz rejects unaligned DS-form displacements (low 2 bits must be 0).
 NAME=rasm2 ppc.nz rejects unaligned ld displacement
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a ppc -b 64 -e 'ld r3, 1(r1)'
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -820,7 +820,7 @@ RUN
 
 # Coverage: 64-bit-only instructions reject when -b 32.
 NAME=rasm2 ppc.nz rejects ld when bits=32
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a ppc -b 32 -e 'ld r3, 0(r1)'
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -829,7 +829,7 @@ EOF
 RUN
 
 NAME=rasm2 -a arm -b 16 "wfe"
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a arm -b 16 "wfe"
 EXPECT=<<EOF
 20bf
@@ -837,7 +837,7 @@ EOF
 RUN
 
 NAME=rasm2 -a arm -b 32 "add fp, sp, 0"
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a arm -b 32 "add fp, sp, 0"
 EXPECT=<<EOF
 00b08de2
@@ -845,7 +845,7 @@ EOF
 RUN
 
 NAME=rasm2 -a arm -b 32 -e "ldr fp, [sp], 4"
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a arm -b 32 -e "ldr fp, [sp], 4"
 EXPECT=<<EOF
 e49db004
@@ -853,7 +853,7 @@ EOF
 RUN
 
 NAME=rasm2 -a arm -b 64 "sub sp, sp, 16"
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a arm -b 64 "sub sp, sp, 16"
 EXPECT=<<EOF
 ff4300d1
@@ -861,7 +861,7 @@ EOF
 RUN
 
 NAME=rasm2 -a x86 -b 64 -f equ.asm
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 64 -f bins/src/equ.asm
 EXPECT=<<EOF
 48c7c003000000
@@ -869,7 +869,7 @@ EOF
 RUN
 
 NAME=rasm2 -a x86 -b 64 -D PCHINT
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 '!rasm2 -a x86 -b 64 -D '8b 5f 50 48 85 db 0f 84 c2 00 00 00 e8 93 bc c4 f1 48 c7 c1 38 14 56 c1 48 89 da 48 c7 c7 aa c2 57 c1 48 89 c6 e8 6a 2c 1c f1 <0f> 0b 5b 41 5c 41 5d 41 5e 5d 31 c0 31 d2 31 c9 31 f6 31 ff 45 31'
 EOF
@@ -901,7 +901,7 @@ EOF
 RUN
 
 NAME=rasm2 -H RASM2_ARCH
-FILE=-
+FILE=malloc://512
 CMDS=%RASM2_ARCH=test;!rasm2 -H RASM2_ARCH
 EXPECT=<<EOF
 test
@@ -910,7 +910,7 @@ EXPECT_ERR=
 RUN
 
 NAME=rasm2 -H RASM2_BITS
-FILE=-
+FILE=malloc://512
 CMDS=%RASM2_BITS=test;!rasm2 -H RASM2_BITS
 EXPECT=<<EOF
 test
@@ -919,7 +919,7 @@ EXPECT_ERR=
 RUN
 
 NAME=rasm2 .db directive
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 ".db 33"
 EXPECT=<<EOF
 21
@@ -927,7 +927,7 @@ EOF
 RUN
 
 NAME=rasm2 comma-separated byte expressions
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 ".byte 1 + 2, 3"
 !rasm2 ".db (1 + 2) * 3, 4"
@@ -944,7 +944,7 @@ EXPECT_ERR=
 RUN
 
 NAME=rasm2 .word directive
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 ".word 0x1234"
 EXPECT=<<EOF
 3412
@@ -952,7 +952,7 @@ EOF
 RUN
 
 NAME=rasm2 .dw directive
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 ".dw 0x1234"
 EXPECT=<<EOF
 3412
@@ -960,7 +960,7 @@ EOF
 RUN
 
 NAME=rasm2 .dword directive
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 ".dword 0x12345678"
 EXPECT=<<EOF
 78563412
@@ -968,7 +968,7 @@ EOF
 RUN
 
 NAME=rasm2 .dd directive
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 ".dd 0x12345678"
 EXPECT=<<EOF
 78563412
@@ -976,7 +976,7 @@ EOF
 RUN
 
 NAME=rasm2 .qword directive
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 ".qword 0x123456789abcdef0"
 EXPECT=<<EOF
 f0debc9a78563412
@@ -984,7 +984,7 @@ EOF
 RUN
 
 NAME=rasm2 .dq directive
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 ".dq 0x123456789abcdef0"
 EXPECT=<<EOF
 f0debc9a78563412
@@ -992,7 +992,7 @@ EOF
 RUN
 
 NAME=rasm2 .uint8 directive
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 ".uint8 255"
 EXPECT=<<EOF
 ff
@@ -1000,7 +1000,7 @@ EOF
 RUN
 
 NAME=rasm2 .uint16 directive
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 ".uint16 0x1234"
 EXPECT=<<EOF
 3412
@@ -1008,7 +1008,7 @@ EOF
 RUN
 
 NAME=rasm2 .uint32 directive
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 ".uint32 0x12345678"
 EXPECT=<<EOF
 78563412
@@ -1016,7 +1016,7 @@ EOF
 RUN
 
 NAME=rasm2 .uint64 directive
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 ".uint64 0x123456789abcdef0"
 EXPECT=<<EOF
 f0debc9a78563412
@@ -1024,7 +1024,7 @@ EOF
 RUN
 
 NAME=rasm2 wider integer directives emit every comma-separated value
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 ".dw 0x1234, 0x5678"
 !rasm2 -e ".dw 0x1234, 0x5678"
@@ -1048,7 +1048,7 @@ EOF
 RUN
 
 NAME=rasm2 wider integer list past 64 bytes keeps label offset
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a z80 -b 8 ".dq 0,0,0,0,0,0,0,0,0; end:; .dw end"
 !rasm2 -e ".dw 0x1234, 0x5678, 0x123"
@@ -1060,7 +1060,7 @@ EOF
 RUN
 
 NAME=rasm2 wider integer directives reject bad lists
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 ".dw 1 2"
 !rasm2 ".dw 1,"
@@ -1082,7 +1082,7 @@ EOF
 RUN
 
 NAME=rasm2 .fill directive
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 ".fill 5"
 EXPECT=<<EOF
 0000000000
@@ -1090,7 +1090,7 @@ EOF
 RUN
 
 NAME=rasm2 .fill repeat,size,value directive
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 ".fill 2, 2, 0x1122"
 EXPECT=<<EOF
 22112211
@@ -1098,7 +1098,7 @@ EOF
 RUN
 
 NAME=rasm2 .fill size over 4 bytes
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 ".fill 2,8,0x1122334455667788"
 EXPECT=<<EOF
 88776655000000008877665500000000
@@ -1106,7 +1106,7 @@ EOF
 RUN
 
 NAME=rasm2 .org without fill preserves PC-only behavior
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a z80 -b 8 ".byte 1; .org 8; here:; jp here"
 !rasm2 -a z80 -b 8 ".byte 1; .org 0; here:; jp here"
@@ -1118,7 +1118,7 @@ EOF
 RUN
 
 NAME=rasm2 .org padding keeps vector labels and forward branches
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a z80 -b 8 "jp reset; .org 8, 0xff; reset:; jr next; .org 0x10, 0xff; next:; ret"
 EXPECT=<<EOF
 c30800ffffffffff1806ffffffffffffc9
@@ -1126,7 +1126,7 @@ EOF
 RUN
 
 NAME=rasm2 .org padding honors the initial PC
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a z80 -b 8 -s 0x100 "jp reset; .org 0x108, 0xff; reset:; ret"
 !rasm2 -a z80 -b 8 ".org 0x100; jp reset; .org 0x108, 0xff; reset:; ret"
@@ -1138,7 +1138,7 @@ EOF
 RUN
 
 NAME=rasm2 .org padding zero gap and zero fill
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a z80 -b 8 ".byte 1; .org 1, 0xff; .byte 2; .org 4, 0"
 EXPECT=<<EOF
 01020000
@@ -1146,7 +1146,7 @@ EOF
 RUN
 
 NAME=rasm2 .org padding rejects backwards targets
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a z80 -b 8 ".byte 1; .org 0, 0xff"
 EXPECT=<<EOF
 EOF
@@ -1157,7 +1157,7 @@ EOF
 RUN
 
 NAME=rasm2 .align pads output and keeps labels in sync
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a z80 -b 8 ".byte 1; .align 8; x:; .uint16 x"
 !rasm2 -a z80 -b 8 ".align 8; x:; .byte x"
@@ -1171,7 +1171,7 @@ EOF
 RUN
 
 NAME=rasm2 .align applies once and honors the initial PC
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a z80 -b 8 ".byte 1; .align 4, 0xff; .byte 2; .align 4; .byte 3; y:; .byte y"
 !rasm2 -a z80 -b 8 -s 0x101 ".align 4, 0xff; x:; .uint16 x"
@@ -1185,7 +1185,7 @@ EOF
 RUN
 
 NAME=rasm2 .fillvalue sets the default padding byte
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a z80 -b 8 ".fillvalue 0xcc; .byte 1; .align 4; .align 8, 0x90; .fill 2; .fill 1, 2, 0x1122"
 !rasm2 -a z80 -b 8 ".fillvalue 0xcc; .fill 2, 2; .org 6; .fillvalue 0; .align 8"
@@ -1199,7 +1199,7 @@ EOF
 RUN
 
 NAME=rasm2 alignment and fillvalue accept tabs
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a z80 -b 8 ".byte 1; .align	4, 0xcc; .byte 2"
 !rasm2 -a z80 -b 8 ".fillvalue	0x7f; .byte 1; .align	4; .fill 2,2"
@@ -1211,7 +1211,7 @@ EOF
 RUN
 
 NAME=rasm2 assembly PC overflow rejected
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a z80 -b 8 -s 0xffffffffffffffff ".align 2"
 !rasm2 -a z80 -b 8 -s 0xffffffffffffffff ".fill 2"
@@ -1227,7 +1227,7 @@ EOF
 RUN
 
 NAME=rasm2 .align and .fillvalue reject invalid operands
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a z80 -b 8 ".align 4, 256"
 !rasm2 -a z80 -b 8 ".align 4, 1, 2"
@@ -1246,7 +1246,7 @@ EOF
 RUN
 
 NAME=rasm2 .db out of range
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 ".db 256"
 EXPECT=<<EOF
 EOF
@@ -1257,7 +1257,7 @@ EOF
 RUN
 
 NAME=rasm2 multiple directives
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 ".db 33;.db 44"
 EXPECT=<<EOF
 212c
@@ -1265,7 +1265,7 @@ EOF
 RUN
 
 NAME=rasm2 .float directive
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 64 ".float 3.14"
 EXPECT=<<EOF
 c3f54840
@@ -1273,7 +1273,7 @@ EOF
 RUN
 
 NAME=rasm2 .double directive
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 64 ".double 3.14"
 EXPECT=<<EOF
 1f85eb51b81e0940
@@ -1281,7 +1281,7 @@ EOF
 RUN
 
 NAME=rasm2 .bf16 directive
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 64 ".bf16 3.14"
 EXPECT=<<EOF
 4940
@@ -1289,7 +1289,7 @@ EOF
 RUN
 
 NAME=rasm2 .cfloat directive
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 64 ".cfloat 1 8 23 127 0 0;.float 3.14"
 EXPECT=<<EOF
 c3f54840
@@ -1297,7 +1297,7 @@ EOF
 RUN
 
 NAME=rasm2 .cfloat rejects negative sizes
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 64 ".cfloat -1 8 23 127 0 0;.float 3.14"
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -1307,7 +1307,7 @@ EOF
 RUN
 
 NAME=rasm2 .cfloat valid profiles
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a x86 -b 64 ".cfloat 1 8 23 127 0 0;.float 3.14"
 !rasm2 -a x86 -b 64 ".cfloat 1 11 52 1023 0 0;.float 3.14"
@@ -1331,7 +1331,7 @@ EOF
 RUN
 
 NAME=rasm2 .cfloat rejects truncated argument list
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 64 ".cfloat 1 8 23 127 0;.float 3.14"
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -1345,7 +1345,7 @@ EOF
 RUN
 
 NAME=rasm2 #25036 (reject invalid x86-64 register r1)
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 64 "add rax, r1"
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -1354,7 +1354,7 @@ EOF
 RUN
 
 NAME=rasm2 #25036 (reject invalid x86-64 register r1 in mov)
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 64 "mov rax, r1"
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -1363,7 +1363,7 @@ EOF
 RUN
 
 NAME=rasm2 #25036 (valid r10 register still works)
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a x86 -b 64 "add rax, r10"
 EXPECT=<<EOF
 4c01d0
@@ -1371,7 +1371,7 @@ EOF
 RUN
 
 NAME=rasm2 #25036 (valid r8-r15 registers work)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a x86 -b 64 "push r8"
 !rasm2 -a x86 -b 64 "push r15"
@@ -1385,7 +1385,7 @@ EOF
 RUN
 
 NAME=rasm2 -d ppc pseudo applied once
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a ppc -b 64 -e -F ppc.pseudo -d 2c29000041820208
 EXPECT=<<EOF
 cr0 = (r9 == 0)
@@ -1394,7 +1394,7 @@ EOF
 RUN
 
 NAME=rasm2 -D ppc pseudo applied once
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a ppc -b 64 -e -F ppc.pseudo -D 2c290000
 EXPECT=<<EOF
 0x00000000   4                 2c290000  cr0 = (r9 == 0)
@@ -1402,7 +1402,7 @@ EOF
 RUN
 
 NAME=rasm2 -d arm64 pseudo branch applied once
-FILE=-
+FILE=malloc://512
 CMDS=!rasm2 -a arm -b 64 -F arm.pseudo -d 800000b4
 EXPECT=<<EOF
 if (!x0) goto 0x10
@@ -1410,7 +1410,7 @@ EOF
 RUN
 
 NAME=rasm2 ignores a stale R2CONS
-FILE=-
+FILE=malloc://512
 ENV=R2CONS=4416884320
 CMDS=!rasm2 -a x86 -b 32 -d 90
 EXPECT=<<EOF
@@ -1445,7 +1445,7 @@ EOF
 RUN
 
 NAME=rasm2 avr reject i/o addresses that do not fit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a avr "out 64, r1"
 !rasm2 -a avr "in r1, 64"
@@ -1476,7 +1476,7 @@ EOF
 RUN
 
 NAME=rasm2 arm32 reject unencodable and out of range immediates
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rasm2 -a arm -b 32 "eor r0, r0, 0x101"
 !rasm2 -a arm -b 32 "add r0, r1, 0x100000000"

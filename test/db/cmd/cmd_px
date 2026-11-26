@@ -348,7 +348,7 @@ EOF
 RUN
 
 NAME=pxe
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 woe 0 0xff 1
 pxe 256

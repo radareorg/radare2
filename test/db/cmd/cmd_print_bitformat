@@ -54,7 +54,7 @@ EOF
 RUN
 
 NAME=pbwb
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pb 8
 wb 110
@@ -73,7 +73,7 @@ EOF
 RUN
 
 NAME=pbwb least significant bit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pb 8
 wb 00000001
@@ -89,7 +89,7 @@ EOF
 RUN
 
 NAME=pbwb most significant bit
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pb 8
 wb 11111111
@@ -105,7 +105,7 @@ EOF
 RUN
 
 NAME=pbwb two bytes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pb 16
 wb 1111111111111111
@@ -121,7 +121,7 @@ EOF
 RUN
 
 NAME=pbwb 3.5 bytes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pb 28
 wb 1111111111111111111111111111
@@ -140,7 +140,7 @@ EOF
 RUN
 
 NAME=pbwb space
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pb 16
 wb 11111111 11111111
@@ -156,7 +156,7 @@ EOF
 RUN
 
 NAME=pbwb partial byte past blocksize
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 0f @ 4
 b 1
@@ -170,7 +170,7 @@ EOF
 RUN
 
 NAME=pbwb invalid chars
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wb 0xff
 EOF

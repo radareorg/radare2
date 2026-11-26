@@ -1,5 +1,5 @@
 NAME=pipe args
-FILE=-
+FILE=malloc://512
 CMDS=#!pipe echo hello world
 EXPECT=<<EOF
 hello world
@@ -7,7 +7,7 @@ EOF
 RUN
 
 NAME=pipe r2p
-FILE=-
+FILE=malloc://512
 CMDS=!*r2p x 32
 EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF

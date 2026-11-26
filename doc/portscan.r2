@@ -1,4 +1,4 @@
-#!/usr/bin/r2 -qni portscan.r2 -
+#!/usr/bin/r2 -qni portscan.r2 malloc://512
 # r2 portscanner
 # author: pancake
 # date: 2013-11-30

@@ -1,7 +1,7 @@
 # XXX its green on mac, but it's os-specific test and will fail on the CI
 NAME=ragg2 eggtest.c
 BROKEN=1
-FILE=-
+FILE=malloc://512
 CMDS=!ragg2 bins/src/eggtest.c
 EXPECT=<<EOF
 rabin2 -o 'bins/src/eggtest.c.text' -O d/S/'0..__text' 'bins/src/eggtest.c.o'

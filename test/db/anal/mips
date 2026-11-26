@@ -128,7 +128,7 @@ EOF
 RUN
 
 NAME=assembler
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -150,7 +150,7 @@ EOF
 RUN
 
 NAME=with-spaces
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
@@ -1569,7 +1569,7 @@ EOF
 RUN
 
 NAME=mips stack adjustments come only from sp-to-sp add immediates
-FILE=-
+FILE=malloc://512
 ARGS=-a mips -b 32 -e asm.bytes=false -e asm.stackptr=true
 CMDS=<<EOF
 wx e0ffbd2700c0dd2721e8a803e0ffbd27e0ffa4270800e003
@@ -1596,7 +1596,7 @@ RUN
 
 # Only a capstone v6 build tells IS_SP from == MIPS_REG_SP (it emits SP_64).
 NAME=mips 64-bit daddiu and daddi on sp adjust the stack
-FILE=-
+FILE=malloc://512
 ARGS=-a mips -b 64 -e asm.bytes=false -e asm.stackptr=true
 CMDS=<<EOF
 wx e0ffbd67e0ffbd630800e003
@@ -1610,7 +1610,7 @@ EOF
 RUN
 
 NAME=mips and marks a stack alignment only from sp and a mask register
-FILE=-
+FILE=malloc://512
 ARGS=-a mips -b 32 -e asm.bytes=false -e asm.stackptr=true
 CMDS=<<EOF
 wx e0ffbd2724e8a10324e81d01f0ffbd3324e8a00324e8bd0324e8090124e81d002440a1030800e003
@@ -1638,7 +1638,7 @@ EOF
 RUN
 
 NAME=mips.gnu 64-bit stack adjustments come only from sp-to-sp add immediates
-FILE=-
+FILE=malloc://512
 ARGS=-a mips.gnu -b 64 -e asm.bytes=false -e asm.stackptr=true
 CMDS=<<EOF
 wx e0ffbd2700c0dd2700c0dd2300c0dd6700c0dd63e0ffbd23e0ffbd67e0ffbd630800e003
@@ -1930,7 +1930,7 @@ EOF
 RUN
 
 NAME=mips ao names the and sp stack alignment
-FILE=-
+FILE=malloc://512
 ARGS=-a mips -b 32
 CMDS=<<EOF
 wx 24e8a103

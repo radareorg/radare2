@@ -1,5 +1,5 @@
 NAME=pxj
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 woe 1
 pxj 10
@@ -21,7 +21,7 @@ EOF
 RUN
 
 NAME=pvXj
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 woe 32 288 1
 e asm.bits=64
@@ -150,7 +150,7 @@ EOF
 RUN
 
 NAME=null raw
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 6
 wx 440044004400
@@ -167,7 +167,7 @@ EOF
 RUN
 
 NAME=null raw wff
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 6
 wx 440044004400
@@ -184,7 +184,7 @@ EOF
 RUN
 
 NAME=ascii alias wff/wtf
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 6
 w hello world
@@ -283,7 +283,7 @@ EOF
 RUN
 
 NAME=pri2 r2 gb logo
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 6767f6f6fefe6e6e0606060606060f0f111133337777ffffffff777733331111
 pri2 32@e:hex.cols=8
@@ -470,7 +470,7 @@ EOF
 RUN
 
 NAME=tmpbits
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -484,7 +484,7 @@ EOF
 RUN
 
 NAME=tmpbits
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -680,7 +680,7 @@ EOF
 RUN
 
 NAME=tmpbits
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -694,7 +694,7 @@ EOF
 RUN
 
 NAME=tmpbits
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -896,7 +896,7 @@ EOF
 RUN
 
 NAME=prc text color
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 . scripts/palette.r2
 woe 0 0xff 1
@@ -960,7 +960,7 @@ EOF
 RUN
 
 NAME=prc single-char-flag fix
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 woe 0 0xff 1
 f s @ 0x77
@@ -987,7 +987,7 @@ EOF
 RUN
 
 NAME=prc hex.addr=0
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e hex.addr=0
 woe 0 0xff 1
@@ -1015,7 +1015,7 @@ EOF
 RUN
 
 NAME=pxA hex.addr=0
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -1030,7 +1030,7 @@ EOF
 RUN
 
 NAME=float long double
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wvf 123
 p8 16
@@ -1165,7 +1165,7 @@ EOF
 RUN
 
 NAME=poS ed25519 (RFC 8032, 2 byte)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 2
 wx af82 @ 13
@@ -1177,7 +1177,7 @@ EOF
 RUN
 
 NAME=poE blowfish (Test vectors)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 8
 wx 0123456789abcdef @ 131
@@ -1189,7 +1189,7 @@ EOF
 RUN
 
 NAME=poD blowfish (Test vectors)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 8
 wx 0aceab0fc6a0a28d @ 27
@@ -1295,7 +1295,7 @@ EOF
 RUN
 
 NAME=print rejects a length whose magnitude exceeds signed int
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 pd -2147483648
 ?e done

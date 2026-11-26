@@ -1,5 +1,5 @@
 NAME=Global commands preserve types and coexisting symbol flags
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 avgj
@@ -203,7 +203,7 @@ EOF
 RUN
 
 NAME=Global commands reject unknown and overflowing types without changing globals
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64 -e log.level=0
 CMDS=<<EOF
 avg uint8_t global.byte @ 0x1000
@@ -568,7 +568,7 @@ EOF
 RUN
 
 NAME=Global access widths grow without replacing manual types
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 o malloc://128 0x2000 rw
@@ -604,7 +604,7 @@ EOF
 RUN
 
 NAME=Global accesses infer signed integers floats doubles and pointers
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 o malloc://128 0x2000 rw
@@ -622,7 +622,7 @@ EOF
 RUN
 
 NAME=Global discovery excludes stack code linkage slots and out-of-bounds accesses
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 o malloc://128 0x2000 rw
@@ -643,7 +643,7 @@ EOF
 RUN
 
 NAME=Global discovery respects array bounds and the selected flag space
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 o malloc://128 0x2000 rw
@@ -686,7 +686,7 @@ EOF
 RUN
 
 NAME=Global integer accesses preserve floating pointer and signed inference
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 o malloc://128 0x2000 rw
@@ -1335,7 +1335,7 @@ EOF
 RUN
 
 NAME=Global registration restores a removed flagspace
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF_CMDS
 avg uint8_t global.byte @ 0x1000
@@ -1392,7 +1392,7 @@ EOF
 RUN
 
 NAME=Global discovery skips the synthetic got.r2 import slots
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 o malloc://128 0x2000 rw
@@ -1434,7 +1434,7 @@ EOF
 RUN
 
 NAME=Global pointer inference ignores values inside the first page
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 o malloc://128 0x2000 rw

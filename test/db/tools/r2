@@ -28,7 +28,7 @@ EXPECT_ERR=
 RUN
 
 NAME=r2 minushache
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !!r2 -HR2_VERSION_MAJOR
 EOF
@@ -38,7 +38,7 @@ EOF
 RUN
 
 NAME=r2 -H lists runtime environment variables
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !!r2 -H~R2_NOPLUGINS=?
 !!r2 -H~R2_SAFE_PLUGINS=?
@@ -60,7 +60,7 @@ EOF
 RUN
 
 NAME=r2 -H reads runtime environment variables
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !!env R2_NOPLUGINS=1 r2 -H R2_NOPLUGINS
 !!env R2_NOPLUGINS=0 r2 -H NOPLUGINS
@@ -79,7 +79,7 @@ EXPECT_ERR=
 RUN
 
 NAME=r2 minushache (dos)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !!r2 -HR2_VERSION_MAJOR -H R2_VERSION_MAJOR
 EOF
@@ -90,7 +90,7 @@ EOF
 RUN
 
 NAME=r2 minushache (dos)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !!r2 -H R2_VERSION_MAJOR -HR2_VERSION_MAJOR
 EOF
@@ -101,7 +101,7 @@ EOF
 RUN
 
 NAME=seek undo/redo
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 01
 s 1
@@ -115,7 +115,7 @@ EOF
 RUN
 
 NAME=seek undo/redo
-FILE=-
+FILE=malloc://512
 CMDS=wx 01; s 1; s-; s+; pb 8
 EXPECT=<<EOF
 00000000
@@ -123,7 +123,7 @@ EOF
 RUN
 
 NAME=radare2 -V
-FILE=-
+FILE=malloc://512
 CMDS=!!radare2 -V~r_anal?
 EXPECT=<<EOF
 1
@@ -131,7 +131,7 @@ EOF
 RUN
 
 NAME=radare2 -E honors R2_RCFILE
-FILE=-
+FILE=malloc://512
 ARGS=-escr.interactive=1 -E
 ENV=R2_RCFILE=scripts/palette.r2;HOME=scripts/no-nl-at-eof.r2;USERPROFILE=scripts/no-nl-at-eof.r2;VISUAL=radare2 -NNQqc o.;EDITOR=radare2 -NNQqc o.
 CMDS=q
@@ -141,7 +141,7 @@ EOF
 RUN
 
 NAME=radare2 -E skips existing command lines
-FILE=-
+FILE=malloc://512
 ENV=R2_RCFILE=scripts/no-nl-at-eof.r2;HOME=scripts/no-nl-at-eof.r2;USERPROFILE=scripts/no-nl-at-eof.r2;EDITOR=r2-no-such-editor;VISUAL=r2-no-such-editor
 CMDS=<<EOF
 r2 -E "!!rahash2 -v~commit?" "!!rahash2 -v~commit?"
@@ -154,11 +154,11 @@ EXPECT_ERR=
 RUN
 
 NAME=radare2 batch startup detects redirected streams
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
-r2 -NNq -c 'e scr.interactive' -
-r2 -NNQ -c 'e scr.interactive' -
-r2 -NN -e scr.prompt=false -c 'e scr.interactive' -
+r2 -NNq -c 'e scr.interactive' malloc://512
+r2 -NNQ -c 'e scr.interactive' malloc://512
+r2 -NN -e scr.prompt=false -c 'e scr.interactive' malloc://512
 EOF
 EXPECT=<<EOF
 false
@@ -168,11 +168,11 @@ EOF
 RUN
 
 NAME=radare2 batch startup honors explicit interactivity
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
-r2 -NNq -e scr.interactive=true -c 'e scr.interactive' -
-r2 -NN -e scr.interactive=true -q -c 'e scr.interactive' -
-r2 -NNQ -e scr.interactive=false -c 'e scr.interactive' -
+r2 -NNq -e scr.interactive=true -c 'e scr.interactive' malloc://512
+r2 -NN -e scr.interactive=true -q -c 'e scr.interactive' malloc://512
+r2 -NNQ -e scr.interactive=false -c 'e scr.interactive' malloc://512
 EOF
 EXPECT=<<EOF
 true
@@ -183,7 +183,7 @@ EXPECT_ERR=
 RUN
 
 NAME=radare2 quick batch output bypasses maxpage
-FILE=-
+FILE=malloc://512
 CMDS=r2 -NNQ -e scr.maxpage=1 -c 'pc 4' hex://00010203
 EXPECT=<<EOF
 #define _BUFFER_SIZE 4
@@ -195,10 +195,10 @@ EXPECT_ERR=
 RUN
 
 NAME=radare2 batch scripts bypass maxpage
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
-r2 -NNq -e scr.maxpage=1 -i scripts/no-nl-at-eof.r2 -
-r2 -NNQ -e scr.maxpage=1 -I scripts/no-nl-at-eof.r2 -
+r2 -NNq -e scr.maxpage=1 -i scripts/no-nl-at-eof.r2 malloc://512
+r2 -NNQ -e scr.maxpage=1 -I scripts/no-nl-at-eof.r2 malloc://512
 EOF
 EXPECT=<<EOF
 1
@@ -208,7 +208,7 @@ EXPECT_ERR=
 RUN
 
 NAME=radare2 -h
-FILE=-
+FILE=malloc://512
 CMDS=!!radare2 -h~Usage?
 EXPECT=<<EOF
 1
@@ -216,7 +216,7 @@ EOF
 RUN
 
 NAME=radare2 -hh
-FILE=-
+FILE=malloc://512
 CMDS=!!radare2 -hh~R2_USER_PLUGINS?
 EXPECT=<<EOF
 1
@@ -224,7 +224,7 @@ EOF
 RUN
 
 NAME=radare2 -L
-FILE=-
+FILE=malloc://512
 CMDS=!!radare2 -L~default?
 EXPECT=<<EOF
 1
@@ -232,7 +232,7 @@ EOF
 RUN
 
 NAME=r2 shortcut
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 ?q `!!r2 -h~Usage?`
 ?+ ?vi $?
@@ -244,8 +244,8 @@ EOF
 RUN
 
 NAME=no-nl-at-eof script
-FILE=-
-CMDS=!radare2 -i scripts/no-nl-at-eof.r2 -NQ -
+FILE=malloc://512
+CMDS=!radare2 -i scripts/no-nl-at-eof.r2 -NQ malloc://512
 EXPECT=<<EOF
 1
 EOF
@@ -254,10 +254,10 @@ EOF
 RUN
 
 NAME=radare2 -i -Q with missing script
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 # Should not hang
-!radare2 -i script/missing.r2 -NQ -
+!radare2 -i script/missing.r2 -NQ malloc://512
 EOF
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -266,23 +266,23 @@ EOF
 RUN
 
 NAME=radare2 empty -i
-FILE=-
-CMDS=!radare2 -i "" -
+FILE=malloc://512
+CMDS=!radare2 -i "" malloc://512
 EXPECT_ERR=<<EOF
 ERROR: Cannot open empty script path
 EOF
 RUN
 
 NAME=radare2 empty -I
-FILE=-
-CMDS=!radare2 -I "" -
+FILE=malloc://512
+CMDS=!radare2 -I "" malloc://512
 EXPECT_ERR=<<EOF
 ERROR: Cannot open empty script path
 EOF
 RUN
 
 NAME=radare2 empty -R
-FILE=-
+FILE=malloc://512
 CMDS=!radare2 -NR ""
 EXPECT_ERR=<<EOF
 ERROR: Missing file to open
@@ -290,7 +290,7 @@ EOF
 RUN
 
 NAME=radare2 empty -P
-FILE=-
+FILE=malloc://512
 CMDS=!radare2 -P ""
 EXPECT_ERR=<<EOF
 ERROR: Cannot open empty rapatch path
@@ -373,9 +373,9 @@ EOF
 RUN
 
 NAME=radare2 -p honors prj.sandbox and dir.projects from R2_RCFILE
-FILE=-
+FILE=malloc://512
 ENV=R2_RCFILE=scripts/prjrc/radare2rc;HOME=scripts/no-nl-at-eof.r2;USERPROFILE=scripts/no-nl-at-eof.r2
-CMDS=!radare2 -q -p sandboxed -c 'e prj.sandbox' - 2>/dev/null
+CMDS=!radare2 -q -p sandboxed -c 'e prj.sandbox' malloc://512 2>/dev/null
 EXPECT=<<EOF
 loaded
 true
@@ -383,9 +383,9 @@ EOF
 RUN
 
 NAME=radare2 -e overrides R2_RCFILE for -p projects
-FILE=-
+FILE=malloc://512
 ENV=R2_RCFILE=scripts/prjrc/radare2rc;HOME=scripts/no-nl-at-eof.r2;USERPROFILE=scripts/no-nl-at-eof.r2
-CMDS=!radare2 -q -e dir.projects=scripts -p sandboxed - 2>/dev/null || echo notfound
+CMDS=!radare2 -q -e dir.projects=scripts -p sandboxed malloc://512 2>/dev/null || echo notfound
 EXPECT=<<EOF
 notfound
 EOF

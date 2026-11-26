@@ -30,7 +30,7 @@ RUN
 NAME=r2 remote webserver two
 BROKEN=1
 CMDS=<<EOF
-& !rarun2 timeout=3 daemon=1 system="r2 -e http.root=/404 -e http.port=9292 -c=h -qcq -"
+& !rarun2 timeout=3 daemon=1 system="r2 -e http.root=/404 -e http.port=9292 -c=h -qcq malloc://512"
 sleep 1
 =+ http://127.0.0.1:9292/cmd/
 =

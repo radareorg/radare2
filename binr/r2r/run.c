@@ -1364,7 +1364,7 @@ R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test,
 	}
 	if (!files) {
 		files = r_list_newf (free);
-		r_list_append (files, strdup ("-"));
+		r_list_append (files, strdup ("malloc://512"));
 	}
 	r_list_foreach_safe (files, it, tmpit, token) {
 		if (!*token) {
@@ -1377,7 +1377,7 @@ R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test,
 		} else {
 			files->free = NULL;
 		}
-		r_list_push (files, "-");
+		r_list_push (files, "malloc://512");
 	}
 	if (test->env.value) {
 		extra_env = r_str_split_duplist (test->env.value, ";", true);
@@ -1838,7 +1838,7 @@ R_API R2RProcessOutput *r2r_run_leak_test(R2RRunConfig *config, R2RCmdTest *test
 	}
 	if (!files) {
 		files = r_list_newf (free);
-		r_list_append (files, strdup ("-"));
+		r_list_append (files, strdup ("malloc://512"));
 	}
 	r_list_foreach_safe (files, it, tmpit, token) {
 		if (!*token) {
@@ -1847,7 +1847,7 @@ R_API R2RProcessOutput *r2r_run_leak_test(R2RRunConfig *config, R2RCmdTest *test
 	}
 	if (r_list_empty (files)) {
 		files->free = NULL;
-		r_list_push (files, "-");
+		r_list_push (files, "malloc://512");
 	}
 	if (test->env.value) {
 		extra_env = r_str_split_duplist (test->env.value, ";", true);

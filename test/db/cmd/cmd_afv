@@ -1,5 +1,5 @@
 NAME=avr[rbs]- without function
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 afvr-*
 afvb-42

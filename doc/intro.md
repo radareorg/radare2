@@ -10,8 +10,8 @@
 -n: Bare load. Do not load executable info as the entrypoint
 -c 'cmds': Run r2 and execute commands (eg: r2 -wqc'wx 3c @ main')
 -p [prj]: Creates a project for the file being analyzed (CC add a comment when opening a file as a project)
--: Opens r2 with the malloc plugin that gives a 512 bytes memory area to play with (size can be changed)
-	Similar to r2 malloc://512
+-: Read file bytes from stdin through EOF
+malloc://512: Open a 512-byte scratch buffer
 ```
 
 ## Configuration properties

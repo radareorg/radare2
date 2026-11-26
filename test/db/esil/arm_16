@@ -1004,7 +1004,7 @@ EOF
 RUN
 
 NAME=x86-16 dos syscall
-FILE=-
+FILE=malloc://512
 ARGS=-ax86 -b16 -kdos
 CMDS=<<EOF
 "wa mov ah,0x30;int 0x21"
@@ -1017,7 +1017,7 @@ EOF
 RUN
 
 NAME=arm s110 syscalls esil
-FILE=-
+FILE=malloc://512
 ARGS=-aarm -b16 -easm.os=s110
 CMDS=<<EOF
 wx 05220aa17cdf
@@ -1032,7 +1032,7 @@ EOF
 RUN
 
 NAME=arm s110 syscalls as
-FILE=-
+FILE=malloc://512
 ARGS=-aarm -b16 -easm.os=s110
 CMDS=<<EOF
 wx 05220aa17cdf
@@ -1048,7 +1048,7 @@ EOF
 RUN
 
 NAME=arm s110 syscalls as num
-FILE=-
+FILE=malloc://512
 ARGS=-aarm -b16 -easm.os=s110
 CMDS=<<EOF
 wx 05220aa17cdf
@@ -1209,7 +1209,7 @@ EOF
 RUN
 
 NAME=arm s110 syscalls asl ascii
-FILE=-
+FILE=malloc://512
 ARGS=-aarm -b16 -easm.os=s110
 CMDS=asl sd_evt_get
 EXPECT=<<EOF
@@ -1218,7 +1218,7 @@ EOF
 RUN
 
 NAME=arm s110 syscalls asl num
-FILE=-
+FILE=malloc://512
 ARGS=-aarm -b16 -easm.os=s110
 CMDS=asl 0x51
 EXPECT=<<EOF
@@ -1227,7 +1227,7 @@ EOF
 RUN
 
 NAME=arm s110 syscalls asc num
-FILE=-
+FILE=malloc://512
 ARGS=-aarm -b16 -easm.os=s110
 CMDS=asc 0x51
 EXPECT=<<EOF
@@ -1236,7 +1236,7 @@ EOF
 RUN
 
 NAME=arm s110 syscalls asca num
-FILE=-
+FILE=malloc://512
 ARGS=-aarm -b16 -easm.os=s110
 CMDS=asca 0x51
 EXPECT=<<EOF

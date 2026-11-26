@@ -1,5 +1,5 @@
 NAME=pad medium size instructions
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=pad 9090909090
 EXPECT=<<EOF
@@ -12,7 +12,7 @@ EOF
 RUN
 
 NAME=pad smaller instruction
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=pad 52ee
 EXPECT=<<EOF
@@ -22,7 +22,7 @@ EOF
 RUN
 
 NAME=pad large instruction
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 32
 CMDS=pad 31c09952682f636174682f62696e89e3526873737764682f2f7061682f65746389e1b00b52515389e1cd80
 EXPECT=<<EOF

@@ -168,7 +168,7 @@ EOF
 RUN
 
 NAME=flutter refs
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 71334091314640f9
@@ -2193,7 +2193,7 @@ EOF
 RUN
 
 NAME=ccmp emits a balanced conditional
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 000041fa
@@ -2205,7 +2205,7 @@ EOF
 RUN
 
 NAME=ccmp with an always condition has no else arm
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 07e041fa
@@ -2217,7 +2217,7 @@ EOF
 RUN
 
 NAME=ccmn emits a balanced conditional
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 000041ba
@@ -2229,7 +2229,7 @@ EOF
 RUN
 
 NAME=ccmn with an always condition has no else arm
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 07e041ba
@@ -2241,7 +2241,7 @@ EOF
 RUN
 
 NAME=fccmp guards the compare with its condition
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 0044611e
@@ -2253,7 +2253,7 @@ EOF
 RUN
 
 NAME=fccmp with an always condition has no else arm
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 07e4611e
@@ -2265,7 +2265,7 @@ EOF
 RUN
 
 NAME=fcmp against the zero immediate uses the register width
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 0820201e
@@ -2280,7 +2280,7 @@ EOF
 RUN
 
 NAME=conditional compares encode the nzcv immediate
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 0a0041fa
@@ -2455,7 +2455,7 @@ RUN
 
 
 NAME=csel with an always condition has no else arm
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 20e0829a
@@ -2467,7 +2467,7 @@ EOF
 RUN
 
 NAME=csel with a condition keeps both arms
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 2000829a
@@ -2479,7 +2479,7 @@ EOF
 RUN
 
 NAME=csinv selects the inverted register
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 2000825a
@@ -2499,7 +2499,7 @@ EOF
 RUN
 
 NAME=csneg selects the negated register
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 2004825a
@@ -2511,7 +2511,7 @@ EOF
 RUN
 
 NAME=csinv selects the first register when the condition holds
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 2000825a
@@ -2530,7 +2530,7 @@ EOF
 RUN
 
 NAME=cinv inverts the register when the condition holds
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 2010815a
@@ -2554,7 +2554,7 @@ EOF
 RUN
 
 NAME=cneg negates the register when the condition holds
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 201481da
@@ -2578,7 +2578,7 @@ EOF
 RUN
 
 NAME=csetm w0 sets all 32 bits and clears the upper half
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx e0139f5a
@@ -2602,7 +2602,7 @@ EOF
 RUN
 
 NAME=csetm x0 sets all 64 bits
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx e0139fda
@@ -2625,7 +2625,7 @@ EOF
 RUN
 
 NAME=fcsel with an always condition has no else arm
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 20ec621e
@@ -2637,7 +2637,7 @@ EOF
 RUN
 
 NAME=fcsel selects by the condition
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 200c621e
@@ -2662,7 +2662,7 @@ EOF
 RUN
 
 NAME=csneg executes both arms
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 wx 2004825a
@@ -4459,7 +4459,7 @@ EOF
 RUN
 
 NAME=ARM64 literal load from a signed high virtual address
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64
 CMDS=<<EOF
 e io.va=true

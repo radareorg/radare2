@@ -1,5 +1,5 @@
 NAME=afn normal function
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch = avr
 wa ret
@@ -42,7 +42,7 @@ EOF
 RUN
 
 NAME=afn interrupt handler
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch = avr
 wa reti

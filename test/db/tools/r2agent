@@ -1,5 +1,5 @@
 NAME=r2agent -v
-FILE=-
+FILE=malloc://512
 CMDS=!r2agent -v | grep -c birth
 EXPECT=<<EOF
 1

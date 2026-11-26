@@ -1,5 +1,5 @@
 NAME=wes 0 10
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w aaaaaaaaaa
 pf z @0x0
@@ -51,7 +51,7 @@ EOF
 RUN
 
 NAME=wes 8 -4
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w aaaaaaaaaa @ 8
 pf z @0x8
@@ -122,7 +122,7 @@ EOF
 RUN
 
 NAME=wes 8 -8
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w aaaaaaaaaa @ 8
 pf z @0x8

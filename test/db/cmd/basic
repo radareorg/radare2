@@ -44,7 +44,7 @@ EOF
 RUN
 
 NAME=overlap0
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w AAAA
 /x 4141
@@ -56,7 +56,7 @@ EOF
 RUN
 
 NAME=overlap1
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e search.overlap=true
 w AAAA

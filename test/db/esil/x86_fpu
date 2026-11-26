@@ -1,5 +1,5 @@
 NAME=fld dword [rsp+8] esil
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -37,7 +37,7 @@ EOF
 RUN
 
 NAME=fst dword [rsp] esil
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -51,7 +51,7 @@ EOF
 RUN
 
 NAME=fstp dword [rsp] esil
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -65,7 +65,7 @@ EOF
 RUN
 
 NAME=fld1 esil
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -79,7 +79,7 @@ EOF
 RUN
 
 NAME=fldz esil
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -93,7 +93,7 @@ EOF
 RUN
 
 NAME=fadd st0, st1 esil
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -107,7 +107,7 @@ EOF
 RUN
 
 NAME=fadd st1, st0 esil
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -121,7 +121,7 @@ EOF
 RUN
 
 NAME=faddp st1 esil
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -135,7 +135,7 @@ EOF
 RUN
 
 NAME=fsub st0, st1 esil
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -149,7 +149,7 @@ EOF
 RUN
 
 NAME=fmul st0, st1 esil
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -163,7 +163,7 @@ EOF
 RUN
 
 NAME=fmulp st1 esil
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -177,7 +177,7 @@ EOF
 RUN
 
 NAME=fdiv st0, st1 esil
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -191,7 +191,7 @@ EOF
 RUN
 
 NAME=fdivrp st1 esil
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -205,7 +205,7 @@ EOF
 RUN
 
 NAME=fpu emulation fld1 fld1 faddp (1.0 + 1.0 = 2.0)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -221,7 +221,7 @@ EOF
 RUN
 
 NAME=fpu emulation fld1 fldz fmul (1.0 * 0.0 = 0.0)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -237,7 +237,7 @@ EOF
 RUN
 
 NAME=fpu emulation fdiv (1.0 / 2.0 = 0.5)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -255,7 +255,7 @@ EOF
 RUN
 
 NAME=fpu emulation fsub (3.0 - 1.0 = 2.0)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -273,7 +273,7 @@ EOF
 RUN
 
 NAME=fpu stack push (fld1)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -295,7 +295,7 @@ EOF
 RUN
 
 NAME=fpu stack pop (fstp)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64

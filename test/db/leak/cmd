@@ -1,5 +1,5 @@
 NAME=leak CL with invalid base64
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e log.level=0
 CL 0x100 base64:
@@ -11,7 +11,7 @@ EOF
 RUN
 
 NAME=leak omb+ with an existing bank name
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e log.level=0
 omb+ foo
@@ -54,7 +54,7 @@ EOF
 RUN
 
 NAME=leak Pze errors
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e log.level=0
 Pze

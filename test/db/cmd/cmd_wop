@@ -1,5 +1,5 @@
 NAME=debruijn little endian
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=false
 wopO 0x41574141
@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=debruijn big endian
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e cfg.bigendian=true
 wopO 0x41574141
@@ -21,7 +21,7 @@ EOF
 RUN
 
 NAME=wopD 0x10 @ 0
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wopD 0x10 @ 0
 p8 0x10
@@ -32,7 +32,7 @@ EOF
 RUN
 
 NAME=wopD* 0x10
-FILE=-
+FILE=malloc://512
 CMDS=wopD* 0x10
 EXPECT=<<EOF
 wx 41414142414143414144414145414146
@@ -40,7 +40,7 @@ EOF
 RUN
 
 NAME=wopO 0x41417641
-FILE=-
+FILE=malloc://512
 CMDS=wopO 0x41417641
 EXPECT=<<EOF
 140
@@ -48,14 +48,14 @@ EOF
 RUN
 
 NAME=wopO 41417641
-FILE=-
+FILE=malloc://512
 CMDS=wopO 41417641
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=woE woD rc4
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w helloworld
 woE rc4 s:key
@@ -68,7 +68,7 @@ EOF
 RUN
 
 NAME=woE woD rc2 ciphertext with zero byte
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 8
 w hello12x
@@ -84,7 +84,7 @@ EOF
 RUN
 
 NAME=woE woD rc2 unaligned length
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 12
 w helloworld12
@@ -101,7 +101,7 @@ EOF
 RUN
 
 NAME=woE woD sm4
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 32
 woE sm4-ecb 00112233445566778899aabbccddeeff
@@ -117,7 +117,7 @@ EOF
 RUN
 
 NAME=poE sm4 partial block
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 poE sm4-ecb 0123456789abcdeffedcba9876543210 @!24
 poD sm4-ecb 0123456789abcdeffedcba9876543210 @!24
@@ -128,7 +128,7 @@ EOF
 RUN
 
 NAME=woE woD xor
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w helloworld
 woE xor s:key
@@ -141,7 +141,7 @@ EOF
 RUN
 
 NAME=woE woD xor fix value
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 20
 woE xor s:helloworld
@@ -153,7 +153,7 @@ EOF
 RUN
 
 NAME=woE woD blowfish
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w helloworld
 woE blowfish s:key
@@ -166,7 +166,7 @@ EOF
 RUN
 
 NAME=woE woD aes-ecb
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w helloworld
 woE aes-ecb s:0123456789abcdef
@@ -179,7 +179,7 @@ EOF
 RUN
 
 NAME=woE aes-ecb-192
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 w0 16
 b 16
@@ -192,7 +192,7 @@ EOF
 RUN
 
 NAME=woS ed25519 (RFC 8032, 1 byte)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 1
 wx 72
@@ -205,7 +205,7 @@ EOF
 RUN
 
 NAME=woS ed25519 (RFC 8032, 64 bytes)
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 64
 wx ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f @ 64

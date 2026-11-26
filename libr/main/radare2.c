@@ -13,6 +13,8 @@
 
 #define USE_THREADS 1
 #define ALLOW_THREADED 1
+// 1: `r2 -` is an alias for `r2 malloc://512`; 0: `r2 -` reads the file from stdin
+#define DASH_IS_MALLOC 1
 #ifdef _MSC_VER
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -300,8 +302,13 @@ static int main_help(int line) {
 	if (line != 1) {
 		printf (
 			" --           end option parsing (start without a file if nothing follows)\n"
+#if DASH_IS_MALLOC
 			" -            same as 'r2 malloc://512'\n"
 			" =            read file from stdin (use -i and -c to run cmds)\n"
+#else
+			" -            read file from stdin (use malloc://512 for a scratch buffer)\n"
+			" =            read file from stdin and reopen the console on /dev/tty\n"
+#endif
 			" -=           perform !=! command to run all commands remotely\n"
 			" -0           print \\x00 after init and every command\n"
 			" -1           redirect stderr to stdout\n"
@@ -1473,7 +1480,11 @@ static int main_radare2(int argc, const char **argv, bool standalone) {
 			r_core_cmdf (r, "=+ %s", argv[opt.ind]);
 		}
 		r_core_cmd0 (r, "=!=0");
+#if DASH_IS_MALLOC
 		argv[opt.ind] = "-";
+#else
+		argv[opt.ind] = "malloc://512";
+#endif
 	}
 
 	switch (mr.zflag) {
@@ -1519,7 +1530,11 @@ static int main_radare2(int argc, const char **argv, bool standalone) {
 		autoload_zigns (r);
 	}
 
+#if DASH_IS_MALLOC
 	if (R_STR_ISNOTEMPTY (mr.pfile) && r_file_is_directory (mr.pfile)) {
+#else
+	if (R_STR_ISNOTEMPTY (mr.pfile) && (mr.debug || strcmp (mr.pfile, "-")) && r_file_is_directory (mr.pfile)) {
+#endif
 		if (mr.debug) {
 			R_LOG_ERROR ("Cannot debug directories, yet");
 			mainr2_fini (&mr);
@@ -1776,11 +1791,20 @@ static int main_radare2(int argc, const char **argv, bool standalone) {
 #else
 					mr.pfile = strdup (argv[opt.ind++]);
 #endif
+#if DASH_IS_MALLOC
 					mr.fh = r_core_file_open (r, mr.pfile, mr.perms, mr.mapaddr);
 					if (!mr.fh && mr.perms & R_PERM_W) {
 						mr.perms |= R_PERM_CREAT;
 						mr.fh = r_core_file_open (r, mr.pfile, mr.perms, mr.mapaddr);
 					}
+#else
+					const char *input = !mr.debug && r_str_eq (mr.pfile, "-")? "stdin://": mr.pfile;
+					mr.fh = r_core_file_open (r, input, mr.perms, mr.mapaddr);
+					if (!mr.fh && mr.perms & R_PERM_W) {
+						mr.perms |= R_PERM_CREAT;
+						mr.fh = r_core_file_open (r, input, mr.perms, mr.mapaddr);
+					}
+#endif
 					if (mr.perms & R_PERM_CREAT) {
 						if (mr.fh) {
 							r_config_set_i (r->config, "io.va", false);

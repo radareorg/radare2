@@ -1,5 +1,5 @@
 NAME=dupfd bug
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.null=true
 10o -
@@ -12,7 +12,7 @@ EOF
 RUN
 
 NAME=dupfd hard
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e scr.null=true
 1000o -
@@ -25,7 +25,7 @@ EOF
 RUN
 
 NAME=dupfd hard
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 op
 o -

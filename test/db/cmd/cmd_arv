@@ -1,5 +1,5 @@
 NAME=arv and drv share vector register implementation
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 ar?~arv
@@ -124,7 +124,7 @@ EOF
 RUN
 
 NAME=Vector lane defaults and formatting agree across commands
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF_CMDS
 arv xmm0 1 = 0x123456789abcdef0
@@ -152,7 +152,7 @@ EOF_EXPECT
 RUN
 
 NAME=ARM64 aliases and banks share discovery and checked predicate bits
-FILE=-
+FILE=malloc://512
 ARGS=-a arm -b 64 -e cfg.bigendian=true -e asm.cpu=sve384
 CMDS=<<EOF_CMDS
 arvj
@@ -193,7 +193,7 @@ EOF_EXPECT
 RUN
 
 NAME=Vector bounds errors are shared by reads writes JSON and restore output
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF_CMDS
 arv xmm0 2
@@ -228,7 +228,7 @@ EOF_EXPECT
 RUN
 
 NAME=Vector sub-byte lanes can cross chunks but full exports require complete lanes
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF_CMDS
 arv xmm0 21 3 = 7
@@ -253,7 +253,7 @@ EOF_EXPECT
 RUN
 
 NAME=Vector shorthand floats and integers keep distinct formatting
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF_CMDS
 arv xmm0 0 64 = 0x400000003f800000
@@ -270,7 +270,7 @@ EOF_EXPECT
 RUN
 
 NAME=X86 vector profiles overlap through ZMM31 without touching adjacent registers
-FILE=-
+FILE=malloc://512
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 arv zmm30 7=0x30

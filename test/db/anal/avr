@@ -49,7 +49,7 @@ EOF
 RUN
 
 NAME=avr DISasm: opcode size
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
 wx 0e941122
@@ -405,7 +405,7 @@ EOF
 RUN
 
 NAME=avr functions 2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
 wx 1895

@@ -1,5 +1,5 @@
 NAME=rahash2 standalone ignores an inherited console pointer
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 env R2CONS=1
 !rahash2 -q -a md5 -s abc
@@ -17,7 +17,7 @@ EXPECT_ERR=
 RUN
 
 NAME=rahash2 -a entropy
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a entropy bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a35 entropy: 3.27819072
@@ -25,7 +25,7 @@ EOF
 RUN
 
 NAME=rahash2 entropy output modes
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rahash2 -qq -a entropy bins/elf/analysis/hello-linux-x86_64
 !rahash2 -j -a entropy bins/elf/analysis/hello-linux-x86_64
@@ -43,7 +43,7 @@ EOF
 RUN
 
 NAME=rahash2 -a ssdeep
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a ssdeep bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a35 ssdeep: 96:Gy7im/6GjuA9fuF/lsSULxe2RELk3MgmEof7EEa4BIUdoBU:GyXfk/lsSU8LkaEofDOeom
@@ -51,7 +51,7 @@ EOF
 RUN
 
 NAME=rahash2 -a ssdeep small input
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rahash2 -a ssdeep -s 123456789
 !rahash2 -j -a md5,ssdeep -s 123456789
@@ -63,7 +63,7 @@ EOF
 RUN
 
 NAME=rahash2 -a md5
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a35 md5: c957bd5bd6204470256bc15248ccafd4
@@ -71,7 +71,7 @@ EOF
 RUN
 
 NAME=rahash2 -a sha1
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a sha1 bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a35 sha1: 687c82d13cb27f0600d8e57edc784282c1732f56
@@ -79,7 +79,7 @@ EOF
 RUN
 
 NAME=rahash2 -a sha256
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a sha256 bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a35 sha256: 7bdbf25324af1946ec0b16dbf928875a588a786f7c279cd115729c5a3a297a55
@@ -87,7 +87,7 @@ EOF
 RUN
 
 NAME=rahash2 -a sha384
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a sha384 bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a35 sha384: a6fed224b0b5892ab44839b5ae6a12e54fb3393b5f1e1ca174fb5a0032c994f1c492c5b3a090518d8a60875223977ba4
@@ -95,7 +95,7 @@ EOF
 RUN
 
 NAME=rahash2 -a sha512
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a sha512 bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a35 sha512: 2640b1ff96870fb78a3d8ae6b51595ca86c37e25443b2e8c5441e77d11cdb3830ece8d791561c22788d37d7f22c99cdabf8f798826c0ff441901e6157890fee6
@@ -103,7 +103,7 @@ EOF
 RUN
 
 NAME=rahash2 -a md5,sha1,sha256 -r
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5,sha1,sha256 -r bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: CC file md5:c957bd5bd6204470256bc15248ccafd4
@@ -113,7 +113,7 @@ EOF
 RUN
 
 NAME=rahash2 -b10 -a md5,sha1,sha256 -r
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -b10 -a md5,sha1,sha256 -r bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: CC file md5:c957bd5bd6204470256bc15248ccafd4
@@ -123,7 +123,7 @@ EOF
 RUN
 
 NAME=rahash2 -a md5,sha1,sha256 -R
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5,sha1,sha256 -R bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: k file.md5=c957bd5bd6204470256bc15248ccafd4
@@ -133,7 +133,7 @@ EOF
 RUN
 
 NAME=rahash2 -R -B rejected
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 -R -B bins/elf/analysis/hello-linux-x86_64
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -142,7 +142,7 @@ EOF
 RUN
 
 NAME=rahash2 -h
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2~Usage
 EXPECT=<<EOF
 Usage: rahash2 [-BehjkLqRrvX] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...
@@ -150,7 +150,7 @@ EOF
 RUN
 
 NAME=rahash2 -a md5 -s "admin"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 -s "admin"
 EXPECT=<<EOF
 0x00000000-0x00000004 md5: 21232f297a57a5a743894a0e4a801fc3
@@ -158,7 +158,7 @@ EOF
 RUN
 
 NAME=rahash2 -a md5 -e -s "admin"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 -e -s "admin"
 EXPECT=<<EOF
 0x00000000-0x00000004 md5: c31f804a0e4a8943a7a5577a292f2321
@@ -166,7 +166,7 @@ EOF
 RUN
 
 NAME=rahash2 -a sha1,sha256 -s "admin"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a sha1,sha256 -s "admin"
 EXPECT=<<EOF
 0x00000000-0x00000004 sha1: d033e22ae348aeb5660fc2140aec35850c4da997
@@ -175,25 +175,25 @@ EOF
 RUN
 
 NAME=rahash2 -D base64 -s "YWRtaW4="
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -D base64 -s "YWRtaW4="
 EXPECT=admin
 RUN
 
 NAME=rahash2 -E base64 -s "admin"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E base64 -s "admin"
 EXPECT=YWRtaW4=
 RUN
 
 NAME=rahash2 -E base64 -x "61646d696e"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E base64 -x "61646d696e"
 EXPECT=YWRtaW4=
 RUN
 
 NAME=rahash2 -a md5 -x "61646d696e"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 -x "61646d696e"
 EXPECT=<<EOF
 0x00000000-0x00000004 md5: 21232f297a57a5a743894a0e4a801fc3
@@ -201,7 +201,7 @@ EOF
 RUN
 
 NAME=rahash2 -a md5 -x "61646d696e" -s "admin"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 -x "61646d696e" -s "admin"
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -210,7 +210,7 @@ EOF
 RUN
 
 NAME=rahash2 -a luhn -s "5105105105105100"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a luhn -s "5105105105105100"
 EXPECT=<<EOF
 0x00000000-0x0000000f luhn: 00
@@ -218,7 +218,7 @@ EOF
 RUN
 
 NAME=rahash2 -a luhn -s "4408041234567890"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a luhn -s "4408041234567890"
 EXPECT=<<EOF
 0x00000000-0x0000000f luhn: 07
@@ -226,7 +226,7 @@ EOF
 RUN
 
 NAME=rahash2 -L
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -L
 EXPECT=<<EOF
 hash          add  Add checksum used by Tar (sum all bytes into ut32)
@@ -284,7 +284,7 @@ EOF
 RUN
 
 NAME=rahash2 -a md5 -t0x4 -x "61646d696eaa"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 -t0x4 -x "61646d696eaa"
 EXPECT=<<EOF
 0x00000000-0x00000004 md5: 21232f297a57a5a743894a0e4a801fc3
@@ -292,7 +292,7 @@ EOF
 RUN
 
 NAME=rahash2 -q -a md5 -t0x4 -x "61646d696eaa"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -q -a md5 -t0x4 -x "61646d696eaa"
 EXPECT=<<EOF
 21232f297a57a5a743894a0e4a801fc3
@@ -300,7 +300,7 @@ EOF
 RUN
 
 NAME=rahash2 -q -a md5 -f0x1 -x "aa61646d696e"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -q -a md5 -f0x1 -x "aa61646d696e"
 EXPECT=<<EOF
 21232f297a57a5a743894a0e4a801fc3
@@ -308,7 +308,7 @@ EOF
 RUN
 
 NAME=rahash2 -q -a md5 -i1 -x "61646d696e"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -q -a md5 -i1 -x "61646d696e"
 EXPECT=<<EOF
 43442676c74ae59f219c2d87fd6bad52
@@ -316,7 +316,7 @@ EOF
 RUN
 
 NAME=rahash2 -q -a md5 -i2 -x "61646d696e"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -q -a md5 -i2 -x "61646d696e"
 EXPECT=<<EOF
 9fec80fbcee7632ce78d1586332b299e
@@ -324,7 +324,7 @@ EOF
 RUN
 
 NAME=rahash2 -a md5 -t0x4 -s "admina"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 -t0x4 -s "admina"
 EXPECT=<<EOF
 0x00000000-0x00000004 md5: 21232f297a57a5a743894a0e4a801fc3
@@ -332,7 +332,7 @@ EOF
 RUN
 
 NAME=rahash2 -q -a md5 -t0x4 -s "admina"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -q -a md5 -t0x4 -s "admina"
 EXPECT=<<EOF
 21232f297a57a5a743894a0e4a801fc3
@@ -340,7 +340,7 @@ EOF
 RUN
 
 NAME=rahash2 -q -a md5 -f0x1 -s "aadmin"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -q -a md5 -f0x1 -s "aadmin"
 EXPECT=<<EOF
 21232f297a57a5a743894a0e4a801fc3
@@ -348,7 +348,7 @@ EOF
 RUN
 
 NAME=rahash2 -q -a md5 -i1 -s "admin"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -q -a md5 -i1 -s "admin"
 EXPECT=<<EOF
 43442676c74ae59f219c2d87fd6bad52
@@ -356,7 +356,7 @@ EOF
 RUN
 
 NAME=rahash2 -q -a md5 -i2 -s "admin"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -q -a md5 -i2 -s "admin"
 EXPECT=<<EOF
 9fec80fbcee7632ce78d1586332b299e
@@ -364,7 +364,7 @@ EOF
 RUN
 
 NAME=rahash2 -q -a md5 -f0x1 -t0x5 -s "aadmina"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -q -a md5 -f0x1 -t0x5 -s "aadmina"
 EXPECT=<<EOF
 21232f297a57a5a743894a0e4a801fc3
@@ -372,7 +372,7 @@ EOF
 RUN
 
 NAME=rahash2 -q -a md5 -f0x1 -t0x5 -x "aa61646d696eaa"
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -q -a md5 -f0x1 -t0x5 -x "aa61646d696eaa"
 EXPECT=<<EOF
 21232f297a57a5a743894a0e4a801fc3
@@ -380,7 +380,7 @@ EOF
 RUN
 
 NAME=printf "admin" | rahash2 -q -a md5 -s -
-FILE=-
+FILE=malloc://512
 CMDS=!printf "admin" | rahash2 -q -a md5 -s -
 EXPECT=<<EOF
 21232f297a57a5a743894a0e4a801fc3
@@ -388,7 +388,7 @@ EOF
 RUN
 
 NAME=printf "aadmina" | rahash2 -f0x1 -t0x5 -q -a md5 -s -
-FILE=-
+FILE=malloc://512
 CMDS=!printf "aadmina" | rahash2 -f0x1 -t0x5 -q -a md5 -s -
 EXPECT=<<EOF
 21232f297a57a5a743894a0e4a801fc3
@@ -396,7 +396,7 @@ EOF
 RUN
 
 NAME=printf "aa61646d696eaa" | rahash2 -f0x1 -t0x5 -q -a md5 -x -
-FILE=-
+FILE=malloc://512
 CMDS=!printf "aa61646d696eaa" | rahash2 -f0x1 -t0x5 -q -a md5 -x -
 EXPECT=<<EOF
 21232f297a57a5a743894a0e4a801fc3
@@ -434,7 +434,7 @@ EOF
 RUN
 
 NAME=rahash2 -v~commit?"
-FILE=-
+FILE=malloc://512
 CMDS=!!rahash2 -v~commit?
 EXPECT=<<EOF
 1
@@ -442,7 +442,7 @@ EOF
 RUN
 
 NAME=rahash2 -s hello1
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -qa md5 -s hello1
 EXPECT=<<EOF
 203ad5ffa1d7c650ad681fdff3965cd2
@@ -450,7 +450,7 @@ EOF
 RUN
 
 NAME=rahash2 -s hello\x31
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -qa md5 -s "hello\x31"
 EXPECT=<<EOF
 203ad5ffa1d7c650ad681fdff3965cd2
@@ -458,7 +458,7 @@ EOF
 RUN
 
 NAME=rahash2 zero length hashes md5
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 -s ""
 EXPECT=<<EOF
 0x00000000-0x00000000 md5: d41d8cd98f00b204e9800998ecf8427e
@@ -466,7 +466,7 @@ EOF
 RUN
 
 NAME=rahash2 zero length hashes sha1
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a sha1 -s ""
 EXPECT=<<EOF
 0x00000000-0x00000000 sha1: da39a3ee5e6b4b0d3255bfef95601890afd80709
@@ -474,7 +474,7 @@ EOF
 RUN
 
 NAME=rahash2 empty file
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rahash2 -a md5,sha256,xxhash,ssdeep /dev/null
 !rahash2 -qa md5 -t 0 /dev/null
@@ -491,7 +491,7 @@ EOF
 RUN
 
 NAME=rahash2 empty stdin
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 - < /dev/null
 EXPECT=<<EOF
 -: 0x00000000-0x00000000 md5: d41d8cd98f00b204e9800998ecf8427e
@@ -501,7 +501,7 @@ EOF
 RUN
 
 NAME=rahash2 -c with correct expected hash
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 -s "admin" -c 21232f297a57a5a743894a0e4a801fc3
 EXPECT=<<EOF
 0x00000000-0x00000004 md5: 21232f297a57a5a743894a0e4a801fc3
@@ -509,7 +509,7 @@ EOF
 RUN
 
 NAME=rahash2 -c with incorrect expected hash
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 -s "admin" -c 21232f297a57a5a743894a0e4a801fc4
 EXPECT=<<EOF
 0x00000000-0x00000004 md5: 21232f297a57a5a743894a0e4a801fc3
@@ -520,7 +520,7 @@ EOF
 RUN
 
 NAME=rahash2 -c with correct expected hash and quiet
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -q -a md5 -s "admin" -c 21232f297a57a5a743894a0e4a801fc3
 EXPECT=<<EOF
 21232f297a57a5a743894a0e4a801fc3
@@ -528,7 +528,7 @@ EOF
 RUN
 
 NAME=rahash2 -c with missing nibble
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 -s "admin" -c 21232f297a57a5a743894a0e4a801fc
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -537,7 +537,7 @@ EOF
 RUN
 
 NAME=rahash2 -c with incorrect md5 hash length
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 -s "admin" -c 21232f297a57a5a743894a0e4a801f
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -546,7 +546,7 @@ EOF
 RUN
 
 NAME=rahash2 -c with incorrect sha1 hash length
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a sha1 -s "admin" -c 21232f297a57a5a743894a0e4a801f
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -555,7 +555,7 @@ EOF
 RUN
 
 NAME=rahash2 -c with 2 hash algorithms
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5,sha1 -s "admin" -c 21232f297a57a5a743894a0e4a801f
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -564,7 +564,7 @@ EOF
 RUN
 
 NAME=rahash2 -c with all hash algorithms
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a all -s "admin" -c 21232f297a57a5a743894a0e4a801f
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -573,7 +573,7 @@ EOF
 RUN
 
 NAME=rahash2 -c with custom block size and per-block hash
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -b 1 -B -s "admin" -c 21232f297a57a5a743894a0e4a801f
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -582,7 +582,7 @@ EOF
 RUN
 
 NAME=rahash2 -c with base64 encoding
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E base64 -s "admin" -c 21232f297a57a5a743894a0e4a801f
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -591,7 +591,7 @@ EOF
 RUN
 
 NAME=rahash2 -c with base64 decoding
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -D base64 -s "admin" -c 21232f297a57a5a743894a0e4a801f
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -601,7 +601,7 @@ RUN
 
 # Taken from "Descriptions of SHA-256, SHA-384, and SHA-512" by NIST
 NAME=rahash2 of "abc" using sha256
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a sha256 -s "abc"
 EXPECT=<<EOF
 0x00000000-0x00000002 sha256: ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
@@ -610,7 +610,7 @@ RUN
 
 # Taken from "Descriptions of SHA-256, SHA-384, and SHA-512" by NIST
 NAME=rahash2 of "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq" using sha256
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a sha256 -s "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
 EXPECT=<<EOF
 0x00000000-0x00000037 sha256: 248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1
@@ -619,7 +619,7 @@ RUN
 
 # Taken from "Descriptions of SHA-256, SHA-384, and SHA-512" by NIST
 NAME=rahash2 of "abc" using sha512
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a sha512 -s "abc"
 EXPECT=<<EOF
 0x00000000-0x00000002 sha512: ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f
@@ -628,7 +628,7 @@ RUN
 
 # Taken from "Descriptions of SHA-256, SHA-384, and SHA-512" by NIST
 NAME=rahash2 of "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu" using sha512
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a sha512 -s "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"
 EXPECT=<<EOF
 0x00000000-0x0000006f sha512: 8e959b75dae313da8cf4f72814fc143f8f7779c6eb9f7fa17299aeadb6889018501d289e4900f7e4331b99dec4b5433ac7d329eeb6dd26545e96e55b874be909
@@ -637,7 +637,7 @@ RUN
 
 # Taken from "Descriptions of SHA-256, SHA-384, and SHA-512" by NIST3
 NAME=rahash2 of "abc" using sha384
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a sha384 -s "abc"
 EXPECT=<<EOF
 0x00000000-0x00000002 sha384: cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7
@@ -646,7 +646,7 @@ RUN
 
 # Taken from "Descriptions of SHA-256, SHA-384, and SHA-512" by NIST
 NAME=rahash2 of "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu" using sha384
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a sha384 -s "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"
 EXPECT=<<EOF
 0x00000000-0x0000006f sha384: 09330c33f71147e83d192fc782cd1b4753111b173b3b05d22fa08086e3b0f712fcc7c71a557e2db966c3e9fa91746039
@@ -654,7 +654,7 @@ EOF
 RUN
 
 NAME=rahash2 of empty string using sha256
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a sha256 -s ""
 EXPECT=<<EOF
 0x00000000-0x00000000 sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
@@ -662,7 +662,7 @@ EOF
 RUN
 
 NAME=rahash2 of empty string using sha384
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a sha384 -s ""
 EXPECT=<<EOF
 0x00000000-0x00000000 sha384: 38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b
@@ -670,7 +670,7 @@ EOF
 RUN
 
 NAME=rahash2 of empty string using sha512
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a sha512 -s ""
 EXPECT=<<EOF
 0x00000000-0x00000000 sha512: cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e
@@ -678,7 +678,7 @@ EOF
 RUN
 
 NAME=rahash2 -E RC4
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -S key -E rc4 -s hello" world\n" | rahash2 -S key -E rc4 -s -
 EXPECT=<<EOF
 hello world
@@ -686,7 +686,7 @@ EOF
 RUN
 
 NAME=rahash2 -E xor
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -S key -E xor -s hello" world\n" | rahash2 -S key -E xor -s -
 EXPECT=<<EOF
 hello world
@@ -694,7 +694,7 @@ EOF
 RUN
 
 NAME=rahash2 -E blowfish
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -S key -E blowfish -s hello" world 123\n" | rax2 -S
 EXPECT=<<EOF
 6ceced43fb2a72c9aa9447d193b00763
@@ -702,7 +702,7 @@ EOF
 RUN
 
 NAME=rahash2 -D blowfish
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -S key -E blowfish -s hello" world 123\n" | rahash2 -S key -D blowfish -s -
 EXPECT=<<EOF
 hello world 123
@@ -710,20 +710,20 @@ EOF
 RUN
 
 NAME=rahash2 -E aes-ecb 128 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E aes-ecb -S "11111111111111111111111111111111" -s "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") <(echo -en "\xff\x6f\xb5\xd9\x27\x6d\xe8\x38\x8e\x4b\x82\xa7\x73\xd0\xb5\x21\xff\x6f\xb5\xd9\x27\x6d\xe8\x38\x8e\x4b\x82\xa7\x73\xd0\xb5\x21\xff\x6f\xb5\xd9\x27\x6d\xe8\x38\x8e\x4b\x82\xa7\x73\xd0\xb5\x21\xff\x6f\xb5\xd9\x27\x6d\xe8\x38\x8e\x4b\x82\xa7\x73\xd0\xb5\x21")"
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=rahash2 -D aes-ecb 128 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E aes-ecb -S "11111111111111111111111111111111" -s "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" | rahash2 -D aes-ecb -S "11111111111111111111111111111111" -s -
 EXPECT=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 RUN
 
 NAME=rahash2 -E aes-ecb 192 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E aes-ecb -S 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b -x "6bc1bee22e409f96e93d7e117393172a" | rax2 -S
 EXPECT=<<EOF
 bd334f1d6e45f25ff712a214571fa5cc
@@ -731,7 +731,7 @@ EOF
 RUN
 
 NAME=rahash2 -D aes-ecb 192 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E aes-ecb -S 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b -x "6bc1bee22e409f96e93d7e117393172a" | rahash2 -D aes-ecb -S 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b -s - | rax2 -S
 EXPECT=<<EOF
 6bc1bee22e409f96e93d7e117393172a
@@ -739,7 +739,7 @@ EOF
 RUN
 
 NAME=rahash2 -E aes-ecb 256 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E aes-ecb -S 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 -x "6bc1bee22e409f96e93d7e117393172a" | rax2 -S
 EXPECT=<<EOF
 f3eed1bdb5d2a03c064b5a7e3db181f8
@@ -747,7 +747,7 @@ EOF
 RUN
 
 NAME=rahash2 -D aes-ecb 256 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E aes-ecb -S 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 -x "6bc1bee22e409f96e93d7e117393172a" | rahash2 -D aes-ecb -S 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 -s - | rax2 -S
 EXPECT=<<EOF
 6bc1bee22e409f96e93d7e117393172a
@@ -755,7 +755,7 @@ EOF
 RUN
 
 NAME=rahash2 -E aes-cbc 128 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E aes-cbc -S "2b7e151628aed2a6abf7158809cf4f3c" -I "7649ABAC8119B246CEE98E9B12E9197D"  -x "ae2d8a571e03ac9c9eb76fac45af8e51" | rax2 -S
 EXPECT=<<EOF
 5086cb9b507219ee95db113a917678b2
@@ -763,7 +763,7 @@ EOF
 RUN
 
 NAME=rahash2 -D aes-cbc 128 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E aes-cbc -S "2b7e151628aed2a6abf7158809cf4f3c" -I "7649ABAC8119B246CEE98E9B12E9197D"  -x "ae2d8a571e03ac9c9eb76fac45af8e51" | rahash2 -D aes-cbc -S "2b7e151628aed2a6abf7158809cf4f3c" -I "7649ABAC8119B246CEE98E9B12E9197D" -s - | rax2 -S
 EXPECT=<<EOF
 ae2d8a571e03ac9c9eb76fac45af8e51
@@ -771,7 +771,7 @@ EOF
 RUN
 
 NAME=rahash2 -E aes-cbc 192 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E aes-cbc -S 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b -x "6bc1bee22e409f96e93d7e117393172a" -I "000102030405060708090A0B0C0D0E0F" | rax2 -S
 EXPECT=<<EOF
 4f021db243bc633d7178183a9fa071e8
@@ -779,7 +779,7 @@ EOF
 RUN
 
 NAME=rahash2 -D aes-cbc 192 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E aes-cbc -S 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b -x "6bc1bee22e409f96e93d7e117393172a" -I "000102030405060708090A0B0C0D0E0F" | rahash2 -D aes-cbc -S 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b -I "000102030405060708090A0B0C0D0E0F" -s - | rax2 -S
 EXPECT=<<EOF
 6bc1bee22e409f96e93d7e117393172a
@@ -787,7 +787,7 @@ EOF
 RUN
 
 NAME=rahash2 -E aes-cbc 256 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E aes-cbc -S 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 -x "f69f2445df4f9b17ad2b417be66c3710" -I "39F23369A9D9BACFA530E26304231461" | rax2 -S
 EXPECT=<<EOF
 b2eb05e2c39be9fcda6c19078c6a9d1b
@@ -795,7 +795,7 @@ EOF
 RUN
 
 NAME=rahash2 -D aes-cbc 256 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E aes-cbc -S 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 -x "f69f2445df4f9b17ad2b417be66c3710" -I "39F23369A9D9BACFA530E26304231461" | rahash2 -D aes-cbc -S 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 -I "39F23369A9D9BACFA530E26304231461" -s - | rax2 -S
 EXPECT=<<EOF
 f69f2445df4f9b17ad2b417be66c3710
@@ -803,7 +803,7 @@ EOF
 RUN
 
 NAME=rahash2 -E aes-wrap 128 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E aes-wrap -S 000102030405060708090A0B0C0D0E0F -x "00112233445566778899AABBCCDDEEFF" | rax2 -S
 EXPECT=<<EOF
 1fa68b0a8112b447aef34bd8fb5a7b829d3e862371d2cfe5
@@ -811,7 +811,7 @@ EOF
 RUN
 
 NAME=rahash2 -E aes-wrap 128 bit custom IV
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E aes-wrap -S 000102030405060708090A0B0C0D0E0F -x "00112233445566778899AABBCCDDEEFF" -I "0011223344556677" | rahash2 -D aes-wrap -S 000102030405060708090A0B0C0D0E0F -I "0011223344556677" -s - | rax2 -S
 EXPECT=<<EOF
 00112233445566778899aabbccddeeff
@@ -819,7 +819,7 @@ EOF
 RUN
 
 NAME=rahash2 -D aes-wrap 128 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -D aes-wrap -S 000102030405060708090A0B0C0D0E0F -x "1FA68B0A8112B447AEF34BD8FB5A7B829D3E862371D2CFE5" | rax2 -S
 EXPECT=<<EOF
 00112233445566778899aabbccddeeff
@@ -827,14 +827,14 @@ EOF
 RUN
 
 NAME=rahash2 -D aes-wrap 128 bit invalid
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -D aes-wrap -S 000102030405060708090A0B0C0D0E0F -x "1FA68B0A8112B447AE934BD8FB5A7B829D3E862371D2CFE5" | rax2 -S
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=rahash2 -D aes-wrap 192 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -D aes-wrap -S 000102030405060708090A0B0C0D0E0F1011121314151617 -x "96778B25AE6CA435F92B5B97C050AED2468AB8A17AD84E5D" | rax2 -S
 EXPECT=<<EOF
 00112233445566778899aabbccddeeff
@@ -842,7 +842,7 @@ EOF
 RUN
 
 NAME=rahash2 -E aes-wrap 256 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E aes-wrap -S 000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F -x "00112233445566778899AABBCCDDEEFF000102030405060708090A0B0C0D0E0F" | rax2 -S
 EXPECT=<<EOF
 28c9f404c4b810f4cbccb35cfb87f8263f5786e2d80ed326cbc7f0e71a99f43bfb988b9b7a02dd21
@@ -850,7 +850,7 @@ EOF
 RUN
 
 NAME=rahash2 -E rot
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E rot -S s:13 -s hello" world\n"
 EXPECT=<<EOF
 uryyb jbeyq
@@ -858,7 +858,7 @@ EOF
 RUN
 
 NAME=rahash2 -E rot negative key
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E rot -S s:14 -s hello" world\n" | rahash2 -E rot -S s:-14 -s -
 EXPECT=<<EOF
 hello world
@@ -866,7 +866,7 @@ EOF
 RUN
 
 NAME=rahash2 -E rol
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E rol -S 03 -x "31ed4989" | rax2 -S
 EXPECT=<<EOF
 896f4a4c
@@ -874,7 +874,7 @@ EOF
 RUN
 
 NAME=rahash2 -E ror
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E ror -S 04 -x "62da9212" | rax2 -S
 EXPECT=<<EOF
 26ad2921
@@ -882,25 +882,25 @@ EOF
 RUN
 
 NAME=rahash2 -E base91
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E base91 -s "hello world\n"
 EXPECT=TPwJh>Io2Tv!^aB
 RUN
 
 NAME=rahash2 -D base91
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E base91 -s "hello world" | rahash2 -D base91 -s -
 EXPECT=hello world
 RUN
 
 NAME=rahash2 -E bech32
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E bech32 -S s:bc -x "00010203040506070809"
 EXPECT=bc1qpzry9x8gfaur95s
 RUN
 
 NAME=rahash2 -D bech32
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -D bech32 -s bc1qpzry9x8gfaur95s | rax2 -S
 EXPECT=<<EOF
 00010203040506070809
@@ -908,13 +908,13 @@ EOF
 RUN
 
 NAME=rahash2 -D bech32 with a long hrp
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -D bech32 -s aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1qqqqqq
 EXPECT=
 RUN
 
 NAME=rahash2 -E rc2
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E rc2 -S key -s "helloworld123456" | rax2 -S 
 EXPECT=<<EOF
 a9c85c7650456d8f5f369704ad1e339f
@@ -922,19 +922,19 @@ EOF
 RUN
 
 NAME=rahash2 -D rc2
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E rc2 -S key -s "helloworld123456" | rahash2 -D rc2 -S key -s -
 EXPECT=helloworld123456
 RUN
 
 NAME=rahash2 -E punycode
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E punycode -x 57696c6c73742064752064696520426cc3bc74686520646573206672c3bc68656e2c20646965204672c3bc6368746520646573207370c3a4746572656e204a6168726573
 EXPECT=Willst du die Blthe des frhen, die Frchte des spteren Jahres-x9e96lkal
 RUN
 
 NAME=rahash2 -D punycode
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -D punycode -s "Willst du die Blthe des frhen, die Frchte des spteren Jahres-x9e96lkal" | rax2 -S
 EXPECT=<<EOF
 57696c6c73742064752064696520426cc3bc74686520646573206672c3bc68656e2c20646965204672c3bc6368746520646573207370c3a4746572656e204a6168726573
@@ -942,13 +942,13 @@ EOF
 RUN
 
 NAME=rahash2 -E punycode[1]
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E punycode -x f09f918d
 EXPECT=yp8h
 RUN
 
 NAME=rahash2 -D punycode[1]
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -D punycode -s yp8h | rax2 -S
 EXPECT=<<EOF
 f09f918d
@@ -956,7 +956,7 @@ EOF
 RUN
 
 NAME=rahash2 -E rc6 128 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E rc6 -S 0123456789abcdef0112233445566778 -x 02132435465768798a9bacbdcedfe0f1 | rax2 -S
 EXPECT=<<EOF
 524e192f4715c6231f51f6367ea43f18
@@ -964,7 +964,7 @@ EOF
 RUN
 
 NAME=rahash2 -D rc6 128 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -D rc6 -S 0123456789abcdef0112233445566778 -x 524e192f4715c6231f51f6367ea43f18 | rax2 -S
 EXPECT=<<EOF
 02132435465768798a9bacbdcedfe0f1
@@ -972,7 +972,7 @@ EOF
 RUN
 
 NAME=rahash2 -E rc6 192 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E rc6 -S 0123456789abcdef0112233445566778899aabbccddeeff0 -x 02132435465768798a9bacbdcedfe0f1 | rax2 -S
 EXPECT=<<EOF
 688329d019e505041e52e92af95291d4
@@ -980,7 +980,7 @@ EOF
 RUN
 
 NAME=rahash2 -D rc6 192 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -D rc6 -S 0123456789abcdef0112233445566778899aabbccddeeff0 -x 688329d019e505041e52e92af95291d4 | rax2 -S
 EXPECT=<<EOF
 02132435465768798a9bacbdcedfe0f1
@@ -988,7 +988,7 @@ EOF
 RUN
 
 NAME=rahash2 -E rc6 256 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E rc6 -S 0123456789abcdef0112233445566778899aabbccddeeff01032547698badcfe -x 02132435465768798a9bacbdcedfe0f1 | rax2 -S
 EXPECT=<<EOF
 c8241816f0d7e48920ad16a1674e5d48
@@ -996,7 +996,7 @@ EOF
 RUN
 
 NAME=rahash2 -D rc6 256 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -D rc6 -S 0123456789abcdef0112233445566778899aabbccddeeff01032547698badcfe -x c8241816f0d7e48920ad16a1674e5d48 | rax2 -S
 EXPECT=<<EOF
 02132435465768798a9bacbdcedfe0f1
@@ -1004,7 +1004,7 @@ EOF
 RUN
 
 NAME=rahash2 -E cps2 8 byte
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E cps2 -S "0x942a5702 0x05ac140e" -x 000000000000033244d31b9deba90ac1 | rax2 -S
 EXPECT=<<EOF
 d5642832bc24ac560000fe020000fe02
@@ -1012,7 +1012,7 @@ EOF
 RUN
 
 NAME=rahash2 -D cps2 8 byte
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -D cps2 -S "0x942a5702 0x05ac140e" -x d5642832bc24ac560000fe020000fe02 | rax2 -S
 EXPECT=<<EOF
 000000000000033244d31b9deba90ac1
@@ -1020,7 +1020,7 @@ EOF
 RUN
 
 NAME=rahash2 -E cps2 20 byte
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E cps2 -S "0x010002400008704380000011C0A0D68103A950A4" -x 000000000000033244d31b9deba90ac1 | rax2 -S
 EXPECT=<<EOF
 d5642832bc24ac560000fe020000fe02
@@ -1028,7 +1028,7 @@ EOF
 RUN
 
 NAME=rahash2 -D cps2 20 byte
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -D cps2 -S "0x010002400008704380000011C0A0D68103A950A4" -x d5642832bc24ac560000fe020000fe02 | rax2 -S
 EXPECT=<<EOF
 000000000000033244d31b9deba90ac1
@@ -1036,7 +1036,7 @@ EOF
 RUN
 
 NAME=rahash2 -E des-ecb
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E "des-ecb" -S "4545454545454545" -x "CC3368EE3DD10A86" | rax2 -S
 EXPECT=<<EOF
 4545454545454545
@@ -1044,7 +1044,7 @@ EOF
 RUN
 
 NAME=rahash2 -D des-ecb
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -D "des-ecb" -S "0101010101010101" -x "41AD068548809D02994D4DC157B96C52" | rax2 -S
 EXPECT=<<EOF
 b01c29502b59ff4a0101010101010101
@@ -1052,7 +1052,7 @@ EOF
 RUN
 
 NAME=rahash2 -E des-ecb STRING
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E "des-ecb" -S s:"doom bin" -s "A password storms below a laid singer." | rax2 -S
 EXPECT=<<EOF
 8d244873a8e0de1287f65d712419cb937ff318a5352682e0c31d3e7a72c7e35f40c06d63fb5f2e5f
@@ -1060,13 +1060,13 @@ EOF
 RUN
 
 NAME=rahash2 -D des-ecb STRING
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -D "des-ecb" -S s:"savethat" -x "c3868da6e3d787c88e5a61a7c333cd802e5cee17d7b09555572a35e120fb8e36dc9f0722976934b9453a3a4e741f27c8"
 EXPECT=How does a passionate magic wipe a reactionary?.
 RUN
 
 NAME=rahash2 -E serpent-ecb 128 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E serpent-ecb -S "BFBFBFBFBFBFBFBFBFBFBFBFBFBFBFBF" -x "BFBFBFBFBFBFBFBFBFBFBFBFBFBFBFBF" | rax2 -S
 EXPECT=<<EOF
 af39614e747b9331c38b797f527ebea6
@@ -1074,7 +1074,7 @@ EOF
 RUN
 
 NAME=rahash2 -D serpent-ecb 128 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -D serpent-ecb -S "2BD6459F82C5B300952C49104881FF48" -x "EA024714AD5C4D84EA024714AD5C4D84" | rax2 -S
 EXPECT=<<EOF
 beb6c069393822d3be73ff30525ec43e
@@ -1082,7 +1082,7 @@ EOF
 RUN
 
 NAME=rahash2 -E serpent-ecb 192 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E serpent-ecb -S "C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C7" -x "C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C7" | rax2 -S
 EXPECT=<<EOF
 844a4ef08b4354c52593d3e907a163f7
@@ -1090,7 +1090,7 @@ EOF
 RUN
 
 NAME=rahash2 -D serpent-ecb 192 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -D serpent-ecb -S "2BD6459F82C5B300952C49104881FF482BD6459F82C5B300" -x "EA024714AD5C4D84EA024714AD5C4D84" | rax2 -S
 EXPECT=<<EOF
 e0208be278e21420c4b1b9747788a954
@@ -1098,7 +1098,7 @@ EOF
 RUN
 
 NAME=rahash2 -E serpent-ecb 256 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E serpent-ecb -S "5757575757575757575757575757575757575757575757575757575757575756" -x "57575757575757575757575757575756" | rax2 -S
 EXPECT=<<EOF
 d35588cf3d2e74f2a0df437ffa0073b3
@@ -1106,7 +1106,7 @@ EOF
 RUN
 
 NAME=rahash2 -D serpent-ecb 256 bit
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -D serpent-ecb -S "2BD6459F82C5B300952C49104881FF482BD6459F82C5B300952C49104881FF48" -x "EA024714AD5C4D84EA024714AD5C4D84" | rax2 -S
 EXPECT=<<EOF
 677c8dfaa08071743fd2b415d1b28af2
@@ -1114,7 +1114,7 @@ EOF
 RUN
 
 NAME=rahash2 -E serpent-ecb zero padding
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E serpent-ecb -S "1032547698badcfe1032547698badcfe1032547698badcfe1032547698badcfe" -x "101231" | rax2 -S
 EXPECT=<<EOF
 417dfc518e8146ea81b089731b56fefa
@@ -1122,7 +1122,7 @@ EOF
 RUN
 
 NAME=rahash2 -E sm4-ecb
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E sm4-ecb -S "0123456789abcdeffedcba9876543210" -x "aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffffaaaaaaaabbbbbbbb" | rax2 -S
 EXPECT=<<EOF
 5ec8143de509cff7b5179f8f474b86192f1d305a7fb17df985f81c8482192304
@@ -1130,7 +1130,7 @@ EOF
 RUN
 
 NAME=rahash2 -E sm4-ecb pads a partial block
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -E sm4-ecb -S "0123456789abcdeffedcba9876543210" -x "0123456789abcdeffedcba987654321000" | rax2 -S
 EXPECT=<<EOF
 681edf34d206965e86b3e94f536e42462677f46b09c122cc975533105bd4a22a
@@ -1138,14 +1138,14 @@ EOF
 RUN
 
 NAME=rahash2 -D sm4-ecb rejects a partial block
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -D sm4-ecb -S "0123456789abcdeffedcba9876543210" -x "681edf34d206965e86b3e94f536e424600" | rax2 -S
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=rahash2 -a fletcher8 -s hello-world
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a fletcher8 -s hello-world
 EXPECT=<<EOF
 0x00000000-0x0000000a fletcher8: 6d
@@ -1153,7 +1153,7 @@ EOF
 RUN
 
 NAME=rahash2 -a fletcher16 -s hello-world
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a fletcher16 -s hello-world
 EXPECT=<<EOF
 0x00000000-0x0000000a fletcher16: 6d68
@@ -1161,7 +1161,7 @@ EOF
 RUN
 
 NAME=rahash2 -a fletcher32 -s hello-world
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a fletcher32 -s hello-world
 EXPECT=<<EOF
 0x00000000-0x0000000a fletcher32: 91dbfc5b
@@ -1169,7 +1169,7 @@ EOF
 RUN
 
 NAME=rahash2 -a fletcher64 -s hello-world
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a fletcher64 -s hello-world
 EXPECT=<<EOF
 0x00000000-0x0000000a fletcher64: 49ff47dc8af79724
@@ -1177,7 +1177,7 @@ EOF
 RUN
 
 NAME=rahash2 empty single path
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 ""
 EXPECT_ERR=<<EOF
 ERROR: Cannot open empty path
@@ -1185,7 +1185,7 @@ EOF
 RUN
 
 NAME=rahash2 empty second path
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 bins/elf/analysis/hello-linux-x86_64 ""
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a35 md5: c957bd5bd6204470256bc15248ccafd4
@@ -1196,7 +1196,7 @@ EOF
 RUN
 
 NAME=rahash2 empty first file
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 "" bins/elf/analysis/hello-linux-x86_64
 EXPECT_ERR=<<EOF
 ERROR: Cannot open empty path
@@ -1204,7 +1204,7 @@ EOF
 RUN
 
 NAME=rahash2 -f -t every file
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 -f 0 -t 3 bins/elf/analysis/hello-linux-x86_64 bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00000003 md5: d1531b1622de54fe3a0187c3344600e9
@@ -1213,7 +1213,7 @@ EOF
 RUN
 
 NAME=rahash2 -t past the end of the file
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 -f 0x10 -t 0x100000 bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000010-0x00001a35 md5: 2f4f88b1d8e6ea41c8b4c5c2544c3fd8
@@ -1221,7 +1221,7 @@ EOF
 RUN
 
 NAME=rahash2 -B -f -t ends the last block at -t
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 -B -b 4 -f 0x10 -t 0x19 bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 0x00000010-0x00000013 md5: d4b0a4b122e47cd9e7b3581a6a28290c
@@ -1231,7 +1231,7 @@ EOF
 RUN
 
 NAME=rahash2 -b -f -t hashes the exact range
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -a md5 -b 4 -f 0x10 -t 0x19 bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000010-0x00000019 md5: b2751074461e5fbd1f65e5fd7b6af994
@@ -1239,7 +1239,7 @@ EOF
 RUN
 
 NAME=rahash2 -j file
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -j -a md4,md5 bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 [{"name":"md5","hash":"c957bd5bd6204470256bc15248ccafd4"},{"name":"md4","hash":"d4d61472a12d59be3a85e07ff9065658"}]
@@ -1247,7 +1247,7 @@ EOF
 RUN
 
 NAME=rahash2 -j file ssdeep
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -j -a ssdeep bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 [{"name":"ssdeep","hash":"96:Gy7im/6GjuA9fuF/lsSULxe2RELk3MgmEof7EEa4BIUdoBU:GyXfk/lsSU8LkaEofDOeom"}]
@@ -1255,7 +1255,7 @@ EOF
 RUN
 
 NAME=rahash2 -J file
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 !rahash2 -J -a md4,md5 bins/elf/analysis/hello-linux-x86_64
 !rahash2 -jj -a md5 bins/elf/analysis/hello-linux-x86_64
@@ -1267,7 +1267,7 @@ EOF
 RUN
 
 NAME=rahash2 -j string
-FILE=-
+FILE=malloc://512
 CMDS=!rahash2 -j -a sha1,sha256 -s 233
 EXPECT=<<EOF
 [{"name":"sha1","hash":"52fdb9f68c503e11d168fe52035901864c0a4861"},{"name":"sha256","hash":"c0509a487a18b003ba05e505419ebb63e57a29158073e381f57160b5c5b86426"}]
@@ -1275,7 +1275,7 @@ EOF
 RUN
 
 NAME=rahash2 -S seed read errors
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 'rahash2 -a sha256 -S @missing -s 123
 'rahash2 -a sha256 -S @missing bins/other/admin.txt

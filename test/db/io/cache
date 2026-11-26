@@ -70,7 +70,7 @@ EOF
 RUN
 
 NAME=io.cache: empty file
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 o++ .empty.tmp
 o=4

@@ -1,5 +1,5 @@
 NAME=pxd1
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 554889e54157415641554154534881ec
 pxd1 0x10
@@ -11,7 +11,7 @@ EOF
 RUN
 
 NAME=pxd2
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 554889e54157415641554154534881ec
 pxd2 0x10
@@ -23,7 +23,7 @@ EOF
 RUN
 
 NAME=pxd4
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 554889e54157415641554154534881ec
 pxd4 0x10
@@ -35,7 +35,7 @@ EOF
 RUN
 
 NAME=pxd8
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 554889e54157415641554154534881ec
 pxd8 0x10
@@ -47,7 +47,7 @@ EOF
 RUN
 
 NAME=pxd8 pxu8 skip incomplete values
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 4142434445464748494a4b4c
 pxd8 4
@@ -68,7 +68,7 @@ EOF
 RUN
 
 NAME=pxd arg
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 554889e54157415641554154534881ec
 pxd 0x10
@@ -80,7 +80,7 @@ EOF
 RUN
 
 NAME=pxd no arg
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 b 0x10
 wx 554889e54157415641554154534881ec
@@ -93,7 +93,7 @@ EOF
 RUN
 
 NAME=pxd zero arg
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 554889e54157415641554154534881ec
 pxd 0
@@ -103,7 +103,7 @@ EOF
 RUN
 
 NAME=pxd negative arg
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 wx 554889e54157415641554154534881ec
 s 8
@@ -116,7 +116,7 @@ EOF
 RUN
 
 NAME=pxu1 pxu2 pxu4 pxu8
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 woe 10
 pxu1 32
@@ -141,7 +141,7 @@ EOF
 RUN
 
 NAME=pxd1 pxd2 pxd4 pxd8
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 woe 10
 pxd1 32

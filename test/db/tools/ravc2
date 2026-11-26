@@ -1,5 +1,5 @@
 NAME=ravc2 init
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 mkdir ravc2_init_test
 cd ravc2_init_test
@@ -80,7 +80,7 @@ EOF
 RUN
 
 NAME=ravc2 -H RAVC2_USER
-FILE=-
+FILE=malloc://512
 CMDS=%RAVC2_USER=test;!ravc2 -H RAVC2_USER
 EXPECT=<<EOF
 test

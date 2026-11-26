@@ -67,7 +67,7 @@ the GDB IO commands.
 Radare2 can also launch a native target and serve RSP with `=g`:
 
 ```sh
-r2 -q -c '=g 2345 /bin/sleep 30' -
+r2 -q -c '=g 2345 /bin/sleep 30' malloc://512
 ```
 
 Connect with `target remote 127.0.0.1:2345` in GDB or

@@ -1,5 +1,5 @@
 NAME=f~?
-FILE=-
+FILE=malloc://512
 CMDS=f~?
 EXPECT=<<EOF
 0
@@ -408,7 +408,7 @@ EOF
 RUN
 
 NAME=asm.flags.middle reset
-FILE=-
+FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bytes=true
