@@ -64,6 +64,8 @@ typedef struct {
 	ut64 last_data;
 	ut64 ntarget;
 	bool strings_only;
+	RefSearch *listing;
+	RVecAnalRef *listed;
 	EsilClobCtx clob;
 	EsilCallClobbers *call_clobbers; // Shared by CFG snapshots.
 } EsilBreakCtx;
@@ -439,7 +441,7 @@ static bool clob_op_end(EsilBreakCtx *ctx, RAnalOp *op) {
 	if (!ctx->clob.enabled) {
 		return false;
 	}
-	if (ctx->clob.read_tainted_reg[0]) {
+	if (!ctx->listing && ctx->clob.read_tainted_reg[0]) {
 		RRegItem *item = r_reg_get (ctx->anal->reg, ctx->clob.read_tainted_reg, -1);
 		const char *cc = ctx->fcn? r_anal_function_cc (ctx->fcn): NULL;
 		cc = cc? cc: r_anal_cc_default (ctx->anal);
@@ -457,17 +459,49 @@ static bool clob_op_end(EsilBreakCtx *ctx, RAnalOp *op) {
 	return ctx->clob.read_clobbered;
 }
 
+static bool esil_target_matches(const EsilBreakCtx *ctx, ut64 target) {
+	return ctx->listing? refsearch_matches (ctx->listing, target)
+		: ctx->ntarget == UT64_MAX || ctx->ntarget == target;
+}
+
+static void esil_search_ref(EsilBreakCtx *ctx, ut64 from, ut64 to, RAnalRefType type) {
+	if (!ctx->listing) {
+		r_anal_xrefs_setf (ctx->anal, ctx->fcn, from, to, type);
+		return;
+	}
+	const RAnalRef *ref;
+	R_VEC_FOREACH (ctx->listed, ref) {
+		if (ref->at == from && ref->addr == to && ref->type == type) {
+			return;
+		}
+	}
+	if (refsearch_emit (ctx->listing, from, to, type)) {
+		RAnalRef *entry = RVecAnalRef_emplace_back (ctx->listed);
+		if (entry) {
+			*entry = (RAnalRef){ .at = from, .addr = to, .type = type };
+		} else {
+			ctx->listing->failed = true;
+		}
+	}
+}
+
 static void esil_string_ref(REsil *esil, ut64 addr) {
 	EsilBreakCtx *ctx = esil->user;
 	RCore *core = ctx->anal->coreb.core;
-	if (ctx->ntarget != UT64_MAX && ctx->ntarget != addr) {
+	if (!esil_target_matches (ctx, addr)) {
 		return;
 	}
 	if (is_stack (core->io, addr)) {
 		return;
 	}
-	if (r_flag_exist_at (core->flags, "str.", 4, addr) || add_string_ref (core, esil->addr, addr)) {
-		r_anal_xrefs_set (ctx->anal, esil->addr, addr, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
+	const bool flagged = r_flag_exist_at (core->flags, "str.", 4, addr);
+	if (ctx->listing) {
+		char str[STRSZ] = {0};
+		if (flagged || (is_string_at (core, addr, str, NULL) && *str)) {
+			esil_search_ref (ctx, esil->addr, addr, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
+		}
+	} else if (flagged || add_string_ref (core, esil->addr, addr)) {
+		esil_search_ref (ctx, esil->addr, addr, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
 	}
 }
 
@@ -487,8 +521,10 @@ static bool esilbreak_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len)
 	// ignore writes in stack
 	if (len > 0 && myvalid (core, addr)) {
 		if (!is_stack (core->io, addr)) {
-			r_anal_xrefs_set (core->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_WRITE);
-			anal_global_access (core, ctx->op, addr, len, UT64_MAX);
+			esil_search_ref (ctx, esil->addr, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_WRITE);
+			if (!ctx->listing) {
+				anal_global_access (core, ctx->op, addr, len, UT64_MAX);
+			}
 		}
 	}
 	return true;
@@ -533,12 +569,14 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 			r_io_read_at (core->io, addr, (ut8*)buf, len);
 			break;
 		}
-		if (trace && myvalid (core, refptr) && (ctx->ntarget == UT64_MAX || ctx->ntarget == refptr)) {
+		if (trace && myvalid (core, refptr) && esil_target_matches (ctx, refptr)) {
 			if (ctx->strings_only) {
 				esil_string_ref (esil, refptr);
 			} else {
-				r_anal_xrefs_set (core->anal, esil->addr, refptr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
-				add_string_ref (core, esil->addr, refptr);
+				esil_search_ref (ctx, esil->addr, refptr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+				if (!ctx->listing) {
+					add_string_ref (core, esil->addr, refptr);
+				}
 			}
 			ctx->last_data = UT64_MAX;
 		}
@@ -546,8 +584,10 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 			if (ctx->strings_only) {
 				esil_string_ref (esil, addr);
 			} else {
-				r_anal_xrefs_set (core->anal, esil->addr, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
-				anal_global_access (core, ctx->op, addr, len, refptr);
+				esil_search_ref (ctx, esil->addr, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+				if (!ctx->listing) {
+					anal_global_access (core, ctx->op, addr, len, refptr);
+				}
 			}
 		}
 	}
@@ -640,11 +680,15 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 	}
 	if (ctx->strings_only) {
 		RRegItem *item = r_reg_get (anal->reg, name, -1);
+		const char *sp = ctx->listing? r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP): ctx->spname;
 		if (item && item->type == R_REG_TYPE_GPR && item->size > 1
-				&& !esil_reg_taint_overlap_item (&ctx->clob.pc_span, item) && strcmp (name, ctx->spname)) {
+				&& !esil_reg_taint_overlap_item (&ctx->clob.pc_span, item) && strcmp (name, r_str_get (sp))) {
 			esil_string_ref (esil, *val);
 		}
 		r_unref (item);
+		return false;
+	}
+	if (ctx->listing) {
 		return false;
 	}
 	handle_var_stack_access (esil, *val, R_PERM_NONE, bits / 8, false);
@@ -787,32 +831,45 @@ static ut64 thumb_slot_target(RCore *core, ut64 slot, ut64 dst) {
 	return (sym && sym->bits == 16 && reloc_sym_vaddr (core, sym) == dst - 1)? dst - 1: dst;
 }
 
+static int esil_arch_kind(const RArchConfig *cfg) {
+	if (!strcmp (cfg->arch, "arm")) {
+		switch (cfg->bits) {
+		case 64: return R2_ARCH_ARM64;
+		case 32: return R2_ARCH_ARM32;
+		case 16: return R2_ARCH_THUMB;
+		}
+	}
+	return !strcmp (cfg->arch, "mips")? R2_ARCH_MIPS: -1;
+}
+
 // R2R db/cmd/cmd_search_esil db/cmd/cmd_aae
-R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *target /* addr */) {
-	R_RETURN_IF_FAIL (core && str);
-	if (!core->anal->arch->session) {
+static void core_anal_esil(RCore *core, const char *str, const char *target, RefSearch *listing, RefSearchDecoder *decoder, RInterval bounds, bool only_strings) {
+	RAnal *anal = decoder? &decoder->anal: core->anal;
+	if (!anal->arch->session) {
 		return;
 	}
-	bool cfg_anal_strings = r_config_get_b (core->config, "anal.strings");
+	bool cfg_anal_strings = !listing && r_config_get_b (core->config, "anal.strings");
 	bool emu_lazy = r_config_get_b (core->config, "emu.lazy");
 	const bool gp_fixed = r_config_get_b (core->config, "anal.fixed.gp");
-	const bool newstack = core->anal->opt.var_newstack;
-	REsil *ESIL = core->anal->esil;
+	const bool newstack = anal->opt.var_newstack;
+	REsil *ESIL = anal->esil;
 	ut64 refptr = 0LL;
 	ut64 ntarget = UT64_MAX;
 	RAnalOp op = {0};
 	int iend;
 	int minopsize = 4; // XXX this depends on asm->mininstrsize
-	bool archIsArm = false;
-	const bool archIsX86 = r_str_startswith (core->anal->config->arch, "x86");
+	bool archIsArm = !strcmp (anal->config->arch, "arm");
+	bool archIsX86 = r_str_startswith (anal->config->arch, "x86");
 	// ut64 addr = core->addr;
-	ut64 start = core->addr;
+	ut64 start = listing? bounds.addr: core->addr;
 	ut64 end = 0LL;
-	core->esil_anal_stop = false;
+	if (!listing) {
+		core->esil_anal_stop = false;
+	}
 
-	const bool strings_only = target && r_str_startswith (target, "+s");
-	bool xrefs_only = target && (!strcmp (target, "+x") || strings_only);
-	if (strings_only) {
+	const bool strings_only = listing? only_strings: target && r_str_startswith (target, "+s");
+	const bool xrefs_only = listing || (target && (!strcmp (target, "+x") || strings_only));
+	if (!listing && strings_only) {
 		target = r_str_trim_head_ro (target + 2);
 	} else if (xrefs_only) {
 		target = NULL;
@@ -824,15 +881,17 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	} else if (!strings_only && !target) {
 		ntarget = start;
 	}
-#define CHECKREF(x) (!refptr || (x) == refptr)
-	if (R_STR_ISNOTEMPTY (str)) {
+#define CHECKREF(x) (listing? refsearch_matches (listing, (x)): !refptr || (x) == refptr)
+	if (listing) {
+		end = r_itv_end (bounds);
+	} else if (R_STR_ISNOTEMPTY (str)) {
 		end = start + r_num_math (core->num, str);
 	} else {
 		RIOMap *map = r_io_map_get_at (core->io, start);
 		end = map? r_io_map_end (map): start + core->blocksize;
 	}
 	RAnalFunction *fcn = NULL;
-	if (!strcmp (str, "f")) {
+	if (!listing && !strcmp (str, "f")) {
 		fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 		if (fcn) {
 			ut64 ls = r_anal_function_linear_size (fcn);
@@ -869,6 +928,11 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		R_LOG_DEBUG ("end < start");
 		return;
 	}
+	if (listing && end - start > ST32_MAX) {
+		R_LOG_ERROR ("ESIL reference search range is too large");
+		listing->failed = true;
+		return;
+	}
 	iend = end - start;
 	if (iend < 1) {
 		return;
@@ -881,28 +945,31 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	}
 	ut8 *buf = NULL;
 	// maybe r_core_call (core, "aeim");
-	const char *kspname = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_SP);
+	const char *kspname = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
 	if (R_STR_ISEMPTY (kspname)) {
 		R_LOG_ERROR ("No =SP defined in the reg profile");
 		return;
 	}
+	RVecAnalRef listed = {0};
 	char *spname = strdup (kspname);
 	EsilCallClobbers call_clobbers = {0};
 	EsilBreakCtx ctx = {
 		.op = &op,
-		.anal = core->anal,
+		.anal = anal,
 		.fcn = fcn,
 		.spname = spname,
-		.initial_sp = r_reg_getv (core->anal->reg, spname),
+		.initial_sp = r_reg_getv (anal->reg, spname),
 		.last_read = UT64_MAX,
 		.last_data = UT64_MAX,
 		.ntarget = ntarget,
 		.strings_only = strings_only,
+		.listing = listing,
+		.listed = &listed,
 		.clob.enabled = r_config_get_b (core->config, "anal.vars.clobber"),
 		.call_clobbers = &call_clobbers,
 	};
 	RVecEsilRegTaint_init (&ctx.clob.reg_taints);
-	esil_reg_pc_span (core->anal, &ctx.clob.pc_span);
+	esil_reg_pc_span (anal, &ctx.clob.pc_span);
 	if (ctx.clob.enabled) {
 		ESIL->cb.hook_reg_read = &esilbreak_reg_read;
 	}
@@ -917,48 +984,39 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 
 	if (fcn && fcn->reg_save_area) {
 		ut64 v = newstack?  fcn->reg_save_area: ctx.initial_sp - fcn->reg_save_area;
-		r_reg_setv (core->anal->reg, ctx.spname, v);
+		r_reg_setv (anal->reg, ctx.spname, v);
 	}
 	//eprintf ("Analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
 	// TODO: backup/restore register state before/after analysis
-	core->esil_anal_stop = false;
-	r_cons_break_push (core->cons, cccb, core);
-
-	int arch = -1;
-	if (!strcmp (core->anal->config->arch, "arm")) {
-		switch (core->anal->config->bits) {
-		case 64: arch = R2_ARCH_ARM64; break;
-		case 32: arch = R2_ARCH_ARM32; break;
-		case 16: arch = R2_ARCH_THUMB; break;
-		}
-		archIsArm = true;
+	if (!listing) {
+		core->esil_anal_stop = false;
 	}
+	r_cons_break_push (core->cons, listing? NULL: cccb, core);
+
+	int arch = esil_arch_kind (anal->config);
 
 	const ut64 gp = r_config_get_i (core->config, "anal.gp");
 	const char *gp_reg = NULL;
-	if (!strcmp (core->anal->config->arch, "mips")) {
+	if (arch == R2_ARCH_MIPS) {
 		gp_reg = "gp";
-		arch = R2_ARCH_MIPS;
 	} else if (arch == R2_ARCH_ARM64) {
 		RBinInfo *info = r_bin_get_info (core->bin);
 		if (info && info->lang && !strcmp (info->lang, "dart")) {
 			gp_reg = "x27";
 		}
 	}
-	const bool archIsMips32 = (core->anal->config->bits == 32 && arch == R2_ARCH_MIPS);
-	const bool is_thumb = arch == R2_ARCH_THUMB;
-	bool needOpVals = false;
-	if (archIsMips32 || archIsArm) {
-		needOpVals = true;
-	}
+	bool archIsMips32 = anal->config->bits == 32 && arch == R2_ARCH_MIPS;
+	const bool needOpVals = archIsMips32 || archIsArm || listing;
 
-	r_reg_arena_push (core->anal->reg);
+	if (!listing) {
+		r_reg_arena_push (anal->reg);
+	}
 	// PIC base register (e.g. PPC32 r30): seeded once at entry, then mutated locally, so unlike gp it is never re-fixed
 	const char *gpseed = r_config_get (core->config, "anal.gpseed");
 	if (R_STR_ISNOTEMPTY (gpseed)) {
-		r_reg_setv (core->anal->reg, gpseed, gp);
+		r_reg_setv (anal->reg, gpseed, gp);
 	}
-	char *sn = (char *)r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_SN);
+	char *sn = (char *)r_reg_alias_getname (anal->reg, R_REG_ALIAS_SN);
 	if (sn) {
 		sn = strdup (sn);
 	} else {
@@ -970,14 +1028,18 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	size_t i = 0; // addr - start;
 	size_t i_old = 0;
 	size_t buf_size = 128 * 1024;
-	const size_t maxopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
+	const size_t maxopsz = r_arch_info (anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 	ut64 buf_addr = UT64_MAX;
 	buf = malloc (buf_size);
 	if (!buf) {
 		free (sn);
 		esilbreak_ctx_fini (ESIL, &ctx);
+		if (listing) {
+			listing->failed = true;
+		} else {
+			r_reg_arena_pop (anal->reg);
+		}
 		r_cons_break_pop (core->cons);
-		r_reg_arena_pop (core->anal->reg);
 		return;
 	}
 	ictx.visited = strings_only? r_bitset_new (): NULL;
@@ -990,7 +1052,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	opflags |= R_ARCH_OP_MASK_DISASM;
 
 	while (get_next_i (&ictx, &i)) {
-		if (core->esil_anal_stop || r_cons_is_breaked (core->cons)) {
+		if ((!listing && core->esil_anal_stop) || r_cons_is_breaked (core->cons)
+				|| (listing && refsearch_stopped (listing))) {
 			break;
 		}
 		buf_i = pulldata (core,
@@ -1003,28 +1066,46 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			break;
 		}
 		/* realign address if needed */
-		r_core_seek_arch_bits (core, cur);
-		if (!core->anal->arch->session) {
-			break;
-		}
-		int opalign = core->anal->config->codealign;
-		if (opalign > 0) {
-			cur -= (cur % opalign);
+		if (decoder) {
+			const int changed = refsearch_decoder_at (decoder, core, cur, ESIL);
+			if (changed < 0) {
+				listing->failed = true;
+				break;
+			}
+			if (changed) {
+				arch = esil_arch_kind (anal->config);
+				archIsArm = !strcmp (anal->config->arch, "arm");
+				archIsX86 = r_str_startswith (anal->config->arch, "x86");
+				archIsMips32 = anal->config->bits == 32 && arch == R2_ARCH_MIPS;
+				esil_clear_flow_taint (&ctx);
+				ctx.clob.pc_span = (EsilRegTaint){0};
+				esil_reg_pc_span (anal, &ctx.clob.pc_span);
+			}
+		} else {
+			r_core_seek_arch_bits (core, cur);
+			if (!anal->arch->session) {
+				break;
+			}
+			int opalign = anal->config->codealign;
+			if (opalign > 0) {
+				cur -= (cur % opalign);
+			}
 		}
 		i_old = i;
 		if (buf_i >= buf_size) {
 			break;
 		}
-		size_t opsz = R_MIN (R_MIN (buf_size - buf_i, end - cur), maxopsz);
-		if (!r_anal_op (core->anal, &op, cur, buf + buf_i, opsz, opflags)) {
-			i += minopsize;
+		size_t opsz = R_MIN (R_MIN (buf_size - buf_i, end - cur), decoder? decoder->maxop: maxopsz);
+		const int decoded = r_anal_op (anal, &op, cur, buf + buf_i, opsz, opflags);
+		if (!decoded || (decoder && (decoded < 0 || decoded > opsz))) {
+			i += decoder? R_MAX (op.size, 1): minopsize;
 			goto repeat;
 		}
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_ILL:
 		case R_ANAL_OP_TYPE_UNK:
 		case R_ANAL_OP_TYPE_NULL:
-			if (is_thumb) {
+			if (arch == R2_ARCH_THUMB) {
 				R_LOG_DEBUG ("thumb unaligned or invalid instructions at 0x%08"PFMT64x, cur);
 				i += 2;
 				goto repeat;
@@ -1074,11 +1155,11 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				goto repeat;
 			}
 		}
-		if (!strings_only && sn && op.type == R_ANAL_OP_TYPE_SWI) {
+		if (!listing && !strings_only && sn && op.type == R_ANAL_OP_TYPE_SWI) {
 			// check if aligned
 			// check if conditional (done by R_ANAL_OP_MASK_COND) CSWI exists but its not used properly on arm16
 			r_strf_buffer (64);
-			int snv = (arch == R2_ARCH_THUMB)? op.val: (int)r_reg_getv (core->anal->reg, sn);
+			int snv = (arch == R2_ARCH_THUMB)? op.val: (int)r_reg_getv (anal->reg, sn);
 			if (snv > 0 && snv < 0xFFFF) {
 				r_flag_space_set (core->flags, R_FLAGS_FS_SYSCALLS);
 				RSyscallItem *si = r_syscall_get (core->anal->syscall, snv, -1);
@@ -1098,10 +1179,11 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		}
 		r_esil_set_pc (ESIL, cur);
 		// R2_590 - if roregs is set we dont need to set that value everytime
-		r_reg_setv (core->anal->reg, "PC", cur + op.size);
+		r_reg_setv (anal->reg, "PC", cur + op.size);
 		if (gp_fixed && gp_reg) {
-			r_reg_setv (core->anal->reg, gp_reg, gp);
+			r_reg_setv (anal->reg, gp_reg, gp);
 		}
+		RVecAnalRef_clear (&listed);
 		ctx.last_read = ctx.last_data = UT64_MAX;
 		(void)r_esil_parse (ESIL, esilstr);
 		const bool skip_ref = clob_op_end (&ctx, &op);
@@ -1126,25 +1208,25 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 					} else {
 						type |= R_ANAL_REF_TYPE_READ;
 					}
-					r_anal_xrefs_setf (core->anal, fcn, cur, ESIL->cur, type);
+					esil_search_ref (&ctx, cur, ESIL->cur, type);
 				}
 			} else if (archIsX86) {
 				const ut64 dst = op.ptr? op.ptr: ESIL->cur;
 				if ((target && dst == ctx.ntarget) || !target) {
 					if (CHECKREF (dst)) {
-						if (dst && r_io_is_valid_offset (core->io, dst, !core->anal->opt.noncode)) {
-							r_anal_xrefs_setf (core->anal, fcn, cur, dst, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
+						if (dst && r_io_is_valid_offset (core->io, dst, !anal->opt.noncode)) {
+							esil_search_ref (&ctx, cur, dst, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
 						} else {
-							r_anal_xrefs_setf (core->anal, fcn, cur, ESIL->cur, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
+							esil_search_ref (&ctx, cur, ESIL->cur, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
 						}
 					}
 				}
 			} else if ((target && op.ptr == ctx.ntarget) || !target) {
 				if (CHECKREF (ESIL->cur)) {
-					if (op.ptr && r_io_is_valid_offset (core->io, op.ptr, !core->anal->opt.noncode)) {
-						r_anal_xrefs_setf (core->anal, fcn, cur, op.ptr, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
+					if (op.ptr && r_io_is_valid_offset (core->io, op.ptr, !anal->opt.noncode)) {
+						esil_search_ref (&ctx, cur, op.ptr, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
 					} else {
-						r_anal_xrefs_setf (core->anal, fcn, cur, ESIL->cur, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
+						esil_search_ref (&ctx, cur, ESIL->cur, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
 					}
 				}
 			}
@@ -1153,7 +1235,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			}
 			break;
 		case R_ANAL_OP_TYPE_SUB:
-			if (newstack && core->anal->cur && archIsArm) {
+			if (newstack && anal->cur && archIsArm) {
 				if (strstr (op.mnemonic, " sp,")) {
 					ctx.initial_sp -= op.val;
 				}
@@ -1170,7 +1252,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 						const int type = core_type_by_addr (core, dst);
 						RAnalRefType ref_type = (type == -1)? R_ANAL_REF_TYPE_CODE : type;
 						ref_type |= R_ANAL_REF_TYPE_READ; // maybe ICOD instead of CODE
-						r_anal_xrefs_setf (core->anal, fcn, cur, dst, ref_type);
+						esil_search_ref (&ctx, cur, dst, ref_type);
 					}
 				}
 				if (cfg_anal_strings) {
@@ -1198,9 +1280,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 						RFlagItem *f;
 						char str[STRSZ] = {0};
 						if (CHECKREF (dst) || CHECKREF (cur)) {
-							r_anal_xrefs_setf (core->anal, fcn, cur, dst, R_ANAL_REF_TYPE_DATA);
+							esil_search_ref (&ctx, cur, dst, R_ANAL_REF_TYPE_DATA);
 							if (cfg_anal_strings) {
 								add_string_ref (core, op.addr, dst);
+							}
+							if (listing) {
+								break;
 							}
 							if ((f = r_core_flag_get_by_spaces (core->flags, false, dst))) {
 								r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, f->name);
@@ -1223,7 +1308,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				ut64 dst = ctx.last_read;
 				if (dst != UT64_MAX && CHECKREF (dst)) {
 					if (myvalid (core, dst)) {
-						r_anal_xrefs_setf (core->anal, fcn, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+						esil_search_ref (&ctx, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 						if (cfg_anal_strings) {
 							add_string_ref (core, op.addr, dst);
 						}
@@ -1232,7 +1317,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				dst = ctx.last_data;
 				if (dst != UT64_MAX && CHECKREF (dst)) {
 					if (myvalid (core, dst)) {
-						r_anal_xrefs_setf (core->anal, fcn, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+						esil_search_ref (&ctx, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 						if (cfg_anal_strings) {
 							add_string_ref (core, op.addr, dst);
 						}
@@ -1245,7 +1330,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				ut64 dst = op.jump;
 				if (CHECKREF (dst)) {
 					if (myvalid (core, dst)) {
-						r_anal_xrefs_setf (core->anal, fcn, cur, dst, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
+						esil_search_ref (&ctx, cur, dst, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
 					}
 				}
 			}
@@ -1256,7 +1341,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				ut64 dst = op.jump;
 				if (CHECKREF (dst) || (target && dst == ctx.ntarget)) {
 					if (myvalid (core, dst)) {
-						r_anal_xrefs_setf (core->anal, fcn, cur, dst, R_ANAL_REF_TYPE_CALL | R_ANAL_REF_TYPE_EXEC);
+						esil_search_ref (&ctx, cur, dst, R_ANAL_REF_TYPE_CALL | R_ANAL_REF_TYPE_EXEC);
 					}
 				}
 			}
@@ -1269,14 +1354,14 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		case R_ANAL_OP_TYPE_MJMP:
 		case R_ANAL_OP_TYPE_UCCALL:
 			{
-				ut64 dst = core->anal->esil->jump_target;
+				ut64 dst = ESIL->jump_target;
 				if (dst == 0 || dst == UT64_MAX) {
-					dst = r_reg_getv (core->anal->reg, "PC");
+					dst = r_reg_getv (anal->reg, "PC");
 				}
 				// the type mask preserves the COND bit, strip it too so
 				// conditional variants like UCCALL are handled as calls
 				const int utype = op.type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_TYPE_COND;
-				const ut64 to = (!skip_ref && (arch == R2_ARCH_ARM32 || is_thumb)
+				const ut64 to = (!skip_ref && (arch == R2_ARCH_ARM32 || arch == R2_ARCH_THUMB)
 						&& op.type == R_ANAL_OP_TYPE_MJMP && (dst & 1))
 					? thumb_slot_target (core, ctx.last_read, dst): dst;
 				if (!skip_ref && (CHECKREF (dst) || CHECKREF (to))) {
@@ -1285,7 +1370,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 						RAnalRefType ref = utype == R_ANAL_OP_TYPE_UCALL
 							? R_ANAL_REF_TYPE_CALL
 							: R_ANAL_REF_TYPE_CODE;
-						r_anal_xrefs_setf (core->anal, fcn, cur, to, ref | R_ANAL_REF_TYPE_EXEC);
+						esil_search_ref (&ctx, cur, to, ref | R_ANAL_REF_TYPE_EXEC);
 						if (!xrefs_only) {
 							r_core_anal_fcn (core, dst, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
 						}
@@ -1318,7 +1403,38 @@ repeat:
 	r_bitset_free (ictx.visited);
 	free (buf);
 	esilbreak_ctx_fini (ESIL, &ctx);
+	RVecAnalRef_fini (&listed);
 	r_anal_op_fini (&op);
 	r_cons_break_pop (core->cons);
-	r_reg_arena_pop (core->anal->reg);
+	if (!listing) {
+		r_reg_arena_pop (anal->reg);
+	}
+}
+#undef CHECKREF
+
+R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
+	R_RETURN_IF_FAIL (core && str);
+	core_anal_esil (core, str, target, NULL, NULL, (RInterval){0}, false);
+}
+
+R_IPI void r_core_esil_ref_search(RCore *core, RefSearch *search, ut64 from, ut64 to, bool strings) {
+	RefSearchDecoder decoder;
+	if (refsearch_decoder_init (&decoder, core, true)) {
+		REsilOptions opt = r_esil_options (NULL, NULL);
+		opt.stacksize = R_MAX (16, r_config_get_i (core->config, "esil.stack.size"));
+		opt.iotrap = r_config_get_b (core->config, "esil.iotrap");
+		opt.addrsize = r_config_get_i (core->config, "esil.addr.size");
+		REsil *esil = r_esil_new (&opt);
+		decoder.anal.esil = esil;
+		if (esil && r_esil_setup (esil, &decoder.anal, true, false, r_config_get_b (core->config, "esil.nonull"))) {
+			core_anal_esil (core, "", NULL, search, &decoder, (RInterval){from, to - from}, strings);
+			r_arch_esilcb (&decoder.arch, esil, R_ARCH_ESIL_ACTION_FINI);
+		} else {
+			search->failed = true;
+		}
+		r_esil_free (esil);
+	} else {
+		search->failed = true;
+	}
+	refsearch_decoder_fini (&decoder);
 }

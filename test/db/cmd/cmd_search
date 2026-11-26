@@ -99,6 +99,83 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=/rl lists references and inclusive ranges without touching xrefs
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e search.in=io.maps
+e search.from=0
+e search.to=0x11
+wx 8b05fa0000008905f4000000e80f010000
+f target=0x100
+axd 0x100 0x1
+/rl target
+/ralj target..0x120 0x120
+/rrlj 0x100
+/rwlj 0x100
+/rxlj 0x120
+/rclj 0x100..0x120
+/rcl
+/rclj
+/rlj 0x121
+e search.maxhits=1
+/rlj 0x100..0x120
+axq
+ah
+EOF
+EXPECT=<<EOF
+0x0 -> 0x100 DATA
+0x6 -> 0x100 DATA
+[{"from":0,"target":256,"type":"DATA"},{"from":6,"target":256,"type":"DATA"},{"from":12,"target":288,"type":"CALL"}]
+[{"from":0,"target":256,"type":"DATA"}]
+[{"from":6,"target":256,"type":"DATA"}]
+[{"from":12,"target":288,"type":"CALL"}]
+[{"from":12,"target":288,"type":"CALL"}]
+0x120
+[288]
+[]
+[{"from":0,"target":256,"type":"DATA"}]
+0x00000001 -> 0x00000100  DATA:r--
+EOF
+RUN
+
+NAME=/rlj rejects malformed and reversed target ranges
+FILE=malloc://0x100
+CMDS=<<EOF
+/rlj 0x20..
+/rlj 0x20..0x10
+EOF
+EXPECT=<<EOF
+[]
+[]
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid target '0x20..'
+ERROR: Invalid target '0x20..0x10'
+EOF
+RUN
+
+NAME=/rlj and /brwlj keep long instructions at block edges
+FILE=malloc://0x1000
+TIMEOUT=3
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+b 256
+e search.in=io.maps
+e search.from=0
+e search.to=0x104
+wx c705fe0000007856341289c0 @ 0xf8
+/rlj	0x200
+/brwlj 0x200 @ 0x104
+EOF
+EXPECT=<<EOF
+[{"from":248,"target":512,"type":"DATA"}]
+[{"from":248,"target":512,"type":"DATA"}]
+EOF
+RUN
+
 NAME=/r push [imm] refs
 FILE=bins/pe/x.dll
 CMDS=/r 0x69682004
