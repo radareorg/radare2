@@ -134,6 +134,6 @@ NAME=rasign2 -ar libc-v10.sig
 FILE=
 CMDS=!!rasign2 -ar bins/ar/libgdbr.a~ g ?
 EXPECT=<<EOF
-94
+159
 EOF
 RUN

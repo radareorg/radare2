@@ -3,12 +3,18 @@ NAME=MZ: corkami cdogs.exe - open
 FILE=bins/le/cdogs.exe
 TIMEOUT=1320
 CMDS=<<EOF
+e anal.chain=false
 aac
 # aaef
+aflc
+af-*
+e anal.chain=true
+aac
 aflc
 EOF
 EXPECT=<<EOF
 793
+790
 EOF
 RUN
 
