@@ -788,7 +788,8 @@ static int r_asm_disassemble_do(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 		const int mod = a->pc % a->config->codealign;
 		if (mod) {
 			r_anal_op_set_mnemonic (op, op->addr, "unaligned");
-			op->size = a->config->codealign - mod;
+			// skip to the next aligned address, but not past the bytes held by the op
+			op->size = R_MIN (op->size, a->config->codealign - mod);
 			return -1;
 		}
 	}
