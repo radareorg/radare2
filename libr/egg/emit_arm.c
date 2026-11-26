@@ -172,14 +172,14 @@ static void emit_syscall_args(REgg *egg, int nargs) {
 	load_arg_regs (egg, nargs);
 }
 
-static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int j) {
-	int slen = strlen (str) + 1;
+static void emit_set_string(REgg *egg, const char *dstvar, RStrs str) {
+	int slen = r_strs_len (str) + 1;
 	int rest = (slen % 4);
 	if (rest) {
 		rest = 4 - rest;
 	}
 	int total_data = slen + rest;
-	char *s = r_str_escape (str);
+	char *s = r_str_escape_raw ((const ut8 *)str.a, slen - 1);
 	if (egg->bits == 16) {
 		// Thumb: use adr to get string address, then branch over data
 		r_egg_printf (egg, "  adr r0, 4\n");
@@ -199,7 +199,7 @@ static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int 
 		r_egg_printf (egg, "  sub r0, pc, %d\n", total_data + 4);
 	}
 	{
-		char *p = r_egg_mkvar (egg, NULL, dstvar, 0);
+		char *p = r_egg_mkvar (egg, r_strs_from (dstvar), 0);
 		r_egg_printf (egg, "  str r0, [%s]\n", p);
 		free (p);
 	}
@@ -295,33 +295,15 @@ static void emit_load_ptr(REgg *egg, const char *dst) {
 	load_ptr (egg, "r0", dst);
 }
 
-static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst) {
-	char *p;
-	char *arg = NULL;
-	const char *op = "beq";
-	if (b) {
-		*b = '\0';
-		op = e? "bgt": "bge";
-		arg = b + 1;
-	} else if (g) {
-		*g = '\0';
-		op = e? "blt": "ble";
-		arg = g + 1;
+static void emit_branch(REgg *egg, const REggCond *cond, int sz, const char *dst) {
+	const char *op;
+	switch (cond->cmp) {
+	case '<': op = cond->inclusive? "bgt": "bge"; break;
+	case '>': op = cond->inclusive? "blt": "ble"; break;
+	case '=': op = cond->negate? "beq": "bne"; break;
+	default: op = cond->negate? "bne": "beq"; break;
 	}
-	if (!arg) {
-		if (e) {
-			arg = e + 1;
-			op = n? "beq": "bne";
-		} else {
-			arg = "0";
-			op = n? "bne": "beq";
-		}
-	}
-
-	if (*arg == '=') {
-		arg++; /* for <=, >=, ... */
-	}
-	p = r_egg_mkvar (egg, NULL, arg, 0);
+	char *p = r_egg_mkvar (egg, cond->rhs, 0);
 	const char *arg0 = R_STRBUF_SAFEGET (&lastargs[0]);
 	if (R_STR_ISNOTEMPTY (arg0)) {
 		load_value (egg, R_AX, arg0);

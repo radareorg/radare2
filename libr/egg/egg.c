@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2011-2026 - pancake */
 
-#include "egg_private.h"
+#include <r_egg.h>
 #include <config.h>
 
 R_LIB_VERSION(r_egg);
@@ -14,6 +14,7 @@ extern REggEmit emit_ppc;
 extern REggEmit emit_ppc64;
 extern REggEmit emit_esil;
 extern REggEmit emit_trace;
+extern REggEmit emit_llvm;
 
 #if !defined(R_EGG_STATIC_PLUGINS)
 #define R_EGG_STATIC_PLUGINS 0
@@ -340,20 +341,15 @@ R_API void r_egg_if(REgg *egg, const char *reg, char cmp, int v) {
 R_API void r_egg_printf(REgg *egg, const char *fmt, ...) {
 	R_RETURN_IF_FAIL (egg && fmt);
 	va_list ap;
-	int len;
-	char buf[1024];
 	va_start (ap, fmt);
-	len = vsnprintf (buf, sizeof (buf), fmt, ap);
-	R_LOG_DEBUG ("egg.printf %s", buf);
-	r_buf_append_bytes (egg->buf, (const ut8 *)buf, len);
+	char *text = r_str_newvf (fmt, ap);
 	va_end (ap);
+	R_LOG_DEBUG ("egg.printf %s", text);
+	r_buf_append_string (egg->buf, text);
+	free (text);
 }
 
 R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
-	if (egg->remit == &emit_llvm) {
-		R_LOG_ERROR ("Use clang to compile the generated LLVM IR");
-		return false;
-	}
 	char *code = r_buf_tostring (egg->buf);
 	if (R_STR_ISEMPTY (code)) {
 		free (code);
@@ -409,23 +405,24 @@ R_API bool r_egg_assemble(REgg *egg) {
 
 R_API bool r_egg_compile(REgg *egg) {
 	R_RETURN_VAL_IF_FAIL (egg, false);
-	const bool llvm = egg->remit == &emit_llvm;
-	if (llvm) {
-		r_egg_lang_fini (egg);
-		memset (&egg->lang, 0, sizeof (egg->lang));
-		egg->context = 0;
-		if (!egg_llvm_begin (egg)) {
-			return false;
-		}
-	}
+	REggEmit *e = egg->remit;
 	r_buf_seek (egg->src, 0, R_BUF_SET);
 	char b;
 	int r = r_buf_read (egg->src, (ut8 *)&b, sizeof (b));
-	if (r != sizeof (b) || !egg->remit) {
+	if (r != sizeof (b) || !e) {
 		return true;
 	}
 	// only emit begin if code is found
+	r_egg_lang_fini (egg);
+	memset (&egg->lang, 0, sizeof (egg->lang));
+	egg->context = 0;
 	r_egg_lang_init (egg);
+	if (e->priv_new) {
+		if (e->priv_free) {
+			e->priv_free (egg->priv);
+		}
+		egg->priv = e->priv_new (egg);
+	}
 	for (; b;) {
 		if (r_egg_lang_parsechar (egg, b) < 0) {
 			return false;
@@ -435,17 +432,14 @@ R_API bool r_egg_compile(REgg *egg) {
 			break;
 		}
 	}
+	if (egg->lang.quoteline && r_egg_lang_parsechar (egg, '\n') < 0) {
+		return false;
+	}
 	if (egg->context > 0) {
 		R_LOG_ERROR ("expected '}' at the end of the file. %d left", egg->context);
 		return false;
 	}
-	if (llvm) {
-		return egg_llvm_finish (egg);
-	}
-	if (egg->remit && egg->remit->finalize) {
-		egg->remit->finalize (egg);
-	}
-	return true;
+	return !egg->lang.failed && (!e->finalize || e->finalize (egg));
 }
 
 R_API RBuffer *r_egg_get_bin(REgg *egg) {

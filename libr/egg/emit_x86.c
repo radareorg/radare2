@@ -149,16 +149,16 @@ static void emit_syscall_args(REgg *egg, int nargs) {
 	}
 }
 
-static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
+static void emit_string(REgg *egg, const char *dstvar, RStrs str) {
 	char *p;
-	int i, oj = j;
+	const int len = r_strs_len (str);
+	int i, j = len - len % R_SZ + R_SZ, oj = j;
 
-	int len = strlen (str);
 	char *s = calloc (1, len + 8);
 	if (!s) {
 		return;
 	}
-	memcpy (s, str, len);
+	memcpy (s, str.a, len);
 	memset (s + len, 0, 4);
 
 	/* XXX: Hack: Adjust offset in R_BP correctly for 64b addresses */
@@ -168,7 +168,7 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 	for (i = 4; i <= oj; i += 4) {
 		/* XXX endian issues (non-portable asm) */
 		ut32 *n = (ut32 *) (s + i - 4);
-		p = r_egg_mkvar (egg, NULL, dstvar, i + BPOFF);
+		p = r_egg_mkvar (egg, r_strs_from (dstvar), i + BPOFF);
 		if (attsyntax) {
 			r_egg_printf (egg, "  movl $0x%x, %s\n", M32 (*n), p);
 		} else {
@@ -180,7 +180,7 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 #undef M32
 
 	/* zero */
-	p = r_egg_mkvar (egg, NULL, dstvar, i + BPOFF);
+	p = r_egg_mkvar (egg, r_strs_from (dstvar), i + BPOFF);
 	if (attsyntax) {
 		r_egg_printf (egg, "  movl $0, %s\n", p);
 	} else {
@@ -189,7 +189,7 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 	free (p);
 
 	/* store pointer */
-	p = r_egg_mkvar (egg, NULL, dstvar, j + 4 + BPOFF);
+	p = r_egg_mkvar (egg, r_strs_from (dstvar), j + 4 + BPOFF);
 	if (attsyntax) {
 		r_egg_printf (egg, "  lea %s, %%" R_AX "\n", p);
 	} else {
@@ -197,7 +197,7 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 	}
 	free (p);
 
-	p = r_egg_mkvar (egg, NULL, dstvar, 0);
+	p = r_egg_mkvar (egg, r_strs_from (dstvar), 0);
 	if (attsyntax) {
 		r_egg_printf (egg, "  mov %%" R_AX ", %s\n", p);
 	} else {
@@ -384,47 +384,16 @@ static void emit_load_ptr(REgg *egg, const char *dst) {
 	// r_egg_printf (egg, "  addl $%d, %%"R_AX"\n", d);
 }
 
-static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst) {
-	char *p;
-	char *arg = NULL;
-	char *op = "jz";
-	int signed_value = 1; // XXX: add support for signed/unsigned variables
+static void emit_branch(REgg *egg, const REggCond *cond, int sz, const char *dst) {
 	/* NOTE that jb/ja are inverted to fit cmp opcode */
-	if (b) {
-		*b = '\0';
-		if (signed_value) {
-			op = e? "jge": "jg";
-		} else {
-			op = e? "jae": "ja";
-		}
-		arg = b + 1;
-	} else if (g) {
-		*g = '\0';
-		if (signed_value) {
-			op = e? "jle": "jl";
-		} else {
-			op = e? "jbe": "jb";
-		}
-		arg = g + 1;
+	const char *op;
+	switch (cond->cmp) {
+	case '<': op = cond->inclusive? "jge": "jg"; break;
+	case '>': op = cond->inclusive? "jle": "jl"; break;
+	case '=': op = "jne"; break;
+	default: op = cond->negate? "jnz": "jz"; break;
 	}
-	if (!arg) {
-		if (e) {
-			arg = e + 1;
-			op = "jne";
-		} else {
-			arg = attsyntax? "$0": "0";
-			if (n) {
-				op = "jnz";
-			} else {
-				op = "jz";
-			}
-		}
-	}
-
-	if (*arg == '=') {
-		arg++; /* for <=, >=, ... */
-	}
-	p = r_egg_mkvar (egg, NULL, arg, 0);
+	char *p = r_egg_mkvar (egg, (!cond->cmp && attsyntax)? R_STRS_LIT ("$0"): cond->rhs, 0);
 	if (attsyntax) {
 		r_egg_printf (egg, "  pop %%" R_AX "\n"); /* TODO: add support for more than one arg get arg0 */
 		r_egg_printf (egg, "  cmp%c %s, %%" R_AX "\n", sz, p);

@@ -191,9 +191,9 @@ static void emit_syscall_args(REgg *egg, int nargs) {
 	load_arg_regs (egg, nargs);
 }
 
-static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int j) {
+static void emit_set_string(REgg *egg, const char *dstvar, RStrs str) {
 	/* No PC-relative load on PPC; full inline-string support deferred. */
-	char *s = r_str_escape (str);
+	char *s = r_str_escape_raw ((const ut8 *)str.a, r_strs_len (str));
 	R_LOG_ERROR ("set_string '%s' not implemented for ppc", s);
 	free (s);
 }
@@ -298,33 +298,16 @@ static void emit_load_ptr(REgg *egg, const char *dst) {
 	load_ptr (egg, R_AX, dst);
 }
 
-static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst) {
+static void emit_branch(REgg *egg, const REggCond *cond, int sz, const char *dst) {
 	EmitPpcPriv *priv = egg->priv;
-	char *p, str[64];
-	char *arg = NULL;
-	const char *op = "beq";
-	if (b) {
-		*b = '\0';
-		op = e? "bgt": "bge";
-		arg = b + 1;
-	} else if (g) {
-		*g = '\0';
-		op = e? "blt": "ble";
-		arg = g + 1;
+	const char *op;
+	switch (cond->cmp) {
+	case '<': op = cond->inclusive? "bgt": "bge"; break;
+	case '>': op = cond->inclusive? "blt": "ble"; break;
+	case '=': op = cond->negate? "beq": "bne"; break;
+	default: op = cond->negate? "bne": "beq"; break;
 	}
-	if (!arg) {
-		if (e) {
-			arg = e + 1;
-			op = n? "beq": "bne";
-		} else {
-			arg = "0";
-			op = n? "bne": "beq";
-		}
-	}
-	if (*arg == '=') {
-		arg++;
-	}
-	p = r_egg_mkvar (egg, str, arg, 0);
+	char *p = r_egg_mkvar (egg, cond->rhs, 0);
 	if (priv->lastargs[0][0]) {
 		load_value (egg, R_AX, priv->lastargs[0]);
 	} else {

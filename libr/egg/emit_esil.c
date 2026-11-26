@@ -97,13 +97,13 @@ static void emit_syscall_args(REgg *egg, int nargs) {
 	/* syscall args are already in a1..aN registers, nothing to do */
 }
 
-static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int j) {
+static void emit_set_string(REgg *egg, const char *dstvar, RStrs str) {
 	flush_pending_zero (egg);
 	/* store the string address into the destination variable.
 	 * Encode the literal as a comment-like token so downstream tooling
 	 * can still resolve it; ESIL has no native string literal.
 	 */
-	r_egg_printf (egg, "\"%s\",%s,:=,", str, dstvar);
+	r_egg_printf (egg, "\"%.*s\",%s,:=,", (int)r_strs_len (str), str.a, dstvar);
 }
 
 static void emit_jmp(REgg *egg, const char *str, int atr) {
@@ -216,7 +216,7 @@ static void emit_load_ptr(REgg *egg, const char *dst) {
 	}
 }
 
-static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst) {
+static void emit_branch(REgg *egg, const REggCond *cond, int sz, const char *dst) {
 	flush_pending_zero (egg);
 	/* The parser has pushed the LHS of the condition via push_arg,
 	 * which in this backend copies it into a1. emit_branch jumps to
@@ -228,50 +228,15 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 	 *   a,b,==   sets $z = (a == b), pushes nothing useful
 	 *   X,!      pushes !X (logical not)
 	 */
-	const char *op = NULL;
-	char *arg = NULL;
-	int equality = 0;   /* 1 = test via $z, 0 = ordered comparison */
-	int invert = 0;     /* 1 = invert result (for skip-when-equal) */
-	if (b) {
-		*b = '\0';
-		/* source: < or <=, skip on >= or > */
-		op = e ? ">" : ">=";
-		arg = b + 1;
-	} else if (g) {
-		*g = '\0';
-		/* source: > or >=, skip on <= or < */
-		op = e ? "<" : "<=";
-		arg = g + 1;
-	} else if (e) {
-		/* source: == or !=, branch on equality */
-		arg = e + 1;
-		equality = 1;
-		/* n != NULL means source was "!=", so skip when equal;
-		 * n == NULL means source was "==", so skip when not equal. */
-		invert = (n == NULL) ? 1 : 0;
+	RStrs arg = r_strs_empty (cond->rhs)? R_STRS_LIT ("0"): cond->rhs;
+	const int len = r_strs_len (arg);
+	if (cond->cmp == '<' || cond->cmp == '>') {
+		const char *op = cond->cmp == '<'? (cond->inclusive? ">": ">="): (cond->inclusive? "<": "<=");
+		r_egg_printf (egg, "%.*s,a1,%s,?{," ESIL_JUMP_MARK "%s,GOTO,},", len, arg.a, op, dst);
 	} else {
-		/* bare `if (x)` (skip when x == 0) or `if (!x)` (skip when x != 0) */
-		arg = (char *)"0";
-		equality = 1;
-		/* n != NULL means source had '!', so skip when x != 0 (invert).
-		 * n == NULL means bare `if (x)`, so skip when x == 0 (no invert). */
-		invert = n ? 1 : 0;
-	}
-	if (arg && *arg == '=') {
-		arg++;  /* step over the second char of <=, >= */
-	}
-	while (arg && (*arg == ' ' || *arg == '\t')) {
-		arg++;   /* drop any whitespace between the operator and the RHS */
-	}
-	if (!arg || !*arg) {
-		arg = (char *)"0";
-	}
-	if (equality) {
-		r_egg_printf (egg, "%s,a1,==,$z,%s?{," ESIL_JUMP_MARK "%s,GOTO,},",
-			arg, invert ? "!," : "", dst);
-	} else {
-		r_egg_printf (egg, "%s,a1,%s,?{," ESIL_JUMP_MARK "%s,GOTO,},",
-			arg, op, dst);
+		/* skip when equal for "!=" and "if (x)", when not equal for "==" and "if (!x)" */
+		const bool invert = cond->cmp? !cond->negate: cond->negate;
+		r_egg_printf (egg, "%.*s,a1,==,$z,%s?{," ESIL_JUMP_MARK "%s,GOTO,},", len, arg.a, invert? "!,": "", dst);
 	}
 }
 
@@ -492,10 +457,10 @@ static char *resolve_block(const char *block) {
 	return r_strbuf_drain (out);
 }
 
-static void emit_finalize(REgg *egg) {
+static bool emit_finalize(REgg *egg) {
 	char *src = r_buf_tostring (egg->buf);
 	if (!src) {
-		return;
+		return true;
 	}
 	r_unref (egg->buf);
 	egg->buf = r_buf_new ();
@@ -535,6 +500,7 @@ static void emit_finalize(REgg *egg) {
 	}
 	r_strbuf_free (block);
 	free (src);
+	return true;
 }
 
 REggEmit EMIT_NAME = {

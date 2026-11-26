@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2010-2026 - pancake */
 
-#include "egg_private.h"
+#include <r_egg.h>
 
 #define CTX egg->context
 
@@ -45,8 +45,29 @@ static inline int get_op(char **pos) {
 	return (**pos)? ((is_op (**pos)) + 1): 0;
 }
 
-static void rcc_pushstr(REgg *egg, char *str, int filter);
+static bool rcc_pushstr(REgg *egg, char *str, bool filter);
 static void rcc_context(REgg *egg, int delta);
+static void rcc_capture(REgg *egg, int mode, const char *name);
+
+static void rcc_error(REgg *egg, const char *msg, const char *arg) {
+	R_LOG_ERROR ("%s:%d: %s%s", egg->lang.file, egg->lang.line, msg, r_str_get (arg));
+	egg->lang.failed = true;
+}
+
+// raw assembly text (`: lines`, labels, @data) goes to the backend hook or the output buffer
+static void rcc_raw(REgg *egg, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
+static void rcc_raw(REgg *egg, const char *fmt, ...) {
+	va_list ap;
+	va_start (ap, fmt);
+	char *text = r_str_newvf (fmt, ap);
+	va_end (ap);
+	if (egg->remit->raw) {
+		egg->remit->raw (egg, text);
+	} else {
+		r_buf_append_string (egg->buf, text);
+	}
+	free (text);
+}
 
 enum {
 	LANG_MODE_NORMAL = 0,
@@ -167,10 +188,9 @@ R_API void r_egg_lang_fini(REgg *egg) {
 		R_FREE (egg->lang.nested_callname[i]);
 	}
 	R_FREE (egg->lang.conditionstr);
-	/* dstval may alias syscallbody (inline @syscall body capture) */
-	if (egg->lang.dstval == egg->lang.syscallbody) {
-		egg->lang.dstval = NULL;
-	}
+	r_strbuf_fini (&egg->lang.elem);
+	r_strbuf_free (egg->lang.capture);
+	egg->lang.capture = NULL;
 	R_FREE (egg->lang.syscallbody);
 	R_FREE (egg->lang.includefile);
 	R_FREE (egg->lang.setenviron);
@@ -225,16 +245,14 @@ static void rcc_fastcall(REgg *egg, bool with_body) {
 		e->equ (egg, egg->lang.dstvar, value);
 	}
 	if (with_body && egg->lang.dstvar) {
-		r_egg_printf (egg, "%s:\n", egg->lang.dstvar);
+		rcc_raw (egg, "%s:\n", egg->lang.dstvar);
 		rcc_context (egg, 1);
 	}
 	R_FREE (value);
 	R_FREE (egg->lang.dstvar);
 	R_FREE (egg->lang.dstval);
 	egg->lang.mode = LANG_MODE_NORMAL;
-	egg->lang.elem[0] = '\0';
-	egg->lang.elem_n = 0;
-	egg->lang.ndstval = 0;
+	r_strbuf_set (&egg->lang.elem, "");
 	egg->lang.slurp = 0;
 }
 
@@ -289,7 +307,7 @@ static void rcc_internal_mathop(REgg *egg, const char *ptr, char *ep, char op) {
 		}
 	}
 	if (is_var ((char *)p)) {
-		allocated = r_egg_mkvar (egg, NULL, p, 0);
+		allocated = r_egg_mkvar (egg, r_strs_from (p), 0);
 		p = allocated;
 		if (egg->lang.varxs == '*') {
 			e->load (egg, p, egg->lang.varsize);
@@ -308,7 +326,7 @@ static void rcc_internal_mathop(REgg *egg, const char *ptr, char *ep, char op) {
 	} else {
 		type = '$';
 	}
-	if (R_STR_ISNOTEMPTY (p) || e == &emit_llvm) {
+	if (R_STR_ISNOTEMPTY (p)) {
 		e->mathop (egg, op, egg->lang.varsize, type, p, ep);
 	}
 	R_FREE (allocated);
@@ -360,9 +378,9 @@ static void rcc_mathop(REgg *egg, char **pos, int level) {
 	 */
 }
 
-static void rcc_pusharg(REgg *egg, char *str) {
+static void rcc_pusharg(REgg *egg, RStrs arg) {
 	REggEmit *e = egg->remit;
-	char *p = r_egg_mkvar (egg, NULL, str, 0);
+	char *p = r_egg_mkvar (egg, arg, 0);
 	if (!p) {
 		return;
 	}
@@ -382,6 +400,7 @@ static void rcc_element(REgg *egg, char *str) {
 	}
 	REggEmit *e = egg->remit;
 	char *ptr, *p = str + strlen (str);
+	const char *end = p;
 	int inside = 0;
 	int num, num2;
 	int i;
@@ -396,12 +415,8 @@ static void rcc_element(REgg *egg, char *str) {
 			}
 		} else {
 			if (egg->lang.callname) {
-				if (e == &emit_llvm && (!strcmp (egg->lang.callname, "if") || !strcmp (egg->lang.callname, "while"))) {
-					R_FREE (egg->lang.conditionstr);
-					egg->lang.conditionstr = strdup (str);
-					return;
-				}
-				if (e != &emit_llvm && (strstr (egg->lang.callname, "while") || strstr (egg->lang.callname, "if"))) {
+				if (!strcmp (egg->lang.callname, "while") || !strcmp (egg->lang.callname, "if")) {
+					free (egg->lang.conditionstr);
 					egg->lang.conditionstr = strdup (str);
 				}
 			}
@@ -411,19 +426,16 @@ static void rcc_element(REgg *egg, char *str) {
 			}
 			while (p > str) {
 				p--;
-				if (e == &emit_llvm && (*p == '"' || *p == '\'') && !is_escaped (str, p)) {
+				if ((*p == '"' || *p == '\'') && !is_escaped (str, p)) {
 					if (!inside || inside == *p) {
 						inside = inside? 0: *p;
 					}
-				} else if (e != &emit_llvm && *p == '"') {
-					inside ^= 1;
 				} else if (*p == ',' && !inside) {
-					*p = '\0';
-					p = (char *)r_str_trim_head_ro (p + 1);
-					rcc_pusharg (egg, p);
+					rcc_pusharg (egg, r_strs_new (p + 1, end));
+					end = p;
 				}
 			}
-			rcc_pusharg (egg, str);
+			rcc_pusharg (egg, r_strs_new (str, end));
 		}
 	} else {
 		switch (egg->lang.mode) {
@@ -483,8 +495,7 @@ static void rcc_element(REgg *egg, char *str) {
 			}
 			break;
 		case LANG_MODE_GOTO:
-			egg->lang.elem[egg->lang.elem_n] = 0;
-			e->jmp (egg, egg->lang.elem, 0);
+			e->jmp (egg, str, 0);
 			break;
 		case LANG_MODE_INCLUDE:
 			str = ptr = (char *)find_alias (egg, r_str_trim_head_ro (str));
@@ -511,10 +522,14 @@ static void rcc_element(REgg *egg, char *str) {
 			R_FREE (egg->lang.dstval);
 			egg->lang.dstval = r_str_trim_dup (str);
 			break;
-		default:
-			if (e == &emit_llvm) {
-				break;
+		case LANG_MODE_EXTERN:
+			if (e->declare) {
+				e->declare (egg, egg->lang.dstvar, str);
 			}
+			R_FREE (egg->lang.dstvar);
+			egg->lang.mode = LANG_MODE_NORMAL;
+			break;
+		default:
 			p = strchr (str, ',');
 			if (p) {
 				*p = '\0';
@@ -529,69 +544,21 @@ static void rcc_element(REgg *egg, char *str) {
 				e->frame (egg, egg->lang.stackframe + egg->lang.stackfixed);
 			}
 		}
-		egg->lang.elem[0] = 0;
-		egg->lang.elem_n = 0;
 	}
 }
 
-static void rcc_pushstr(REgg *egg, char *str, int filter) {
-	int dotrim;
-	int i, j, len, ch;
+static bool rcc_pushstr(REgg *egg, char *str, bool filter) {
 	REggEmit *e = egg->remit;
-	if (e == &emit_llvm) {
-		bool empty = !*str;
-		int len = filter? r_str_unescape (str): strlen (str);
-		e->set_string (egg, egg->lang.dstvar, str, !len && !empty? -1: len);
-		R_FREE (egg->lang.dstvar);
-		return;
-	}
-
 	e->comment (egg, "encode %s string (%s) (%s)",
 		filter? "filtered": "unfiltered", str, egg->lang.callname);
-
-	// fixed by izhuer
-	if (filter) {
-		for (i = 0; str[i]; i++) {
-			dotrim = 0;
-			if (str[i] == '\\') {
-				switch (str[i + 1]) {
-				case 't':
-					str[i] = '\t';
-					dotrim = 1;
-					break;
-				case 'n':
-					str[i] = '\n';
-					dotrim = 1;
-					break;
-				case 'e':
-					str[i] = '\x1b';
-					dotrim = 1;
-					break;
-				case 'x':
-					ch = r_hex_pair2bin (str + i + 2);
-					if (ch == -1) {
-						R_LOG_ERROR ("%s:%d Error string format",
-							egg->lang.file, egg->lang.line);
-					}
-					str[i] = (char)ch;
-					dotrim = 3;
-					break;
-				default:
-					break;
-				}
-				if (dotrim) {
-					memmove (str + i + 1, str + i + dotrim + 1,
-						strlen (str + i + dotrim + 1) + 1);
-				}
-				// DO NOT forget the '\x00' terminate char
-			}
-		}
+	const int len = filter? r_str_unescape (str): strlen (str);
+	if (!len && *str) {
+		rcc_error (egg, "invalid string literal ", str);
+		return false;
 	}
-
-	len = strlen (str);
-	j = (len - len % e->size) + e->size;
-	e->set_string (egg, egg->lang.dstvar, str, j);
+	e->set_string (egg, egg->lang.dstvar, r_strs_from_len (str, len));
 	R_FREE (egg->lang.dstvar);
+	return true;
 }
 
 /* Emit a branch-target label in a backend-appropriate form. Backends that
@@ -601,85 +568,67 @@ static void emit_label(REgg *egg, const char *name) {
 	if (egg->remit && egg->remit->label) {
 		egg->remit->label (egg, name);
 	} else {
-		r_egg_printf (egg, "%s:\n", name);
+		rcc_raw (egg, "%s:\n", name);
 	}
 }
 
-/* Return the integer value of the leading (decimal or hex) number in s.
- * Unlike r_num_math this stops at the first non-digit character so that
- * trailing tokens like "==" or whitespace do not affect the result. This
- * is used when resolving `.varN` / `.argN` / `.regN` names out of strings
- * that may still contain comparison operators. */
-static int parse_leading_idx(const char *s) {
+// leading decimal or 0x number, ignoring trailing tokens like "=="
+static int parse_leading_idx(RStrs s) {
+	const bool hex = r_strs_startswith (s, "0x") || r_strs_startswith (s, "0X");
 	int n = 0;
-	int i = 0;
-	int base = 10;
-	if (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) {
-		base = 16;
-		i = 2;
-	}
-	for (; s[i]; i++) {
-		int digit;
-		if (isdigit ((unsigned char)s[i])) {
-			digit = s[i] - '0';
-		} else if (base == 16 && s[i] >= 'a' && s[i] <= 'f') {
-			digit = s[i] - 'a' + 10;
-		} else if (base == 16 && s[i] >= 'A' && s[i] <= 'F') {
-			digit = s[i] - 'A' + 10;
-		} else {
+	for (r_strs_advance (&s, hex? 2: 0); !r_strs_empty (s); s.a++) {
+		const int ch = tolower ((ut8)*s.a);
+		const int digit = isdigit (ch)? ch - '0': (hex && ch >= 'a' && ch <= 'f')? ch - 'a' + 10: -1;
+		if (digit < 0) {
 			break;
 		}
-		if (digit >= base) {
-			break;
-		}
-		n = (n * base) + digit;
+		n = n * (hex? 16: 10) + digit;
 	}
 	return n;
 }
 
-static void r_egg_mkvar_name(REgg *egg, RStrBuf *out, const char *name, int delta) {
+static int parse_idx_after(RStrs name, size_t skip) {
+	r_strs_advance (&name, skip);
+	return parse_leading_idx (name);
+}
+
+static bool mkvar_local(REgg *egg, RStrBuf *out, RStrs name, int delta) {
+	REggEmit *e = egg->remit;
+	const int kind = r_strs_startswith (name, "fix")? 'f': r_strs_startswith (name, "var")? 'v'
+		: (r_strs_startswith (name, "arg") && r_strs_len (name) > 3)? 'a': 0;
+	if (!kind) {
+		return false;
+	}
+	const int idx = parse_idx_after (name, 3);
+	if (e->get_local) {
+		e->get_local (egg, out, kind, idx);
+	} else if (kind != 'a') {
+		e->get_var (egg, 0, out, idx + delta + e->size - (kind == 'f'? egg->lang.stackfixed: 0));
+	} else if (egg->lang.stackframe == 0) {
+		e->get_var (egg, 1, out, 4);
+	} else {
+		e->get_var (egg, 2, out, idx + delta + e->size + 4);
+	}
+	return true;
+}
+
+static void mkvar_name(REgg *egg, RStrBuf *out, RStrs name, int delta) {
 	REggEmit *e = egg->remit;
 	int i;
-	if (*name == '%') {
-		if (e == &emit_llvm) {
-			return;
-		}
-		/* Explicit raw native register: `.%name` skips the alias
-		 * table and copies the register name verbatim. This keeps
-		 * the unambiguous "target register" syntax separate from
-		 * `.varN`, `.regN` and user-defined aliases. */
-		r_strbuf_set (out, name + 1);
-	} else if (r_str_startswith (name, "ret")) {
+	if (mkvar_local (egg, out, name, delta)) {
+		return;
+	}
+	if (r_strs_at (name, 0) == '%') {
+		// `.%name` is a raw native register, copied verbatim without alias lookup
+		r_strbuf_append_n (out, name.a + 1, r_strs_len (name) - 1);
+	} else if (r_strs_startswith (name, "ret")) {
 		r_strbuf_set (out, e->retvar);
-	} else if (r_str_startswith (name, "fix")) {
-		int idx = parse_leading_idx (name + 3);
-		if (e == &emit_llvm) {
-			e->get_var (egg, 1, out, idx);
-		} else {
-			e->get_var (egg, 0, out, idx + delta + e->size - egg->lang.stackfixed);
-		}
-	} else if (r_str_startswith (name, "var")) {
-		int idx = parse_leading_idx (name + 3);
-		if (e != &emit_llvm) {
-			idx += delta + e->size;
-		}
-		e->get_var (egg, 0, out, idx);
-	} else if (r_str_startswith (name, "rarg")) {
+	} else if (r_strs_startswith (name, "rarg")) {
 		if (e->get_arg) {
-			int idx = parse_leading_idx (name + 4);
-			e->get_arg (egg, out, idx);
+			e->get_arg (egg, out, parse_idx_after (name, 4));
 		}
-	} else if (r_str_startswith (name, "arg")) {
-		if (name[3]) {
-			if (e == &emit_llvm) {
-				e->get_arg (egg, out, parse_leading_idx (name + 3));
-			} else if (egg->lang.stackframe == 0) {
-				e->get_var (egg, 1, out, 4); // idx-4);
-			} else {
-				int idx = parse_leading_idx (name + 3) + delta + e->size;
-				e->get_var (egg, 2, out, idx + 4);
-			}
-		} else if (egg->lang.callname) {
+	} else if (r_strs_startswith (name, "arg")) {
+		if (egg->lang.callname) {
 			for (i = 0; i < egg->lang.nsyscalls; i++) {
 				const char *scname = egg->lang.syscalls[i].name;
 				if (scname && !strcmp (scname, egg->lang.callname)) {
@@ -691,110 +640,78 @@ static void r_egg_mkvar_name(REgg *egg, RStrBuf *out, const char *name, int delt
 		} else {
 			R_LOG_WARN ("No CallName '%s'", r_str_get (egg->lang.callname));
 		}
-	} else if (r_str_startswith (name, "reg")) {
-		int idx = parse_leading_idx (name + 3);
-		if (egg->lang.attsyntax) {
-			r_strbuf_setf (out, "%%%s", e->regs (egg, idx));
-		} else {
-			r_strbuf_set (out, e->regs (egg, idx));
-		}
+	} else if (r_strs_startswith (name, "reg")) {
+		const char *reg = e->regs (egg, parse_idx_after (name, 3));
+		r_strbuf_setf (out, "%s%s", egg->lang.attsyntax? "%": "", reg);
 	} else {
 		for (i = 0; i < egg->lang.nalias; i++) {
 			const char *aname = egg->lang.aliases[i].name;
-			if (aname && !strcmp (name, aname)) {
-				const char *content = egg->lang.aliases[i].content;
-				r_strbuf_set (out, content? content: "");
+			if (aname && r_strs_equals_str (name, aname)) {
+				r_strbuf_set (out, r_str_get (egg->lang.aliases[i].content));
 				return;
 			}
 		}
-		R_LOG_ERROR ("Unknown name '.%s' (use .%%%s for a raw register or `%s@alias(...)`)",
-			name, name, name);
+		const int len = r_strs_len (name);
+		R_LOG_ERROR ("Unknown name '.%.*s' (use .%%%.*s for a raw register or `%.*s@alias(...)`)",
+			len, name.a, len, name.a, len, name.a);
 	}
 }
 
-static bool r_egg_mkvar_buf(REgg *egg, RStrBuf *out, const char *_str, int delta) {
-	int len, qi;
-	char *oldstr = NULL, *str = NULL, *q;
-
-	delta += egg->lang.stackfixed; // XXX can be problematic
-	if (!_str) {
-		return false; /* fix segfault, but not badparsing */
-	}
-	str = oldstr = r_str_trim_dup (_str);
-	if (!oldstr) {
+static bool mkvar_buf(REgg *egg, RStrBuf *out, RStrs str, int delta) {
+	if (!str.a) {
 		return false;
 	}
-	r_strbuf_set (out, "");
-	if ((egg->remit != &emit_llvm || (*str != '"' && *str != '\'')) && (q = strchr (str, ':'))) {
-		*q = '\0';
-		qi = atoi (q + 1);
-		egg->lang.varsize = (qi == 1)? 'b': 'l';
-	} else {
-		egg->lang.varsize = 'l';
+	r_strs_trim (&str);
+	const char quote = (r_strs_at (str, 0) == '"' || r_strs_at (str, 0) == '\'')? *str.a: 0;
+	RStrs size;
+	egg->lang.varsize = 'l';
+	if (!quote && r_strs_split (str, ':', &str, &size)) {
+		r_strs_trim (&size);
+		egg->lang.varsize = parse_leading_idx (size) == 1? 'b': 'l';
 	}
-	if (*str == '*' || *str == '&') {
-		egg->lang.varxs = *str;
-		str++;
-	} else {
-		egg->lang.varxs = 0;
-	}
-	if (str[0] == '.') {
-		r_egg_mkvar_name (egg, out, str + 1, delta);
-		free (oldstr);
+	RStrs name = str;
+	const char modifier = r_strs_at (name, 0);
+	egg->lang.varxs = (modifier == '*' || modifier == '&')? modifier: 0;
+	r_strs_advance (&name, egg->lang.varxs? 1: 0);
+	if (r_strs_at (name, 0) == '.') {
+		r_strs_advance (&name, 1);
+		mkvar_name (egg, out, name, delta + egg->lang.stackfixed);
 		return true;
 	}
-	if (*str == '"' || *str == '\'') {
-		int mustfilter = *str == '"';
-		/* TODO: check for room in egg->lang.stackfixed area */
-		str++;
-		len = strlen (str) - 1;
-		if (egg->remit == &emit_llvm && (len < 0 || str[len] != (mustfilter? '"': '\''))) {
-			free (oldstr);
-			return false;
-		}
-		if (egg->remit != &emit_llvm && (!egg->lang.stackfixed || egg->lang.stackfixed < len)) {
-			R_LOG_WARN ("No room in the static stackframe! (%d must be %d)",
-				egg->lang.stackfixed, len);
-		}
-		str[len] = '\0';
-		char *foo = r_str_newf (".fix%d", egg->lang.nargs * 16); /* XXX FIX DELTA !!!1 */
-		if (!foo) {
-			free (oldstr);
-			return false;
-		}
-		char *tmp = egg->lang.dstvar;
-		egg->lang.dstvar = r_str_trim_dup (foo);
-		rcc_pushstr (egg, str, mustfilter);
-		free (egg->lang.dstvar);
-		egg->lang.dstvar = tmp;
-		bool ret = r_egg_mkvar_buf (egg, out, foo, 0);
-		free (foo);
-		free (oldstr);
-		return ret;
+	if (!quote) {
+		r_strbuf_append_n (out, str.a, r_strs_len (str));
+		return true;
 	}
-	if (egg->remit != &emit_llvm || *str != '%') {
-		r_strbuf_set (out, oldstr);
+	if (r_strs_len (str) < 2 || r_strs_lastch (str) != quote) {
+		return false;
 	}
-	free (oldstr);
-	return true;
-}
-
-R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
-	RStrBuf sb;
-	r_strbuf_init (&sb);
-	if (!r_egg_mkvar_buf (egg, &sb, _str, delta)) {
-		r_strbuf_fini (&sb);
-		return NULL;
+	char *literal = r_strs_tostring (r_strs_sub (str, 1, r_strs_len (str) - 1));
+	const int len = r_strs_len (str) - 2;
+	if (!egg->remit->get_local && (!egg->lang.stackfixed || egg->lang.stackfixed < len)) {
+		R_LOG_WARN ("No room in the static stackframe! (%d must be %d)", egg->lang.stackfixed, len);
 	}
-	if (out) {
-		r_str_ncpy (out, R_STRBUF_SAFEGET (&sb), 32);
-	}
-	char *ret = r_strbuf_drain_nofree (&sb);
-	r_strbuf_fini (&sb);
+	char *fix = r_str_newf (".fix%d", egg->lang.nargs * 16);
+	char *dstvar = egg->lang.dstvar;
+	egg->lang.dstvar = strdup (fix);
+	bool ret = rcc_pushstr (egg, literal, quote == '"');
+	free (egg->lang.dstvar);
+	egg->lang.dstvar = dstvar;
+	ret = ret && mkvar_buf (egg, out, r_strs_from (fix), 0);
+	free (fix);
+	free (literal);
 	return ret;
 }
 
-static bool rcc_fun(REgg *egg, char *str) {
+R_API char *r_egg_mkvar(REgg *egg, RStrs str, int delta) {
+	RStrBuf *sb = r_strbuf_new ("");
+	if (!mkvar_buf (egg, sb, str, delta)) {
+		r_strbuf_free (sb);
+		return NULL;
+	}
+	return r_strbuf_drain (sb);
+}
+
+static void rcc_fun(REgg *egg, char *str) {
 	char *ptr, *ptr2;
 	REggEmit *e = egg->remit;
 	if (CTX) {
@@ -812,35 +729,8 @@ static bool rcc_fun(REgg *egg, char *str) {
 			egg->remit->comment (egg, "rcc_fun %d (%s)", CTX, egg->lang.callname);
 		}
 	} else {
-		if (e == &emit_llvm) {
-			r_str_trim (str);
-		}
+		r_str_trim (str);
 		ptr = strchr (str, '@');
-		if (e == &emit_llvm) {
-			if (!ptr) {
-				R_LOG_ERROR ("%s:%d: LLVM: expected a function definition or directive", egg->lang.file, egg->lang.line);
-				return false;
-			}
-			const bool syscall = ptr != str && !strcmp (ptr + 1, "syscall");
-			if (syscall || !strcmp (ptr + 1, "extern")) {
-				*ptr = 0;
-				R_FREE (egg->lang.dstvar);
-				egg->lang.dstvar = r_str_trim_dup (str);
-				egg->lang.mode = syscall? LANG_MODE_SYSCALL: LANG_MODE_EXTERN;
-				return true;
-			}
-			if (!ptr[1] || !strcmp (ptr + 1, "global")) {
-				bool exported = ptr[1] != 0;
-				*ptr = 0;
-				r_str_trim (str);
-				egg->lang.mode = LANG_MODE_NORMAL;
-				return egg_llvm_function (egg, str, exported);
-			}
-			if (strcmp (ptr + 1, "alias") && strcmp (ptr + 1, "include")) {
-				R_LOG_ERROR ("%s:%d: LLVM: unsupported directive '%s'", egg->lang.file, egg->lang.line, ptr);
-				return false;
-			}
-		}
 		if (ptr) {
 			*ptr++ = '\0';
 			egg->lang.mode = LANG_MODE_NORMAL;
@@ -849,6 +739,10 @@ static bool rcc_fun(REgg *egg, char *str) {
 				free (egg->lang.setenviron);
 				egg->lang.setenviron = r_str_trim_dup (str);
 				egg->lang.slurp = 0;
+			} else if (strstr (ptr, "extern")) {
+				free (egg->lang.dstvar);
+				egg->lang.dstvar = r_str_trim_dup (str);
+				egg->lang.mode = LANG_MODE_EXTERN;
 			} else if (strstr (ptr, "fastcall")) {
 				free (egg->lang.dstvar);
 				egg->lang.dstvar = r_str_trim_dup (str);
@@ -857,21 +751,11 @@ static bool rcc_fun(REgg *egg, char *str) {
 			} else if (strstr (ptr, "syscall")) {
 				if (*str) {
 					egg->lang.mode = LANG_MODE_SYSCALL;
+					free (egg->lang.dstvar);
 					egg->lang.dstvar = r_str_trim_dup (str);
 				} else {
-					egg->lang.mode = LANG_MODE_INLINE;
-					char *old_syscallbody = egg->lang.syscallbody;
-					egg->lang.syscallbody = malloc (4096); // XXX hardcoded size
-					if (egg->lang.syscallbody) {
-						egg->lang.dstval = egg->lang.syscallbody;
-						*egg->lang.syscallbody = '\0';
-					}
-					if (egg->lang.dstval == old_syscallbody) {
-						egg->lang.dstval = NULL;
-					}
-					free (old_syscallbody);
-					R_FREE (egg->lang.dstvar);
-					egg->lang.ndstval = 0;
+					// a nameless inline body replaces the backend @syscall payload
+					rcc_capture (egg, LANG_MODE_INLINE, NULL);
 				}
 			} else if (strstr (ptr, "include")) {
 				egg->lang.mode = LANG_MODE_INCLUDE;
@@ -888,38 +772,26 @@ static bool rcc_fun(REgg *egg, char *str) {
 				*ptr2 = '\x00';
 				// for aliases must be valid and accurate strings
 			} else if (strstr (ptr, "data")) {
-				egg->lang.mode = LANG_MODE_DATA;
-				egg->lang.ndstval = 0;
-				egg->lang.dstvar = r_str_trim_dup (str);
-				egg->lang.dstval = malloc (4096);
+				rcc_capture (egg, LANG_MODE_DATA, str);
 			} else if (strstr (ptr, "naked")) {
 				egg->lang.mode = LANG_MODE_NAKED;
-				/*
-				free (egg->lang.dstvar);
-				egg->lang.dstvar = r_str_trim_dup (str);
-				egg->lang.dstval = malloc (4096);
-				egg->lang.ndstval = 0;
-				 */
-				r_egg_printf (egg, "%s:\n", str);
+				rcc_raw (egg, "%s:\n", str);
 			} else if (strstr (ptr, "inline")) {
-				egg->lang.mode = LANG_MODE_INLINE;
-				free (egg->lang.dstvar);
-				egg->lang.dstvar = r_str_trim_dup (str);
-				egg->lang.dstval = malloc (4096);
-				egg->lang.ndstval = 0;
+				rcc_capture (egg, LANG_MODE_INLINE, str);
+			} else if (e->function) {
+				e->function (egg, str, ptr);
 			} else {
-				// naked label
 				if (*ptr) {
-					r_egg_printf (egg, "\n.%s %s\n", ptr, str);
+					rcc_raw (egg, "\n.%s %s\n", ptr, str);
 				}
-				r_egg_printf (egg, "%s:\n", str);
+				rcc_raw (egg, "%s:\n", str);
 			}
 		} else {
 			// e->jmp (egg, egg->lang.ctxpush[context], 0);
 			if (CTX > 0) {
 				// WTF?
 				eprintf ("LABEL %d\n", CTX);
-				r_egg_printf (egg, "\n%s:\n", str);
+				rcc_raw (egg, "\n%s:\n", str);
 			} else {
 				if (!strcmp (str, "goto")) {
 					egg->lang.mode = LANG_MODE_GOTO;
@@ -930,7 +802,6 @@ static bool rcc_fun(REgg *egg, char *str) {
 			}
 		}
 	}
-	return true;
 }
 
 #if 0
@@ -970,6 +841,26 @@ static char **ifelse_slot(REgg *egg, int ctx) {
 	return &egg->lang.ifelse_table[ctx][col];
 }
 
+static REggCond rcc_condition(const char *s) {
+	const char *less = strchr (s, '<');
+	const char *greater = strchr (s, '>');
+	const char *equal = strchr (s, '=');
+	const char *bang = strchr (s, '!');
+	const char *op = less? less: greater? greater: equal;
+	REggCond cond = { .lhs = r_strs_from (s), .rhs = R_STRS_LIT ("0"), .inclusive = equal, .negate = bang };
+	if (op) {
+		cond.cmp = *op;
+		cond.lhs = r_strs_new (s, (!less && !greater && bang && bang < equal)? bang: op);
+		cond.rhs = r_strs_from (op + 1 + (op[1] == '='));
+	}
+	r_strs_trim (&cond.lhs);
+	r_strs_trim (&cond.rhs);
+	if (!op && r_strs_at (cond.lhs, 0) == '!') {
+		r_strs_advance (&cond.lhs, 1);
+	}
+	return cond;
+}
+
 static void rcc_context(REgg *egg, int delta) {
 	REggEmit *emit = egg->remit;
 
@@ -1004,7 +895,7 @@ static void rcc_context(REgg *egg, int delta) {
 	} else {
 		/* conditional block */
 		// eprintf ("Callname is (%s)\n", callname);
-		const char *elm = r_str_trim_head_ro (egg->lang.elem);
+		const char *elm = r_str_trim_head_ro (r_strbuf_get (&egg->lang.elem));
 		// const char *cn = callname;
 		// seems cn is useless in nowadays content
 // if (egg->lang.nested[context-1])
@@ -1030,17 +921,7 @@ static void rcc_context(REgg *egg, int delta) {
 		// eprintf ("CN = (%s) %d (%s) delta=%d\n", cn, context, egg->lang.nested[context-1], delta);
 		if (egg->lang.callname) {
 			/* TODO: this must be an array */
-			char *b, *g, *e, *n;
 			emit->comment (egg, "cond frame %s (%s)", egg->lang.callname, elm);
-			/* TODO: simplify with a single for */
-			if (egg->lang.conditionstr) {
-				b = strchr (egg->lang.conditionstr, '<'); /* below */
-				g = strchr (egg->lang.conditionstr, '>'); /* greater */
-				e = strchr (egg->lang.conditionstr, '='); /* equal */
-				n = strchr (egg->lang.conditionstr, '!'); /* negate */
-			} else {
-				b = g = e = n = NULL;
-			}
 			if (!strcmp (egg->lang.callname, "while")) {
 				char *lab = r_str_newf ("__begin_%d_%d_%d", egg->lang.nfunctions,
 					CTX - 1, egg->lang.nestedi[CTX - 1] - 1);
@@ -1061,12 +942,12 @@ static void rcc_context(REgg *egg, int delta) {
 				rcc_set_callname (egg, "if"); // append 'if' body
 			}
 			if (!strcmp (egg->lang.callname, "if")) {
-				// emit->branch (egg, b, g, e, n, egg->lang.varsize, get_end_frame_label (egg));
 				// HACK HACK :D
 				// nestede[CTX-1] = strdup (str);
 				// where give nestede value
 				char *label = r_str_newf ("__end_%d_%d_%d", egg->lang.nfunctions, CTX - 1, egg->lang.nestedi[CTX - 1] - 1);
-				emit->branch (egg, b, g, e, n, egg->lang.varsize, label);
+				const REggCond cond = rcc_condition (r_str_get (egg->lang.conditionstr));
+				emit->branch (egg, &cond, egg->lang.varsize, label);
 				free (label);
 				if (CTX > 0) {
 					/* XXX .. */
@@ -1078,130 +959,95 @@ static void rcc_context(REgg *egg, int delta) {
 	}
 }
 
-static int parsedatachar(REgg *egg, char c) {
-	char *str;
-	int i, j;
+// @data and @inline bodies are collected verbatim until their closing brace
+static void rcc_capture(REgg *egg, int mode, const char *name) {
+	free (egg->lang.dstvar);
+	egg->lang.dstvar = name? strdup (name): NULL;
+	r_strbuf_free (egg->lang.capture);
+	egg->lang.capture = r_strbuf_new ("");
+	egg->lang.mode = mode;
+}
 
-	if (!egg->lang.dstval) {
-		return 0;
-	}
-	/* skip until '{' */
-	if (c == '{') { /* XXX: repeated code!! */
+// returns the captured text once the body closes, NULL while still capturing
+static char *capture_char(REgg *egg, char c) {
+	RStrBuf *sb = egg->lang.capture;
+	if (c == '{') {
 		rcc_context (egg, 1);
-		if (++ (egg->lang.inlinectr) == 1) {
-			return egg->lang.ndstval = 0;
+		if (++egg->lang.inlinectr == 1) {
+			r_strbuf_set (sb, "");
+			return NULL;
 		}
-	} else if (egg->lang.inlinectr == 0) {
-		/* capture value between parenthesis foo@data (NNN) { ... } */
-		if (c == ')') {
-			egg->lang.dstval[egg->lang.ndstval] = '\0';
-			egg->lang.stackframe = atoi (egg->lang.dstval);
-			egg->lang.ndstval = 0;
-		} else {
-			if (egg->lang.ndstval + 1 >= 4096) {
-				R_LOG_ERROR ("data size too large");
-				return -1;
-			}
-			egg->lang.dstval[egg->lang.ndstval++] = c;
-		}
+	} else if (c == '}' && egg->lang.inlinectr && CTX < 2) {
+		rcc_context (egg, -1);
+		egg->lang.slurp = 0;
+		egg->lang.mode = LANG_MODE_NORMAL;
+		egg->lang.inlinectr = 0;
+		egg->lang.capture = NULL;
+		return r_strbuf_drain (sb);
+	}
+	r_strbuf_append_n (sb, &c, 1);
+	return NULL;
+}
+
+static int parsedatachar(REgg *egg, char c) {
+	if (!egg->lang.inlinectr && c == ')') {
+		// foo@data(NNN) { ... } takes the element count from the parenthesis
+		egg->lang.stackframe = atoi (r_strbuf_get (egg->lang.capture));
+		r_strbuf_set (egg->lang.capture, "");
 		return 0;
 	}
-	/* capture body */
-	if (c == '}') { /* XXX: repeated code!! */
-		if (CTX < 2) {
-			egg->lang.inlinectr = 0;
-			rcc_context (egg, -1);
-			egg->lang.slurp = 0;
-			egg->lang.mode = LANG_MODE_NORMAL;
-			/* register */
-			if (egg->lang.dstval && egg->lang.dstvar) {
-				egg->lang.dstval[egg->lang.ndstval] = '\0';
-				egg->remit->comment (egg, "data (%s)(%s)size=(%d)\n",
-					egg->lang.dstvar, egg->lang.dstval, egg->lang.stackframe);
-				r_egg_printf (egg, ".data\n");
-				for (str = egg->lang.dstval; is_space (*str); str++) {
-					;
-				}
-				j = (egg->lang.stackframe)? egg->lang.stackframe: 1;
-				/* emit label */
-				r_egg_printf (egg, "%s:\n", egg->lang.dstvar);
-				for (i = 1; i <= j; i++) {
-					if (*str == '"') {
-						r_egg_printf (egg, ".ascii %s%s\n", egg->lang.dstval, (i == j)? "\"\\x00\"": "");
-					} else {
-						r_egg_printf (egg, ".long %s\n", egg->lang.dstval);
-					}
-				}
-				r_egg_printf (egg, ".text\n");
-				R_FREE (egg->lang.dstvar);
-				R_FREE (egg->lang.dstval);
-				egg->lang.ndstval = 0;
-				CTX = 0;
-				return 1;
-			}
+	if (!egg->lang.inlinectr && c != '{') {
+		r_strbuf_append_n (egg->lang.capture, &c, 1);
+		return 0;
+	}
+	char *value = capture_char (egg, c);
+	if (!value) {
+		return 0;
+	}
+	egg->remit->comment (egg, "data (%s)(%s)size=(%d)\n", egg->lang.dstvar, value, egg->lang.stackframe);
+	const int count = R_MAX (egg->lang.stackframe, 1);
+	const bool ascii = *r_str_trim_head_ro (value) == '"';
+	rcc_raw (egg, ".data\n%s:\n", egg->lang.dstvar);
+	int i;
+	for (i = 1; i <= count; i++) {
+		if (ascii) {
+			rcc_raw (egg, ".ascii %s%s\n", value, (i == count)? "\"\\x00\"": "");
+		} else {
+			rcc_raw (egg, ".long %s\n", value);
 		}
 	}
-	if (egg->lang.dstval) {
-		if (egg->lang.ndstval + 1 >= 4096) {
-			R_LOG_ERROR ("data block too large");
-			return -1;
-		}
-		egg->lang.dstval[egg->lang.ndstval++] = c;
-	}
-	return 0;
+	rcc_raw (egg, ".text\n");
+	R_FREE (egg->lang.dstvar);
+	free (value);
+	CTX = 0;
+	return 1;
 }
 
 static int parseinlinechar(REgg *egg, char c) {
-	/* skip until '{' */
-	if (c == '{') { /* XXX: repeated code!! */
-		rcc_context (egg, 1);
-		egg->lang.inlinectr++;
-		if (egg->lang.inlinectr == 1) {
-			return 0;
-		}
-	} else if (egg->lang.inlinectr == 0) {
+	if (!egg->lang.inlinectr && c != '{') {
 		return 0;
 	}
-
-	/* capture body */
-	if (c == '}') { /* XXX: repeated code!! */
-		if (CTX < 2) {
-			rcc_context (egg, -1);
-			egg->lang.slurp = 0;
-			egg->lang.mode = LANG_MODE_NORMAL;
-			egg->lang.inlinectr = 0;
-			if (!egg->lang.dstvar && egg->lang.dstval == egg->lang.syscallbody) {
-				egg->lang.dstval = NULL;
-				return 1;
-			} else /* register */
-				if (egg->lang.dstval && egg->lang.dstvar) {
-					if (egg->lang.ninlines >= R_ARRAY_SIZE (egg->lang.inlines)) {
-						R_LOG_ERROR ("Too many inline functions");
-						R_FREE (egg->lang.dstvar);
-						R_FREE (egg->lang.dstval);
-						return -1;
-					}
-					egg->lang.dstval[egg->lang.ndstval] = '\0';
-					// printf (" /* END OF LANG_MODE_INLINE (%s)(%s) */\n", egg->lang.dstvar, egg->lang.dstval);
-					egg->lang.inlines[egg->lang.ninlines].name = r_str_trim_dup (egg->lang.dstvar);
-					egg->lang.inlines[egg->lang.ninlines].body = r_str_trim_dup (egg->lang.dstval);
-					egg->lang.ninlines++;
-					R_FREE (egg->lang.dstvar);
-					R_FREE (egg->lang.dstval);
-					return 1;
-				}
-			R_LOG_ERROR ("Cannot parse expression");
-		}
+	char *body = capture_char (egg, c);
+	if (!body) {
+		return 0;
 	}
-	if (egg->lang.dstval) {
-		if (egg->lang.ndstval + 2 >= 4096) {
-			R_LOG_ERROR ("inline block too large");
-			return -1;
-		}
-		egg->lang.dstval[egg->lang.ndstval++] = c;
-		egg->lang.dstval[egg->lang.ndstval] = 0;
+	if (!egg->lang.dstvar) {
+		free (egg->lang.syscallbody);
+		egg->lang.syscallbody = body;
+		return 1;
 	}
-	return 0;
+	if (egg->lang.ninlines >= R_ARRAY_SIZE (egg->lang.inlines)) {
+		R_LOG_ERROR ("Too many inline functions");
+		R_FREE (egg->lang.dstvar);
+		free (body);
+		return -1;
+	}
+	r_str_trim_head (body);
+	egg->lang.inlines[egg->lang.ninlines].name = egg->lang.dstvar;
+	egg->lang.inlines[egg->lang.ninlines].body = body;
+	egg->lang.ninlines++;
+	egg->lang.dstvar = NULL;
+	return 1;
 }
 
 static int rcc_parse(REgg *egg, const char *s) {
@@ -1214,15 +1060,16 @@ static int rcc_parse(REgg *egg, const char *s) {
 }
 
 /* TODO: split this function into several ones..quite long fun */
-static int rcc_next(REgg *egg) {
+static int rcc_statement(REgg *egg, char *elem) {
 	const char *ocn;
 	REggEmit *e = egg->remit;
 	char *str = NULL, *p, *ptr;
 	int i, ret = 0;
 
 	if (egg->lang.setenviron) {
-		egg->lang.elem[egg->lang.elem_n - 1] = 0;
-		r_sys_setenv (egg->lang.setenviron, egg->lang.elem);
+		// drop the closing parenthesis of `name@env(value)`
+		elem[R_MAX (strlen (elem), 1) - 1] = 0;
+		r_sys_setenv (egg->lang.setenviron, elem);
 		R_FREE (egg->lang.setenviron);
 		return 0;
 	}
@@ -1230,7 +1077,7 @@ static int rcc_next(REgg *egg) {
 		char *p, *q, *path;
 		path = find_include (egg->lang.includedir, egg->lang.includefile);
 		if (!path) {
-			R_LOG_ERROR ("Cannot find include file '%s'", egg->lang.elem);
+			R_LOG_ERROR ("Cannot find include file '%s'", elem);
 			return 0;
 		}
 		R_FREE (egg->lang.includefile);
@@ -1239,8 +1086,6 @@ static int rcc_next(REgg *egg) {
 		p = q = r_file_slurp (path, NULL);
 		if (p) {
 			int oline = ++ (egg->lang.line);
-			egg->lang.elem[0] = 0; // TODO: this must be a separate function
-			egg->lang.elem_n = 0;
 			egg->lang.line = 0;
 			ret = rcc_parse (egg, p);
 			free (q);
@@ -1254,10 +1099,6 @@ static int rcc_next(REgg *egg) {
 	egg->lang.docall = 1;
 	if (egg->lang.callname) {
 		if (!strcmp (egg->lang.callname, "goto")) {
-			if (e == &emit_llvm) {
-				R_LOG_ERROR ("%s:%d: LLVM: unsupported goto", egg->lang.file, egg->lang.line);
-				return -1;
-			}
 			if (egg->lang.nargs != 1) {
 				R_LOG_ERROR ("Invalid number of arguments for goto()");
 				return 0;
@@ -1280,7 +1121,7 @@ static int rcc_next(REgg *egg) {
 		if (!ocn) {
 			return 0;
 		}
-		str = r_egg_mkvar (egg, NULL, ocn, 0);
+		str = r_egg_mkvar (egg, r_strs_from (ocn), 0);
 		if (!str) {
 			R_LOG_ERROR ("Cannot mkvar");
 			return 0;
@@ -1290,11 +1131,6 @@ static int rcc_next(REgg *egg) {
 			egg->lang.docall = 0;
 		}
 		if (!strcmp (str, "while")) {
-			if (e == &emit_llvm) {
-				free (str);
-				R_LOG_ERROR ("%s:%d: LLVM: expected a block after while", egg->lang.file, egg->lang.line);
-				return -1;
-			}
 			if (egg->lang.lastctxdelta >= 0) {
 				R_LOG_ERROR ("Unsupported while syntax");
 				free (str);
@@ -1387,7 +1223,7 @@ static int rcc_next(REgg *egg) {
 		if (egg->lang.dstvar) {
 			// if (egg->lang.mode != LANG_MODE_NAKED) {
 			free (str);
-			str = r_egg_mkvar (egg, NULL, egg->lang.dstvar, 0);
+			str = r_egg_mkvar (egg, r_strs_from (egg->lang.dstvar), 0);
 			if (R_STR_ISEMPTY (str)) {
 				R_LOG_ERROR ("Cannot resolve variable '%s'", egg->lang.dstvar);
 			} else {
@@ -1399,10 +1235,9 @@ static int rcc_next(REgg *egg) {
 		rcc_reset_callname (egg);
 	} else { // handle mathop
 		int vs = 'l';
-		char type, *eq, *ptr = egg->lang.elem, *tmp;
+		char type, *eq, *tmp;
 		char compound_op = 0; // 0 = plain '=', otherwise +,-,*,/,|,&,^
-		egg->lang.elem[egg->lang.elem_n] = '\0';
-		ptr = (char *)r_str_trim_head_ro (ptr);
+		char *ptr = (char *)r_str_trim_head_ro (elem);
 		if (*ptr) {
 			eq = strchr (ptr, '=');
 			if (eq && eq > ptr) {
@@ -1421,17 +1256,18 @@ static int rcc_next(REgg *egg) {
 				// avoid situation that egg->lang.mathline starts with a single '-'
 				egg->lang.mathline = r_str_trim_dup (eq + 1);
 				tmp = egg->lang.mathline;
-				if (e == &emit_llvm && R_STR_ISEMPTY (tmp)) {
-					R_LOG_ERROR ("%s:%d: LLVM: expected an expression after '='", egg->lang.file, egg->lang.line);
+				if (R_STR_ISEMPTY (tmp)) {
+					R_FREE (egg->lang.mathline);
+					rcc_error (egg, "expected an expression after '='", NULL);
 					return -1;
 				}
 				rcc_mathop (egg, &tmp, 2);
 				R_FREE (egg->lang.mathline);
 				tmp = NULL;
 				// following code block is too ugly, oh noes
-				char *p = r_egg_mkvar (egg, NULL, ptr, 0);
+				char *p = r_egg_mkvar (egg, r_strs_from (ptr), 0);
 				if (is_var (p)) {
-					char *q = r_egg_mkvar (egg, NULL, p, 0);
+					char *q = r_egg_mkvar (egg, r_strs_from (p), 0);
 					if (q) {
 						free (p);
 						p = q;
@@ -1455,61 +1291,70 @@ static int rcc_next(REgg *egg) {
 				if (!strcmp (ptr, "break")) { // handle 'break;'
 					e->trap (egg);
 					rcc_reset_callname (egg);
-				} else if (e == &emit_llvm) {
+				} else if (tmp = ptr, get_op (&tmp)) {
 					e->mathop (egg, '=', vs, '$', "0", e->regs (egg, 1));
 					rcc_mathop (egg, &ptr, 2);
-					e->mathop (egg, '=', vs, ' ', e->regs (egg, 1), e->retvar);
+					e->mathop (egg, '=', vs, ' ', e->regs (egg, 1), NULL);
 				} else {
-					e->mathop (egg, '=', vs, '$', ptr, NULL);
+					char *value = r_egg_mkvar (egg, r_strs_from (ptr), 0);
+					e->mathop (egg, '=', vs, is_var (ptr)? ' ': '$', r_str_get (value), NULL);
+					free (value);
 				}
 			}
 		}
 	}
 beach:
 	free (str);
-	/* reset the element buffer so the next statement starts clean */
-	egg->lang.elem[0] = '\0';
-	egg->lang.elem_n = 0;
+	/* expanded inlines and includes may leave text behind */
+	r_strbuf_set (&egg->lang.elem, "");
 	return ret;
 }
 
-static bool rcc_element_append(REgg *egg, char c) {
-	if ((unsigned int)egg->lang.elem_n >= sizeof (egg->lang.elem) - 1) {
-		R_LOG_ERROR ("too large element");
-		return false;
+static int rcc_next(REgg *egg) {
+	char *elem = r_strbuf_drain_nofree (&egg->lang.elem);
+	const int ret = rcc_statement (egg, elem);
+	free (elem);
+	return ret;
+}
+
+static void rcc_element_append(REgg *egg, char c) {
+	r_strbuf_append_n (&egg->lang.elem, &c, 1);
+}
+
+// `: line` passes raw assembly through, expanding `.var` references between backticks
+static void rcc_asm_line(REgg *egg) {
+	RStrBuf *sb = r_strbuf_new ("");
+	RStrs line = r_strs_from (r_strbuf_get (&egg->lang.elem)), head, var;
+	for (;;) {
+		const bool tick = r_strs_split (line, '`', &head, &line);
+		r_strbuf_append_n (sb, head.a, r_strs_len (head));
+		if (!tick) {
+			break;
+		}
+		r_strs_split (line, '`', &var, &line);
+		char *value = r_egg_mkvar (egg, var, 0);
+		r_strbuf_append (sb, r_str_get (value));
+		free (value);
 	}
-	egg->lang.elem[egg->lang.elem_n++] = c;
-	egg->lang.elem[egg->lang.elem_n] = 0;
-	return true;
+	rcc_raw (egg, "%s\n", r_strbuf_get (sb));
+	r_strbuf_free (sb);
+	egg->lang.quoteline = 0;
 }
 
 R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 	REggEmit *e = egg->remit;
-	if (e == &emit_llvm) {
-		if (!egg->priv && !egg_llvm_begin (egg)) {
-			return -1;
+	if (egg->lang.quoteline) {
+		if (c != '\n') {
+			rcc_element_append (egg, c);
+			return 0;
 		}
-		if (egg->lang.quoteline) {
-			if (c != '\n') {
-				return rcc_element_append (egg, c)? 0: -1;
-			}
-			bool ok = egg_llvm_assembly_line (egg, egg->lang.elem);
-			egg->lang.quoteline = 0;
-			egg->lang.elem_n = 0;
-			egg->lang.elem[0] = 0;
-			egg->lang.oc = '\n';
-			egg->lang.line++;
-			return ok? 0: -1;
-		}
-		if (egg->lang.oc == '\n' && c != ':' && !is_space (c) && !egg_llvm_flush_assembly (egg)) {
-			return -1;
-		}
+		rcc_asm_line (egg);
 	}
 	char *tmp_ptr = NULL;
 	int i, j;
 	if (c == '\n') {
 		egg->lang.line++;
-		egg->lang.elem_n = 0;
+		r_strbuf_set (&egg->lang.elem, "");
 	}
 	/* comments */
 	if (egg->lang.skipline) {
@@ -1542,38 +1387,6 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 			return 0;
 		}
 	}
-	/* quotes */
-	if (egg->lang.quoteline) {
-		if (c != egg->lang.quoteline) {
-			if (egg->lang.quotelinevar == 1) {
-				if (c == '`') {
-					egg->lang.elem[egg->lang.elem_n] = 0;
-					egg->lang.elem_n = 0;
-					tmp_ptr = r_egg_mkvar (egg, NULL, egg->lang.elem, 0);
-					r_egg_printf (egg, "%s", tmp_ptr);
-					free (tmp_ptr);
-					egg->lang.quotelinevar = 0;
-				} else {
-					if (!rcc_element_append (egg, c)) {
-						return -1;
-					}
-				}
-			} else {
-				if (c == '`') {
-					egg->lang.elem_n = 0;
-					egg->lang.quotelinevar = 1;
-				} else {
-					r_egg_printf (egg, "%c", c);
-				}
-			}
-			egg->lang.oc = c;
-			return 0;
-		} else {
-			r_egg_printf (egg, "\n");
-			egg->lang.quoteline = 0;
-		}
-	}
-
 	if (egg->lang.commentmode) {
 		if (c == '/' && egg->lang.oc == '*') {
 			egg->lang.commentmode = 0;
@@ -1584,45 +1397,31 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 		egg->lang.commentmode = 1;
 	}
 	if (egg->lang.slurp) {
-		bool escaped = egg->lang.oc == '\\';
-		if (e == &emit_llvm) {
-			escaped = is_escaped (egg->lang.elem, egg->lang.elem + egg->lang.elem_n);
-			if (egg->lang.slurp == ')' && (c == '"' || c == '\'') && !escaped) {
-				if (egg->lang.slurpin == '(' || egg->lang.slurpin == c) {
-					egg->lang.slurpin = egg->lang.slurpin == '('? c: '(';
-				}
+		const char *elem = r_strbuf_get (&egg->lang.elem);
+		const bool escaped = is_escaped (elem, elem + r_strbuf_length (&egg->lang.elem));
+		if (egg->lang.slurp == ')' && (c == '"' || c == '\'') && !escaped) {
+			if (egg->lang.slurpin == '(' || egg->lang.slurpin == c) {
+				egg->lang.slurpin = egg->lang.slurpin == '('? c: '(';
 			}
 		}
-		const bool in_arg_string = e == &emit_llvm && egg->lang.slurp == ')' && egg->lang.slurpin != '(';
+		const bool in_arg_string = egg->lang.slurp == ')' && egg->lang.slurpin != '(';
 		if (egg->lang.slurp != '"' && c == egg->lang.slurpin && !in_arg_string) { // only happend when (... (...)...)
 			R_LOG_ERROR ("%s:%d Nesting of expressions not yet supported",
 				egg->lang.file, egg->lang.line);
 			return -1;
 		}
 		if (c == egg->lang.slurp && !escaped && !in_arg_string) { // close egg->lang.slurp
-			egg->lang.elem[egg->lang.elem_n] = '\0';
-			if (e == &emit_llvm && (egg->lang.mode == LANG_MODE_EXTERN || egg->lang.mode == LANG_MODE_SYSCALL)) {
-				const bool declared = egg->lang.mode == LANG_MODE_EXTERN
-					? egg_llvm_extern (egg, egg->lang.dstvar, egg->lang.elem)
-					: egg_llvm_syscall (egg, egg->lang.dstvar, egg->lang.elem);
-				if (!declared) {
-					return -1;
-				}
-				R_FREE (egg->lang.dstvar);
-				egg->lang.mode = LANG_MODE_NORMAL;
-			} else if (egg->lang.elem_n > 0) {
-				rcc_element (egg, egg->lang.elem);
+			char *element = r_strbuf_drain_nofree (&egg->lang.elem);
+			if (*element) {
+				rcc_element (egg, element);
 			} else if (CTX == 0 && egg->lang.mode != LANG_MODE_FASTCALL) {
 				e->frame (egg, 0);
 			}
-			egg->lang.elem_n = 0;
+			free (element);
 			egg->lang.slurp = 0;
 		} else {
-			if (!rcc_element_append (egg, c)) {
-				return -1;
-			}
+			rcc_element_append (egg, c);
 		}
-		egg->lang.elem[egg->lang.elem_n] = '\0';
 	} else {
 		switch (c) {
 		case ';':
@@ -1638,21 +1437,15 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 			egg->lang.slurp = ')';
 			break;
 		case '{':
-			if (e == &emit_llvm && CTX >= R_ARRAY_SIZE (egg->lang.nested) - 1) {
-				R_LOG_ERROR ("%s:%d: LLVM: too many nested blocks", egg->lang.file, egg->lang.line);
+			if (CTX < 0 || CTX >= R_ARRAY_SIZE (egg->lang.nested) - 1) {
+				rcc_error (egg, "too many nested blocks", NULL);
 				return -1;
 			}
 			if (CTX > 0) {
-				if (CTX > 31 || CTX < 0) {
-					R_LOG_ERROR ("Sinking before overflow");
-					CTX = 0;
-					break;
-				}
 				// r_egg_printf (egg, " %s:\n", get_frame_label (0));
 				if (egg->lang.nested_callname[CTX] && strstr (egg->lang.nested_callname[CTX], "if") &&
-					strstr (egg->lang.elem, "else")) {
-					*egg->lang.elem = '\x00';
-					egg->lang.elem_n = 0;
+					strstr (r_strbuf_get (&egg->lang.elem), "else")) {
+					r_strbuf_set (&egg->lang.elem, "");
 					char **slot = ifelse_slot (egg, CTX);
 					if (slot) {
 						free (*slot);
@@ -1668,16 +1461,12 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 			rcc_context (egg, 1);
 			break;
 		case '}':
-			if (e == &emit_llvm && CTX <= 0) {
-				R_LOG_ERROR ("%s:%d: LLVM: unexpected closing brace", egg->lang.file, egg->lang.line);
+			if (CTX <= 0) {
+				rcc_error (egg, "unexpected closing brace", NULL);
 				return -1;
 			}
 			if (egg->lang.nested[CTX]) {
-				if (e == &emit_llvm) {
-					e->jmp (egg, egg->lang.nested[CTX], 0);
-				} else {
-					r_egg_printf (egg, "%s", egg->lang.nested[CTX]);
-				}
+				rcc_raw (egg, "%s", egg->lang.nested[CTX]);
 				R_FREE (egg->lang.nested[CTX]);
 			}
 			if (CTX > 1) {
@@ -1686,10 +1475,10 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 					e->jmp (egg, tmp_ptr, 0);
 					R_FREE (tmp_ptr);
 					char **slot = ifelse_slot (egg, CTX - 1);
-					if (!slot && e == &emit_llvm) {
+					if (!slot) {
 						return -1;
 					}
-					if (slot && !*slot) {
+					if (!*slot) {
 						*slot = r_str_newf ("__end_%d_%d_%d",
 							egg->lang.nfunctions, CTX - 1, egg->lang.nestedi[CTX - 1] - 1);
 					}
@@ -1704,9 +1493,7 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 			}
 			rcc_context (egg, -1);
 			if (CTX == 0) {
-				if (e != &emit_llvm) {
-					r_egg_printf (egg, "\n");
-				}
+				rcc_raw (egg, "\n");
 				// edit this unnessary jmp to bypass tests
 				for (i = 0; i < 32; i++) {
 					for (j = 0; j < egg->lang.nestedi[i] && j < 32; j++) {
@@ -1723,22 +1510,15 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 				// edit this unnessary jmp to bypass tests
 				egg->lang.nbrackets = 0;
 				egg->lang.nfunctions++;
-				if (e == &emit_llvm) {
-					egg_llvm_end_function (egg);
-				}
+				memset (egg->lang.nestedi, 0, sizeof (egg->lang.nestedi));
 			}
 			break;
 		case ':':
 			if (egg->lang.oc == '\n' || egg->lang.oc == '}') {
-				if (e == &emit_llvm) {
-					egg->lang.elem_n = 0;
-					egg->lang.elem[0] = 0;
-				}
+				r_strbuf_set (&egg->lang.elem, "");
 				egg->lang.quoteline = '\n';
 			} else {
-				if (!rcc_element_append (egg, c)) {
-					return -1;
-				}
+				rcc_element_append (egg, c);
 			}
 			break;
 		case '#':
@@ -1750,28 +1530,18 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 			if (egg->lang.oc == '/') {
 				egg->lang.skipline = 1;
 			} else {
-				if (!rcc_element_append (egg, c)) {
-					return -1;
-				}
+				rcc_element_append (egg, c);
 			}
 			break;
 		default:
-			if (!rcc_element_append (egg, c)) {
-				return -1;
-			}
+			rcc_element_append (egg, c);
 		}
 		if (egg->lang.slurp) {
-			if (egg->lang.elem_n) {
-				char *ptr = egg->lang.elem;
-				egg->lang.elem[egg->lang.elem_n] = '\0';
-				while (is_space (*ptr)) {
-					ptr++;
-				}
-				if (!rcc_fun (egg, ptr)) {
-					return -1;
-				}
+			char *element = r_strbuf_drain_nofree (&egg->lang.elem);
+			if (*element) {
+				rcc_fun (egg, (char *)r_str_trim_head_ro (element));
 			}
-			egg->lang.elem_n = 0;
+			free (element);
 		}
 	}
 	if (c != '\t' && c != ' ') {

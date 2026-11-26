@@ -31,6 +31,7 @@ typedef struct r_egg_lang_t {
 	int nsyscalls;
 	char *conditionstr;
 	char *syscallbody;
+	RStrBuf *capture; // @data, @inline and @syscall body being parsed
 	char *includefile;
 	char *setenviron;
 	char *mathline;
@@ -46,9 +47,8 @@ typedef struct r_egg_lang_t {
 	int slurpin;
 	int slurp;
 	int line;
-	char elem[1024];
+	RStrBuf elem; // statement text being parsed
 	int attsyntax;
-	int elem_n;
 	char *callname;
 	char *endframe;
 	char *ctxpush[32];
@@ -58,14 +58,13 @@ typedef struct r_egg_lang_t {
 	char *includedir;
 	char *ifelse_table[32][32];
 	// used to solve if-else problem in a not so ugly way
-	int ndstval;
 	int skipline;// BOOL
 	int quoteline;
-	int quotelinevar;
 	int stackframe;
 	int stackfixed;
 	int oc;
 	int mode;
+	bool failed;
  	int inlinectr;
 	struct {
 		char *name;
@@ -153,6 +152,15 @@ EOF
 #define R_EGG_FORMAT_DEFAULT "elf"
 #endif
 
+/* `if`/`while` condition decoded by the parser; operands are slices of the source text */
+typedef struct r_egg_cond_t {
+	int cmp; // '<', '>', '=' or 0 when testing the operand against zero
+	bool inclusive; // <= or >=
+	bool negate; // != or !x
+	RStrs lhs;
+	RStrs rhs;
+} REggCond;
+
 typedef struct r_egg_emit_t {
 	const char *arch;
 	int size; /* in bytes.. 32bit arch is 4, 64bit is 8 .. */
@@ -169,7 +177,7 @@ typedef struct r_egg_emit_t {
 	void (*frame_end)(REgg *egg, int sz, int ctx);
 	void (*comment)(REgg *egg, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 	void (*push_arg)(REgg *egg, int xs, int num, const char *str);
-	void (*set_string)(REgg *egg, const char *dstvar, const char *str, int j);
+	void (*set_string)(REgg *egg, const char *dstvar, RStrs str);
 	void (*equ)(REgg *egg, const char *key, const char *value);
 	void (*get_result)(REgg *egg, const char *ocn);
 	void (*restore_stack)(REgg *egg, int size);
@@ -179,20 +187,17 @@ typedef struct r_egg_emit_t {
 	void (*while_end)(REgg *egg, const char *label);
 	void (*load)(REgg *egg, const char *str, int sz);
 	void (*load_ptr)(REgg *egg, const char *str);
-	void (*branch)(REgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst);
+	void (*branch)(REgg *egg, const REggCond *cond, int sz, const char *dst);
 	void (*mathop)(REgg *egg, int ch, int sz, int type, const char *eq, const char *p);
 	void (*get_while_end)(REgg *egg, RStrBuf *out, const char *ctxpush, const char *label);
-	/* Emit a branch-target label. NULL means the default ".S" style
-	 * "name:\n" is used (kept for the native assembler backends). */
+	/* Optional hooks; NULL keeps the native assembly text defaults */
 	void (*label)(REgg *egg, const char *name);
-	/* Optional hook called at the end of r_egg_compile, after all
-	 * parsing has finished. Backends use this to post-process the
-	 * accumulated output - e.g. the ESIL backend resolves symbolic
-	 * label names into numeric GOTO word indices here. */
-	void (*finalize)(REgg *egg);
-	/* Optional per-session backend state. priv_new is called by
-	 * r_egg_setup after remit is assigned; priv_free is called by
-	 * r_egg_setup before switching emitters and by r_egg_free. */
+	void (*function)(REgg *egg, const char *name, const char *kind);
+	void (*declare)(REgg *egg, const char *name, const char *signature);
+	void (*raw)(REgg *egg, const char *text);
+	void (*get_local)(REgg *egg, RStrBuf *out, int kind, int idx);
+	bool (*finalize)(REgg *egg);
+	/* per-compilation state, created by r_egg_setup and r_egg_compile */
 	void *(*priv_new)(REgg *egg);
 	void (*priv_free)(void *priv);
 } REggEmit;
@@ -238,7 +243,7 @@ R_API void r_egg_finalize(REgg *egg);
 R_API char* r_egg_cfile_parser(const char *file, const char *arch, const char *os, int bits);
 
 /* lang.c */
-R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta);
+R_API char *r_egg_mkvar(REgg *egg, RStrs str, int delta);
 R_API int r_egg_lang_parsechar(REgg *egg, char c);
 R_API void r_egg_lang_include_path(REgg *egg, const char *path);
 R_API void r_egg_lang_include_init(REgg *egg);

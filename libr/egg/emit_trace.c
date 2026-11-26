@@ -49,9 +49,9 @@ static void emit_syscall_args(REgg *egg, int nargs) {
 	r_egg_printf (egg, "syscall_args (%d)\n", nargs);
 }
 
-static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int j) {
-	// what is j?
-	r_egg_printf (egg, "set (\"%s\", \"%s\", %d)\n", dstvar, str, j);
+static void emit_set_string(REgg *egg, const char *dstvar, RStrs str) {
+	const int len = r_strs_len (str);
+	r_egg_printf (egg, "set (\"%s\", \"%.*s\", %d)\n", dstvar, len, str.a, len - len % R_SZ + R_SZ);
 }
 
 static void emit_call(REgg *egg, const char *str, int atr) {
@@ -110,35 +110,15 @@ static void emit_load_ptr(REgg *egg, const char *dst) {
 	r_egg_printf (egg, "loadptr (%s)\n", dst);
 }
 
-static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst) {
-	// This function signature is crap
-	char *p;
-	char *arg = NULL;
-	char *op = "beq";
-	/* NOTE that jb/ja are inverted to fit cmp opcode */
-	if (b) {
-		*b = '\0';
-		op = e? "bge": "bgt";
-		arg = b + 1;
-	} else if (g) {
-		*g = '\0';
-		op = e? "ble": "blt";
-		arg = g + 1;
+static void emit_branch(REgg *egg, const REggCond *cond, int sz, const char *dst) {
+	const char *op;
+	switch (cond->cmp) {
+	case '<': op = cond->inclusive? "bge": "bgt"; break;
+	case '>': op = cond->inclusive? "ble": "blt"; break;
+	case '=': op = "bne"; break;
+	default: op = cond->negate? "bne": "beq"; break;
 	}
-	if (!arg) {
-		if (e) {
-			arg = e + 1;
-			op = "bne";
-		} else {
-			arg = "0";
-			op = n? "bne": "beq";
-		}
-	}
-
-	if (*arg == '=') {
-		arg++; /* for <=, >=, ... */
-	}
-	p = r_egg_mkvar (egg, NULL, arg, 0);
+	char *p = r_egg_mkvar (egg, cond->rhs, 0);
 	r_egg_printf (egg, "%s (%s) => (%s)\n", op, p, dst);
 	free (p);
 }

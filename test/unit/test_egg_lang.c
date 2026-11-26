@@ -17,7 +17,7 @@ static bool test_include_preserves_parser_line(void) {
 	r_egg_lang_init (egg);
 
 	mu_assert_eq (parse_string (egg, "missing.r@include(INCDIR)"), 0, "include parsing failed");
-	mu_assert_eq (egg->lang.elem_n, 0, "include argument did not reset the element buffer");
+	mu_assert ("include argument did not reset the element buffer", r_strbuf_is_empty (&egg->lang.elem));
 	mu_assert_notnull (egg->lang.includefile, "include state was not preserved until the semicolon");
 
 	egg->lang.line = 0x7f7f7f7f;
@@ -31,54 +31,42 @@ static bool test_include_preserves_parser_line(void) {
 	mu_end;
 }
 
-static bool test_element_limit(void) {
-	const char *prefixes[] = { "", "", "", "(", ":`" };
-	const char next[] = { 'A', ':', '/', 'A', 'A' };
+static bool test_long_elements(void) {
+	const char *prefixes[] = { "", "(", ":" };
 	size_t i, j;
 	for (i = 0; i < R_ARRAY_SIZE (prefixes); i++) {
 		REgg *egg = r_egg_new ();
 		r_egg_lang_init (egg);
 		mu_assert_eq (parse_string (egg, prefixes[i]), 0, "prefix parsing failed");
-		for (j = 0; j < sizeof (egg->lang.elem) - 1; j++) {
-			mu_assert_eq (r_egg_lang_parsechar (egg, 'A'), 0, "element rejected before the limit");
+		for (j = 0; j < 4096; j++) {
+			mu_assert_eq (r_egg_lang_parsechar (egg, 'A'), 0, "long element was rejected");
 		}
-		egg->lang.attsyntax = 0x1234;
-		r_log_set_quiet (true);
-		int ret = r_egg_lang_parsechar (egg, next[i]);
-		r_log_set_quiet (false);
-		mu_assert_eq (ret, -1, "oversized element was accepted");
-		mu_assert_eq (egg->lang.elem_n, sizeof (egg->lang.elem) - 1, "element length changed on failure");
-		mu_assert_eq (egg->lang.elem[egg->lang.elem_n], 0, "element is not terminated");
-		mu_assert_eq (egg->lang.attsyntax, 0x1234, "element overflow corrupted adjacent state");
+		mu_assert_eq (r_strbuf_length (&egg->lang.elem), 4096, "element was truncated");
 		r_egg_free (egg);
 	}
 	mu_end;
 }
 
-static bool test_compile_element_limit(void) {
+static bool test_compile_long_elements(void) {
 	const char *formats[] = {
 		"%s\n",
-		"exit@syscall(60);\n@syscall(){\n%s\n}\nmain@global(){exit(0); }\n",
-		"f@inline(){\n%s\n}\nmain@global(){f(); }\n",
+		"exit@syscall(60);\n@syscall(){\n: %s\n}\nmain@global(){exit(0); }\n",
+		"f@inline(){\n: %s\n}\nmain@global(){f(); }\n",
 	};
-	const size_t lengths[] = { 1022, 1023, 1024, 1100 };
-	size_t i, j;
+	size_t i;
 	for (i = 0; i < R_ARRAY_SIZE (formats); i++) {
-		for (j = 0; j < R_ARRAY_SIZE (lengths); j++) {
-			REgg *egg = r_egg_new ();
-			mu_assert ("setup failed", r_egg_setup (egg, "x86", 64, 0, "linux"));
-			char *element = r_str_repeat ("A", lengths[j]);
-			char *source = r_str_newf (formats[i], element);
-			r_egg_load (egg, source, 0);
-			free (source);
-			free (element);
-			r_log_set_quiet (true);
-			bool ret = r_egg_compile (egg);
-			r_log_set_quiet (false);
-			size_t replay_newline = i? 1: 0;
-			mu_assert_eq (ret, lengths[j] + replay_newline < sizeof (egg->lang.elem), "incorrect compilation result at element limit");
-			r_egg_free (egg);
-		}
+		REgg *egg = r_egg_new ();
+		mu_assert ("setup failed", r_egg_setup (egg, "trace", 64, 0, "linux"));
+		char *element = r_str_repeat ("A", 5000);
+		char *source = r_str_newf (formats[i], element);
+		r_egg_load (egg, source, 0);
+		free (source);
+		mu_assert ("long element did not compile", r_egg_compile (egg));
+		char *out = r_egg_get_assembly (egg);
+		mu_assert ("long element was truncated", !i || strstr (out, element));
+		free (out);
+		free (element);
+		r_egg_free (egg);
 	}
 	mu_end;
 }
@@ -166,13 +154,64 @@ static bool test_llvm_inline_assembly(void) {
 	mu_end;
 }
 
+static char *compile_source(const char *arch, int bits, const char *source) {
+	REgg *egg = r_egg_new ();
+	r_egg_setup (egg, arch, bits, 0, "linux");
+	r_egg_option_set (egg, "llvm.asm.arch", "x86");
+	r_egg_load (egg, source, 0);
+	r_log_set_quiet (true);
+	char *out = r_egg_compile (egg)? r_egg_get_assembly (egg): NULL;
+	r_log_set_quiet (false);
+	r_egg_free (egg);
+	return out;
+}
+
+static bool test_statements_and_directives(void) {
+	char *asm_ = compile_source ("x86", 64, "puts@extern(i32, ptr);\nmain@global(16,0){\n.var0 = 2;\n.var0 * 3;\n.var0;\n}\n");
+	mu_assert_notnull (asm_, "x86 compilation failed");
+	mu_assert ("extern emitted a label", !strstr (asm_, "puts:"));
+	mu_assert ("expression statement not evaluated", strstr (asm_, "mul rsi, 3"));
+	mu_assert ("variable statement not resolved", strstr (asm_, "mov rax, [rbp+8]") && !strstr (asm_, ".var0"));
+	free (asm_);
+	asm_ = compile_source ("arm", 32, "main@global(){ .var0 = \"a\\\"b\\\\c\"; }");
+	mu_assert_notnull (asm_, "arm compilation failed");
+	mu_assert ("string escaped twice", strstr (asm_, ".string \"a\\\"b\\\\c\""));
+	free (asm_);
+	char *big = r_str_repeat (": nop\n", 1000);
+	char *source = r_str_newf ("f@inline(){\n%s: int3\n}\nmain@global(){f(); }\n", big);
+	asm_ = compile_source ("x86", 64, source);
+	mu_assert ("large inline body truncated", asm_ && strstr (asm_, "int3"));
+	free (asm_);
+	free (source);
+	free (big);
+	mu_end;
+}
+
+static bool test_llvm_statements(void) {
+	char *ir = compile_source ("llvm", 64, "add@global(){\n.arg0 + .arg1 * 2;\n}\nmain@global(){\nadd(1, 3);\n}\n");
+	mu_assert_notnull (ir, "LLVM expression statement failed");
+	mu_assert ("missing multiplication", strstr (ir, "mul i64"));
+	mu_assert ("missing addition", strstr (ir, "add i64"));
+	mu_assert ("missing typed call", strstr (ir, "call i64 @add(i64 1, i64 3)"));
+	free (ir);
+	ir = compile_source ("llvm", 64, "msg@data(1){ 1 }\nmain@global(){ 0; }\n");
+	mu_assert ("@data was accepted by the LLVM backend", !ir);
+	ir = compile_source ("llvm", 64, "main@global(){\n.var0 = 0;\nwhile (.var0 < 3) {\n.var0 += 1;\n}\n.var0;\n}\n");
+	mu_assert_notnull (ir, "LLVM loop compilation failed");
+	mu_assert ("missing loop back-edge", strstr (ir, "br label %__begin_0_1_0\n__end_0_1_0:"));
+	free (ir);
+	mu_end;
+}
+
 static bool all_tests(void) {
 	mu_run_test (test_include_preserves_parser_line);
-	mu_run_test (test_element_limit);
-	mu_run_test (test_compile_element_limit);
+	mu_run_test (test_long_elements);
+	mu_run_test (test_compile_long_elements);
 	mu_run_test (test_llvm_output);
 	mu_run_test (test_llvm_syscalls);
 	mu_run_test (test_llvm_inline_assembly);
+	mu_run_test (test_statements_and_directives);
+	mu_run_test (test_llvm_statements);
 	return tests_passed != tests_run;
 }
 
