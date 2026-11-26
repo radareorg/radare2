@@ -27,3 +27,15 @@ EXPECT=<<EOF
 0x00000069
 EOF
 RUN
+
+NAME=debug startup reports an unknown dbg.bep target
+FILE=bins/mach0/hello-macos-arm64-chained-dbg
+ARGS=-d -e dbg.bep=invalid_entry
+CMDS=e dbg.bep
+EXPECT=<<EOF
+invalid_entry
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot continue until unknown address 'invalid_entry'
+EOF
+RUN

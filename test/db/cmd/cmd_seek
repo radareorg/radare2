@@ -607,6 +607,39 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=s/ uses the configured hit prefix and restores the search range
+FILE=malloc://16
+CMDS=<<EOF
+wx 0000410041
+s 1
+e search.from=7
+e search.maxhits=4
+e search.show=false
+e search.prefix=next-item
+s/x 41
+s
+f~next~?
+e search.from
+e search.maxhits
+s-
+s
+s/x ff
+s
+EOF
+EXPECT=<<EOF
+next-item0_0
+0x2
+0
+7
+4
+0x1
+0x1
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot seek to unknown address 'next_item1_0'
+EOF
+RUN
+
 NAME=s++ with invalid expression does not seek
 FILE=malloc://1024
 CMDS=<<EOF

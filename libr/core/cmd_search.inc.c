@@ -3664,26 +3664,11 @@ static void search_similar_pattern(RCore *core, int count, RSearchParameters *pa
 	r_cons_break_pop (core->cons);
 }
 
-static bool isArm(RCore *core) {
-	RAsm *as = core->rasm;
-	if (as->config && r_str_startswith (as->config->arch, "arm")) {
-		if (as->config->bits < 64) {
-			return true;
-		}
-	}
-	return false;
-}
-
-void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, void *user) {
+static void value_search_hit(RCore *core, ut64 from, ut64 to, int vsize, void *user) {
 	RSearchParameters *param = user;
-	const bool isarm = isArm (core);
-	// this is expensive operation that could be cached but is a callback
-	// and for not messing adding a new param
-	const char *prefix = r_config_get (core->config, "search.prefix");
-	if (isarm) {
-		if (to & 1) {
-			to--;
-		}
+	const RArchConfig *config = core->rasm->config;
+	if (config && config->bits < 64 && r_str_startswith (config->arch, "arm")) {
+		to &= ~(ut64)1;
 	}
 	if (param->outmode != R_MODE_JSON) {
 		r_cons_printf (core->cons, "0x%"PFMT64x ": 0x%"PFMT64x"\n", from, to);
@@ -3693,8 +3678,17 @@ void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, void *user) {
 		pj_kn (param->pj, "value", to);
 		pj_end (param->pj);
 	}
-	r_core_cmdf (core, "f %s.value.0x%08"PFMT64x" %d = 0x%08"PFMT64x, prefix, to, vsize, to); // flag at value of hit
-	r_core_cmdf (core, "f %s.offset.0x%08"PFMT64x" %d = 0x%08"PFMT64x, prefix, from, vsize, from); // flag at offset of hit
+	const char *prefix = r_str_get (r_config_get (core->config, "search.prefix"));
+	RStrBuf flag_name = {0};
+	const char *name = r_strbuf_setf (&flag_name, "%s.value.0x%08"PFMT64x, prefix, to);
+	if (name) {
+		r_flag_set (core->flags, name, to, vsize);
+	}
+	name = r_strbuf_setf (&flag_name, "%s.offset.0x%08"PFMT64x, prefix, from);
+	if (name) {
+		r_flag_set (core->flags, name, from, vsize);
+	}
+	r_strbuf_fini (&flag_name);
 	const char *cmdHit = r_config_get (core->config, "cmd.hit");
 	if (cmdHit && *cmdHit) {
 		ut64 addr = core->addr;
@@ -5318,7 +5312,7 @@ reread:
 							err = 0;
 							int hits = r_core_search_value_in_range (core, false, map->itv,
 									vmin, vmax, vsize,
-									_CbInRangeSearchV, &param);
+									value_search_hit, &param);
 							if (param.outmode != R_MODE_JSON) {
 								R_LOG_INFO ("hits: %d", hits);
 							}

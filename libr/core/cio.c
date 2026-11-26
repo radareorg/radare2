@@ -31,17 +31,15 @@ R_API int r_core_setup_debugger(RCore *r, const char *debugbackend, bool attach)
 	//this makes to attach twice showing warnings in the output
 	//we get "resource busy" so it seems isn't an issue
 	r_core_cmd (r, ".dr*", 0);
-	/* honor dbg.bep */
-	{
-		const char *bep = r_config_get (r->config, "dbg.bep");
-		if (bep) {
-			if (!strcmp (bep, "loader")) {
-				/* do nothing here */
-			} else if (!strcmp (bep, "entry")) {
-				r_core_cmd (r, "dcu entry0", 0);
-			} else {
-				r_core_cmdf (r, "dcu %s", bep);
-			}
+	const char *bep = r_config_get (r->config, "dbg.bep");
+	if (R_STR_ISNOTEMPTY (bep) && strcmp (bep, "loader")) {
+		const char *target = !strcmp (bep, "entry")? "entry0": bep;
+		const char *err = NULL;
+		ut64 addr = r_num_math_err (r->num, target, &err);
+		if (err || r_num_failed (r->num) || addr == UT64_MAX) {
+			R_LOG_ERROR ("Cannot continue until unknown address '%s'", target);
+		} else {
+			r_core_cmdf (r, "dcu 0x%"PFMT64x, addr);
 		}
 	}
 	r_core_cmd (r, "sr PC", 0);

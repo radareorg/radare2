@@ -796,48 +796,42 @@ static int cmd_seek(void *data, const char *input) {
 	}
 	break;
 	case '/': // "s/"
-	{
-		const char *pfx = r_config_get (core->config, "search.prefix");
-		const ut64 saved_from = r_config_get_i (core->config, "search.from");
-		const ut64 saved_maxhits = r_config_get_i (core->config, "search.maxhits");
-// kwidx cfg var is ignored
-		int kwidx = core->search->n_kws; // (int)r_config_get_i (core->config, "search.kwidx")-1;
-		if (kwidx < 0) {
-			kwidx = 0;
-		}
-		switch (input[1]) {
-		case ' ':
-		case 'v':
-		case 'V':
-		case 'w':
-		case 'W':
-		case 'z':
-		case 'm':
-		case 'c':
-		case 'A':
-		case 'e':
-		case 'E':
-		case 'i':
-		case 'R':
-		case 'r':
-		case '/':
-		case 'x':
-			r_config_set_i (core->config, "search.from", core->addr? core->addr + 1: 0);
+		if (input[1] == '?') {
+			r_cons_cmd_help_match (core->cons, help_msg_s, "s/", 0, false);
+		} else if (input[1] && strchr (" vVwWzmcAeEiRr/x", input[1])) {
+			const char *prefix = r_config_get (core->config, "search.prefix");
+			const int kwidx = R_MAX (core->search->n_kws, 0);
+			char *name = r_str_newf ("%s%d_0", r_str_get (prefix), kwidx);
+			if (!name) {
+				break;
+			}
+			r_flag_name_filter (core->flags, name);
+			const ut64 addr = core->addr;
+			const ut64 saved_from = r_config_get_i (core->config, "search.from");
+			const ut64 saved_maxhits = r_config_get_i (core->config, "search.maxhits");
+			r_config_set_i (core->config, "search.from", addr? addr + 1: 0);
 			r_config_set_i (core->config, "search.maxhits", 1);
-			r_core_cmdf (core, "s+1; %s; s-1; s %s%d_0; f-%s%d_0",
-				input, pfx, kwidx, pfx, kwidx);
+			r_core_seek_delta (core, 1);
+			r_core_cmd0 (core, input);
+			r_core_seek (core, addr, true);
 			r_config_set_i (core->config, "search.from", saved_from);
 			r_config_set_i (core->config, "search.maxhits", saved_maxhits);
-			break;
-		case '?':
-			r_cons_cmd_help_match (core->cons, help_msg_s, "s/", 0, false);
-			break;
-		default:
+			RFlagItem *hit = r_flag_get (core->flags, name);
+			if (hit) {
+				if (!silent) {
+					r_io_sundo_push (core->io, addr, r_print_get_cursor (core->print));
+				}
+				r_core_seek (core, hit->addr, true);
+				r_flag_unset (core->flags, hit);
+			} else {
+				R_LOG_ERROR ("Cannot seek to unknown address '%s'", name);
+				r_core_return_value (core, R_CMD_RC_FAILURE);
+			}
+			free (name);
+		} else {
 			R_LOG_ERROR ("unknown search subcommand");
-			break;
 		}
-	}
-	break;
+		break;
 	case '.': // "s." "s.."
 		if (input[1] == '?') {
 			r_cons_cmd_help (core->cons, help_msg_sdot);
