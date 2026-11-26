@@ -349,6 +349,7 @@ typedef struct r_anal_function_t {
 	char *name;
 	ut64 addr;
 	RVecAnalBlockPtr bbs;
+	RFreeze *frozen_bbs; // PRIVATE, see r_anal_function_freeze_blocks
 	RVecAnalVarPtr vars;
 	char *realname; // R2_590: add realname for the mangled one
 	char *pin; // user-defined pin string (emoji or any utf-8) to mark this function; NULL if not pinned
@@ -1153,6 +1154,8 @@ static inline RAnalFunction *r_anal_function_thunk_target(RAnalFunction *fcn) {
 }
 
 R_API void r_anal_function_sort_blocks(RAnalFunction *fcn);
+// Stable view of fcn->bbs that outlives block or function removal; release with r_freeze_release.
+R_API R_OWNED RFreeze *r_anal_function_freeze_blocks(RAnalFunction *fcn);
 R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb);
 R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb);
 

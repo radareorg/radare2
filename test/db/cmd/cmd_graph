@@ -772,3 +772,63 @@ false
 1
 EOF
 RUN
+
+NAME=cmd.bbgraph deleting the function while graphing
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 740190c3 @ 16
+s 16
+af
+e cmd.bbgraph=af- 16
+agf
+af
+agfj~?je 0x13
+af
+agf*
+af
+agfd~URL
+af
+agft
+afl
+EOF
+EXPECT=<<EOF
+
+1
+	"0x00000010" [URL="fcn.00000010/0x00000010", fontcolor="#767676", fontname="Courier"]
+
+EOF
+RUN
+
+NAME=cmd.bbgraph deleting the rendered block
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 740190c3 @ 16
+s 16
+af
+e cmd.bbgraph=afb- $$
+agf*
+af-*
+af
+agfj~?je 0x13
+af-*
+af
+agfd~URL
+af-*
+af
+agf~0x
+afl
+EOF
+EXPECT=<<EOF
+agn 0x10 base64:
+agn 0x12 base64:
+agn 0x13 base64:
+1
+	"0x00000010" [URL="fcn.00000010/0x00000010", fontcolor="#767676", fontname="Courier"]
+	"0x00000012" [URL="fcn.00000010/0x00000012", fontcolor="#767676", fontname="Courier"]
+	"0x00000013" [URL="fcn.00000010/0x00000013", fontcolor="#767676", fontname="Courier"]
+|  0x10              |    |  0x12              |    |  0x13              |
+0x00000010    0      0 fcn.00000010
+EOF
+RUN

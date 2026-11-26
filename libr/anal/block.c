@@ -123,6 +123,7 @@ static void block_reset_rb(RBNode *node, void *user) {
 	RAnalFunction *fcn;
 	// Clear owner lists in bulk; release their block references in tree order.
 	r_list_foreach (block->fcns, iter, fcn) {
+		r_freeze_detach (&fcn->frozen_bbs);
 		RVecAnalBlockPtr_clear (&fcn->bbs);
 		fcn->meta._min = UT64_MAX;
 		fcn->meta.numcallrefs = -1;

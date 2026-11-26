@@ -2391,7 +2391,7 @@ static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fc
 		if (targets[i] == UT64_MAX || targets[i] <= b->addr) {
 			continue;
 		}
-		RAnalBlock *target = r_anal_get_block_at (b->anal, targets[i]);
+		RAnalBlock *target = r_anal_get_block_at (core->anal, targets[i]);
 		if (!target || !r_list_contains (target->fcns, fcn)) {
 			continue;
 		}
@@ -2542,8 +2542,11 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	HtUP *decompiled = g->show_node_body && ((opts & BODY_PDC)
 		|| r_str_eq (r_config_get (core->config, "cmd.bbgraph"), "pdcb"))? r_core_pdc_blocks (core, fcn): NULL;
 	graph_palette_begin (core, g, &palette);
-	R_VEC_FOREACH (&fcn->bbs, iter) {
-		bb = *iter;
+	// cmd.bbgraph can delete blocks or the function itself
+	const ut64 fcn_addr = fcn->addr;
+	size_t i;
+	RFreeze *blocks = r_anal_function_freeze_blocks (fcn);
+	r_freeze_foreach (blocks, i, bb) {
 		if (breakable && r_cons_is_breaked (core->cons)) {
 			goto interrupted;
 		}
@@ -2554,6 +2557,11 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 			continue;
 		}
 		char *body = g->show_node_body? get_bb_body (core, bb, opts, fcn, emu, saved_gp, saved_arena, saved_arena_size, decompiled): strdup ("");
+		if (r_anal_get_function_at (core->anal, fcn_addr) != fcn) {
+			free (body);
+			fcn = NULL;
+			goto interrupted;
+		}
 		char *title = get_title (bb->addr);
 		char *color = (bb->color.r || bb->color.g || bb->color.b)
 			? r_cons_rgb_str (core->cons, NULL, -1, &bb->color)
@@ -2602,9 +2610,10 @@ interrupted:
 	}
 
 	delete_dup_edges (g);
-	ret = true;
+	ret = fcn != NULL;
 
 cleanup:
+	r_freeze_release (blocks);
 	graph_palette_end (&palette);
 	ht_up_free (decompiled);
 	if (emu) {

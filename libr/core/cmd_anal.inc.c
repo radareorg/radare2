@@ -6032,6 +6032,7 @@ static void cmd_afbs(RCore *core, const char *input) {
 		R_LOG_ERROR ("No function here");
 		return;
 	}
+	r_freeze_detach (&fcn->frozen_bbs);
 	switch (input[3]) {
 	case '?':
 		break;

@@ -83,6 +83,7 @@ R_API void r_anal_function_free(RAnalFunction *fcn) {
 		return;
 	}
 
+	r_freeze_detach (&fcn->frozen_bbs);
 	RAnalBlock **it;
 	R_VEC_FOREACH (&fcn->bbs, it) {
 		r_list_delete_data ((*it)->fcns, fcn);
@@ -272,9 +273,15 @@ static int bb_addr_cmp(RAnalBlock *const *a, RAnalBlock *const *b) {
 R_API void r_anal_function_sort_blocks(RAnalFunction *fcn) {
 	R_RETURN_IF_FAIL (fcn);
 	if (!fcn->bbs_sorted) {
+		r_freeze_detach (&fcn->frozen_bbs);
 		RVecAnalBlockPtr_sort (&fcn->bbs, bb_addr_cmp);
 		fcn->bbs_sorted = true;
 	}
+}
+
+R_API RFreeze *r_anal_function_freeze_blocks(RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (fcn, NULL);
+	return r_freeze_vec (&fcn->frozen_bbs, &fcn->bbs, RAnalBlock);
 }
 
 R_API RAnalBlock *r_anal_function_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
@@ -301,6 +308,7 @@ R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	if (fcn->bbs_sorted && len && (*RVecAnalBlockPtr_last (&fcn->bbs))->addr > bb->addr) {
 		fcn->bbs_sorted = false;
 	}
+	r_freeze_detach (&fcn->frozen_bbs);
 	RAnalBlock **slot = RVecAnalBlockPtr_emplace_back (&fcn->bbs);
 	if (!slot) {
 		return;
@@ -336,6 +344,7 @@ R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	if (idx == SZT_MAX || *RVecAnalBlockPtr_at (&fcn->bbs, idx) != bb) {
 		return;
 	}
+	r_freeze_detach (&fcn->frozen_bbs);
 	r_list_delete_data (bb->fcns, fcn);
 
 	if (fcn->meta._min != UT64_MAX

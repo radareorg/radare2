@@ -1695,7 +1695,6 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 
 static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *pj, Sdb *DB) {
 	RAnalBlock *bbi;
-	RAnalBlock **iter;
 	int is_keva = opts & R_CORE_ANAL_KEYVALUE;
 	int is_star = opts & R_CORE_ANAL_STAR;
 	int is_json = opts & R_CORE_ANAL_JSON;
@@ -1716,8 +1715,15 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 		&& !is_keva && R_STR_ISNOTEMPTY (r_config_get (core->config, "cmd.bbgraph"));
 	HtUP *decompiled = custom && r_config_get_b (core->config, "graph.body")
 		&& r_str_eq (r_config_get (core->config, "cmd.bbgraph"), "pdcb")? r_core_pdc_blocks (core, fcn): NULL;
-	R_VEC_FOREACH (&fcn->bbs, iter) {
-		bbi = *iter;
+	// cmd.bbgraph can delete blocks or the function itself
+	const ut64 fcn_addr = fcn->addr;
+	char *fcn_name = strdup (fcn->name);
+	size_t i;
+	RFreeze *blocks = r_anal_function_freeze_blocks (fcn);
+	r_freeze_foreach (blocks, i, bbi) {
+		if (r_anal_get_function_at (core->anal, fcn_addr) != fcn) {
+			break;
+		}
 		if (is_keva) {
 			sdb_array_push_num (DB, "bbs", bbi->addr, 0);
 			sdb_num_setf (DB, bbi->size, 0, "bb.0x%08"PFMT64x".size", bbi->addr); // bb.<addr>.size=<num>
@@ -1866,8 +1872,8 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 								free (body_b64);
 								free (title);
 								r_diff_free (d);
-								ht_up_free (decompiled);
-								return false;
+								nodes = false;
+								goto beach;
 							}
 							body_b64 = r_str_prepend (body_b64, "base64:");
 							r_cons_printf (core->cons, "agn %s %s %s\n", title, body_b64, difftype);
@@ -1879,7 +1885,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 							r_cons_printf (core->cons, " \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
 							"color=\"black\", fontname=\"%s\","
 							" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
-							bbi->addr, difftype, font, diffstr, fcn->name,
+							bbi->addr, difftype, font, diffstr, fcn_name,
 							bbi->addr);
 						}
 						free (diffstr);
@@ -1892,8 +1898,8 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 								free (body_b64);
 								free (title);
 								r_diff_free (d);
-								ht_up_free (decompiled);
-								return false;
+								nodes = false;
+								goto beach;
 							}
 							body_b64 = r_str_prepend (body_b64, "base64:");
 							r_cons_printf (core->cons, "agn %s %s %s\n", title, body_b64, difftype);
@@ -1903,7 +1909,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 							r_cons_printf (core->cons, " \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
 									"color=\"black\", fontname=\"%s\","
 									" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
-									bbi->addr, difftype, font, str, fcn->name, bbi->addr);
+									bbi->addr, difftype, font, str, fcn_name, bbi->addr);
 						}
 					}
 					r_diff_free (d);
@@ -1942,8 +1948,8 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 						if (!title || !body_b64) {
 								free (body_b64);
 								free (title);
-								ht_up_free (decompiled);
-								return false;
+								nodes = false;
+								goto beach;
 						}
 						body_b64 = r_str_prepend (body_b64, "base64:");
 						r_cons_printf (core->cons, "agn %s %s %d\n", title, body_b64, color);
@@ -1954,14 +1960,14 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 							r_cons_printf (core->cons, "\t\"0x%08"PFMT64x"\" ["
 								"URL=\"%s/0x%08"PFMT64x"\", "
 								"%sfontname=\"%s\"]\n",
-								bbi->addr, fcn->name, bbi->addr,
+								bbi->addr, fcn_name, bbi->addr,
 								fill_color, font);
 						} else {
 							r_cons_printf (core->cons, "\t\"0x%08"PFMT64x"\" ["
 								"URL=\"%s/0x%08"PFMT64x"\", "
 								"%sfontname=\"%s\", "
 								"label=\"%s\"]\n",
-								bbi->addr, fcn->name, bbi->addr,
+								bbi->addr, fcn_name, bbi->addr,
 								fill_color, font, str);
 						}
 					}
@@ -1971,6 +1977,9 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 			free (str);
 		}
 	}
+beach:
+	r_freeze_release (blocks);
+	free (fcn_name);
 	ht_up_free (decompiled);
 	return nodes;
 }
@@ -2031,8 +2040,11 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, GraphOptions *
 		pj_k (pj, "blocks");
 		pj_a (pj);
 	}
+	const ut64 fcn_addr = fcn->addr;
 	nodes += core_anal_graph_construct_nodes (core, fcn, go->opts, pj, DB);
-	nodes += core_anal_graph_construct_edges (core, fcn, go->opts, pj, DB);
+	if (r_anal_get_function_at (core->anal, fcn_addr) == fcn) {
+		nodes += core_anal_graph_construct_edges (core, fcn, go->opts, pj, DB);
+	}
 	if (go->is_json) {
 		pj_end (pj);
 		pj_end (pj);
@@ -2223,6 +2235,7 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 	if (!fcn) {
 		return false;
 	}
+	const ut64 fcn_addr = fcn->addr;
 
 	RConfigHold *hc = r_config_hold_new (core->config);
 	r_config_hold (hc, "scr.color", "scr.utf8", "asm.marks", "asm.addr", "asm.lines",
@@ -2239,18 +2252,21 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 
 	HtUP *decompiled = r_config_get_b (core->config, "graph.body")
 		&& r_str_eq (r_config_get (core->config, "cmd.bbgraph"), "pdcb")? r_core_pdc_blocks (core, fcn): NULL;
-	R_VEC_FOREACH (&fcn->bbs, iter) {
-		bb = *iter;
+	// cmd.bbgraph can delete blocks or the function itself
+	size_t i;
+	RFreeze *blocks = r_anal_function_freeze_blocks (fcn);
+	r_freeze_foreach (blocks, i, bb) {
 		if (bb->addr == UT64_MAX) {
 			continue;
 		}
 		char *title = get_title (bb->addr);
 		char *body = core_graph_block_body (core, bb, decompiled);
 		char *body_b64 = body? r_base64_encode_dyn ((const ut8 *)body, -1): NULL;
-		if (!title || !body || !body_b64) {
+		if (!title || !body || !body_b64 || r_anal_get_function_at (core->anal, fcn_addr) != fcn) {
 			free (body_b64);
 			free (body);
 			free (title);
+			r_freeze_release (blocks);
 			r_config_hold_restore (hc);
 			r_config_hold_free (hc);
 			ht_up_free (decompiled);
@@ -2262,6 +2278,7 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 		free (body_b64);
 		free (title);
 	}
+	r_freeze_release (blocks);
 
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
@@ -4466,6 +4483,9 @@ R_API bool r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		pj = r_core_pj_new (core);
 		pj_a (pj);
 	}
+	// collect addresses first, cmd.bbgraph can delete functions
+	RVecUT64 fcn_addrs;
+	RVecUT64_init (&fcn_addrs);
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (fcni->type & (R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_FCN |
 						  R_ANAL_FCN_TYPE_LOC | R_ANAL_FCN_TYPE_INT) &&
@@ -4475,13 +4495,24 @@ R_API bool r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 					continue;
 				}
 			}
-			r_anal_function_sort_blocks (fcni);
-			nodes += core_anal_graph_nodes (core, fcni, &go, pj);
+			ut64 *slot = RVecUT64_emplace_back (&fcn_addrs);
+			if (slot) {
+				*slot = fcni->addr;
+			}
 			if (addr != UT64_MAX) {
 				break;
 			}
 		}
 	}
+	ut64 *fcn_addr;
+	R_VEC_FOREACH (&fcn_addrs, fcn_addr) {
+		fcni = r_anal_get_function_at (core->anal, *fcn_addr);
+		if (fcni) {
+			r_anal_function_sort_blocks (fcni);
+			nodes += core_anal_graph_nodes (core, fcni, &go, pj);
+		}
+	}
+	RVecUT64_fini (&fcn_addrs);
 	if (!nodes) {
 		if (!go.is_html && !go.is_json && !go.is_keva) {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
