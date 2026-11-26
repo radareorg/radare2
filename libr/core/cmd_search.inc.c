@@ -3419,10 +3419,12 @@ static void do_sparse_search(RCore *core, RSearchParameters *param) {
 	if (r_mul_overflow_ut64 (gap_lines, R_MAX (2, core->print->cols), &gap_size)) {
 		gap_size = UT64_MAX;
 	}
-	if (core->blocksize < 1) {
+	// cmd.hit can change core->blocksize while searching
+	const ut32 bsize = core->blocksize;
+	if (bsize < 1) {
 		return;
 	}
-	ut8 *buf = malloc (core->blocksize);
+	ut8 *buf = malloc (bsize);
 	if (!buf) {
 		return;
 	}
@@ -3445,7 +3447,7 @@ static void do_sparse_search(RCore *core, RSearchParameters *param) {
 		ut8 run_value = 0;
 		ut64 at;
 		for (at = from; at < to && !r_cons_is_breaked (core->cons); ) {
-			int len = R_MIN ((ut64)core->blocksize, to - at);
+			int len = R_MIN ((ut64)bsize, to - at);
 			if (!r_io_read_at (core->io, at, buf, len)) {
 				break;
 			}
@@ -3509,7 +3511,9 @@ static void do_string_search(RCore *core, RInterval search_itv, RSearchParameter
 		/* TODO: launch search in background support */
 		// REMOVE OLD FLAGS r_core_cmdf (core, "f-%s*", r_config_get (core->config, "search.prefix"));
 		r_search_set_callback (core->search, &_cb_hit, param);
-		if (!(buf = malloc (core->blocksize))) {
+		// cmd.hit can change core->blocksize while searching
+		const ut32 bsize = core->blocksize;
+		if (!(buf = malloc (bsize))) {
 			return;
 		}
 		if (search->bckwrds) {
@@ -3558,14 +3562,14 @@ static void do_string_search(RCore *core, RInterval search_itv, RSearchParameter
 					break;
 				}
 				if (search->bckwrds) {
-					len = R_MIN (core->blocksize, at - from);
+					len = R_MIN (bsize, at - from);
 					// TODO prefix_read_at
 					if (!r_io_is_valid_offset (core->io, at - len, 0)) {
 						break;
 					}
 					(void)r_io_read_at (core->io, at - len, buf, len);
 				} else {
-					len = R_MIN (core->blocksize, to - at);
+					len = R_MIN (bsize, to - at);
 					if (!r_io_is_valid_offset (core->io, at, 0)) {
 						break;
 					}
@@ -3574,7 +3578,7 @@ static void do_string_search(RCore *core, RInterval search_itv, RSearchParameter
 				r_search_update (core->search, at, buf, len);
 				if (param->key_search) {
 					// Adjust length to search between blocks.
-					if (len == core->blocksize) {
+					if (len == bsize) {
 						len -= param->key_search_len - 1;
 					}
 				}

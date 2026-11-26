@@ -440,6 +440,27 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=z/ with cmd.fcn.new changing the blocksize
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 554889e54883ec10897dfc8b45fcc9c3 @ 0x20
+wx 554889e54883ec10897dfc8b45fcc9c3 @ 0x40
+za foo b 554889e54883ec10897dfc8b45fcc9c3
+e cmd.fcn.new=b 0x100
+b 0x10
+z/
+b
+f~sign.bytes.
+EOF
+EXPECT=<<EOF
+0x100
+0x00000020 16 sign.bytes.foo_0
+0x00000040 16 sign.bytes.foo_1
+EOF
+RUN
+
 NAME=z/ with zign.minsz
 FILE=malloc://1024
 CMDS=<<EOF

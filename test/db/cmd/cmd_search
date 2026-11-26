@@ -1130,6 +1130,42 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=/xs with cmd.hit changing the blocksize
+FILE=malloc://1024
+CMDS=<<EOF
+wx 41 @ 0x20
+wx 41 @ 0x50
+e hex.gaplines=1
+e cmd.hit=b 0x100
+b 0x10
+/xs
+b
+EOF
+EXPECT=<<EOF
+0x00000000 hit0_0 00
+0x00000021 hit0_1 00
+0x00000051 hit0_2 00
+0x100
+EOF
+RUN
+
+NAME=/ with cmd.hit changing the blocksize
+FILE=malloc://1024
+CMDS=<<EOF
+w hello @ 0x20
+w hello @ 0x40
+e cmd.hit=b 0x100
+b 0x10
+/ hello
+b
+EOF
+EXPECT=<<EOF
+0x00000020 hit0_0 "hello"
+0x00000040 hit0_1 "hello"
+0x100
+EOF
+RUN
+
 NAME=/xs respects range, minimum length and hit limit
 FILE=bins/other/gaps.bin
 ARGS=-n

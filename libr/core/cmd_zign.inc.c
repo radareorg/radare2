@@ -719,7 +719,9 @@ static int fcnMatchCB(RSignItem *it, RAnalFunction *fcn, RSignType *types, void 
 }
 
 static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSearchCB *ctx) {
-	ut8 *buf = malloc (core->blocksize);
+	// cmd.fcn.new can change core->blocksize while searching
+	const ut32 bsize = core->blocksize;
+	ut8 *buf = malloc (bsize);
 	ut64 at;
 	int rlen;
 	bool retval = true;
@@ -733,12 +735,12 @@ static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSea
 	r_sign_search_init (core->anal, ss, minsz, searchBytesHitCB, ctx);
 
 	r_cons_break_push (core->cons, NULL, NULL);
-	for (at = from; at < to; at += core->blocksize) {
+	for (at = from; at < to; at += bsize) {
 		if (r_cons_is_breaked (core->cons)) {
 			retval = false;
 			break;
 		}
-		rlen = R_MIN (core->blocksize, to - at);
+		rlen = R_MIN (bsize, to - at);
 		if (!r_io_is_valid_offset (core->io, at, 0)) {
 			retval = false;
 			break;
