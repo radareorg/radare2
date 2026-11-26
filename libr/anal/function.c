@@ -55,6 +55,8 @@ static bool __fcn_exists(RAnal *anal, const char *name, ut64 addr) {
 
 R_IPI void r_anal_var_free(RAnalVar *av);
 
+static void function_free(RAnalFunction *fcn);
+
 R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	// XXX fcn->name is null because its r_anal_create_function the one that must be called
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
@@ -75,14 +77,11 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	fcn->meta.numcallrefs = -1;
 	RVecAnalVarPtr_init (&fcn->vars);
 	fcn->ts = r_time_now ();
+	r_ref_init (fcn, function_free);
 	return fcn;
 }
 
-R_API void r_anal_function_free(RAnalFunction *fcn) {
-	if (!fcn) {
-		return;
-	}
-
+static void function_unregister(RAnalFunction *fcn) {
 	r_freeze_detach (&fcn->frozen_bbs);
 	RAnalBlock **it;
 	R_VEC_FOREACH (&fcn->bbs, it) {
@@ -98,7 +97,10 @@ R_API void r_anal_function_free(RAnalFunction *fcn) {
 	if (fcn->name && ht_pp_find (anal->ht_name_fun, fcn->name, NULL) == fcn) {
 		ht_pp_delete (anal->ht_name_fun, fcn->name);
 	}
+}
 
+static void function_free(RAnalFunction *fcn) {
+	function_unregister (fcn);
 	ht_up_free (fcn->inst_vars);
 	fcn->inst_vars = NULL;
 	r_anal_function_delete_all_vars (fcn);
@@ -114,6 +116,13 @@ R_API void r_anal_function_free(RAnalFunction *fcn) {
 	r_anal_diff_free (fcn->diff);
 	r_list_free (fcn->imports);
 	free (fcn);
+}
+
+R_API void r_anal_function_free(RAnalFunction *fcn) {
+	if (fcn) {
+		function_unregister (fcn);
+		r_unref (fcn);
+	}
 }
 
 // names come from binaries and users and reach terminals and generated r2 scripts
@@ -277,6 +286,11 @@ R_API void r_anal_function_sort_blocks(RAnalFunction *fcn) {
 		RVecAnalBlockPtr_sort (&fcn->bbs, bb_addr_cmp);
 		fcn->bbs_sorted = true;
 	}
+}
+
+R_API RFreeze *r_anal_freeze_functions(RAnal *anal) {
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
+	return r_freeze_list (anal->fcns, R_REF_LAYOUT (RAnalFunction));
 }
 
 R_API RFreeze *r_anal_function_freeze_blocks(RAnalFunction *fcn) {

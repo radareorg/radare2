@@ -379,6 +379,7 @@ typedef struct r_anal_function_t {
 	RList *imports; // maybe bound to class?
 	struct r_anal_t *anal; // this function is associated with this instance
 	ut64 ts; // timestamp when the function was registered. useful to sort them by order or "incremental projects"). afla
+	R_REF_TYPE;
 } RAnalFunction;
 
 typedef struct r_anal_func_arg_t {
@@ -1098,6 +1099,7 @@ R_API bool r_anal_block_was_modified(RAnalBlock *block);
 /* function.c */
 
 R_API RAnalFunction *r_anal_function_new(RAnal *anal);
+// Unregister fcn and drop its reference, frozen views keep it allocated
 R_API void r_anal_function_free(RAnalFunction *fcn);
 
 // Add a function created with r_anal_function_new() to anal
@@ -1156,6 +1158,11 @@ static inline RAnalFunction *r_anal_function_thunk_target(RAnalFunction *fcn) {
 R_API void r_anal_function_sort_blocks(RAnalFunction *fcn);
 // Stable view of fcn->bbs that outlives block or function removal; release with r_freeze_release.
 R_API R_OWNED RFreeze *r_anal_function_freeze_blocks(RAnalFunction *fcn);
+// Referenced snapshot of anal->fcns; skip items failing r_anal_function_alive
+R_API R_OWNED RFreeze *r_anal_freeze_functions(RAnal *anal);
+static inline bool r_anal_function_alive(RAnal *anal, RAnalFunction *fcn) {
+	return r_anal_get_function_at (anal, fcn->addr) == fcn;
+}
 R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb);
 R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb);
 

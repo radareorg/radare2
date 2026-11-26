@@ -23,6 +23,8 @@ typedef struct r_freeze_t {
 R_API R_OWNED RFreeze *r_freeze_acquire(RFreeze **slot, void **items, size_t count, RRefLayout layout);
 R_API void r_freeze_release(RFreeze * R_NULLABLE freeze);
 R_API void r_freeze_unshare(RFreeze **slot);
+// Owned snapshot of a list holding a reference on each element
+R_API R_OWNED RFreeze *r_freeze_list(const RList *list, RRefLayout layout);
 
 // Owner hook before mutating the array: a NULL check unless a freeze is active
 static inline void r_freeze_detach(RFreeze **slot) {

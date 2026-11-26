@@ -138,6 +138,34 @@ static int function_renamed_cb(RAnal *anal, void *user, RAnalFunction *fcn, cons
 	return 0;
 }
 
+bool test_r_anal_freeze_functions(void) {
+	RAnal *anal = r_anal_new ();
+	RAnalFunction *kept = r_anal_create_function (anal, "kept", 0x100, 0, NULL);
+	RAnalFunction *gone = r_anal_create_function (anal, "gone", 0x200, 0, NULL);
+	RFreeze *fcns = r_anal_freeze_functions (anal);
+	mu_assert_eq (fcns->count, 2, "frozen view has every function");
+	r_anal_function_delete (anal, gone);
+	mu_assert_null (r_anal_get_function_at (anal, 0x200), "deleted function is unregistered");
+	mu_assert_null (r_anal_get_function_byname (anal, "gone"), "deleted function name is unregistered");
+	RAnalFunction *fcn;
+	size_t i, alive = 0;
+	r_freeze_foreach (fcns, i, fcn) {
+		if (r_anal_function_alive (anal, fcn)) {
+			alive++;
+		} else {
+			mu_assert_streq (fcn->name, "gone", "deleted function stays readable");
+		}
+	}
+	mu_assert_eq (alive, 1, "only the kept function is alive");
+	mu_assert_true (r_anal_function_rename (gone, "renamed"), "renaming a deleted function is harmless");
+	mu_assert_null (r_anal_get_function_byname (anal, "renamed"), "deleted function is not registered again");
+	r_freeze_release (fcns);
+	mu_assert_ptreq (r_anal_get_function_at (anal, 0x100), kept, "kept function survives release");
+	assert_invariants (anal);
+	r_anal_free (anal);
+	mu_end;
+}
+
 bool test_r_anal_function_rename(void) {
 	RAnal *anal = r_anal_new ();
 	RAnalFunction *fcn = r_anal_create_function (anal, "original", 0x100, 0, NULL);
@@ -1010,6 +1038,7 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_function_relocate);
 	mu_run_test (test_r_anal_function_filtered_name_collision);
 	mu_run_test (test_r_anal_function_rename);
+	mu_run_test (test_r_anal_freeze_functions);
 	mu_run_test (test_r_core_function_rename);
 	mu_run_test (test_r_anal_function_labels);
 	mu_run_test (test_r_anal_function_block_order);

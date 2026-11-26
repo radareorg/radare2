@@ -890,7 +890,7 @@ static bool search(RCore *core, bool rad, bool only_func) {
 		}
 	}
 	if (metric_search_failed) {
-		R_LOG_ERROR ("cannot allocate function address snapshot");
+		R_LOG_ERROR ("cannot freeze the function list");
 		r_core_return_code (core, R_CMD_RC_FAILURE);
 		return false;
 	}

@@ -312,10 +312,15 @@ static void autoname_all(RAnal *anal) {
 	 * pick up B's freshly assigned name in the second pass. */
 	int pass;
 	for (pass = 0; pass < 2; pass++) {
-		RListIter *it;
+		// cmd.fcn.rename can delete functions
+		RFreeze *fcns = r_anal_freeze_functions (anal);
 		RAnalFunction *fcn;
+		size_t i;
 		bool changed = false;
-		r_list_foreach (anal->fcns, it, fcn) {
+		r_freeze_foreach (fcns, i, fcn) {
+			if (!r_anal_function_alive (anal, fcn)) {
+				continue;
+			}
 			char *name = autoname_fcn (anal, fcn, 0);
 			if (!name) {
 				continue;
@@ -325,6 +330,7 @@ static void autoname_all(RAnal *anal) {
 			}
 			free (name);
 		}
+		r_freeze_release (fcns);
 		if (!changed) {
 			break;
 		}

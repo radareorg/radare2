@@ -148,3 +148,16 @@ func.mein.args=3
 func.mein.ret=int
 EOF
 RUN
+
+NAME=a:autoname all survives a cmd.fcn.rename hook deleting functions
+FILE=bins/elf/ls
+CMDS=<<EOF
+aaa
+e cmd.fcn.rename=af-*
+a:autoname all
+afl~?
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN

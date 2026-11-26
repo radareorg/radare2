@@ -113,11 +113,43 @@ static bool test_freeze_raw(void) {
 	mu_end;
 }
 
+static bool test_freeze_list(void) {
+	Item a, b;
+	item_init (&a, 1);
+	item_init (&b, 2);
+	RList *list = r_list_new ();
+	r_list_append (list, &a);
+	r_list_append (list, &b);
+	RFreeze *frozen = r_freeze_list (list, R_REF_LAYOUT (Item));
+	mu_assert_true (frozen->owned, "list views own a copy");
+	mu_assert_eq (r_ref_count (&b), 2, "list view references each item");
+	r_list_free (list);
+	Item *pb_owned = &b;
+	r_unref (pb_owned);
+	mu_assert_false (b.freed, "list view keeps removed items alive");
+	Item *item;
+	size_t i, sum = 0;
+	r_freeze_foreach (frozen, i, item) {
+		sum += item->value;
+	}
+	mu_assert_eq (sum, 3, "iterates the list snapshot");
+	r_freeze_release (frozen);
+	mu_assert_true (b.freed, "last release frees removed items");
+	mu_assert_eq (r_ref_count (&a), 1, "kept items return to their owner refcount");
+	list = r_list_new ();
+	frozen = r_freeze_list (list, R_REF_LAYOUT (Item));
+	mu_assert_eq (frozen->count, 0, "empty list gives an empty view");
+	r_freeze_release (frozen);
+	r_list_free (list);
+	mu_end;
+}
+
 static int all_tests(void) {
 	mu_run_test (test_freeze_borrows);
 	mu_run_test (test_freeze_detach);
 	mu_run_test (test_freeze_empty);
 	mu_run_test (test_freeze_raw);
+	mu_run_test (test_freeze_list);
 	return tests_passed != tests_run;
 }
 
