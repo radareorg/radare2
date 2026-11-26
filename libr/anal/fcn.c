@@ -26,6 +26,7 @@
 
 // Tail called functions walked nested on the stack, about 4KB each
 #define MAX_TAILCALL_DEPTH 32
+#define MAX_CHAIN_HOPS 8
 
 // Max NOP count to stop analysis
 #define MAX_NOP_PREFIX_CNT 1024
@@ -1038,6 +1039,59 @@ static const char *tailcall_name(RAnal *anal, ut64 addr) {
 	return NULL;
 }
 
+// follow unconditional direct jumps from dst, UT64_MAX when there is no chain or it loops
+static ut64 chain_target(RAnal *anal, ut64 dst, int code_perm) {
+	ut64 hops[MAX_CHAIN_HOPS];
+	ut64 at = dst;
+	int i, n;
+	for (n = 0; n < MAX_CHAIN_HOPS; n++) {
+		ut8 buf[32];
+		if (!anal->iob.is_valid_offset (anal->iob.io, at, code_perm) || !anal->iob.read_at (anal->iob.io, at, buf, sizeof (buf))) {
+			break;
+		}
+		RAnalOp op;
+		r_anal_op_init (&op);
+		const int len = r_anal_op (anal, &op, at, buf, sizeof (buf), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
+		const bool is_jmp = len > 0 && op.type == R_ANAL_OP_TYPE_JMP && !op.delay && op.jump != UT64_MAX;
+		const ut64 next = op.jump;
+		r_anal_op_fini (&op);
+		if (!is_jmp) {
+			break;
+		}
+		hops[n] = at;
+		for (i = 0; i <= n; i++) {
+			if (hops[i] == next) {
+				return UT64_MAX;
+			}
+		}
+		at = next;
+	}
+	return (n > 0 && n < MAX_CHAIN_HOPS)? at: UT64_MAX;
+}
+
+// hint the call or jump at op with the end of the jump chain at its destination
+static bool chain_resolve(RAnal *anal, RAnalOp *op, int code_perm, bool need_entry) {
+	const ut64 dst = chain_target (anal, op->jump, code_perm);
+	if (dst == UT64_MAX) {
+		return false;
+	}
+	if (need_entry && !r_anal_get_function_at (anal, dst) && !tailcall_name (anal, dst)) {
+		ut8 buf[32];
+		if (!anal->iob.read_at (anal->iob.io, dst, buf, sizeof (buf)) || !r_anal_is_prelude (anal, dst, buf, sizeof (buf))) {
+			return false;
+		}
+	}
+	RAnalHint *hint = r_anal_hint_get (anal, op->addr);
+	const bool user_jump = hint && hint->jump != UT64_MAX;
+	r_anal_hint_free (hint);
+	if (user_jump) {
+		return false;
+	}
+	r_anal_hint_set_jump (anal, op->addr, dst);
+	op->jump = dst;
+	return true;
+}
+
 static bool walk_code_section(FcnWalk *w, ut64 addr) {
 	RAnal *anal = w->anal;
 	if (anal->opt.noncode || !anal->binb.get_vsect_at || !anal->binb.bin) {
@@ -1833,6 +1887,13 @@ noskip:
 			if (op->jump == UT64_MAX) {
 				gotoBeach (R_ANAL_RET_END);
 			}
+			// a function starting with a jump is a link of the chain, not its first site
+			if (anal->opt.chain && anal->iob.io && op->addr != fcn->addr) {
+				// the flag checks below may end the block before jmpref records the resolved target
+				if (chain_resolve (anal, op, code_perm, true) && anal->opt.jmpref) {
+					(void) r_anal_xrefs_setf (anal, fcn, op->addr, op->jump, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
+				}
+			}
 			{
 				RFlagItem *fi = anal->flb.get_at (anal->flb.f, op->jump, false);
 				if (fi) {
@@ -2083,6 +2144,9 @@ noskip:
 		case R_ANAL_OP_TYPE_CCALL:
 		case R_ANAL_OP_TYPE_CALL:
 			/* call dst */
+			if (anal->opt.chain && anal->iob.io && op->jump != UT64_MAX) {
+				chain_resolve (anal, op, code_perm, false);
+			}
 			(void) r_anal_xrefs_setf (anal, fcn, op->addr, op->jump, R_ANAL_REF_TYPE_CALL | R_ANAL_REF_TYPE_EXEC);
 
 			if (propagate_noreturn && r_anal_noreturn_at (anal, op->jump)) {

@@ -1381,8 +1381,8 @@ zbr sym.exact ~[5]
 EOF
 EXPECT=<<EOF
 fcn.00410210
+fcn.0048f260
 entry.init1
-fcn.0048f380
 main
 entry0
 EOF
