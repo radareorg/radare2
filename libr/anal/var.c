@@ -1589,27 +1589,75 @@ static inline bool op_affect_dst(RAnalOp *op) {
 	}
 }
 
-static bool op_zeroes_reg(RAnalOp *op) {
+// The dst bits that xor reg,reg, sub reg,reg or or reg,-1 write without reading
+// dst, or 0. It depends on the op alone, so callers compute it once per op.
+static int op_set_bits(RAnal *anal, RAnalOp *op, bool dst_writeonly) {
 	const int type = op->type & R_ANAL_OP_TYPE_MASK;
-	if (type != R_ANAL_OP_TYPE_XOR && type != R_ANAL_OP_TYPE_SUB) {
-		return false;
+	if (type != R_ANAL_OP_TYPE_XOR && type != R_ANAL_OP_TYPE_SUB && type != R_ANAL_OP_TYPE_OR) {
+		return 0;
 	}
 	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
-	RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
-	if (!src || !src->reg || !dst || !dst->reg || dst->memref) {
-		return false;
+	if (!dst || !dst->reg || dst->memref) {
+		return 0;
 	}
+	// xor keeps its existing rule; sub and or must be unconditional integer ops,
+	// and sub two-operand, since a third operand may be shifted or extended
+	const bool xor = type == R_ANAL_OP_TYPE_XOR;
+	if (!xor && (op->cond != R_ANAL_CONDTYPE_AL || op->family != R_ANAL_OP_FAMILY_CPU
+			|| (type == R_ANAL_OP_TYPE_SUB && dst_writeonly))) {
+		return 0;
+	}
+	RRegItem *ri = r_reg_get (anal->reg, dst->reg, -1);
+	const int bits = ri && (xor || ri->type == R_REG_TYPE_GPR)? ri->size: 0;
+	r_unref (ri);
+	if (bits < 1) {
+		return 0;
+	}
+	const ut64 mask = bits >= 64? UT64_MAX: (1ULL << bits) - 1;
+	bool imm = false, fill = false;
+	int nreg = 0;
+	RAnalValue *src;
 	R_VEC_FOREACH (&op->srcs, src) {
-		if (src->memref || src->type == R_ANAL_VAL_IMM || (src->reg && strcmp (src->reg, dst->reg))) {
-			return false;
+		if (src->memref || (src->reg && strcmp (src->reg, dst->reg))) {
+			return 0;
+		}
+		if (src->type == R_ANAL_VAL_IMM) {
+			imm = true;
+			fill |= ((ut64)src->imm & mask) == mask;
+		} else if (src->reg) {
+			nreg++;
 		}
 	}
-	return true;
+	if (type == R_ANAL_OP_TYPE_OR) {
+		return fill? bits: 0;
+	}
+	if (imm || !nreg) {
+		return 0;
+	}
+	if (xor) {
+		return bits;
+	}
+	// any other register read, such as the carry flag of sbb, feeds the result
+	RListIter *iter;
+	r_list_foreach (op->access, iter, src) {
+		if ((src->access & R_PERM_R) && src->type == R_ANAL_VAL_REG && src->reg && strcmp (src->reg, dst->reg)) {
+			return 0;
+		}
+	}
+	return bits;
+}
+
+// sub and or overwrite the whole argument only at full width. A 32-bit write on
+// a 64-bit target is assumed to zero-extend, as on x86-64 and arm64.
+static bool op_sets_whole_reg(RAnal *anal, RAnalOp *op, int bits) {
+	const int full = anal->config->bits;
+	return bits && ((op->type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_XOR
+		|| bits == full || (full == 64 && bits == 32));
 }
 
 // in_src and in_dst are the only facts the branches below are built from, and
 // every caller already needs them, so they come in rather than being recomputed
-static bool is_used_like_arg(RAnalOp *op, bool op_dst_writeonly, bool in_src, bool in_dst) {
+static bool is_used_like_arg(RAnalOp *op, bool op_dst_writeonly, bool sets_reg, bool in_src, bool in_dst) {
 	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_POP:
@@ -1622,7 +1670,9 @@ static bool is_used_like_arg(RAnalOp *op, bool op_dst_writeonly, bool in_src, bo
 	case R_ANAL_OP_TYPE_LOAD:
 		return in_src;
 	case R_ANAL_OP_TYPE_XOR:
-		if (op_zeroes_reg (op)) {
+	case R_ANAL_OP_TYPE_SUB:
+	case R_ANAL_OP_TYPE_OR:
+		if (sets_reg) {
 			return false;
 		}
 		//fallthrough
@@ -1649,7 +1699,7 @@ static ut32 reg_overlap_mask(RAnal *anal, const RRegItem *arg, const char *name)
 }
 
 // The low two bits hold the argument state; higher bits track overwritten register bits.
-static bool is_used_small_reg_arg(RAnal *anal, RAnalOp *op, const RRegItem *arg, int *state, bool dst_writeonly) {
+static bool is_used_small_reg_arg(RAnal *anal, RAnalOp *op, const RRegItem *arg, int *state, bool dst_writeonly, int set_bits) {
 	ut32 reads = 0, writes = 0;
 	RAnalValue *value;
 	const int type = op->type & R_ANAL_OP_TYPE_MASK;
@@ -1680,7 +1730,7 @@ static bool is_used_small_reg_arg(RAnal *anal, RAnalOp *op, const RRegItem *arg,
 			}
 		}
 	}
-	if (op_zeroes_reg (op)) {
+	if (set_bits) {
 		reads = 0;
 	}
 	if (type == R_ANAL_OP_TYPE_CMOV) {
@@ -1859,7 +1909,7 @@ static int cc_loc_delta(RAnal *anal, const char *loc) {
 	return delta;
 }
 
-static void extract_dyncc_reguse(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, int *reg_set, const char *opdreg, bool op_dst_writeonly, const char *const *srcregs) {
+static void extract_dyncc_reguse(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, int *reg_set, const char *opdreg, bool op_dst_writeonly, bool sets_reg, const char *const *srcregs) {
 	const char *p = fcn->callconv;
 	for (; (p = strchr (p, '!')); p++) {
 		const char tag = p[1];
@@ -1880,7 +1930,7 @@ static void extract_dyncc_reguse(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, i
 		const int slot = R_ANAL_CC_DYNSLOT_BASE + dynslot;
 		const bool in_src = is_reg_in_src (loc, anal, srcregs);
 		const bool in_dst = opdreg && r_anal_cc_location_uses (anal, loc, opdreg);
-		const bool is_arg = is_used_like_arg (op, op_dst_writeonly, in_src, in_dst);
+		const bool is_arg = is_used_like_arg (op, op_dst_writeonly, sets_reg, in_src, in_dst);
 		if (is_arg && reg_set[slot] != 2) {
 			const char *regname = reguse_regname_for_loc (anal, op, loc, opdreg);
 			reguse_append_hint (anal, op->addr, regname, name);
@@ -2004,6 +2054,8 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	}
 	const char *opdreg = dst ? get_regname (anal, dst) : NULL;
 	const bool op_dst_writeonly = r_arch_info (anal->arch, R_ARCH_INFO_WODST) == 1;
+	const int set_bits = op_set_bits (anal, op, op_dst_writeonly);
+	const bool sets_reg = op_sets_whole_reg (anal, op, set_bits);
 	const int size = (fcn->bits ? fcn->bits : anal->config->bits) / 8;
 	if (!fcn->callconv) {
 		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments", fcn->name);
@@ -2146,8 +2198,8 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			continue;
 		}
 		const int regsize = reg && reg->size > 0? BITS2BYTES (reg->size): size;
-		bool is_arg = partial? is_used_small_reg_arg (anal, op, reg, &reg_set[slot], op_dst_writeonly)
-			: is_used_like_arg (op, op_dst_writeonly, in_src, in_dst);
+		bool is_arg = partial? is_used_small_reg_arg (anal, op, reg, &reg_set[slot], op_dst_writeonly, set_bits)
+			: is_used_like_arg (op, op_dst_writeonly, sets_reg, in_src, in_dst);
 		if (is_arg) {
 			delta = reg? reg->index: cc_loc_delta (anal, regname);
 		}
@@ -2228,7 +2280,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	if (selfreg && (roles & R_BIN_SWIFT_ROLE_SELF)) {
 		// an ignored spill leaves the state alone: the value is still incoming
 		const bool spill = (roles & R_BIN_SWIFT_ROLE_SELF_UNKNOWN) && !in_dst && is_stack_traffic (anal, op);
-		bool is_arg = !spill && is_used_like_arg (op, op_dst_writeonly, in_src, in_dst);
+		bool is_arg = !spill && is_used_like_arg (op, op_dst_writeonly, sets_reg, in_src, in_dst);
 		if (is_arg && reg_set[i] != 2) {
 			int delta = cc_loc_delta (anal, selfreg);
 			RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, size, true, "self");
@@ -2271,7 +2323,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		}
 	}
 	if (is_dyncc) {
-		extract_dyncc_reguse (anal, fcn, op, reg_set, opdreg, op_dst_writeonly, srcregs);
+		extract_dyncc_reguse (anal, fcn, op, reg_set, opdreg, op_dst_writeonly, sets_reg, srcregs);
 	}
 	free (fname);
 }

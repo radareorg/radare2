@@ -377,9 +377,9 @@ R_API char *r_anal_op_tostring(RAnal *anal, RAnalOp *op) {
 		RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
 		RAnalValue *src0 = RVecRArchValue_at (&op->srcs, 0);
 		RAnalValue *src1 = RVecRArchValue_at (&op->srcs, 1);
-		r0 = r_anal_value_tostring (dst);
-		a0 = r_anal_value_tostring (src0);
-		a1 = r_anal_value_tostring (src1);
+		r0 = dst? r_anal_value_tostring (dst): NULL;
+		a0 = src0? r_anal_value_tostring (src0): NULL;
+		a1 = src1? r_anal_value_tostring (src1): NULL;
 		if (!r0) {
 			r0 = strdup ("?");
 		}
