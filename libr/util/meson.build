@@ -129,7 +129,7 @@ else
   library_cflags += ['-DUSE_RLZ4']
 endif
 
-r_util_deps = [ldl, mth, spp_dep, pth, sdb_dep, lz4_dep, platform_deps]
+r_util_deps = [ldl, mth, spp_dep, pth, sdb_dep, lz4_dep, platform_deps, lrt]
 if get_option('use_zip')
   r_util_deps += [ zlib_dep, zip_dep ]
 endif

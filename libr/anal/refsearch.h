@@ -139,7 +139,7 @@ static inline bool refsearch_emit_match(RefSearch *search, ut64 from, ut64 to, R
 		pj_kn (search->json, "target", to);
 		pj_ks (search->json, "type", r_anal_ref_type_tostring (type));
 		pj_end (search->json);
-	} else if (!r_strbuf_appendf (search->text, "0x%"PFMT64x" -> 0x%"PFMT64x" %s\n",
+	} else if (!r_strbuf_appendf (search->text, "0x%" PFMT64x " -> 0x%" PFMT64x " %s\n",
 			from, to, r_anal_ref_type_tostring (type))) {
 		search->failed = true;
 		return false;
@@ -161,7 +161,7 @@ static inline void refsearch_finish(RefSearch *search) {
 	R_VEC_FOREACH (&search->destinations, addr) {
 		if (search->json) {
 			pj_n (search->json, *addr);
-		} else if (!r_strbuf_appendf (search->text, "0x%"PFMT64x"\n", *addr)) {
+		} else if (!r_strbuf_appendf (search->text, "0x%" PFMT64x "\n", *addr)) {
 			search->failed = true;
 			break;
 		}

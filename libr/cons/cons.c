@@ -631,24 +631,43 @@ R_API bool r_cons_was_breaked(RCons *cons) {
 	return res;
 }
 
+static inline bool cons_timeout_check_due(ut64 deadline) {
+	ut64 now = 0;
+#if defined(__APPLE__) && defined(__clang__) && defined(CLOCK_UPTIME_RAW_APPROX)
+#if __has_builtin(__builtin_available)
+	if (__builtin_available (macOS 10.12, iOS 10.0, tvOS 10.0, watchOS 3.0, *)) {
+		now = clock_gettime_nsec_np (CLOCK_UPTIME_RAW_APPROX) / R_NSEC_PER_USEC;
+	}
+#endif
+#elif defined(__linux__) && !R2_UEFI && defined(CLOCK_MONOTONIC_COARSE) && defined(CLOCK_MONOTONIC)
+	struct timespec ts;
+	if (!clock_gettime (CLOCK_MONOTONIC_COARSE, &ts)) {
+		now = ts.tv_sec * R_USEC_PER_SEC + ts.tv_nsec / R_NSEC_PER_USEC;
+	}
+#endif
+	// Allow for coarse clock lag by using the exact clock near expiration.
+	return !now || now + 10 * R_USEC_PER_MSEC >= deadline;
+}
+
 R_API bool r_cons_is_breaked(RCons *cons) {
 	RConsContext *C = cons->context;
 	if (R_UNLIKELY (cons->cb_break)) {
 		cons->cb_break (cons->user);
 	}
-	if (R_UNLIKELY (cons->timeout)) {
+	const ut64 deadline = cons->timeout;
+	if (R_UNLIKELY (deadline) && cons_timeout_check_due (deadline)) {
 		const ut64 now = r_time_now_mono ();
-		if (now > cons->timeout) {
+		if (now > deadline) {
 			if (!cons->timeout_break) {
-				R_LOG_INFO ("Timeout interruption after %"PFMT64u"s", (ut64)((now - cons->timeout) / R_USEC_PER_SEC));
+				R_LOG_INFO ("Timeout interruption after %"PFMT64u"s", (ut64)((now - deadline) / R_USEC_PER_SEC));
 			}
 			C->breaked = true;
 			C->was_breaked = true;
 			cons->timeout_break = true;
 		}
 	}
-	if (R_UNLIKELY (!C->was_breaked)) {
-		C->was_breaked = C->breaked;
+	if (R_UNLIKELY (C->breaked && !C->was_breaked)) {
+		C->was_breaked = true;
 	}
 	if (cons->timeout_break && !cons->timeout_warned) {
 		R_LOG_WARN ("Stopped because of timeout");
