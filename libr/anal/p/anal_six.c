@@ -75,7 +75,7 @@ static inline bool six_is_branch(ut32 v, ut64 addr, ut64 *dst, bool *is_call) {
 	if ((v & 0x7c000000) != 0x14000000) {
 		return false;
 	}
-	*dst = addr + (((st64)((ut64)(v & 0x3ffffff) << 38)) >> 36);
+	*dst = refsearch_arm64_branch_target (v, addr);
 	*is_call = (v & 0x80000000) != 0;
 	return true;
 }
@@ -155,7 +155,7 @@ static const char *lookup_unprivileged_inst_name(uint32_t opc_size) {
 }
 
 // address built by adr/adrp plus up to two add and a load/store immediate, the page when none follow
-static ut64 adrp_resolve(const ut8 *p, const ut8 *e, ut32 reg, ut64 target) {
+static ut64 adrp_resolve(const ut8 *p, const ut8 *e, ut32 reg, ut64 target, ut64 *adds) {
 	int i;
 	for (i = 0; i < 2; i++) {
 		p = skip_nops (p, e);
@@ -167,6 +167,9 @@ static ut64 adrp_resolve(const ut8 *p, const ut8 *e, ut32 reg, ut64 target) {
 			break;
 		}
 		target += (ut64)((v >> 10) & 0xfff) << ((v & 0x400000)? 12: 0);
+		if (adds) {
+			adds[i] = target;
+		}
 		reg = v & 0x1f;
 		p += 4;
 	}
@@ -215,6 +218,7 @@ static void siguza_xrefs_chunked(const SixScan *ss, const ut8 *mem, ut64 addr, i
 	RStrBuf *sb = ss->sb;
 	const bool register_refs = ss->register_refs;
 	const bool emit_refs = register_refs || ss->refs;
+	const bool list_intermediates = !register_refs && ss->refs && !RVecRefSearchRange_empty (&ss->refs->ranges);
 	const bool islands = ss->islands;
 	const ut64 search = ss->search;
 	const ut8 *p = mem;
@@ -249,7 +253,20 @@ static void siguza_xrefs_chunked(const SixScan *ss, const ut8 *mem, ut64 addr, i
 				}
 			}
 			if (emit_refs) {
-				six_ref (ss, addr, adrp_resolve (p + 4, e, reg, target), R_ANAL_REF_TYPE_DATA);
+				ut64 candidates[] = { target, UT64_MAX, UT64_MAX };
+				const ut64 resolved = adrp_resolve (p + 4, e, reg, target, list_intermediates? candidates + 1: NULL);
+				if (list_intermediates) {
+					ut64 previous = UT64_MAX;
+					size_t i;
+					for (i = 0; i < R_ARRAY_SIZE (candidates); i++) {
+						const ut64 candidate = candidates[i];
+						if (candidate != previous && candidate != resolved) {
+							six_ref (ss, addr, candidate, R_ANAL_REF_TYPE_DATA);
+						}
+						previous = candidate;
+					}
+				}
+				six_ref (ss, addr, resolved, R_ANAL_REF_TYPE_DATA);
 			} else if (target == search) {
 				r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "\n", addr, is_adrp? "adrp": "adr", reg, target);
 			} else {
