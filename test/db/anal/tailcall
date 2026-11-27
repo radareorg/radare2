@@ -30,3 +30,41 @@ EXPECT=<<EOF2
 size: 6
 EOF2
 RUN
+
+NAME=anal.hpskip rekeys a tail call target registered before the walk
+FILE=malloc://512
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+e anal.hpskip=true
+wx e90b000000
+wx 8bff558bec5dc3 @ 0x10
+af
+aflq
+af- 0x10
+aflq
+af- 0x12
+aflq
+?e --
+wx 8bff558bec5dc3 @ 0x30
+af+ 0x30 foo
+afb+ 0x30 0x30 7
+aflq
+af- 0x30
+aflq
+EOF
+EXPECT=<<EOF
+0x00000012
+0x00000000
+0x00000012
+0x00000000
+0x00000000
+--
+0x00000000
+0x00000032
+0x00000000
+0x00000032
+EOF
+EXPECT_ERR=<<EOF
+ERROR: afb+: Cannot add basic block at 0x00000030 with size 7
+EOF
+RUN

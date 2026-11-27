@@ -489,10 +489,13 @@ static int skip_hp(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, RAnalBlock *bb,
 	}
 	// use addr instead of op->addr to mark repeat
 	if (!anal->flb.exist_at (anal->flb.f, "skip", 4, addr)) {
+		// rekey ht_addr_fun, tail call targets are registered before the walk
+		if (!r_anal_function_relocate (fcn, fcn->addr + oplen)) {
+			return 0;
+		}
 		char *name = r_str_newf ("skip.%"PFMT64x, addr);
 		anal->flb.set (anal->flb.f, name, addr, oplen);
 		free (name);
-		fcn->addr += oplen;
 		r_anal_block_relocate (bb, bb->addr + oplen, bb->size - oplen);
 		*idx = un_idx;
 		return 1;
