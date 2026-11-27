@@ -633,13 +633,7 @@ R_API bool r_cons_was_breaked(RCons *cons) {
 
 static inline bool cons_timeout_check_due(ut64 deadline) {
 	ut64 now = 0;
-#if defined(__APPLE__) && defined(__clang__) && defined(CLOCK_UPTIME_RAW_APPROX)
-#if __has_builtin(__builtin_available)
-	if (__builtin_available (macOS 10.12, iOS 10.0, tvOS 10.0, watchOS 3.0, *)) {
-		now = clock_gettime_nsec_np (CLOCK_UPTIME_RAW_APPROX) / R_NSEC_PER_USEC;
-	}
-#endif
-#elif defined(__linux__) && !R2_UEFI && defined(CLOCK_MONOTONIC_COARSE) && defined(CLOCK_MONOTONIC)
+#if defined(__linux__) && !R2_UEFI && defined(CLOCK_MONOTONIC_COARSE) && defined(CLOCK_MONOTONIC)
 	struct timespec ts;
 	if (!clock_gettime (CLOCK_MONOTONIC_COARSE, &ts)) {
 		now = ts.tv_sec * R_USEC_PER_SEC + ts.tv_nsec / R_NSEC_PER_USEC;
