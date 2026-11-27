@@ -15577,6 +15577,9 @@ static bool cmd_aa(RCore *core, bool aaa) {
 
 	logline (core, 18, "Analyze symbols (af@@@s)");
 	RVecRBinSymbol *v = r_bin_get_symbols_vec (core->bin);
+	// a code symbol states its entry, a leading nop is part of the function
+	const bool nopskip = r_config_get_b (core->config, "anal.nopskip");
+	r_config_set_b (core->config, "anal.nopskip", false);
 	if (v) {
 		if (anal_symsort != 0) {
 			RSkipList *symbols = r_skiplist_new (NULL, (anal_symsort > 0)? cmpfn_fw: cmpfn_bw);
@@ -15614,6 +15617,7 @@ static bool cmd_aa(RCore *core, bool aaa) {
 			}
 		}
 	}
+	r_config_set_b (core->config, "anal.nopskip", nopskip);
 	r_core_task_yield (&core->tasks);
 	/* Main */
 	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN))) {

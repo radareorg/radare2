@@ -1277,6 +1277,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=aa keeps the entry a function symbol states before a nop
+FILE=bins/elf/dectest64
+ARGS=-e io.cache=true -e anal.nopskip=true
+CMDS=<<EOF
+wx 90 @ sym.Aeropause
+aa
+afl~Aeropause
+e anal.nopskip
+EOF
+EXPECT=<<EOF
+0x0040127e   22    402 sym.Aeropause
+true
+EOF
+RUN
+
 NAME=afb+ keeps the entry of a function starting with nops
 FILE=malloc://0x100
 ARGS=-a x86 -b 32 -e anal.nopskip=true
