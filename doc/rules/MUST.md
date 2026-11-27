@@ -109,6 +109,13 @@ and `doc/indent-example.c`.
   `r_buf_free`, use `sdb_const_get` when you don't take ownership, drain
   RStrBuf and PJ with `*_drain`, use `r_json_parsedup`, and annotate
   transferred arguments with `R_OWNED`. (#25789, #18794, #23090)
+- **Use `RFreeze` for stable iteration when callbacks can change a
+  collection.** Use helpers such as `r_anal_function_freeze_blocks` and
+  `r_anal_freeze_functions`, iterate with `r_freeze_foreach`, and release
+  each view with `r_freeze_release`. Owners using `r_freeze_vec` must call
+  `r_freeze_detach` before mutating or freeing the backing vector. Keep the
+  view on one thread and use ref-counted elements when the view must keep
+  them alive. See [r_freeze.h](../../libr/include/r_util/r_freeze.h).
 - **Zero-initialize** stack buffers and scalars that may be read before they
   are written. (#22517, #20835)
 - **When unsure between a leak and a double free, reproduce with ASAN**
@@ -202,10 +209,14 @@ and `doc/indent-example.c`.
   (#26435, #25379)
 - **Read a block once** instead of one I/O call per iteration.
   (#22362, #22517)
-- **Honor `r_cons_is_breaked (cons)` in long loops**, and balance every
-  `r_cons_break_push` with a pop. Call it only where the cons instance is
-  available, usually in core; elsewhere use an `is_breaked` callback.
-  (#19511, #19757)
+- **Check for cancellation in long-running loops.** Use `RBreakBind` to
+  pass cancellation into library code and `r_cons_break_bind (cons)` to
+  create the binding for console callers. Poll with `r_break_check` and
+  pair each successful `r_break_begin` with `r_break_end` on every exit.
+  A NULL binding disables cancellation. In console-only code that uses
+  `r_cons_is_breaked (cons)` directly, balance each `r_cons_break_push` with
+  `r_cons_break_pop`. (#19511, #19757) See
+  [r_bind.h](../../libr/include/r_bind.h).
 
 ## Security and robustness
 
