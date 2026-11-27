@@ -36,6 +36,7 @@ CWD=$(shell pwd)
 LDFLAGS+=${BN_LIBS}
 LDFLAGS+=${TH_LIBS}
 LDFLAGS+=${DL_LIBS}
+LDFLAGS+=${CLOCK_LDFLAGS}
 
 # Ensure zip library is linked when building shared library
 

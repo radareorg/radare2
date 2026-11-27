@@ -6,6 +6,7 @@ OBJS+=line.o hud.o rgb.o input.o pal.o editor.o 2048.o msg.o
 OBJS+=canvas.o canvas_line.o stiv.o pixel.o help.o visual.o
 OBJS+=dietline.o
 R2DEPS=r_util
+LDFLAGS+=${CLOCK_LDFLAGS}
 
 include ../rules.mk
 
