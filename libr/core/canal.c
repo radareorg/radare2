@@ -4746,14 +4746,7 @@ static int core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode,
 						continue;
 					}
 				}
-				RAnalRefType type = search_op_type (&op, false);
-				if (type == R_ANAL_REF_TYPE_DATA) {
-					r_anal_op_fini (&op);
-					if (!r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i, opmask)) {
-						r_anal_op_fini (&op);
-						continue;
-					}
-				}
+				const RAnalRefType type = search_op_type (&op, false);
 				if (call_targets) {
 					const size_t index = RVecRefSearchAddr_lower_bound (call_targets, &op.jump, refsearch_addr_cmp);
 					const ut64 *target = RVecRefSearchAddr_at (call_targets, index);
