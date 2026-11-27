@@ -57,7 +57,7 @@ typedef struct {
 typedef struct {
 	RAnalOp *op;
 	RAnal *anal;
-	RAnalFunction *fcn;
+	ut64 fcn_addr; // UT64_MAX if none, commands run by the emulation can delete the function
 	char *spname;
 	ut64 initial_sp;
 	ut64 last_read;
@@ -71,6 +71,10 @@ typedef struct {
 } EsilBreakCtx;
 
 typedef int RPerm;
+
+static RAnalFunction *esilbreak_fcn(EsilBreakCtx *ctx) {
+	return ctx->fcn_addr == UT64_MAX? NULL: r_anal_get_function_at (ctx->anal, ctx->fcn_addr);
+}
 
 static bool esil_reg_taint_overlap_item(const EsilRegTaint *taint, const RRegItem *item) {
 	if (taint->arena != item->arena || taint->size < 1 || item->size < 1) {
@@ -263,7 +267,7 @@ static void esil_step_delayed_call_clobbers(EsilBreakCtx *ctx) {
 }
 
 static void esil_delay_flow_taint_clear(EsilBreakCtx *ctx, RAnalOp *op) {
-	if (ctx->strings_only && ctx->fcn) {
+	if (ctx->strings_only && ctx->fcn_addr != UT64_MAX) {
 		return;
 	}
 	const int type = op->type & R_ANAL_OP_TYPE_MASK;
@@ -343,12 +347,15 @@ static void handle_var_stack_access(REsil *esil, ut64 addr, RPerm type, int len,
 	R_RETURN_IF_FAIL (esil && esil->user);
 	EsilBreakCtx *ctx = esil->user;
 	const char *regname = reg_name_for_access (ctx->op, type);
-	RAnalFunction *fcn = ctx->fcn;
-	if (ctx->strings_only || !fcn || !regname) {
+	if (ctx->strings_only || !regname) {
 		return;
 	}
 	ut64 spaddr = r_reg_getv (esil->anal->reg, ctx->spname);
 	if (addr < spaddr || addr >= ctx->initial_sp) {
+		return;
+	}
+	RAnalFunction *fcn = esilbreak_fcn (ctx);
+	if (!fcn) {
 		return;
 	}
 	int stack_off = addr - ctx->initial_sp;
@@ -443,7 +450,8 @@ static bool clob_op_end(EsilBreakCtx *ctx, RAnalOp *op) {
 	}
 	if (!ctx->listing && ctx->clob.read_tainted_reg[0]) {
 		RRegItem *item = r_reg_get (ctx->anal->reg, ctx->clob.read_tainted_reg, -1);
-		const char *cc = ctx->fcn? r_anal_function_cc (ctx->fcn): NULL;
+		RAnalFunction *fcn = esilbreak_fcn (ctx);
+		const char *cc = fcn? r_anal_function_cc (fcn): NULL;
 		cc = cc? cc: r_anal_cc_default (ctx->anal);
 		if (item && item->type != R_REG_TYPE_FLG && item->size > 1
 				&& strcmp (ctx->clob.read_tainted_reg, ctx->spname)
@@ -492,7 +500,7 @@ static void esil_search_ref(EsilBreakCtx *ctx, ut64 from, ut64 to, RAnalRefType 
 	if (ctx->listing) {
 		esil_list_ref (ctx, from, to, type, false);
 	} else {
-		r_anal_xrefs_setf (ctx->anal, ctx->fcn, from, to, type);
+		r_anal_xrefs_set (ctx->anal, from, to, type);
 	}
 }
 
@@ -742,7 +750,11 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 	return 0;
 }
 
-R_VEC_TYPE(RVecEsilBlock, RAnalBlock *);
+static void esil_block_fini(RAnalBlock **bb) {
+	r_unref (*bb);
+}
+
+R_VEC_TYPE_WITH_FINI(RVecEsilBlock, RAnalBlock *, esil_block_fini);
 R_VEC_TYPE(RVecEsilState, EsilBreakCtx);
 
 typedef struct {
@@ -759,6 +771,10 @@ typedef struct {
 
 static bool esil_block_enter(RAnalBlock *bb, void *user) {
 	IterCtx *ctx = user;
+	if (bb) {
+		// commands run by the emulation can delete the block
+		(void)r_ref (bb);
+	}
 	RVecEsilBlock_push_back (&ctx->blocks, &bb);
 	return true;
 }
@@ -793,7 +809,8 @@ static bool get_next_i(IterCtx *ctx, size_t *next_i) {
 			}
 			EsilBreakCtx *state = ctx->state;
 			RVecEsilState_push_back (&ctx->path, state);
-			state->fcn = r_list_first (bb->fcns);
+			RAnalFunction *fcn = r_list_first (bb->fcns);
+			state->fcn_addr = fcn? fcn->addr: UT64_MAX;
 			EsilClobCtx saved = state->clob;
 			RVecEsilRegTaint_init (&state->clob.reg_taints);
 			RVecEsilRegTaint_append (&state->clob.reg_taints, &saved.reg_taints, NULL);
@@ -916,6 +933,7 @@ static void core_anal_esil(RCore *core, const char *str, const char *target, Ref
 				// (not r_core_anal_esil_function which uses simpler hooks and misses some xrefs)
 				bool (*old_write_at)(RIO *io, ut64 addr, const ut8 *buf, int len) = core->anal->iob.write_at;
 				core->anal->iob.write_at = r_io_vwrite_to_overlay_at;
+				const ut64 fcn_addr = fcn->addr;
 				size_t i;
 				for (i = 0; i < RVecAnalBlockPtr_length (&fcn->bbs); i++) {
 					RAnalBlock *bb = *RVecAnalBlockPtr_at (&fcn->bbs, i);
@@ -923,6 +941,11 @@ static void core_anal_esil(RCore *core, const char *str, const char *target, Ref
 					snprintf (szbuf, sizeof (szbuf), "%"PFMT64u, (ut64)bb->size);
 					r_core_seek (core, bb->addr, true);
 					r_core_anal_esil (core, szbuf, NULL);
+					// commands run by the emulation can delete the function
+					fcn = r_anal_get_function_at (core->anal, fcn_addr);
+					if (!fcn) {
+						break;
+					}
 				}
 				core->anal->iob.write_at = old_write_at;
 				return;
@@ -969,7 +992,7 @@ static void core_anal_esil(RCore *core, const char *str, const char *target, Ref
 	EsilBreakCtx ctx = {
 		.op = &op,
 		.anal = anal,
-		.fcn = fcn,
+		.fcn_addr = fcn? fcn->addr: UT64_MAX,
 		.spname = spname,
 		.initial_sp = r_reg_getv (anal->reg, spname),
 		.last_read = UT64_MAX,
