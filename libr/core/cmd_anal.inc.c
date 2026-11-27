@@ -17082,6 +17082,7 @@ static int cmd_apt(RCore *core, const char *input) {
 		break;
 	case '-':
 		r_anal_tid_kill (core->anal, atoi (input + 1));
+		core->dbg->reg = core->anal->reg;
 		break;
 	case 0:
 		{

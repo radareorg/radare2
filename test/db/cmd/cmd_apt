@@ -1,0 +1,40 @@
+NAME=apt- current thread and dbg.backend
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+apt+ 1
+apt+ 2
+apt- 2
+e dbg.backend=esil
+apt=1
+ar rax=33
+ar rax
+EOF
+EXPECT=<<EOF
+0x00000021
+EOF
+RUN
+
+NAME=apt- keeps thread registers
+FILE=malloc://512
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+apt+ 1
+apt+ 2
+apt=1
+ar rax=1
+apt=2
+ar rax=2
+apt- 2
+e dbg.backend=esil
+ar rax
+apt=1
+ar rax
+apt~?
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00000001
+1
+EOF
+RUN

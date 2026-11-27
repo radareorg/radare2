@@ -63,8 +63,7 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 				R_LOG_ERROR ("Cannot set the register profile once");
 			} else {
 				if (dbg->anal && dbg->reg != dbg->anal->reg) {
-					r_reg_free (dbg->anal->reg);
-					dbg->anal->reg = dbg->reg;
+					r_ref_set (dbg->anal->reg, dbg->reg);
 				}
 				if (plugin && plugin->init_debugger) {
 					plugin->init_debugger (dbg);
