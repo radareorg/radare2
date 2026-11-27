@@ -140,3 +140,27 @@ f rax 8 0x00000000
 f r15 8 0x41414141
 EOF
 RUN
+
+NAME=aras and ara- on cloned thread registers
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+apt+
+apt=1
+ara~*?
+apt+
+apt=2
+ar rax=0x1234
+aras
+apt=1
+ara-
+apt=2
+aras
+ar rax
+EOF
+EXPECT=<<EOF
+10
+0x00001234
+EOF
+RUN

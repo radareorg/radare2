@@ -865,6 +865,43 @@ bool test_r_reg_clone(void) {
 	mu_end;
 }
 
+bool test_r_reg_clone_arena(void) {
+	RReg *reg = r_reg_new ();
+	mu_assert_notnull (reg, "r_reg_new () failed");
+	r_reg_set_profile_string (reg, "=PC eip\n"
+		"gpr eax .32 0 0\n"
+		"gpr eip .32 4 0\n");
+	mu_assert_eq (r_reg_setv (reg, "eax", 0x1234), true, "setv eax");
+
+	RReg *clone = r_reg_clone (reg);
+	mu_assert_notnull (clone, "r_reg_clone () failed");
+	int i;
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		RRegSet *rs = &clone->regset[i];
+		mu_assert_eq (r_list_length (rs->pool), r_list_length (reg->regset[i].pool), "cloned pool depth");
+		mu_assert_ptreq (rs->cur, r_list_tail (rs->pool), "cur is a node of the cloned pool");
+		mu_assert_ptreq (rs->arena, rs->cur->data, "arena is owned by the cloned pool");
+	}
+	mu_assert_eq (r_reg_getv (clone, "eax"), 0x1234, "clone keeps register values");
+
+	// swapping the clone and popping the source must not affect each other
+	r_reg_arena_swap (clone, false);
+	r_reg_arena_pop (reg);
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		RRegSet *rs = &clone->regset[i];
+		mu_assert_eq (r_list_length (rs->pool), 2, "cloned pool keeps its arenas");
+		mu_assert_ptreq (rs->arena, rs->cur->data, "arena is owned by the cloned pool after swap");
+	}
+	mu_assert_eq (r_reg_setv (clone, "eax", 0x5678), true, "setv eax in clone");
+	mu_assert_eq (r_reg_getv (clone, "eax"), 0x5678, "clone is writable after source pop");
+	r_reg_arena_swap (clone, false);
+	mu_assert_eq (r_reg_getv (clone, "eax"), 0x1234, "clone swaps back to its own arena");
+
+	r_reg_free (reg);
+	r_reg_free (clone);
+	mu_end;
+}
+
 bool test_r_reg_profile_to_cc(void) {
 	RReg *reg = r_reg_new ();
 	mu_assert_null (r_reg_profile_to_cc (reg), "missing result register");
@@ -1146,6 +1183,7 @@ int all_tests(void) {
 	mu_run_test (test_r_reg_vector_bank);
 	mu_run_test (test_r_reg_vector_alias_endian);
 	mu_run_test (test_r_reg_clone);
+	mu_run_test (test_r_reg_clone_arena);
 	mu_run_test (test_r_reg_set_name);
 	mu_run_test (test_r_reg_set_profile_string);
 	mu_run_test (test_r_reg_cfloat_scalar);

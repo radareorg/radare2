@@ -500,8 +500,8 @@ R_API RRegItem *r_reg_item_clone(RRegItem *r) {
 // TODO rename regset to reggroup . R_API void r_reg_group_copy(RRegGroup *d, RRegGroup *s) ..
 R_API void r_reg_set_copy(RRegSet *d, RRegSet *s) {
 	R_RETURN_IF_FAIL (d && s);
-	d->cur = NULL; // TODO. not yet implemented
-	d->arena = r_reg_arena_clone (s->arena);
+	d->cur = NULL;
+	d->arena = NULL;
 	d->maskregstype = s->maskregstype;
 	RRegArena *a;
 	RListIter *iter;
@@ -509,8 +509,17 @@ R_API void r_reg_set_copy(RRegSet *d, RRegSet *s) {
 	d->regs = r_list_newf ((RListFree)r_reg_item_free);
 	r_list_foreach (s->pool, iter, a) {
 		RRegArena *na = r_reg_arena_clone (a);
-		r_list_append (d->pool, na);
-		d->cur = iter; // always points to the last..
+		RListIter *cloned = r_list_append (d->pool, na);
+		if (a == s->arena) {
+			// cur and arena must belong to the cloned pool, not to the source
+			d->cur = cloned;
+			d->arena = na;
+		}
+	}
+	if (!d->cur && s->arena) {
+		// source arena was not registered in its pool
+		d->arena = r_reg_arena_clone (s->arena);
+		d->cur = r_list_append (d->pool, d->arena);
 	}
 	HtPP *pp = ht_pp_new0 ();
 	RRegItem *r;
