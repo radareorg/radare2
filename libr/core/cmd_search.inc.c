@@ -7,8 +7,6 @@
 
 static int cmd_search(void *data, const char *input);
 
-R_VEC_TYPE (RVecSearchAddr, ut64);
-
 #define AES_SEARCH_LENGTH 40
 #define SM4_SEARCH_LENGTH 24
 #define ASN1_PRIVATE_KEY_SEARCH_LENGTH 11
@@ -970,19 +968,20 @@ static bool fs_search_deleted(FSSearchBounds *bounds, const char *path, ut64 id,
 	return ok;
 }
 
-static int fs_search_bound_cmp(const void *a, const void *b) {
+static int search_bound_cmp(const void *a, const void *b) {
 	const RIOMap *ma = a, *mb = b;
 	return ma->itv.addr < mb->itv.addr? -1: ma->itv.addr > mb->itv.addr;
 }
 
-static void fs_search_merge(RList *list) {
-	r_list_sort (list, fs_search_bound_cmp);
+static void search_merge_bounds(RList *list, bool adjacent) {
+	r_list_sort (list, search_bound_cmp);
 	RListIter *iter, *tmp;
 	RIOMap *map, *last = NULL;
 	r_list_foreach_safe (list, iter, tmp, map) {
-		if (last && map->itv.addr <= r_itv_end (last->itv)) {
-			ut64 end = R_MAX (r_itv_end (last->itv), r_itv_end (map->itv));
-			last->itv.size = end - last->itv.addr;
+		const ut64 end = last? r_itv_end (last->itv): 0;
+		if (last && (map->itv.addr < end || (adjacent && map->itv.addr == end))) {
+			const ut64 merged_end = R_MAX (end, r_itv_end (map->itv));
+			last->itv.size = merged_end - last->itv.addr;
 			r_list_delete (list, iter);
 		} else {
 			last = map;
@@ -1066,7 +1065,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		if (!ok) {
 			R_LOG_WARN ("Deleted entry walk in %s is incomplete", mountpoint);
 		}
-		fs_search_merge (list);
+		search_merge_bounds (list, true);
 	} else if (r_str_startswith (mode, "fs.")) {
 		ut32 flags = fs_search_flags (mode + strlen ("fs."));
 		if (!flags) {
@@ -2307,9 +2306,9 @@ static void print_ref_search(RCore *core, ut64 addr, ut64 from, ut64 to, RSearch
 	}
 }
 
-static bool parse_targets(RCore *core, const char *args, RVecSearchAddr *targets) {
+static bool parse_targets(RCore *core, const char *args, RVecRefSearchAddr *targets) {
 	R_RETURN_VAL_IF_FAIL (core && targets, false);
-	RVecSearchAddr_init (targets);
+	RVecRefSearchAddr_init (targets);
 	char *str = r_str_trim_dup (args);
 	if (R_STR_ISEMPTY (str)) {
 		free (str);
@@ -2328,11 +2327,11 @@ static bool parse_targets(RCore *core, const char *args, RVecSearchAddr *targets
 			ut64 addr = r_num_math (core->num, word);
 			if (!addr || addr == UT64_MAX || core->num->nc.errors) {
 				R_LOG_ERROR ("Invalid address (%s)", word);
-				RVecSearchAddr_fini (targets);
+				RVecRefSearchAddr_fini (targets);
 				ok = false;
 				break;
 			}
-			RVecSearchAddr_push_back (targets, &addr);
+			RVecRefSearchAddr_push_back (targets, &addr);
 		}
 	}
 	r_list_free (words);
@@ -2340,11 +2339,15 @@ static bool parse_targets(RCore *core, const char *args, RVecSearchAddr *targets
 	return ok;
 }
 
-static void refsearch_targets(RCore *core, int mode, bool print_hits, RSearchParameters *param, const RVecSearchAddr *targets) {
-	const size_t target_count = RVecSearchAddr_length (targets);
+static void refsearch_targets(RCore *core, int mode, bool print_hits, RSearchParameters *param, RVecRefSearchAddr *targets) {
+	const size_t target_count = RVecRefSearchAddr_length (targets);
+	const bool targeted_calls = mode == 'c' && target_count;
+	if (targeted_calls) {
+		RVecRefSearchAddr_sort (targets, refsearch_addr_cmp);
+	}
 	ut64 scan_addr = UT64_MAX;
 	if (target_count == 1) {
-		ut64 *addr = RVecSearchAddr_at (targets, 0);
+		ut64 *addr = RVecRefSearchAddr_at (targets, 0);
 		scan_addr = *addr;
 	}
 	RListIter *iter;
@@ -2353,7 +2356,11 @@ static void refsearch_targets(RCore *core, int mode, bool print_hits, RSearchPar
 		const ut64 from = r_io_map_begin (map);
 		const ut64 to = r_io_map_end (map);
 		R_LOG_DEBUG ("-- 0x%"PFMT64x" 0x%"PFMT64x, from, to);
-		r_core_anal_search (core, from, to, scan_addr, mode);
+		if (targeted_calls) {
+			r_core_anal_search_calls (core, from, to, targets);
+		} else {
+			r_core_anal_search (core, from, to, scan_addr, mode);
+		}
 		if (print_hits) {
 			if (target_count > 0) {
 				ut64 *addr;
@@ -2370,11 +2377,11 @@ static void refsearch_targets(RCore *core, int mode, bool print_hits, RSearchPar
 	}
 }
 
-static void esilsearch_targets(RCore *core, RSearchParameters *param, const RVecSearchAddr *targets, bool strings) {
+static void esilsearch_targets(RCore *core, RSearchParameters *param, const RVecRefSearchAddr *targets, bool strings) {
 	const ut64 curseek = core->addr;
 	RListIter *iter;
 	RIOMap *map;
-	const size_t target_count = RVecSearchAddr_length (targets);
+	const size_t target_count = RVecRefSearchAddr_length (targets);
 	r_list_foreach (param->boundaries, iter, map) {
 		ut64 from = r_io_map_begin (map);
 		R_LOG_DEBUG ("-- 0x%"PFMT64x" 0x%"PFMT64x, from, r_io_map_end (map));
@@ -2403,7 +2410,7 @@ static void esilsearch_targets(RCore *core, RSearchParameters *param, const RVec
 
 static bool refsearch_list(RCore *core, RSearchParameters *param, int mode, const char *args) {
 	RStrBuf text = {0};
-	RefSearch search = { .json = param->pj, .text = &text, .maxhits = core->search->maxhits };
+	RefSearch search = { .json = param->pj, .text = &text, .cons = core->cons, .maxhits = core->search->maxhits };
 	int argc = 0;
 	char **argv = *args? r_str_argv (args, &argc): NULL;
 	bool ok = !*args || argv;
@@ -2427,6 +2434,7 @@ static bool refsearch_list(RCore *core, RSearchParameters *param, int mode, cons
 		pj_a (search.json);
 	}
 	if (ok) {
+		search_merge_bounds (param->boundaries, false);
 		r_cons_break_push (core->cons, NULL, NULL);
 		const bool backwards = core->search->bckwrds;
 		RListIter *iter = backwards? param->boundaries->tail: param->boundaries->head;
@@ -2449,7 +2457,6 @@ static bool refsearch_list(RCore *core, RSearchParameters *param, int mode, cons
 		r_cons_break_pop (core->cons);
 	}
 	refsearch_finish (&search);
-	r_cons_print (core->cons, r_strbuf_get (&text));
 	r_strbuf_fini (&text);
 	core->search->nhits = search.hits;
 	return ok && !search.failed;
@@ -4798,18 +4805,19 @@ reread:
 				if (!refsearch_list (core, &param, mode, r_str_trim_head_ro (suffix))) {
 					status = R_CMD_RC_FAILURE;
 				}
+				param.outmode = 0;
 			}
 			dosearch = false;
 			break;
 		}
-		RVecSearchAddr targets;
+		RVecRefSearchAddr targets;
 		const char *args = r_str_trim_head_ro (input + 2);
 		switch (input[1]) {
 		case 'a': // "/ra"
 		case 'c': // "/rc"
 			if (parse_targets (core, args, &targets)) {
 				refsearch_targets (core, input[1], false, &param, &targets);
-				RVecSearchAddr_fini (&targets);
+				RVecRefSearchAddr_fini (&targets);
 			}
 			break;
 		case 'e': // "/re"
@@ -4823,14 +4831,14 @@ reread:
 			}
 			if (parse_targets (core, args, &targets)) {
 				esilsearch_targets (core, &param, &targets, input[1] == 's');
-				RVecSearchAddr_fini (&targets);
+				RVecRefSearchAddr_fini (&targets);
 			}
 			break;
 		case ' ': // "/r $$"
 		case 0: // "/r"
 			if (parse_targets (core, args, &targets)) {
 				refsearch_targets (core, 0, true, &param, &targets);
-				RVecSearchAddr_fini (&targets);
+				RVecRefSearchAddr_fini (&targets);
 			}
 			break;
 		case 'u': // "/ru"

@@ -14,6 +14,7 @@ R_VEC_TYPE (RVecRefSearchAddr, ut64);
 typedef struct {
 	PJ *json;
 	RStrBuf *text;
+	RCons *cons;
 	RVecRefSearchRange ranges;
 	RVecRefSearchAddr destinations;
 	HtUU *seen;
@@ -89,12 +90,33 @@ static inline bool refsearch_matches(const RefSearch *search, ut64 addr) {
 		|| bsearch (&addr, R_VEC_START_ITER (ranges), count, sizeof (RefSearchRange), refsearch_target_cmp));
 }
 
+static inline ut64 refsearch_arm64_branch_target(ut32 word, ut64 addr) {
+	return addr + ((st64)((ut64)(word & 0x3ffffff) << 38) >> 36);
+}
+
 static inline int refsearch_addr_cmp(const ut64 *a, const ut64 *b) {
 	return (*a > *b) - (*a < *b);
 }
 
-static inline bool refsearch_emit(RefSearch *search, ut64 from, ut64 to, RAnalRefType type) {
-	if (refsearch_stopped (search) || !refsearch_matches (search, to)) {
+static inline bool refsearch_flush(RefSearch *search, bool final) {
+	if (!search->cons) {
+		return true;
+	}
+	RStrBuf *chunk = search->json? &search->json->sb: search->text;
+	const size_t len = r_strbuf_length (chunk);
+	if (len >= 32 * 1024 || (final && len)) {
+		if (!r_cons_write (search->cons, r_strbuf_get (chunk), len)) {
+			search->failed = true;
+			return false;
+		}
+		// Keep PJ's array and comma state across writes.
+		r_strbuf_set (chunk, "");
+	}
+	return true;
+}
+
+static inline bool refsearch_emit_match(RefSearch *search, ut64 from, ut64 to, RAnalRefType type) {
+	if (refsearch_stopped (search)) {
 		return false;
 	}
 	if (search->seen) {
@@ -117,12 +139,20 @@ static inline bool refsearch_emit(RefSearch *search, ut64 from, ut64 to, RAnalRe
 		pj_kn (search->json, "target", to);
 		pj_ks (search->json, "type", r_anal_ref_type_tostring (type));
 		pj_end (search->json);
-	} else {
-		r_strbuf_appendf (search->text, "0x%"PFMT64x" -> 0x%"PFMT64x" %s\n",
-			from, to, r_anal_ref_type_tostring (type));
+	} else if (!r_strbuf_appendf (search->text, "0x%"PFMT64x" -> 0x%"PFMT64x" %s\n",
+			from, to, r_anal_ref_type_tostring (type))) {
+		search->failed = true;
+		return false;
+	}
+	if (!search->seen && !refsearch_flush (search, false)) {
+		return false;
 	}
 	search->hits++;
 	return true;
+}
+
+static inline bool refsearch_emit(RefSearch *search, ut64 from, ut64 to, RAnalRefType type) {
+	return refsearch_matches (search, to) && refsearch_emit_match (search, from, to, type);
 }
 
 static inline void refsearch_finish(RefSearch *search) {
@@ -131,13 +161,21 @@ static inline void refsearch_finish(RefSearch *search) {
 	R_VEC_FOREACH (&search->destinations, addr) {
 		if (search->json) {
 			pj_n (search->json, *addr);
-		} else {
-			r_strbuf_appendf (search->text, "0x%"PFMT64x"\n", *addr);
+		} else if (!r_strbuf_appendf (search->text, "0x%"PFMT64x"\n", *addr)) {
+			search->failed = true;
+			break;
+		}
+		if (!refsearch_flush (search, false)) {
+			break;
 		}
 	}
 	if (search->json) {
 		pj_end (search->json);
+		if (search->cons) {
+			pj_raw (search->json, "\n");
+		}
 	}
+	refsearch_flush (search, true);
 	ht_uu_free (search->seen);
 	RVecRefSearchAddr_fini (&search->destinations);
 	RVecRefSearchRange_fini (&search->ranges);

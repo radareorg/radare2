@@ -4553,12 +4553,12 @@ static bool core_anal_followptr(RCore *core, RAnal *anal, RefSearch *listing, in
 	}
 	if (listing? refsearch_matches (listing, ptr): ref == UT64_MAX || ptr == ref) {
 		if (listing) {
-			return refsearch_emit (listing, at, ptr, type);
+			return refsearch_emit_match (listing, at, ptr, type);
 		}
 		r_anal_xrefs_set (anal, at, ptr, type);
 		return true;
 	}
-	if (depth < 0) {
+	if (depth < 0 || (listing && refsearch_stopped (listing))) {
 		return false;
 	}
 	const ut32 wordsize = (int)(anal->config->bits / 8);
@@ -4642,15 +4642,19 @@ static bool search_op_refs(RCore *core, RAnal *anal, RefSearch *listing, const R
 	}
 	const bool indirect = op->type != R_ANAL_OP_TYPE_JMP && op->type != R_ANAL_OP_TYPE_CJMP
 		&& op->type != R_ANAL_OP_TYPE_CALL && op->type != R_ANAL_OP_TYPE_CCALL;
-	return (indirect && (!listing || !listing->seen) && op->ptr != UT64_MAX
-		&& core_anal_followptr (core, anal, listing, type, at, op->ptr, ref, 1))
-		|| (op->jump != UT64_MAX && core_anal_followptr (core, anal, listing, type, at, op->jump, ref, 0));
+	if (indirect && (!listing || !listing->seen) && op->ptr != UT64_MAX
+			&& core_anal_followptr (core, anal, listing, type, at, op->ptr, ref, 1)) {
+		return true;
+	}
+	if (listing) {
+		return refsearch_emit (listing, at, op->jump, type);
+	}
+	return op->jump != UT64_MAX && core_anal_followptr (core, anal, NULL, type, at, op->jump, ref, 0);
 }
 
 // TODO(maskray) RAddrInterval API
 #define OPSZ 8
-R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode) {
-	R_RETURN_VAL_IF_FAIL (core, -1);
+static int core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode, RVecRefSearchAddr *call_targets) {
 	if (!ref) {
 		R_LOG_ERROR ("Null reference search is not supported");
 		return -1;
@@ -4750,7 +4754,15 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 						continue;
 					}
 				}
-				count += search_op_refs (core, core->anal, NULL, &op, type, at + i, ref, ptrdepth);
+				if (call_targets) {
+					const size_t index = RVecRefSearchAddr_lower_bound (call_targets, &op.jump, refsearch_addr_cmp);
+					const ut64 *target = RVecRefSearchAddr_at (call_targets, index);
+					if (target && *target == op.jump) {
+						count += r_anal_xrefs_set (core->anal, at + i, op.jump, type);
+					}
+				} else {
+					count += search_op_refs (core, core->anal, NULL, &op, type, at + i, ref, ptrdepth);
+				}
 				if (op.size < 1) {
 					op.size = 1;
 				}
@@ -4778,6 +4790,15 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	free (buf);
 	r_anal_op_fini (&op);
 	return count;
+}
+
+R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode) {
+	R_RETURN_VAL_IF_FAIL (core, -1);
+	return core_anal_search (core, from, to, ref, mode, NULL);
+}
+
+R_IPI int r_core_anal_search_calls(RCore *core, ut64 from, ut64 to, RVecRefSearchAddr *targets) {
+	return core_anal_search (core, from, to, UT64_MAX, 'c', targets);
 }
 
 typedef struct {
@@ -4811,6 +4832,9 @@ static void refsearch_decoder_fini(RefSearchDecoder *decoder) {
 }
 
 static int refsearch_decoder_at(RefSearchDecoder *decoder, RCore *core, ut64 addr, REsil *esil) {
+	if (core->fixedarch && core->fixedbits) {
+		return 0;
+	}
 	int bits = core->anal->config->bits;
 	const char *arch = core->anal->config->arch;
 	r_core_arch_bits_at (core, addr, &bits, &arch);
@@ -4843,6 +4867,21 @@ static int refsearch_decoder_at(RefSearchDecoder *decoder, RCore *core, ut64 add
 	return 0;
 }
 
+static bool refsearch_arm64_calls(const RefSearchDecoder *decoder) {
+	const RArchConfig *cfg = decoder->arch.cfg;
+	return cfg->bits == 64 && cfg->codealign == 4 && !R_ARCH_CONFIG_IS_BIG_ENDIAN (cfg)
+		&& !strcmp (decoder->arch.session->plugin->meta.name, "arm");
+}
+
+static inline bool refsearch_arm64_call(RefSearch *search, ut64 at, const ut8 *buf) {
+	const ut32 word = r_read_le32 (buf);
+	if ((word & 0xfc000000) == 0x94000000) {
+		refsearch_emit (search, at, refsearch_arm64_branch_target (word, at), R_ANAL_REF_TYPE_CALL);
+	}
+	// Let the decoder handle register branches, including authenticated calls.
+	return (word & 0xfe000000) != 0xd6000000;
+}
+
 R_IPI void r_core_ref_search(RCore *core, RefSearch *search, ut64 from, ut64 to, int mode) {
 	RefSearchDecoder decoder;
 	if (!refsearch_decoder_init (&decoder, core, false)) {
@@ -4856,14 +4895,19 @@ R_IPI void r_core_ref_search(RCore *core, RefSearch *search, ut64 from, ut64 to,
 	const int depth = r_config_get_i (core->config, "anal.ptrdepth");
 	const RAnalOpMask mask = R_ARCH_OP_MASK_BASIC
 		| (!backwards && decoder.anal.opt.stateful? R_ARCH_OP_MASK_STATEFUL: 0);
+	bool arm64_calls = mode == 'c' && refsearch_arm64_calls (&decoder);
 	ut64 at = backwards? to - 1: from;
 	ut64 start = at, end = at;
 	int capacity = 0;
 	ut8 *buf = NULL;
 	while (at >= from && at < to && !refsearch_stopped (search) && !r_cons_is_breaked (core->cons)) {
-		if (refsearch_decoder_at (&decoder, core, at, NULL) < 0) {
+		const int changed = refsearch_decoder_at (&decoder, core, at, NULL);
+		if (changed < 0) {
 			search->failed = true;
 			break;
+		}
+		if (changed && mode == 'c') {
+			arm64_calls = refsearch_arm64_calls (&decoder);
 		}
 		const int need = R_MIN ((ut64)decoder.maxop, to - at);
 		if (at < start || at >= end || end - at < need) {
@@ -4885,17 +4929,21 @@ R_IPI void r_core_ref_search(RCore *core, RefSearch *search, ut64 from, ut64 to,
 				break;
 			}
 		}
-		RAnalOp op = {0};
-		const int ret = r_anal_op (&decoder.anal, &op, at, buf + (at - start), need, mask);
-		if (ret > 0 && ret <= need && (!direction || (op.direction & direction)
-				|| (direction == R_ANAL_OP_DIR_EXEC && op.jump != UT64_MAX))) {
-			RAnalRefType type = search_op_type (&op, true);
-			if (mode != 'c' || type == R_ANAL_REF_TYPE_CALL) {
-				search_op_refs (core, &decoder.anal, search, &op, type, at, UT64_MAX, depth);
+		const ut8 *bytes = buf + (at - start);
+		int step = 4;
+		if (!arm64_calls || need < 4 || (at & 3) || !refsearch_arm64_call (search, at, bytes)) {
+			RAnalOp op = {0};
+			const int ret = r_anal_op (&decoder.anal, &op, at, bytes, need, mask);
+			if (ret > 0 && ret <= need && (!direction || (op.direction & direction)
+					|| (direction == R_ANAL_OP_DIR_EXEC && op.jump != UT64_MAX))) {
+				RAnalRefType type = search_op_type (&op, true);
+				if (mode != 'c' || type == R_ANAL_REF_TYPE_CALL) {
+					search_op_refs (core, &decoder.anal, search, &op, type, at, UT64_MAX, depth);
+				}
 			}
+			step = R_MAX (op.size, 1);
+			r_anal_op_fini (&op);
 		}
-		int step = R_MAX (op.size, 1);
-		r_anal_op_fini (&op);
 		if (backwards) {
 			if (at == from) {
 				break;

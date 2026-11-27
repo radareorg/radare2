@@ -556,6 +556,7 @@ f target=0x100
 axd 0x300 0x20
 a:sixl target 0x200 0x1038
 a:sixlj 0x100..0x200 target 0x1038
+a:sixlj 0x1000 0x1038
 a:sixlj 0x300
 omb+empty
 omb=empty
@@ -570,6 +571,7 @@ EXPECT=<<EOF
 0x8 -> 0x100 CODE
 0xc -> 0x1038 DATA
 [{"from":0,"target":256,"type":"CALL"},{"from":4,"target":512,"type":"CALL"},{"from":8,"target":256,"type":"CODE"},{"from":12,"target":4152,"type":"DATA"}]
+[{"from":12,"target":4096,"type":"DATA"},{"from":12,"target":4152,"type":"DATA"}]
 []
 []
 0x00000020 -> 0x00000300  DATA:r--

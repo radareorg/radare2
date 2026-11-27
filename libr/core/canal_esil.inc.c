@@ -459,14 +459,9 @@ static bool clob_op_end(EsilBreakCtx *ctx, RAnalOp *op) {
 	return ctx->clob.read_clobbered;
 }
 
-static bool esil_target_matches(const EsilBreakCtx *ctx, ut64 target) {
-	return ctx->listing? refsearch_matches (ctx->listing, target)
-		: ctx->ntarget == UT64_MAX || ctx->ntarget == target;
-}
-
-static void esil_search_ref(EsilBreakCtx *ctx, ut64 from, ut64 to, RAnalRefType type) {
-	if (!ctx->listing) {
-		r_anal_xrefs_setf (ctx->anal, ctx->fcn, from, to, type);
+static void esil_list_ref(EsilBreakCtx *ctx, ut64 from, ut64 to, RAnalRefType type, bool detect_string) {
+	RefSearch *listing = ctx->listing;
+	if (refsearch_stopped (listing) || !refsearch_matches (listing, to)) {
 		return;
 	}
 	const RAnalRef *ref;
@@ -475,33 +470,48 @@ static void esil_search_ref(EsilBreakCtx *ctx, ut64 from, ut64 to, RAnalRefType 
 			return;
 		}
 	}
-	if (refsearch_emit (ctx->listing, from, to, type)) {
+	if (detect_string) {
+		RCore *core = ctx->anal->coreb.core;
+		char str[STRSZ] = {0};
+		if (is_stack (core->io, to) || (!r_flag_exist_at (core->flags, "str.", 4, to)
+				&& (!is_string_at (core, to, str, NULL) || !*str))) {
+			return;
+		}
+	}
+	if (refsearch_emit_match (listing, from, to, type)) {
 		RAnalRef *entry = RVecAnalRef_emplace_back (ctx->listed);
 		if (entry) {
 			*entry = (RAnalRef){ .at = from, .addr = to, .type = type };
 		} else {
-			ctx->listing->failed = true;
+			listing->failed = true;
 		}
+	}
+}
+
+static void esil_search_ref(EsilBreakCtx *ctx, ut64 from, ut64 to, RAnalRefType type) {
+	if (ctx->listing) {
+		esil_list_ref (ctx, from, to, type, false);
+	} else {
+		r_anal_xrefs_setf (ctx->anal, ctx->fcn, from, to, type);
 	}
 }
 
 static void esil_string_ref(REsil *esil, ut64 addr) {
 	EsilBreakCtx *ctx = esil->user;
+	const RAnalRefType type = R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ;
+	if (ctx->listing) {
+		esil_list_ref (ctx, esil->addr, addr, type, true);
+		return;
+	}
 	RCore *core = ctx->anal->coreb.core;
-	if (!esil_target_matches (ctx, addr)) {
+	if (ctx->ntarget != UT64_MAX && ctx->ntarget != addr) {
 		return;
 	}
 	if (is_stack (core->io, addr)) {
 		return;
 	}
-	const bool flagged = r_flag_exist_at (core->flags, "str.", 4, addr);
-	if (ctx->listing) {
-		char str[STRSZ] = {0};
-		if (flagged || (is_string_at (core, addr, str, NULL) && *str)) {
-			esil_search_ref (ctx, esil->addr, addr, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
-		}
-	} else if (flagged || add_string_ref (core, esil->addr, addr)) {
-		esil_search_ref (ctx, esil->addr, addr, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
+	if (r_flag_exist_at (core->flags, "str.", 4, addr) || add_string_ref (core, esil->addr, addr)) {
+		esil_search_ref (ctx, esil->addr, addr, type);
 	}
 }
 
@@ -548,7 +558,10 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 		}
 	}
 	handle_var_stack_access (esil, addr, R_PERM_R, len, false);
-	if ((ctx->strings_only || myvalid (core, addr)) && r_io_read_at (core->io, addr, buf, len)) {
+	const bool listing = ctx->listing != NULL;
+	if ((ctx->strings_only || myvalid (core, addr)) && (listing
+			? r_esil_mem_read_silent (esil, addr, buf, len)
+			: r_io_read_at (core->io, addr, buf, len))) {
 		ut64 refptr = UT64_MAX;
 		bool trace = true;
 		switch (len) {
@@ -566,15 +579,14 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 			break;
 		default:
 			trace = false;
-			r_io_read_at (core->io, addr, (ut8*)buf, len);
 			break;
 		}
-		if (trace && myvalid (core, refptr) && esil_target_matches (ctx, refptr)) {
+		if (trace && myvalid (core, refptr) && (listing || ctx->ntarget == UT64_MAX || ctx->ntarget == refptr)) {
 			if (ctx->strings_only) {
 				esil_string_ref (esil, refptr);
 			} else {
 				esil_search_ref (ctx, esil->addr, refptr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
-				if (!ctx->listing) {
+				if (!listing) {
 					add_string_ref (core, esil->addr, refptr);
 				}
 			}
@@ -585,11 +597,12 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 				esil_string_ref (esil, addr);
 			} else {
 				esil_search_ref (ctx, esil->addr, addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
-				if (!ctx->listing) {
+				if (!listing) {
 					anal_global_access (core, ctx->op, addr, len, refptr);
 				}
 			}
 		}
+		return listing;
 	}
 	return false; // fallback
 }
