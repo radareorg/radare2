@@ -1564,6 +1564,8 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_new(RAnal *anal, bool use_map_info, bool use
 
 	r_reg_set_profile_string (dfg->reg, anal->reg->reg_profile_str);
 	r_esil_setup (dfg->esil, anal, 0, 0, 0);
+	// the graph models the expression, it must not run r2 commands
+	r_esil_del_op (dfg->esil, "#!");
 	if (dfg->iob.io && dfg->fd >= 0) {
 		dfg->esil->user = dfg;
 		dfg->esil->cb.mem_read = _dfg_mem_read;
@@ -1628,6 +1630,7 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *R_NULLABLE d
 	}
 
 	ht_pp_foreach (esil->ops, edf_fallback_cb, esil);
+	r_esil_del_op (esil, "#!");
 	r_esil_set_op (esil, "=", edf_consume_2_set_reg, 0, 2, R_ESIL_OP_TYPE_REG_WRITE, NULL);
 	r_esil_set_op (esil, ":=", edf_eq_weak, 0, 2, R_ESIL_OP_TYPE_REG_WRITE, NULL);
 	r_esil_set_op (esil, "$s", edf_sf, 1, 1, R_ESIL_OP_TYPE_UNKNOWN, NULL); // XXX TODO
@@ -2001,6 +2004,7 @@ R_API void r_anal_esil_dfg_fold_const(RAnal *anal, RAnalEsilDFG *dfg) {
 	esil_opt.addrsize = 1;
 	REsil *esil = r_esil_new (&esil_opt);
 	r_esil_setup (esil, anal, 1, 0, 0);
+	r_esil_del_op (esil, "#!");
 	RGraphVisitor vi = { _dfg_const_reducer_rev_dfs_cb, NULL, NULL, NULL, NULL, &reducer };
 	RRBNode *first_node;
 	while ((first_node = r_crbtree_first_node (reducer.const_result_gnodes))) {

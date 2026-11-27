@@ -180,3 +180,46 @@ EXPECT=<<EOF
 1,so,=
 EOF
 RUN
+
+NAME=aeg does not run r2 commands from the expression
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+apt+ 1
+"aeg apt=1,#!"
+"aeg apt=1,#!,+,[8]"
+"aeg apt=99,#!"
+"aeg '?e ran',#!"
+?e done
+EOF
+EXPECT=<<EOF
+ .-----------------------.
+ |  0                    |
+ | generative:apt=1,#!,+ |
+ `-----------------------'
+     v
+     |
+     '.
+      |
+  .--------------------.
+  |  1                 |
+  | result_2           |
+  `--------------------'
+      v
+      |
+    .-'
+    |
+.-------------------------.
+|  3                      |
+| generative:result_2,[8] |
+`-------------------------'
+    v
+    |
+    '-.
+      |
+  .--------------------.
+  |  4                 |
+  | result_5           |
+  `--------------------'
+done
+EOF
+RUN
