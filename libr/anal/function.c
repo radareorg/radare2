@@ -53,8 +53,6 @@ static bool __fcn_exists(RAnal *anal, const char *name, ut64 addr) {
 	return false;
 }
 
-R_IPI void r_anal_var_free(RAnalVar *av);
-
 static void function_free(RAnalFunction *fcn);
 
 R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
@@ -81,7 +79,7 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	return fcn;
 }
 
-static void function_unregister(RAnalFunction *fcn) {
+static void function_detach_blocks(RAnalFunction *fcn) {
 	r_freeze_detach (&fcn->frozen_bbs);
 	RAnalBlock **it;
 	R_VEC_FOREACH (&fcn->bbs, it) {
@@ -89,7 +87,11 @@ static void function_unregister(RAnalFunction *fcn) {
 		r_unref (*it);
 	}
 	RVecAnalBlockPtr_fini (&fcn->bbs);
+	fcn->meta._min = UT64_MAX;
+}
 
+static void function_unregister(RAnalFunction *fcn) {
+	function_detach_blocks (fcn);
 	RAnal *anal = fcn->anal;
 	if (ht_up_find (anal->ht_addr_fun, fcn->addr, NULL) == fcn) {
 		ht_up_delete (anal->ht_addr_fun, fcn->addr);
@@ -100,11 +102,9 @@ static void function_unregister(RAnalFunction *fcn) {
 }
 
 static void function_free(RAnalFunction *fcn) {
-	function_unregister (fcn);
+	function_detach_blocks (fcn);
 	ht_up_free (fcn->inst_vars);
-	fcn->inst_vars = NULL;
-	r_anal_function_delete_all_vars (fcn);
-	RVecAnalVarPtr_fini (&fcn->vars);
+	r_anal_function_vars_fini (fcn);
 
 	ht_up_free (fcn->labels);
 	ht_pp_free (fcn->label_addrs);
@@ -139,7 +139,7 @@ static bool function_name_filter(char *s) {
 }
 
 R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
-	R_RETURN_VAL_IF_FAIL (anal && fcn, false);
+	R_RETURN_VAL_IF_FAIL (anal && fcn && fcn->anal == anal, false);
 	bool filtered = function_name_filter (fcn->name);
 	if (R_STR_ISEMPTY (fcn->name)) {
 		R_LOG_WARN ("Unnamed function at 0x%08"PFMT64x, fcn->addr);
@@ -159,17 +159,27 @@ R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
 	if (anal->cb.on_fcn_new) {
 		anal->cb.on_fcn_new (anal, anal->user, fcn);
 	}
+	if (!ht_pp_insert (anal->ht_name_fun, fcn->name, fcn)) {
+		return false;
+	}
+	if (!ht_up_insert (anal->ht_addr_fun, fcn->addr, fcn)) {
+		ht_pp_delete (anal->ht_name_fun, fcn->name);
+		return false;
+	}
+	R_MASK_SET (fcn->attrs, R_ANAL_FCN_ATTR_NORETURN, r_anal_noreturn_at_addr (anal, fcn->addr));
+	// Keep the caller's reference until the notifications finish.
+	r_list_append (anal->fcns, r_ref (fcn));
 	if (anal->flg_fcn_set) {
 		anal->flg_fcn_set (anal->flb.f, fcn->name, fcn->addr, r_anal_function_size_from_entry (fcn));
 	}
-	R_MASK_SET (fcn->attrs, R_ANAL_FCN_ATTR_NORETURN, r_anal_noreturn_at_addr (anal, fcn->addr));
-	r_list_append (anal->fcns, fcn);
-	ht_pp_insert (anal->ht_name_fun, fcn->name, fcn);
-	ht_up_insert (anal->ht_addr_fun, fcn->addr, fcn);
-	{
+	if (r_anal_function_alive (anal, fcn)) {
 		REventFunction event = { .addr = fcn->addr, .fcn = fcn };
 		r_event_send (anal->ev, R_EVENT_FUNCTION_ADDED, &event);
 	}
+	if (!r_anal_function_alive (anal, fcn)) {
+		return false;
+	}
+	r_unref (fcn);
 	return true;
 }
 
@@ -203,9 +213,9 @@ R_API RAnalFunction *r_anal_create_function(RAnal *anal, const char *name, ut64 
 }
 
 R_API bool r_anal_function_delete(RAnal *anal, RAnalFunction *fcn) {
-	R_RETURN_VAL_IF_FAIL (fcn, false);
+	R_RETURN_VAL_IF_FAIL (anal && fcn && fcn->anal == anal, false);
 	ut64 fcn_addr = fcn->addr;
-	bool found = r_list_delete_data (fcn->anal->fcns, fcn);
+	bool found = r_list_delete_data (anal->fcns, fcn);
 	if (found) {
 		REventFunction event = { .addr = fcn_addr };
 		r_event_send (anal->ev, R_EVENT_FUNCTION_DELETED, &event);
@@ -233,8 +243,10 @@ R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
 		return false;
 	}
 	if (r_anal_get_function_at (anal, fcn->addr) == fcn) {
+		if (!ht_up_insert (anal->ht_addr_fun, addr, fcn)) {
+			return false;
+		}
 		ht_up_delete (anal->ht_addr_fun, fcn->addr);
-		ht_up_insert (anal->ht_addr_fun, addr, fcn);
 	}
 	fcn->addr = addr;
 	fcn->meta.numrefs = -1;
@@ -257,16 +269,21 @@ R_API bool r_anal_function_rename(RAnalFunction *fcn, const char *name) {
 	char *oldname = fcn->name;
 	bool registered = oldname && ht_pp_find (anal->ht_name_fun, oldname, NULL) == fcn;
 	if (registered) {
+		if (!ht_pp_insert (anal->ht_name_fun, newname, fcn)) {
+			free (newname);
+			return false;
+		}
 		ht_pp_delete (anal->ht_name_fun, oldname);
-		ht_pp_insert (anal->ht_name_fun, newname, fcn);
 	}
 	fcn->name = newname;
+	(void)r_ref (fcn);
 	REventFunction event = { .addr = fcn->addr, .fcn = fcn };
 	r_event_send (anal->ev, R_EVENT_FUNCTION_RENAMED, &event);
-	if (registered && anal->cb.on_fcn_rename) {
+	if (registered && anal->cb.on_fcn_rename && r_anal_function_alive (anal, fcn)) {
 		anal->cb.on_fcn_rename (anal, anal->user, fcn, oldname);
 	}
 	free (oldname);
+	r_unref (fcn);
 	return true;
 }
 

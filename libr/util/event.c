@@ -13,7 +13,7 @@ R_API REvent *r_event_new(void *user) {
 	for (i = 0; i < R_EVENT_LAST; i++) {
 		RVecREventHook_init (&ev->known_events[i]);
 	}
-	ev->lock = r_th_lock_new (false);
+	ev->lock = r_th_lock_new (true);
 	ev->other_events = ht_up_new (NULL, ht_callback_free, NULL);
 	if (R_UNLIKELY (!ev->other_events)) {
 		r_event_free (ev);
@@ -106,17 +106,57 @@ R_API bool r_event_unhook(REvent * R_NULLABLE ev, ut32 event_type, REventCallbac
 	return res;
 }
 
-// r_event_send (core->ev, R_EVENT_ANALYSIS_START, "");
+static bool hook_matches(const REventHook *hook, const REventHook *saved) {
+	return hook && hook->cb == saved->cb && hook->user == saved->user;
+}
+
+static void dispatch_hooks(REvent *ev, RVecREventHook *hooks, ut32 type, void *data) {
+	const size_t count = RVecREventHook_length (hooks);
+	if (!count) {
+		return;
+	}
+	REventHook local[8];
+	REventHook *snapshot = local;
+	size_t bytes;
+	if (r_mul_overflow (count, sizeof (REventHook), &bytes)) {
+		return;
+	}
+	if (count > R_ARRAY_SIZE (local)) {
+		snapshot = malloc (bytes);
+		if (!snapshot) {
+			return;
+		}
+	}
+	memcpy (snapshot, R_VEC_START_ITER (hooks), bytes);
+	size_t i;
+	for (i = 0; i < count; i++) {
+		const REventHook *saved = &snapshot[i];
+		bool subscribed = i < RVecREventHook_length (hooks) && hook_matches (RVecREventHook_at (hooks, i), saved);
+		if (!subscribed) {
+			const REventHook *hook;
+			R_VEC_FOREACH (hooks, hook) {
+				if (hook_matches (hook, saved)) {
+					subscribed = true;
+					break;
+				}
+			}
+		}
+		if (subscribed) {
+			saved->cb (ev, type, saved->user, data);
+		}
+	}
+	if (snapshot != local) {
+		free (snapshot);
+	}
+}
+
 R_API void r_event_send(REvent * R_NULLABLE ev, ut32 event_type, void *data) {
 	if (!ev || event_type == R_EVENT_ALL) {
 		return;
 	}
-	REventHook *hook;
 	r_th_lock_enter (ev->lock);
 
-	R_VEC_FOREACH (&ev->all_events, hook) {
-		hook->cb (ev, event_type, hook->user, data);
-	}
+	dispatch_hooks (ev, &ev->all_events, event_type, data);
 	RVecREventHook *eh = NULL;
 	if (R_LIKELY (event_type < R_EVENT_LAST)) {
 		eh = &ev->known_events[event_type];
@@ -124,9 +164,7 @@ R_API void r_event_send(REvent * R_NULLABLE ev, ut32 event_type, void *data) {
 		eh = ht_up_find (ev->other_events, (ut64)event_type, NULL);
 	}
 	if (R_LIKELY (eh)) {
-		R_VEC_FOREACH (eh, hook) {
-			hook->cb (ev, event_type, hook->user, data);
-		}
+		dispatch_hooks (ev, eh, event_type, data);
 	}
 	r_th_lock_leave (ev->lock);
 }

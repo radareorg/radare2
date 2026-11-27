@@ -361,16 +361,32 @@ R_API void r_anal_var_set_type(RAnal *anal, RAnalVar *var, const char * const ty
 	}
 }
 
+static void var_free_storage(RAnalVar *var) {
+	RVecAnalVarConstraint_fini (&var->constraints);
+	free (var->name);
+	free (var->regname);
+	free (var->type);
+	free (var->comment);
+	free (var);
+}
+
 static void var_free(RAnalVar *var) {
 	if (R_LIKELY (var)) {
 		r_anal_var_clear_accesses (var);
-		RVecAnalVarConstraint_fini (&var->constraints);
-		free (var->name);
-		free (var->regname);
-		free (var->type);
-		free (var->comment);
-		free (var);
+		var_free_storage (var);
 	}
+}
+
+R_IPI void r_anal_function_vars_fini(RAnalFunction *fcn) {
+	RAnalVar **it;
+	R_VEC_FOREACH (&fcn->vars, it) {
+		RAnalVar *var = *it;
+		if (var) {
+			RVecAnalVarAccess_fini (&var->accesses);
+			var_free_storage (var);
+		}
+	}
+	RVecAnalVarPtr_fini (&fcn->vars);
 }
 
 static void r_anal_var_proto_free(RAnalVarProt *vp) {

@@ -1099,22 +1099,23 @@ R_API bool r_anal_block_was_modified(RAnalBlock *block);
 
 /* function.c */
 
-R_API RAnalFunction *r_anal_function_new(RAnal *anal);
-// Unregister fcn and drop its reference, frozen views keep it allocated
+R_API R_OWNED RAnalFunction *r_anal_function_new(RAnal *anal);
+// Release a caller-owned function that has no list entry. Use r_unref for extra references.
 R_API void r_anal_function_free(RAnalFunction *fcn);
 
-// Add a function created with r_anal_function_new() to anal
+// Transfer ownership to anal on success. Failure (including removal by an event listener) leaves ownership with the caller.
 R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn);
 
-// Create a new function and add it to anal (r_anal_function_new() + set members + r_anal_add_function())
-R_API RAnalFunction *r_anal_create_function(RAnal *anal, const char *name, ut64 addr, int type, RAnalDiff *diff);
+// Create a new registered function. The returned pointer is borrowed from anal.
+R_API R_UNOWNED RAnalFunction *r_anal_create_function(RAnal *anal, const char *name, ut64 addr, int type, RAnalDiff *diff);
 
 // returns all functions that have a basic block containing the given address
 R_API RList *r_anal_get_functions_in(RAnal *anal, ut64 addr);
 
-// returns the function that has its entrypoint at addr or NULL
-R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr);
+// Look up a borrowed function by entrypoint.
+R_API R_UNOWNED RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr);
 
+// Detach a registered function and release the registry's reference.
 R_API bool r_anal_function_delete(RAnal *anal, RAnalFunction *fcn);
 
 // Change the entrypoint of fcn without registering a function that has not been added yet
@@ -1123,6 +1124,7 @@ R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr);
 
 // Rename the function and notify on_fcn_rename with its old name if registered
 // This can fail (and return false) if there is another function with the name given
+// A successful rename can be followed by removal in a callback. Hold a reference to use fcn afterward.
 R_API bool r_anal_function_rename(RAnalFunction *fcn, const char *name);
 
 // R2_640: make this public; try an address suffix when the requested name is taken
@@ -1159,7 +1161,8 @@ static inline RAnalFunction *r_anal_function_thunk_target(RAnalFunction *fcn) {
 R_API void r_anal_function_sort_blocks(RAnalFunction *fcn);
 // Stable view of fcn->bbs that outlives block or function removal; release with r_freeze_release.
 R_API R_OWNED RFreeze *r_anal_function_freeze_blocks(RAnalFunction *fcn);
-// Referenced snapshot of anal->fcns; skip items failing r_anal_function_alive
+// Referenced snapshot of anal->fcns. Skip items failing r_anal_function_alive.
+// The snapshot can be released after anal is freed. Access to analysis state requires a live anal.
 R_API R_OWNED RFreeze *r_anal_freeze_functions(RAnal *anal);
 static inline bool r_anal_function_alive(RAnal *anal, RAnalFunction *fcn) {
 	return r_anal_get_function_at (anal, fcn->addr) == fcn;
@@ -1366,7 +1369,7 @@ R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType 
 R_API bool r_anal_xrefs_setf(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 to, const RAnalRefType type);
 R_API bool r_anal_xref_del(RAnal *anal, ut64 from, ut64 to);
 
-R_API RList *r_anal_get_fcns(RAnal *anal);
+R_API R_UNOWNED RList *r_anal_get_fcns(RAnal *anal);
 
 /* type.c */
 R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name);

@@ -589,14 +589,11 @@ static void apply_name(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad)
 		}
 		return;
 	}
-	const ut64 addr = fcn->addr;
 	if (!r_anal_function_rename (fcn, name)) {
 		return;
 	}
-	// cmd.fcn.rename can delete the function
-	fcn = r_anal_get_function_at (core->anal, addr);
 	// set alternate spelling as realname for the function flag if available
-	if (fcn && R_STR_ISNOTEMPTY (alt)) {
+	if (r_anal_function_alive (core->anal, fcn) && R_STR_ISNOTEMPTY (alt)) {
 		RFlagItem *nf = r_flag_get (core->flags, fcn->name);
 		if (nf) {
 			r_flag_item_set_realname (core->flags, nf, alt);
@@ -604,18 +601,18 @@ static void apply_name(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad)
 	}
 }
 
-// name, types and vars run hooks that can delete fcn, so resolve it again after each step
 static void apply_sign(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad) {
-	const ut64 addr = fcn->addr;
+	(void)r_ref (fcn);
 	apply_name (core, fcn, it, rad);
-	if (it->types && (fcn = r_anal_get_function_at (core->anal, addr))) {
+	if (it->types && r_anal_function_alive (core->anal, fcn)) {
 		char *tmp = r_str_newf ("%s;", it->types);
 		r_anal_str_to_fcn (core->anal, fcn, tmp);
 		free (tmp);
 	}
-	if (it->vars && (fcn = r_anal_get_function_at (core->anal, addr))) {
+	if (it->vars && r_anal_function_alive (core->anal, fcn)) {
 		r_anal_function_set_var_prot (fcn, it->vars);
 	}
+	r_unref (fcn);
 }
 
 static void apply_flag(RCore *core, RSignItem *it, ut64 addr, int size, int count, const char *prefix, bool rad) {

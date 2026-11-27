@@ -42,7 +42,7 @@ R_API bool r_core_gdiff(RCore *c, RCore *c2) {
 	RCore *cores[2] = {c, c2};
 	RAnalFunction *fcn;
 	RAnalBlock *bb;
-	RListIter *iter, *iter2;
+	RListIter *iter;
 	RAnalBlock **bb_iter2;
 	int i;
 
@@ -54,12 +54,18 @@ R_API bool r_core_gdiff(RCore *c, RCore *c2) {
 		return false;
 	}
 	for (i = 0; i < 2; i++) {
-		/* remove strings */
-		r_list_foreach_safe (cores[i]->anal->fcns, iter, iter2, fcn) {
-			if (r_str_startswith (fcn->name, "str.")) {
-				r_anal_function_delete (cores[i]->anal, fcn);
+		RAnal *anal = cores[i]->anal;
+		RFreeze *fcns = r_anal_freeze_functions (anal);
+		if (!fcns) {
+			return false;
+		}
+		size_t j;
+		r_freeze_foreach (fcns, j, fcn) {
+			if (r_anal_function_alive (anal, fcn) && r_str_startswith (fcn->name, "str.")) {
+				r_anal_function_delete (anal, fcn);
 			}
 		}
+		r_freeze_release (fcns);
 		/* Fingerprint fcn bbs (functions basic-blocks) */
 		r_list_foreach (cores[i]->anal->fcns, iter, fcn) {
 			R_VEC_FOREACH (&fcn->bbs, bb_iter2) {

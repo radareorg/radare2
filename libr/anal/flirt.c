@@ -581,13 +581,20 @@ static bool module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b,
 			}
 			// resize function if needed
 			next_module_function_size = r_anal_function_linear_size (next_module_function);
+			(void)r_ref (next_module_function);
 			if (next_module_function_size < flirt_fcn_size) {
-				RListIter *iter;
-				RListIter *iter_tmp;
+				RFreeze *fcns = r_anal_freeze_functions (anal);
+				if (!fcns) {
+					r_unref (next_module_function);
+					return false;
+				}
 				RAnalFunction *fcn;
-				r_list_foreach_safe (anal->fcns, iter, iter_tmp, fcn) {
-					// compare distances because the sums can wrap, the caller is iterating
-					// anal->fcns too, so only functions behind this one can be absorbed
+				size_t i;
+				r_freeze_foreach (fcns, i, fcn) {
+					if (!r_anal_function_alive (anal, fcn)) {
+						continue;
+					}
+					// Compare distances because the sums can wrap.
 					const ut64 delta = fcn->addr - next_module_function->addr;
 					if (fcn->addr > next_module_function->addr &&
 						delta >= next_module_function_size && delta < flirt_fcn_size) {
@@ -599,7 +606,15 @@ static bool module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b,
 						}
 						next_module_function->ninstr += fcn->ninstr;
 						r_anal_function_delete (anal, fcn);
+						if (!r_anal_function_alive (anal, next_module_function)) {
+							break;
+						}
 					}
+				}
+				r_freeze_release (fcns);
+				if (!r_anal_function_alive (anal, next_module_function)) {
+					r_unref (next_module_function);
+					continue;
 				}
 				r_anal_function_resize (next_module_function, flirt_fcn_size);
 				next_module_function_size = r_anal_function_linear_size (next_module_function);
@@ -610,19 +625,23 @@ static bool module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b,
 				name_offs++;
 			}
 			if (!flirt_func->name[name_offs]) {
+				r_unref (next_module_function);
 				continue;
 			}
 			name = r_name_filter_dup (flirt_func->name + name_offs);
 			char *flirt_name = r_str_newf ("flirt.%s", name);
 			r_anal_function_rename_unique (next_module_function, flirt_name);
 			free (flirt_name);
-			RFlagItem *flag = anal->flb.set (anal->flb.f, next_module_function->name,
-				next_module_function->addr, next_module_function_size);
-			if (flag) {
-				flag->space = r_flag_space_cur (anal->flb.f);
+			if (r_anal_function_alive (anal, next_module_function)) {
+				RFlagItem *flag = anal->flb.set (anal->flb.f, next_module_function->name,
+					next_module_function->addr, next_module_function_size);
+				if (flag) {
+					flag->space = r_flag_space_cur (anal->flb.f);
+				}
+				R_LOG_INFO ("Found %s", next_module_function->name);
 			}
-			R_LOG_INFO ("Found %s", next_module_function->name);
 			free (name);
+			r_unref (next_module_function);
 		}
 	}
 	return true;
@@ -678,11 +697,19 @@ static bool node_match_functions(RAnal *anal, const RFlirtNode *root_node) {
 		return true; // Not an error, just nothing to do
 	}
 
+	RFreeze *fcns = r_anal_freeze_functions (anal);
+	if (!fcns) {
+		return false;
+	}
 	anal->flb.push_fs (anal->flb.f, "flirt");
-	RListIter *it_func;
 	RAnalFunction *func;
-	r_list_foreach (anal->fcns, it_func, func) {
+	size_t i;
+	r_freeze_foreach (fcns, i, func) {
+		if (!r_anal_function_alive (anal, func)) {
+			continue;
+		}
 		ut64 func_size = r_anal_function_linear_size (func);
+		const ut64 addr = func->addr;
 		ut8 *func_buf = malloc (func_size);
 		if (!func_buf) {
 			continue;
@@ -695,13 +722,14 @@ static bool node_match_functions(RAnal *anal, const RFlirtNode *root_node) {
 		RListIter *node_child_it;
 		RFlirtNode *child;
 		r_list_foreach (root_node->child_list, node_child_it, child) {
-			if (node_match_buffer (anal, child, func_buf, func->addr, func_size, 0)) {
+			if (node_match_buffer (anal, child, func_buf, addr, func_size, 0)) {
 				break;
 			}
 		}
 		free (func_buf);
 	}
 	anal->flb.pop_fs (anal->flb.f);
+	r_freeze_release (fcns);
 
 	return true;
 }

@@ -2694,7 +2694,9 @@ R_API bool r_core_init(RCore *core) {
 	core->in_log_process = false;
 	core->rfs = r_fs_shell_new ();
 	core->ev = r_event_new (core);
-	r_event_hook (core->ev, R_EVENT_ALL, cb_event_handler, NULL);
+	r_event_hook (core->ev, R_EVENT_META_SET, cb_event_handler, NULL);
+	r_event_hook (core->ev, R_EVENT_META_DEL, cb_event_handler, NULL);
+	r_event_hook (core->ev, R_EVENT_META_CLEAR, cb_event_handler, NULL);
 	core->max_cmd_depth = R_CONS_CMD_DEPTH + 1;
 	core->sdb = sdb_new (NULL, "r2kv.sdb", 0); // XXX: path must be in home?
 	core->lastsearch = NULL;

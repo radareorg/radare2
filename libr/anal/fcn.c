@@ -687,7 +687,11 @@ R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *f
 
 R_IPI void r_anal_function_scan_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr) {
 	R_RETURN_IF_FAIL (anal && fcn);
+	const bool registered = r_anal_function_alive (anal, fcn);
 	(void)r_anal_function_bb (anal, fcn, case_addr);
+	if (registered && !r_anal_function_alive (anal, fcn)) {
+		return;
+	}
 	RAnalBlock *block = r_anal_get_block_at (anal, case_addr);
 	if (!block || block->ninstr > 0) {
 		(void)add_switch_case_block (anal, fcn, case_addr, INT_MAX);
@@ -1004,7 +1008,7 @@ R_VEC_TYPE (RVecWalkFrame, WalkFrame);
 // State of one walk over a function's blocks. The recursion this replaces kept a copy per block.
 typedef struct {
 	RAnal *anal;
-	RAnalFunction *fcn;
+	R_OWNED RAnalFunction *fcn;
 	RCons *cons;
 	RVecWalkFrame frames;
 	ut64 len;
@@ -1029,9 +1033,19 @@ typedef struct {
 	ut64 section_to;
 	bool section_exec;
 	bool walk_depth; // a fresh function's walk, so fcn->stack is trustworthy
+	bool registered;
 	bool follow; // false when only rebuilding a known block (afb+): jump targets are not analyzed
 	ReadAhead ra; // one cache for the walk, so a block inside the last read reads no io
 } FcnWalk;
+
+static bool walk_block_removed(FcnWalk *w, RAnalBlock *bb) {
+	if (r_anal_get_block_at (w->anal, bb->addr) == bb
+		&& (!w->registered || r_anal_function_alive (w->anal, w->fcn))) {
+		return false;
+	}
+	w->failed = true;
+	return true;
+}
 
 // name a tail call target like the core names new functions: after the flag at its address
 static const char *tailcall_name(RAnal *anal, ut64 addr) {
@@ -1585,6 +1599,9 @@ repeat:
 				if ((addr + delay.un_idx - oplen) == fcn->addr) {
 					if (r_anal_block_relocate (bb, bb->addr + oplen, bb->size - oplen)) {
 						fcn_rename_readdr (fcn, fcn->addr + oplen);
+						if (walk_block_removed (w, bb)) {
+							gotoBeach (R_ANAL_RET_ERROR);
+						}
 						idx = delay.un_idx;
 						r_anal_op_fini (op);
 						goto repeat;
@@ -1600,9 +1617,12 @@ repeat:
 					gotoBeach (R_ANAL_RET_ERROR);
 				}
 				if (r_anal_block_relocate (bb, at + op->size, bb->size)) {
-					r_anal_op_fini (op);
 					addr = at + op->size;
 					fcn_rename_readdr (fcn, addr);
+					if (walk_block_removed (w, bb)) {
+						gotoBeach (R_ANAL_RET_ERROR);
+					}
+					r_anal_op_fini (op);
 					// force function rename if needed
 					goto repeat;
 				}
@@ -2001,7 +2021,11 @@ noskip:
 			// a function starting with a jump is a link of the chain, not its first site
 			if (anal->opt.chain && anal->iob.io && op->addr != fcn->addr) {
 				// the flag checks below may end the block before jmpref records the resolved target
-				if (chain_resolve (w, op, code_perm, true) && anal->opt.jmpref) {
+				const bool resolved = chain_resolve (w, op, code_perm, true);
+				if (resolved && walk_block_removed (w, bb)) {
+					gotoBeach (R_ANAL_RET_ERROR);
+				}
+				if (resolved && anal->opt.jmpref) {
 					(void) r_anal_xrefs_setf (anal, fcn, op->addr, op->jump, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
 				}
 			}
@@ -2071,8 +2095,14 @@ noskip:
 						if (!nfcn) {
 							nfcn = r_anal_create_function (anal, NULL, op->jump, 0, NULL);
 						}
+						if (walk_block_removed (w, bb)) {
+							gotoBeach (R_ANAL_RET_ERROR);
+						}
 						if (anal->fcn_depth < MAX_TAILCALL_DEPTH) {
 							r_anal_function (anal, nfcn? nfcn: fcn, op->jump, R_ANAL_REF_TYPE_CALL);
+							if (walk_block_removed (w, bb)) {
+								gotoBeach (R_ANAL_RET_ERROR);
+							}
 						} else if (nfcn) {
 							// deeper chains are walked by the outermost call instead of nesting on the stack
 							RVecAnalAddr_push_back (&anal->tailcalls, &op->jump);
@@ -2256,7 +2286,9 @@ noskip:
 		case R_ANAL_OP_TYPE_CALL:
 			/* call dst */
 			if (anal->opt.chain && anal->iob.io && op->jump != UT64_MAX) {
-				chain_resolve (w, op, code_perm, false);
+				if (chain_resolve (w, op, code_perm, false) && walk_block_removed (w, bb)) {
+					gotoBeach (R_ANAL_RET_ERROR);
+				}
 			}
 			(void) r_anal_xrefs_setf (anal, fcn, op->addr, op->jump, R_ANAL_REF_TYPE_CALL | R_ANAL_REF_TYPE_EXEC);
 
@@ -2705,7 +2737,7 @@ static int fcn_walk(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, bool f
 	const char *arch = anal->config? anal->config->arch: R_SYS_ARCH;
 	FcnWalk w = {
 		.anal = anal,
-		.fcn = fcn,
+		.fcn = r_ref (fcn),
 		.cons = core->cons,
 		.len = len,
 		.last_ret = R_ANAL_RET_END,
@@ -2720,6 +2752,7 @@ static int fcn_walk(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, bool f
 		// blocks added by hand (afb+, projects) keep the entry point they are given
 		.nopskip = follow && anal->opt.nopskip && r_arch_info (anal->arch, R_ARCH_INFO_ISVM) != R_ARCH_INFO_ISVM,
 		.follow = follow,
+		.registered = r_anal_function_alive (anal, fcn),
 	};
 	w.is_arm = r_str_startswith (arch, "arm");
 	w.is_mips = !w.is_arm && r_str_startswith (arch, "mips");
@@ -2770,6 +2803,7 @@ static int fcn_walk(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, bool f
 		fcn_scan (&w, f.enter.addr);
 	}
 	RVecWalkFrame_fini (&w.frames);
+	r_unref (fcn);
 	return w.failed? R_ANAL_RET_ERROR: w.last_ret;
 }
 
@@ -2911,18 +2945,22 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftyp
 		fcn->stack = fcn->maxstack = fcn->reg_save_area = frame;
 	}
 	anal->fcn_depth++;
+	const bool registered = r_anal_function_alive (anal, fcn);
+	(void)r_ref (fcn);
 	int ret = r_anal_function_bb (anal, fcn, addr);
 	anal->fcn_depth--;
 	if (ret < 0) {
 		R_LOG_DEBUG ("Failed to analyze basic block at 0x%"PFMT64x, addr);
 	}
 	// Notify plugins after all basic blocks are analyzed
-	if (ret >= 0 || ret == R_ANAL_RET_END) {
+	if ((ret >= 0 || ret == R_ANAL_RET_END) && (!registered || r_anal_function_alive (anal, fcn))) {
 		const bool naked = !RVecAnalBlockPtr_empty (&fcn->bbs)
 			&& (ut64)fcn->maxstack == fcn->reg_save_area && !fcn->bp_from_sp && !fcn->bp_off;
 		R_MASK_SET (fcn->attrs, R_ANAL_FCN_ATTR_NAKED, naked);
 		r_anal_plugin_action (anal, R_ANAL_PLUGIN_ACTION_ANALYZE_FCN, fcn);
-		r_anal_function_sort_blocks (fcn);
+		if (!registered || r_anal_function_alive (anal, fcn)) {
+			r_anal_function_sort_blocks (fcn);
+		}
 	}
 	if (!anal->fcn_depth) {
 		anal->fcn_depth++;
@@ -2936,17 +2974,13 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftyp
 		}
 		anal->fcn_depth--;
 	}
+	r_unref (fcn);
 	return ret;
 }
 
 R_API int r_anal_function_del(RAnal *a, ut64 addr) {
 	RAnalFunction *fcn = r_anal_get_function_at (a, addr);
-	if (fcn) {
-		r_anal_function_delete (a, fcn);
-		// r_anal_function_free (fcn);
-		return true;
-	}
-	return false;
+	return fcn && r_anal_function_delete (a, fcn);
 }
 
 R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
@@ -3993,38 +4027,68 @@ R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 }
 
 typedef struct {
-	RAnalFunction *fcn;
-	RBitset *visited;
-} BlockRecurseCtx;
+	R_OWNED RAnalFunction *fcn;
+	RBitset *reachable;
+	bool registered;
+} FcnUpdate;
+
+static void fcn_update_fini(FcnUpdate *update) {
+	r_unref (update->fcn);
+	r_bitset_free (update->reachable);
+}
+
+R_VEC_TYPE_WITH_FINI (RVecFcnUpdate, FcnUpdate, fcn_update_fini);
 
 static bool mark_as_visited(RAnalBlock *bb, void *user) {
-	BlockRecurseCtx *ctx = user;
-	r_bitset_set (ctx->visited, bb->addr);
+	r_bitset_set (user, bb->addr);
 	return true;
 }
 
-static bool analize_addr_cb(ut64 addr, void *user) {
-	BlockRecurseCtx *ctx = user;
-	RAnal *anal = ctx->fcn->anal;
-	RAnalBlock *existing_bb = r_anal_get_block_at (anal, addr);
-	if (!existing_bb || !r_list_contains (existing_bb->fcns, ctx->fcn)) {
-		int old_len = (int)RVecAnalBlockPtr_length (&ctx->fcn->bbs);
-		r_anal_function_bb (ctx->fcn->anal, ctx->fcn, addr);
-		if (old_len != (int)RVecAnalBlockPtr_length (&ctx->fcn->bbs)) {
-			r_anal_block_recurse (r_anal_get_block_at (anal, addr), mark_as_visited, user);
-		}
+static bool collect_successor(ut64 addr, void *user) {
+	ut64 *slot = RVecAnalAddr_emplace_back (user);
+	if (!slot) {
+		return false;
 	}
-	r_bitset_set (ctx->visited, addr);
+	*slot = addr;
 	return true;
 }
 
-static bool analize_descendents(RAnalBlock *bb, void *user) {
-	r_anal_block_successor_addrs_foreach (bb, analize_addr_cb, user);
-	return true;
+static bool update_function_alive(const FcnUpdate *update) {
+	return !update->registered || r_anal_function_alive (update->fcn->anal, update->fcn);
 }
 
-static void free_bitset_value(HtUPKv *kv) {
-	r_bitset_free ((RBitset *)kv->value);
+typedef struct {
+	FcnUpdate *update;
+	RBitset *visited;
+	RVecAnalAddr successors;
+} FcnUpdateWalk;
+
+static bool update_successors(RAnalBlock *block, void *user) {
+	FcnUpdateWalk *walk = user;
+	RAnalFunction *fcn = walk->update->fcn;
+	RAnal *anal = fcn->anal;
+	RVecAnalAddr_clear (&walk->successors);
+	// A case scan can change the dispatch block or remove the function.
+	if (!r_anal_block_successor_addrs_foreach (block, collect_successor, &walk->successors)) {
+		return false;
+	}
+	const ut64 *addr;
+	R_VEC_FOREACH (&walk->successors, addr) {
+		RAnalBlock *bb = r_anal_get_block_at (anal, *addr);
+		if (!bb || !r_list_contains (bb->fcns, fcn)) {
+			const size_t old_count = RVecAnalBlockPtr_length (&fcn->bbs);
+			r_anal_function_bb (anal, fcn, *addr);
+			if (!update_function_alive (walk->update)) {
+				return false;
+			}
+			bb = r_anal_get_block_at (anal, *addr);
+			if (bb && old_count != RVecAnalBlockPtr_length (&fcn->bbs)) {
+				r_anal_block_recurse (bb, mark_as_visited, walk->visited);
+			}
+		}
+		r_bitset_set (walk->visited, *addr);
+	}
+	return true;
 }
 
 static void update_var_analysis(RAnalFunction *fcn, int align, ut64 from, ut64 to) {
@@ -4093,27 +4157,33 @@ static void clear_bb_vars(RAnalFunction *fcn, RAnalBlock *bb, ut64 from, ut64 to
 	}
 }
 
-static void update_analysis(RAnal *anal, RList *fcns, HtUP *reachable) {
-	// huge slowdown
-	RListIter *it;
-	RAnalFunction *fcn;
+static void update_analysis(RAnal *anal, RVecFcnUpdate *updates) {
 	bool old_jmpmid = anal->opt.jmpmid;
 	anal->opt.jmpmid = true;
-	r_list_foreach (fcns, it, fcn) {
-		// Recurse through blocks of function, mark reachable,
-		// analyze edges that don't have a block
+	FcnUpdate *update;
+	R_VEC_FOREACH (updates, update) {
+		if (!update_function_alive (update)) {
+			continue;
+		}
+		RAnalFunction *fcn = update->fcn;
 		RAnalBlock *bb = r_anal_get_block_at (anal, fcn->addr);
 		if (!bb) {
 			r_anal_function_bb (anal, fcn, fcn->addr);
 			bb = r_anal_get_block_at (anal, fcn->addr);
-			if (!bb) {
+			if (!bb || !update_function_alive (update)) {
 				continue;
 			}
 		}
 		RBitset *bs = r_bitset_new ();
 		r_bitset_set (bs, bb->addr);
-		BlockRecurseCtx ctx = { fcn, bs };
-		r_anal_block_recurse (bb, analize_descendents, &ctx);
+		FcnUpdateWalk walk = { .update = update, .visited = bs };
+		RVecAnalAddr_init (&walk.successors);
+		const bool completed = r_anal_block_recurse (bb, update_successors, &walk);
+		RVecAnalAddr_fini (&walk.successors);
+		if (!completed) {
+			r_bitset_free (bs);
+			continue;
+		}
 
 		// Remove non-reachable blocks
 		size_t bb_idx;
@@ -4122,14 +4192,14 @@ static void update_analysis(RAnal *anal, RList *fcns, HtUP *reachable) {
 			if (r_bitset_test (bs, bb->addr)) {
 				continue;
 			}
-			RBitset *o_visited = ht_up_find (reachable, fcn->addr, NULL);
-			if (!o_visited || !r_bitset_test (o_visited, bb->addr)) {
+			if (!r_bitset_test (update->reachable, bb->addr)) {
 				// Avoid removing blocks that were already not reachable
 				continue;
 			}
 			fcn->ninstr -= bb->ninstr;
 			r_anal_function_remove_block (fcn, bb);
 		}
+		r_bitset_free (bs);
 
 		RList *bbs = r_list_new ();
 		RAnalBlock **bbit;
@@ -4143,17 +4213,28 @@ static void update_analysis(RAnal *anal, RList *fcns, HtUP *reachable) {
 	anal->opt.jmpmid = old_jmpmid;
 }
 
-static void calc_reachable_and_remove_block(RList *fcns, RAnalFunction *fcn, RAnalBlock *bb, HtUP *reachable) {
+static void calc_reachable_and_remove_block(RVecFcnUpdate *updates, RAnalFunction *fcn, RAnalBlock *bb) {
 	clear_bb_vars (fcn, bb, bb->addr, bb->addr + bb->size);
-	if (!r_list_contains (fcns, fcn)) {
-		r_list_append (fcns, fcn);
-
-		// Calculate reachable blocks from the start of function
-		RBitset *bs = r_bitset_new ();
-		BlockRecurseCtx ctx = { fcn, bs };
-		r_anal_block_recurse (r_anal_get_block_at (fcn->anal, fcn->addr), mark_as_visited, &ctx);
-		ht_up_insert (reachable, fcn->addr, bs);
+	FcnUpdate *update;
+	R_VEC_FOREACH (updates, update) {
+		if (update->fcn == fcn) {
+			goto remove_block;
+		}
 	}
+	update = RVecFcnUpdate_emplace_back (updates);
+	if (!update) {
+		return;
+	}
+	*update = (FcnUpdate) {
+		.fcn = r_ref (fcn),
+		.reachable = r_bitset_new (),
+		.registered = r_anal_function_alive (fcn->anal, fcn),
+	};
+	RAnalBlock *entry = r_anal_get_block_at (fcn->anal, fcn->addr);
+	if (entry) {
+		r_anal_block_recurse (entry, mark_as_visited, update->reachable);
+	}
+remove_block:
 	fcn->ninstr -= bb->ninstr;
 	r_anal_function_remove_block (fcn, bb);
 }
@@ -4168,8 +4249,8 @@ R_API void r_anal_update_analysis_range(RAnal *anal, ut64 addr, int size) {
 		r_list_free (blocks);
 		return;
 	}
-	RList *fcns = r_list_new ();
-	HtUP *reachable = ht_up_new (NULL, free_bitset_value, NULL);
+	RVecFcnUpdate updates;
+	RVecFcnUpdate_init (&updates);
 	const int align = R_MAX (1, r_arch_info (anal->arch, R_ARCH_INFO_CODE_ALIGN));
 	const ut64 end_write = addr + size;
 
@@ -4189,13 +4270,12 @@ R_API void r_anal_update_analysis_range(RAnal *anal, ut64 addr, int size) {
 					continue;
 				}
 			}
-			calc_reachable_and_remove_block (fcns, fcn, bb, reachable);
+			calc_reachable_and_remove_block (&updates, fcn, bb);
 		}
 	}
 	r_list_free (blocks); // This will call r_unref to actually remove blocks from RAnal
-	update_analysis (anal, fcns, reachable);
-	ht_up_free (reachable);
-	r_list_free (fcns);
+	update_analysis (anal, &updates);
+	RVecFcnUpdate_fini (&updates);
 }
 
 R_API void r_anal_function_update_analysis(RAnalFunction *fcn) {
@@ -4203,18 +4283,17 @@ R_API void r_anal_function_update_analysis(RAnalFunction *fcn) {
 	RListIter *it2, *tmp2;
 	RAnalBlock *bb;
 	RAnalFunction *f;
-	RList *fcns = r_list_new ();
-	HtUP *reachable = ht_up_new (NULL, free_bitset_value, NULL);
+	RVecFcnUpdate updates;
+	RVecFcnUpdate_init (&updates);
 	size_t bb_idx;
 	for (bb_idx = RVecAnalBlockPtr_length (&fcn->bbs); bb_idx > 0; bb_idx--) {
 		bb = *RVecAnalBlockPtr_at (&fcn->bbs, bb_idx - 1);
 		if (r_anal_block_was_modified (bb)) {
 			r_list_foreach_safe (bb->fcns, it2, tmp2, f) {
-				calc_reachable_and_remove_block (fcns, f, bb, reachable);
+				calc_reachable_and_remove_block (&updates, f, bb);
 			}
 		}
 	}
-	update_analysis (fcn->anal, fcns, reachable);
-	ht_up_free (reachable);
-	r_list_free (fcns);
+	update_analysis (fcn->anal, &updates);
+	RVecFcnUpdate_fini (&updates);
 }

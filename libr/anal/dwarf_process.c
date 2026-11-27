@@ -2691,11 +2691,17 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwar
 			// a clone keeps its symbol name so the origin's prototype is not looked up for it
 			if (value && !sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.clone", func_sname)) {
 				char *dwf_name = r_str_newf ("dbg.%s", value);
+				(void)r_ref (fcn);
 				r_anal_function_rename (fcn, dwf_name);
+				const bool alive = r_anal_function_alive (anal, fcn);
+				r_unref (fcn);
+				if (!alive) {
+					fcn = NULL;
+				}
 				free (dwf_name);
 			}
 			value = sdb_const_getf (dwarf_sdb, NULL, "fcn.%s.sig", func_sname);
-			if (value) {
+			if (fcn && value) {
 				/* Apply signature as a comment at a function address */
 				r_meta_set_string (anal, R_META_TYPE_COMMENT, faddr, value);
 			}

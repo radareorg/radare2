@@ -153,11 +153,13 @@ NAME=a:autoname all survives a cmd.fcn.rename hook deleting functions
 FILE=bins/elf/ls
 CMDS=<<EOF
 aaa
+afl~?
 e cmd.fcn.rename=af-*
 a:autoname all
 afl~?
 EOF
 EXPECT=<<EOF
+145
 0
 EOF
 RUN

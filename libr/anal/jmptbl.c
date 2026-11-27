@@ -9,7 +9,8 @@
 #define SWITCH_SDB_NS "switches"
 
 typedef struct {
-	RIOMap *switch_map;
+	RInterval switch_range;
+	bool has_switch_map;
 	HtUP *validated_targets;
 	HtUP *analyzed_targets;
 } JmptblTargetCtx;
@@ -300,9 +301,13 @@ static inline ut64 get_mips_gp_base(RAnal *anal, ut64 ip) {
 }
 
 static void jmptbl_target_ctx_init(JmptblTargetCtx *ctx, RAnal *anal, ut64 switch_addr) {
-	ctx->switch_map = anal->iob.map_get_at
+	const RIOMap *map = anal->iob.map_get_at
 		? anal->iob.map_get_at (anal->iob.io, switch_addr)
 		: NULL;
+	ctx->has_switch_map = map != NULL;
+	if (map) {
+		ctx->switch_range = map->itv;
+	}
 	ctx->validated_targets = ht_up_new0 ();
 	ctx->analyzed_targets = ht_up_new0 ();
 }
@@ -312,7 +317,6 @@ static void jmptbl_target_ctx_fini(JmptblTargetCtx *ctx) {
 	ht_up_free (ctx->analyzed_targets);
 	ctx->validated_targets = NULL;
 	ctx->analyzed_targets = NULL;
-	ctx->switch_map = NULL;
 }
 
 static bool check_jmptbl_case_target(RAnal *anal, JmptblTargetCtx *ctx, ut64 case_addr) {
@@ -325,7 +329,7 @@ static bool check_jmptbl_case_target(RAnal *anal, JmptblTargetCtx *ctx, ut64 cas
 			return false;
 		}
 		// Keep jump-table targets in the same map as the dispatcher, matching direct-jump behavior.
-		if (ctx->switch_map && !r_io_map_contain (ctx->switch_map, case_addr)) {
+		if (ctx->has_switch_map && !r_itv_contain (ctx->switch_range, case_addr)) {
 			return false;
 		}
 	}
@@ -803,6 +807,11 @@ static bool switch_apply_flagged(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bl
 	}
 	ut32 i;
 	ut32 last_applied = 0;
+	const bool registered = fcn && r_anal_function_alive (anal, fcn);
+	bool removed = false;
+	if (fcn) {
+		(void)r_ref (fcn);
+	}
 	// case scans may delete the caller's block
 	if (block) {
 		block = r_ref (block);
@@ -866,11 +875,15 @@ static bool switch_apply_flagged(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bl
 		if (scan != UT64_MAX) {
 			// a command applies the switch outside any walk, so the case is scanned here
 			r_anal_function_scan_switch_case (anal, fcn, scan);
+			if (registered && !r_anal_function_alive (anal, fcn)) {
+				removed = true;
+				break;
+			}
 		}
 		block = switch_block_refetch (anal, block, spec->startea);
 		last_applied = i + 1;
 	}
-	if (last_applied > 0) {
+	if (!removed && last_applied > 0) {
 		ut64 def = def_jump;
 		if (def == 0) {
 			def = UT64_MAX;
@@ -880,10 +893,11 @@ static bool switch_apply_flagged(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bl
 		switch_op_apply_spec (block, spec);
 	}
 	r_unref (block);
+	r_unref (fcn);
 	free (jmptbl);
 	free (vtbl);
 	jmptbl_target_ctx_fini (&target_ctx);
-	return last_applied > 0;
+	return !removed && last_applied > 0;
 }
 
 // Predicate: returns true when the spec carries fields the legacy
@@ -1086,7 +1100,6 @@ typedef struct {
 	Arm64Dispatch dispatch;
 	ut8 *table;
 	RBitset *seen;
-	RIOMap *map;
 	ut64 valid_cases;
 	ut64 size; // cases the bound names
 	ut64 default_case;
@@ -1100,7 +1113,8 @@ typedef struct {
 struct r_anal_switch_cursor_t {
 	SwitchCursorKind kind;
 	RAnal *anal;
-	RAnalFunction *fcn;
+	R_OWNED RAnalFunction *fcn;
+	bool registered;
 	R_OWNED RAnalBlock *block; // the dispatch block, found again when a case's scan splits or deletes it
 	ut64 ip; // the switch instruction
 	JmptblTargetCtx ctx;
@@ -1590,6 +1604,11 @@ R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 	RBitset *s = r_bitset_new ();
 	RAnalCaseOp *kase;
 	RListIter *iter;
+	const bool registered = fcn && r_anal_function_alive (anal, fcn);
+	bool removed = false;
+	if (fcn) {
+		(void)r_ref (fcn);
+	}
 	// case scans may delete the caller's block
 	if (bb) {
 		bb = r_ref (bb);
@@ -1599,11 +1618,18 @@ R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 		if (scan != UT64_MAX) {
 			// listing is not a walk, so the case is scanned here as it always was
 			r_anal_function_scan_switch_case (anal, fcn, scan);
+			if (registered && !r_anal_function_alive (anal, fcn)) {
+				removed = true;
+				break;
+			}
 		}
 		bb = switch_block_refetch (anal, bb, saddr);
 	}
-	apply_switch (anal, fcn, bb, saddr, saddr, jaddr, UT64_MAX,
-		r_list_length (cases), UT64_MAX, loadsz);
+	if (!removed) {
+		apply_switch (anal, fcn, bb, saddr, saddr, jaddr, UT64_MAX,
+			r_list_length (cases), UT64_MAX, loadsz);
+	}
+	r_unref (fcn);
 	r_unref (bb);
 	r_bitset_free (s);
 }
@@ -1669,7 +1695,6 @@ R_IPI bool r_anal_jmptbl_arm64_from_br(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 	c->count = max;
 	c->arm64 = (SwitchArm64State){
 		.dispatch = dispatch, .table = table, .seen = r_bitset_new (),
-		.map = anal->iob.map_get_at (anal->iob.io, op->addr),
 		.size = table_size, .default_case = alt_default, .bounded = bounded, .loadsize = loadsize,
 	};
 	return switch_cursor_run (c, sink);
@@ -1678,7 +1703,8 @@ R_IPI bool r_anal_jmptbl_arm64_from_br(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 static RAnalSwitchCursor *switch_cursor_new(RAnal *anal, RAnalFunction *fcn, R_UNOWNED RAnalBlock *block, ut64 ip, int ret0) {
 	RAnalSwitchCursor *c = R_NEW0 (RAnalSwitchCursor);
 	c->anal = anal;
-	c->fcn = fcn;
+	c->fcn = fcn? r_ref (fcn): NULL;
+	c->registered = fcn && r_anal_function_alive (anal, fcn);
 	c->block = block? r_ref (block): NULL;
 	c->ip = ip;
 	c->ret0 = ret0;
@@ -1688,6 +1714,9 @@ static RAnalSwitchCursor *switch_cursor_new(RAnal *anal, RAnalFunction *fcn, R_U
 
 // What the walker returns, the way each one has always counted it.
 static int switch_cursor_result(const RAnalSwitchCursor *c) {
+	if (c->registered && !r_anal_function_alive (c->anal, c->fcn)) {
+		return false;
+	}
 	switch (c->kind) {
 	case SWITCH_CURSOR_TABLE:
 		return c->ret0 || c->legacy.a.mips || c->applied;
@@ -1801,7 +1830,7 @@ static bool switch_cursor_arm64_next(RAnalSwitchCursor *c, ut64 *target) {
 		}
 		const ut64 caseaddr = d->basptr + delta * d->scale;
 		if ((caseaddr & 3) || !anal->iob.is_valid_offset (anal->iob.io, caseaddr, 0)
-				|| (t->map && !r_io_map_contain (t->map, caseaddr))) {
+				|| (c->ctx.has_switch_map && !r_itv_contain (c->ctx.switch_range, caseaddr))) {
 			continue;
 		}
 		const ut64 entry_addr = d->tblptr + i * esize;
@@ -1834,8 +1863,11 @@ static R_TRANSIENT RAnalBlock *switch_cursor_block(RAnalSwitchCursor *c) {
 
 R_IPI bool r_anal_switch_cursor_step(RAnalSwitchCursor *c, ut64 *target) {
 	R_RETURN_VAL_IF_FAIL (c && target, false);
-	(void) switch_cursor_block (c);
 	*target = UT64_MAX;
+	if (c->registered && !r_anal_function_alive (c->anal, c->fcn)) {
+		return false;
+	}
+	(void) switch_cursor_block (c);
 	switch (c->kind) {
 	case SWITCH_CURSOR_TABLE:
 	case SWITCH_CURSOR_CASETBL:
@@ -1854,12 +1886,13 @@ R_IPI bool r_anal_switch_cursor_step(RAnalSwitchCursor *c, ut64 *target) {
 R_IPI void r_anal_switch_cursor_finish(RAnalSwitchCursor *c) {
 	R_RETURN_IF_FAIL (c);
 	RAnal *anal = c->anal;
-	RAnalBlock *block = switch_cursor_block (c);
+	const bool alive = !c->registered || r_anal_function_alive (anal, c->fcn);
+	RAnalBlock *block = alive? switch_cursor_block (c): NULL;
 	switch (c->kind) {
 	case SWITCH_CURSOR_TABLE:
 	case SWITCH_CURSOR_CASETBL: {
 		SwitchLegacyState *t = &c->legacy;
-		if (c->idx > 0) {
+		if (alive && c->idx > 0) {
 			if (t->default_case == 0) {
 				t->default_case = UT64_MAX;
 			}
@@ -1871,7 +1904,7 @@ R_IPI void r_anal_switch_cursor_finish(RAnalSwitchCursor *c) {
 		break;
 	}
 	case SWITCH_CURSOR_ARM:
-		if (c->idx > 0) {
+		if (alive && c->idx > 0) {
 			ut64 default_case = c->arm.default_case;
 			if (default_case == 0 || default_case == UT32_MAX) {
 				default_case = UT64_MAX;
@@ -1881,7 +1914,7 @@ R_IPI void r_anal_switch_cursor_finish(RAnalSwitchCursor *c) {
 		break;
 	case SWITCH_CURSOR_ARM64: {
 		SwitchArm64State *t = &c->arm64;
-		if (t->valid_cases) {
+		if (alive && t->valid_cases) {
 			apply_switch (anal, c->fcn, block, c->ip, c->ip, t->dispatch.tblptr, UT64_MAX,
 				t->valid_cases, t->bounded? t->default_case: UT64_MAX, t->loadsize);
 			// Do not mistake a partial or unbounded table for a complete CFG.
@@ -1897,6 +1930,7 @@ R_IPI void r_anal_switch_cursor_finish(RAnalSwitchCursor *c) {
 	}
 	jmptbl_target_ctx_fini (&c->ctx);
 	r_unref (c->block);
+	r_unref (c->fcn);
 	free (c);
 }
 

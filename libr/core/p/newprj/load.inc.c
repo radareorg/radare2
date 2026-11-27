@@ -324,49 +324,6 @@ static void rprj_flag_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 	r_list_free (seen);
 }
 
-static bool rprj_function_is_registered(RAnal *anal, RAnalFunction *fcn) {
-	if (!fcn) {
-		return false;
-	}
-	RListIter *iter;
-	RAnalFunction *it;
-	RList *fcns = r_anal_get_fcns (anal);
-	r_list_foreach (fcns, iter, it) {
-		if (it == fcn) {
-			return true;
-		}
-	}
-	return false;
-}
-
-static RAnalFunction *rprj_function_get_registered(RAnal *anal, ut64 addr) {
-	RAnalFunction *fcn = r_anal_get_function_at (anal, addr);
-	if (rprj_function_is_registered (anal, fcn)) {
-		return fcn;
-	}
-	if (fcn) {
-		ht_up_delete (anal->ht_addr_fun, addr);
-		if (fcn->name) {
-			ht_pp_delete (anal->ht_name_fun, fcn->name);
-		}
-	}
-	return NULL;
-}
-
-static void rprj_function_drop_stale_name(RAnal *anal, const char *name) {
-	if (!name) {
-		return;
-	}
-	bool found = false;
-	RAnalFunction *fcn = ht_pp_find (anal->ht_name_fun, name, &found);
-	if (found && !rprj_function_is_registered (anal, fcn)) {
-		ht_pp_delete (anal->ht_name_fun, name);
-		if (fcn) {
-			ht_up_delete (anal->ht_addr_fun, fcn->addr);
-		}
-	}
-}
-
 static void rprj_block_load(RPrjCursor *cur, RAnalFunction *fcn, R2ProjectBlock *pbb, int mode, ut64 fcn_addr, RColor *colors, ut32 ncolors) {
 	ut64 va = UT64_MAX;
 	ut64 jump = UT64_MAX;
@@ -840,20 +797,28 @@ static bool rprj_function_resolve(RPrjCursor *cur, int mode, R2ProjectFunction *
 		R2ProjectDiffAddr *df = R_NEW (R2ProjectDiffAddr);
 		df->addr = va;
 		r_list_append (pfcns, df);
-		fcn = rprj_function_get_registered (core->anal, va);
+		fcn = r_anal_get_function_at (core->anal, va);
 	}
 	if (mode & R_CORE_NEWPRJ_MODE_SCRIPT) {
 		r_strbuf_appendf (cur->out, "'af+ 0x%08"PFMT64x" %s\n", va, name? name: "");
 	}
 	if (mode & R_CORE_NEWPRJ_MODE_LOAD) {
-		fcn = rprj_function_get_registered (core->anal, va);
+		fcn = r_anal_get_function_at (core->anal, va);
 		if (!fcn) {
-			rprj_function_drop_stale_name (core->anal, name);
 			R2ProjectFunctionAttr *attr = pfcn->attr < nattrs? attrs + pfcn->attr: NULL;
 			fcn = r_anal_create_function (core->anal, name, va, attr? attr->type: 0, NULL);
 		}
 		if (fcn && name) {
+			(void)r_ref (fcn);
 			r_anal_function_rename (fcn, name);
+			const bool alive = r_anal_function_alive (core->anal, fcn);
+			r_unref (fcn);
+			if (!alive) {
+				fcn = NULL;
+			}
+		}
+		if (fcn) {
+			r_anal_function_delete_all_vars (fcn);
 		}
 	}
 	if (pfcn->attr < nattrs) {

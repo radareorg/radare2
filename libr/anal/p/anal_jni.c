@@ -172,15 +172,23 @@ static RAnalFunction *jni_materialize_method(JniScanContext *ctx,
 		method->function_addr);
 	const bool has_prototype = fcn
 		&& jni_function_has_prototype (ctx->anal, fcn);
+	const bool rename = fcn && jni_function_name_is_generic (fcn->name);
 	char *name = jni_function_name (ctx, method);
 	if (!fcn) {
 		fcn = r_anal_create_function (ctx->anal, name,
 			method->function_addr, R_ANAL_FCN_TYPE_FCN, NULL);
-	} else if (jni_function_name_is_generic (fcn->name)) {
+	}
+	if (!fcn) {
+		free (name);
+		return NULL;
+	}
+	(void)r_ref (fcn);
+	if (rename) {
 		r_anal_function_rename (fcn, name);
 	}
 	free (name);
-	if (!fcn) {
+	if (!r_anal_function_alive (ctx->anal, fcn)) {
+		r_unref (fcn);
 		return NULL;
 	}
 	if (!has_prototype) {
@@ -188,6 +196,10 @@ static RAnalFunction *jni_materialize_method(JniScanContext *ctx,
 	}
 	if (RVecAnalBlockPtr_empty (&fcn->bbs)) {
 		r_anal_function (ctx->anal, fcn, fcn->addr, R_ANAL_REF_TYPE_CALL);
+		if (!r_anal_function_alive (ctx->anal, fcn)) {
+			r_unref (fcn);
+			return NULL;
+		}
 	}
 	const ut64 pointer_addr = method->record_addr + ctx->pointer_size * 2;
 	r_anal_xrefs_set (ctx->anal, pointer_addr, fcn->addr,
@@ -196,6 +208,7 @@ static RAnalFunction *jni_materialize_method(JniScanContext *ctx,
 		method->name, method->descriptor);
 	jni_append_unique_comment (ctx->anal, fcn->addr, comment);
 	free (comment);
+	r_unref (fcn);
 	return fcn;
 }
 

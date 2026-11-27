@@ -162,6 +162,88 @@ bool test_r_anal_freeze_functions(void) {
 	r_freeze_release (fcns);
 	mu_assert_ptreq (r_anal_get_function_at (anal, 0x100), kept, "kept function survives release");
 	assert_invariants (anal);
+	mu_assert_notnull (r_anal_function_set_var (kept, -8, R_ANAL_VAR_KIND_BPV,
+		"int", 4, false, "local"), "function owns a variable");
+	fcns = r_anal_freeze_functions (anal);
+	mu_assert_notnull (fcns, "snapshot can retain a function");
+	r_anal_purge (anal);
+	mu_assert_false (r_anal_function_alive (anal, kept), "purge detaches the frozen function");
+	RAnalFunction *replacement = r_anal_create_function (anal, "replacement", 0x100, 0, NULL);
+	mu_assert_notnull (replacement, "purged entrypoint is available");
+	mu_assert_false (r_anal_function_alive (anal, kept), "reused address does not revive the old function");
+	assert_invariants (anal);
+	r_anal_free (anal);
+	mu_assert_streq (kept->name, "kept", "snapshot keeps function storage after owner teardown");
+	r_freeze_release (fcns);
+	mu_end;
+}
+
+static int add_nested_function_cb(RAnal *anal, void *user, RAnalFunction *fcn) {
+	RAnalFunction **nested = user;
+	if (!strcmp (fcn->name, "outer")) {
+		*nested = r_anal_create_function (anal, "nested", fcn->addr, R_ANAL_FCN_TYPE_FCN, NULL);
+	}
+	return 0;
+}
+
+bool test_r_anal_function_nested_add(void) {
+	RAnal *anal = r_anal_new ();
+	RAnalFunction *nested = NULL;
+	anal->user = &nested;
+	anal->cb.on_fcn_new = add_nested_function_cb;
+	RAnalFunction *outer = r_anal_create_function (anal, "outer", 0x100, R_ANAL_FCN_TYPE_FCN, NULL);
+	mu_assert_null (outer, "address claimed by nested registration");
+	mu_assert_notnull (nested, "nested registration succeeds");
+	mu_assert_null (r_anal_get_function_byname (anal, "outer"), "failed registration rolls back the name index");
+	mu_assert_ptreq (r_anal_get_function_at (anal, 0x100), nested, "nested function is indexed");
+	assert_invariants (anal);
+	r_anal_free (anal);
+	mu_end;
+}
+
+typedef struct {
+	RAnal *anal;
+	const char *name;
+	bool removed;
+	bool observed;
+} FunctionEventTest;
+
+static void remove_event_function(REvent *ev, int type, void *user, void *data) {
+	FunctionEventTest *test = user;
+	REventFunction *event = data;
+	r_event_unhook (ev, type, remove_event_function);
+	test->removed = r_anal_function_delete (test->anal, event->fcn);
+}
+
+static void observe_event_function(REvent *ev, int type, void *user, void *data) {
+	FunctionEventTest *test = user;
+	REventFunction *event = data;
+	RAnalFunction *fcn = event->fcn;
+	test->observed = !strcmp (fcn->name, test->name)
+		&& !r_anal_function_alive (test->anal, fcn);
+}
+
+bool test_r_anal_function_event_lifetime(void) {
+	RAnal *anal = r_anal_new ();
+	anal->ev = r_event_new (NULL);
+	RAnalFunction *rename = r_anal_create_function (anal, "original", 0x200, 0, NULL);
+	FunctionEventTest added = { .anal = anal, .name = "pending" };
+	FunctionEventTest renamed = { .anal = anal, .name = "renamed" };
+	r_event_hook (anal->ev, R_EVENT_FUNCTION_ADDED, remove_event_function, &added);
+	r_event_hook (anal->ev, R_EVENT_FUNCTION_ADDED, observe_event_function, &added);
+	r_event_hook (anal->ev, R_EVENT_FUNCTION_RENAMED, remove_event_function, &renamed);
+	r_event_hook (anal->ev, R_EVENT_FUNCTION_RENAMED, observe_event_function, &renamed);
+	RAnalFunction *pending = r_anal_function_new (anal);
+	pending->addr = 0x100;
+	pending->name = strdup (added.name);
+	mu_assert_false (r_anal_add_function (anal, pending), "removed registration reports failure");
+	mu_assert_true (added.removed && added.observed, "add listeners retain the detached function");
+	mu_assert_eq (r_ref_count (pending), 1, "caller owns failed add");
+	r_anal_function_free (pending);
+	mu_assert_true (r_anal_function_rename (rename, renamed.name), "rename applied before notification");
+	mu_assert_true (renamed.removed && renamed.observed, "rename listeners retain the detached function");
+	assert_invariants (anal);
+	r_event_free (anal->ev);
 	r_anal_free (anal);
 	mu_end;
 }
@@ -1039,6 +1121,8 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_function_filtered_name_collision);
 	mu_run_test (test_r_anal_function_rename);
 	mu_run_test (test_r_anal_freeze_functions);
+	mu_run_test (test_r_anal_function_nested_add);
+	mu_run_test (test_r_anal_function_event_lifetime);
 	mu_run_test (test_r_core_function_rename);
 	mu_run_test (test_r_anal_function_labels);
 	mu_run_test (test_r_anal_function_block_order);

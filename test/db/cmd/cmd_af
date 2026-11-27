@@ -951,6 +951,32 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=af respects functions removed by cmd.fcn.new and cmd.fcn.rename
+FILE=malloc://256
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx e803000000c3 @ 0
+wx c3 @ 8
+e cmd.fcn.new=af-*
+af @ 0
+e cmd.fcn.new=
+afl
+wx c3 @ 0x10
+f rax @ 0x10
+e cmd.fcn.rename=af-*
+af @ 0x10
+e cmd.fcn.rename=
+afl
+af-*
+aflq~?
+EOF
+EXPECT=<<EOF
+0x00000008    1      1 fcn.00000008
+0
+EOF
+RUN
+
 NAME=afia set, unset and query function attributes
 FILE=malloc://256
 CMDS=<<EOF

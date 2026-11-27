@@ -5641,11 +5641,15 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 	if (fcn) {
 		/* ensure we use a proper name */
+		(void)r_ref (fcn);
 		__setFunctionName (core, addr, fcn->name, false);
-		if (core->anal->opt.vars) {
-			r_core_recover_vars (core, fcn, true);
+		if (r_anal_function_alive (core->anal, fcn)) {
+			if (core->anal->opt.vars) {
+				r_core_recover_vars (core, fcn, true);
+			}
+			__add_vars_sdb (core, fcn);
 		}
-		__add_vars_sdb (core, fcn);
+		r_unref (fcn);
 	} else {
 		if (core->anal->verbose) {
 			R_LOG_WARN ("Unable to analyze function at 0x%08"PFMT64x, addr);
@@ -5655,9 +5659,13 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 		RBitset *visited = r_bitset_new ();
 		fcn = r_anal_get_fcn_in (core->anal, addr, 0); /// XXX wrong in case of nopskip
 		if (fcn) {
+			(void)r_ref (fcn);
 			RVecAnalRef *refs = r_anal_function_get_refs (fcn);
 			RAnalRef *ref;
 			R_VEC_FOREACH (refs, ref) {
+				if (!r_anal_function_alive (core->anal, fcn)) {
+					break;
+				}
 				if (!r_bitset_set (visited, ref->addr)) {
 					continue;
 				}
@@ -5674,13 +5682,20 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 					continue;
 				}
 				r_core_anal_fcn (core, ref->addr, fcn->addr, R_ANAL_REF_TYPE_CALL, depth - 1);
+				if (!r_anal_function_alive (core->anal, fcn)) {
+					break;
+				}
 				/* use recursivity here */
 #if 1
 				RAnalFunction *f = r_anal_get_function_at (core->anal, ref->addr);
 				if (f) {
+					(void)r_ref (f);
 					RVecAnalRef *refs1 = r_anal_function_get_refs (f);
 					RAnalRef *ref;
 					R_VEC_FOREACH (refs1, ref) {
+						if (!r_anal_function_alive (core->anal, f)) {
+							break;
+						}
 						const ut64 raddr = ref->addr;
 						if (!r_bitset_set (visited, raddr)) {
 							continue;
@@ -5699,6 +5714,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 						}
 					}
 					RVecAnalRef_free (refs1);
+					r_unref (f);
 				} else {
 					f = r_anal_get_fcn_in (core->anal, fcn->addr, 0);
 					if (f) {
@@ -5714,9 +5730,10 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 #endif
 			}
 			RVecAnalRef_free (refs);
-			if (core->anal->opt.vars) {
+			if (core->anal->opt.vars && r_anal_function_alive (core->anal, fcn)) {
 				r_core_recover_vars (core, fcn, true);
 			}
+			r_unref (fcn);
 		}
 		r_bitset_free (visited);
 	}
@@ -6522,14 +6539,19 @@ static int cmd_af(RCore *core, const char *input) {
 			cmd_af (core, "f-$$");
 			r_core_anal_undefine (core, core->addr);
 		} else if (!strcmp (input + 2, "*")) { // "af-*"
-			RAnalFunction *f;
-			RListIter *iter, *iter2;
-			r_list_foreach_safe (core->anal->fcns, iter, iter2, f) {
-				ut64 addr = f->addr;
-				r_anal_del_jmprefs (core->anal, f);
-			//	r_anal_function_del (core->anal, addr);
-				r_core_anal_undefine (core, addr);
+			RFreeze *fcns = r_anal_freeze_functions (core->anal);
+			if (!fcns) {
+				return false;
 			}
+			RAnalFunction *f;
+			size_t i;
+			r_freeze_foreach (fcns, i, f) {
+				if (r_anal_function_alive (core->anal, f)) {
+					r_anal_del_jmprefs (core->anal, f);
+					r_core_anal_undefine (core, f->addr);
+				}
+			}
+			r_freeze_release (fcns);
 		} else {
 			ut64 addr = input[2]
 				? r_num_math (core->num, input + 2)
@@ -7573,22 +7595,18 @@ static int cmd_af(RCore *core, const char *input) {
 }
 
 R_API void r_core_anal_undefine(RCore *core, ut64 off) {
-	// very slow
-	// RAnalFunction *f = r_anal_get_fcn_in (core->anal, off, -1);
 	RAnalFunction *f = r_anal_get_function_at (core->anal, off);
 	if (f) {
 		if (r_str_startswith (f->name, "fcn.")) {
 			r_flag_unset_name (core->flags, f->name);
 		}
 		r_meta_del (core->anal, R_META_TYPE_ANY, r_anal_function_min_addr (f), r_anal_function_linear_size (f));
-		r_anal_function_del (core->anal, off);
+		r_anal_function_delete (core->anal, f);
+		if (r_anal_get_function_at (core->anal, off)) {
+			return;
+		}
 	}
 	r_anal_delete_block_at (core->anal, off);
-	char *abcmd = r_str_newf ("ab-0x%"PFMT64x, off);
-	if (abcmd) {
-		cmd_af (core, abcmd);
-		free (abcmd);
-	}
 }
 
 // size: 0: bits; -1: any; >0: exact size
@@ -15442,10 +15460,17 @@ static bool funref(void *_core, ut64 from, ut64 addr) {
 }
 
 static void anal_aarr(RCore *core) {
+	RFreeze *fcns = r_anal_freeze_functions (core->anal);
+	if (!fcns) {
+		return;
+	}
 	RBitset *visited = r_bitset_new ();
 	RAnalFunction *fcn;
-	RListIter *it;
-	r_list_foreach (core->anal->fcns, it, fcn) {
+	size_t i;
+	r_freeze_foreach (fcns, i, fcn) {
+		if (!r_anal_function_alive (core->anal, fcn)) {
+			continue;
+		}
 #if 0
 		r_anal_analyze_fcn_refs (core, fcn, depth);
 		continue;
@@ -15462,6 +15487,7 @@ static void anal_aarr(RCore *core) {
 		RVecAnalRef_free (refs);
 	}
 	r_bitset_free (visited);
+	r_freeze_release (fcns);
 }
 
 static void logline(RCore *core, int pc, const char *title) {
@@ -15530,6 +15556,8 @@ static int cmpfn_bw(const void *a, const void *b) {
 	return 0;
 }
 
+R_VEC_TYPE (RVecBinEntry, RBinAddr);
+
 static bool cmd_aa(RCore *core, bool aaa) {
 	const RList *list;
 	RListIter *iter;
@@ -15576,6 +15604,8 @@ static bool cmd_aa(RCore *core, bool aaa) {
 	r_core_task_yield (&core->tasks);
 
 	logline (core, 18, "Analyze symbols (af@@@s)");
+	RVecAnalAddr symbol_addrs;
+	RVecAnalAddr_init (&symbol_addrs);
 	RVecRBinSymbol *v = r_bin_get_symbols_vec (core->bin);
 	if (v) {
 		if (anal_symsort != 0) {
@@ -15588,14 +15618,8 @@ static bool cmd_aa(RCore *core, bool aaa) {
 			}
 			RSkipListNode *it;
 			r_skiplist_foreach (symbols, it, symbol) {
-				if (r_cons_is_breaked (core->cons)) {
-					break;
-				}
-				ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr, symbol->vaddr);
-				// TODO: uncomment to: fcn.name = symbol.name, problematic for imports
-				// r_core_af (core, addr, symbol->name, anal_calls);
-				r_core_af (core, addr, NULL, anal_calls);
-				r_core_task_yield (&core->tasks);
+				const ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr, symbol->vaddr);
+				RVecAnalAddr_push_back (&symbol_addrs, &addr);
 			}
 			r_skiplist_free (symbols);
 		} else {
@@ -15606,14 +15630,20 @@ static bool cmd_aa(RCore *core, bool aaa) {
 				if (isSkippable (symbol) || !isValidSymbol (symbol)) {
 					continue;
 				}
-				ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr, symbol->vaddr);
-				// TODO: uncomment to: fcn.name = symbol.name, problematic for imports
-				// r_core_af (core, addr, symbol->name, anal_calls);
-				r_core_af (core, addr, NULL, anal_calls);
-				r_core_task_yield (&core->tasks);
+				const ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr, symbol->vaddr);
+				RVecAnalAddr_push_back (&symbol_addrs, &addr);
 			}
 		}
 	}
+	const ut64 *symbol_addr;
+	R_VEC_FOREACH (&symbol_addrs, symbol_addr) {
+		if (r_cons_is_breaked (core->cons)) {
+			break;
+		}
+		r_core_af (core, *symbol_addr, NULL, anal_calls);
+		r_core_task_yield (&core->tasks);
+	}
+	RVecAnalAddr_fini (&symbol_addrs);
 	r_core_task_yield (&core->tasks);
 	/* Main */
 	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN))) {
@@ -15623,28 +15653,34 @@ static bool cmd_aa(RCore *core, bool aaa) {
 		}
 	}
 	r_core_task_yield (&core->tasks);
-	if ((list = r_bin_get_entries (core->bin))) {
-		r_list_foreach (list, iter, entry) {
-			if (r_cons_is_breaked (core->cons)) {
-				break;
-			}
-			if (entry->paddr == UT64_MAX) {
-				continue;
-			}
-			ut64 addr = r_bin_get_vaddr (core->bin, entry->paddr, entry->vaddr);
-			if (addr != UT64_MAX) {
-				r_core_af (core, addr, NULL, anal_calls);
-				RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
-				if (fcn) {
-					if (entry->type == R_BIN_ENTRY_TYPE_INIT || entry->type == R_BIN_ENTRY_TYPE_PREINIT) {
-						r_anal_function_set_attr (fcn, R_ANAL_FCN_ATTR_CONSTRUCTOR, true);
-					} else if (entry->type == R_BIN_ENTRY_TYPE_FINI) {
-						r_anal_function_set_attr (fcn, R_ANAL_FCN_ATTR_DESTRUCTOR, true);
-					}
-				}
+	RVecBinEntry entries;
+	RVecBinEntry_init (&entries);
+	list = r_bin_get_entries (core->bin);
+	r_list_foreach (list, iter, entry) {
+		if (entry->paddr == UT64_MAX) {
+			continue;
+		}
+		const ut64 addr = r_bin_get_vaddr (core->bin, entry->paddr, entry->vaddr);
+		if (addr != UT64_MAX) {
+			RBinAddr saved = { .vaddr = addr, .type = entry->type };
+			RVecBinEntry_push_back (&entries, &saved);
+		}
+	}
+	R_VEC_FOREACH (&entries, entry) {
+		if (r_cons_is_breaked (core->cons)) {
+			break;
+		}
+		r_core_af (core, entry->vaddr, NULL, anal_calls);
+		RAnalFunction *fcn = r_anal_get_function_at (core->anal, entry->vaddr);
+		if (fcn) {
+			if (entry->type == R_BIN_ENTRY_TYPE_INIT || entry->type == R_BIN_ENTRY_TYPE_PREINIT) {
+				r_anal_function_set_attr (fcn, R_ANAL_FCN_ATTR_CONSTRUCTOR, true);
+			} else if (entry->type == R_BIN_ENTRY_TYPE_FINI) {
+				r_anal_function_set_attr (fcn, R_ANAL_FCN_ATTR_DESTRUCTOR, true);
 			}
 		}
 	}
+	RVecBinEntry_fini (&entries);
 	r_core_task_yield (&core->tasks);
 	if (!aaa) {
 		// R2_600 - drop this code? we already recover vars later in aaa. should be fine to if 0

@@ -549,9 +549,11 @@ static void r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) 
 static void function_rename(RAnalFunction *fcn) {
 	if (r_str_startswith (fcn->name, "loc.")) {
 		char *name = r_str_newf ("fcn.%s", fcn->name + 4);
-		if (r_anal_function_rename (fcn, name)) {
+		(void)r_ref (fcn);
+		if (r_anal_function_rename (fcn, name) && r_anal_function_alive (fcn->anal, fcn)) {
 			fcn->type = R_ANAL_FCN_TYPE_FCN;
 		}
+		r_unref (fcn);
 		free (name);
 	}
 }
@@ -789,12 +791,11 @@ static bool trycatch_found_cb(const RBinTrycatch *tc, void *user) {
 }
 
 // Analyze exception handlers in their owning function without adding CFG edges.
-static bool anal_trycatch(const RBinTrycatch *tc, void *user) {
-	RAnalFunction *fcn = user;
+static void anal_trycatch(RAnalFunction *fcn, const RBinTrycatch *tc) {
 	RAnal *anal = fcn->anal;
 	const ut64 handler = tc->handler;
 	if (tc->kind == R_BIN_TRYCATCH_FINALLY || handler == fcn->addr || block_in (anal, NULL, handler)) {
-		return true;
+		return;
 	}
 	const int saved = fcn->stack;
 	trycatch_depth (anal, fcn, tc->to);
@@ -802,6 +803,15 @@ static bool anal_trycatch(const RBinTrycatch *tc, void *user) {
 		R_LOG_DEBUG ("Cannot analyze exception handler at 0x%08"PFMT64x, handler);
 	}
 	fcn->stack = saved;
+}
+
+static bool collect_trycatch(const RBinTrycatch *tc, void *user) {
+	RBinTrycatch *copy = RVecRBinTrycatch_emplace_back (user);
+	if (!copy) {
+		return false;
+	}
+	*copy = *tc;
+	copy->type = NULL;
 	return true;
 }
 
@@ -811,7 +821,15 @@ static void core_anal_fcn_trycatch(RCore *core, RAnalFunction *fcn) {
 	}
 	RBinFile *bf = r_bin_cur (core->bin);
 	if (bf) {
-		r_bin_trycatch_foreach (bf, fcn->addr, anal_trycatch, fcn);
+		RVecRBinTrycatch regions;
+		RVecRBinTrycatch_init (&regions);
+		if (r_bin_trycatch_foreach (bf, fcn->addr, collect_trycatch, &regions)) {
+			const RBinTrycatch *tc;
+			R_VEC_FOREACH (&regions, tc) {
+				anal_trycatch (fcn, tc);
+			}
+		}
+		RVecRBinTrycatch_fini (&regions);
 	}
 }
 
@@ -829,6 +847,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 	RVecUT64_init (&next);
 	int fcnlen = 0;
 	RAnalFunction *fcn = r_anal_function_new (core->anal);
+	bool registered = false;
 	R_WARN_IF_FAIL (fcn);
 	const char *fcnpfx = r_anal_fcn_prefix_at (core->anal, at);
 	const char *cc = r_anal_cc_default (core->anal);
@@ -951,6 +970,8 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 				fcn = NULL;
 				break;
 			}
+			(void)r_ref (fcn);
+			registered = true;
 			if (has_next) {
 				ut64 addr = r_anal_function_max_addr (fcn);
 				RIOMap *map = r_io_map_get_at (core->io, addr);
@@ -990,12 +1011,13 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 			r_core_anal_fcn (core, *iter, from, 0, depth - 1);
 		}
 	}
-	if (fcn && is_x86) {
+	if (fcn && is_x86 && (!registered || r_anal_function_alive (core->anal, fcn))) {
 		r_anal_function_check_bp_use (fcn);
 		if (!fcn->bp_frame) {
 			r_anal_function_delete_vars_by_kind (fcn, R_ANAL_VAR_KIND_BPV);
 		}
 	}
+	r_unref (fcn);
 	RVecUT64_fini (&next);
 	r_anal_hint_free (hint);
 	return true;
@@ -1026,6 +1048,8 @@ error:
 			if (!r_anal_add_function (core->anal, fcn)) {
 				r_anal_function_free (fcn);
 				fcn = NULL;
+			} else {
+				(void)r_ref (fcn);
 			}
 		}
 		if (fcn && has_next) {
@@ -1043,12 +1067,13 @@ error:
 			}
 		}
 	}
-	if (fcn && is_x86) {
+	if (fcn && is_x86 && r_anal_function_alive (core->anal, fcn)) {
 		r_anal_function_check_bp_use (fcn);
 		if (!fcn->bp_frame) {
 			r_anal_function_delete_vars_by_kind (fcn, R_ANAL_VAR_KIND_BPV);
 		}
 	}
+	r_unref (fcn);
 	RVecUT64_fini (&next);
 	r_anal_hint_free (hint);
 	return false;
@@ -2199,34 +2224,36 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 			return true;
 		}
 	}
-	if (__core_anal_fcn (core, at, from, reftype, depth - 1)) {
-		// split function if overlaps
-		if (fcn) {
-			r_anal_function_resize (fcn, at - fcn->addr);
-		}
-		return true;
+	if (fcn) {
+		(void)r_ref (fcn);
 	}
-	return false;
+	const bool analyzed = __core_anal_fcn (core, at, from, reftype, depth - 1);
+	if (analyzed && fcn && r_anal_function_alive (core->anal, fcn) && at > fcn->addr) {
+		r_anal_function_resize (fcn, at - fcn->addr);
+	}
+	r_unref (fcn);
+	return analyzed;
 }
 
 /* if addr is 0, remove all functions
  * otherwise remove the function addr falls into */
 R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
-	RAnalFunction *fcni;
-	RListIter *iter, *iter_tmp;
-
 	if (!addr) {
 		r_list_purge (core->anal->fcns);
-		if (!(core->anal->fcns = r_list_new ())) {
-			return false;
-		}
-	} else {
-		r_list_foreach_safe (core->anal->fcns, iter, iter_tmp, fcni) {
-			if (r_anal_function_contains (fcni, addr)) {
-				r_anal_function_delete (core->anal, fcni);
-			}
+		return true;
+	}
+	RFreeze *fcns = r_anal_freeze_functions (core->anal);
+	if (!fcns) {
+		return false;
+	}
+	RAnalFunction *fcn;
+	size_t i;
+	r_freeze_foreach (fcns, i, fcn) {
+		if (r_anal_function_alive (core->anal, fcn) && r_anal_function_contains (fcn, addr)) {
+			r_anal_function_delete (core->anal, fcn);
 		}
 	}
+	r_freeze_release (fcns);
 	return true;
 }
 

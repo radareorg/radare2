@@ -481,7 +481,7 @@ R_API bool r_anal_block_successor_addrs_foreach(RAnalBlock *block, RAnalAddrCb c
 
 typedef struct r_anal_block_recurse_context_t {
 	RAnal *anal;
-	RVecAnalBlockPtr /*<RAnalBlock>*/ to_visit;
+	RVecAnalAddr to_visit;
 	RBitset *visited;
 } RAnalBlockRecurseContext;
 
@@ -491,11 +491,7 @@ static bool block_recurse_successor_cb(ut64 addr, void *user) {
 		// already visited
 		return true;
 	}
-	RAnalBlock *block = r_anal_get_block_at (ctx->anal, addr);
-	if (!block) {
-		return true;
-	}
-	RVecAnalBlockPtr_push_back (&ctx->to_visit, &block);
+	RVecAnalAddr_push_back (&ctx->to_visit, &addr);
 	return true;
 }
 
@@ -503,27 +499,31 @@ R_API bool r_anal_block_recurse(RAnalBlock *block, RAnalBlockCb cb, void *user) 
 	bool breaked = false;
 	RAnalBlockRecurseContext ctx;
 	ctx.anal = block->anal;
-	RVecAnalBlockPtr_init (&ctx.to_visit);
+	RVecAnalAddr_init (&ctx.to_visit);
 	ctx.visited = r_bitset_new ();
 
 	r_bitset_set (ctx.visited, block->addr);
-	RVecAnalBlockPtr_push_back (&ctx.to_visit, &block);
+	RVecAnalAddr_push_back (&ctx.to_visit, &block->addr);
 
-	while (!RVecAnalBlockPtr_empty (&ctx.to_visit)) {
-		RAnalBlock **cur_slot = RVecAnalBlockPtr_last (&ctx.to_visit);
-		RAnalBlock *cur = cur_slot? *cur_slot: NULL;
-		RVecAnalBlockPtr_pop_back (&ctx.to_visit);
+	while (!RVecAnalAddr_empty (&ctx.to_visit)) {
+		const ut64 addr = *RVecAnalAddr_last (&ctx.to_visit);
+		RVecAnalAddr_pop_back (&ctx.to_visit);
+		RAnalBlock *cur = r_anal_get_block_at (ctx.anal, addr);
 		if (cur) {
+			(void)r_ref (cur);
 			breaked = !cb (cur, user);
+			if (!breaked && r_anal_get_block_at (ctx.anal, cur->addr) == cur) {
+				r_anal_block_successor_addrs_foreach (cur, block_recurse_successor_cb, &ctx);
+			}
+			r_unref (cur);
 			if (breaked) {
 				break;
 			}
-			r_anal_block_successor_addrs_foreach (cur, block_recurse_successor_cb, &ctx);
 		}
 	}
 
 	r_bitset_free (ctx.visited);
-	RVecAnalBlockPtr_fini (&ctx.to_visit);
+	RVecAnalAddr_fini (&ctx.to_visit);
 	return !breaked;
 }
 
@@ -531,27 +531,33 @@ R_API bool r_anal_block_recurse_followthrough(RAnalBlock *block, RAnalBlockCb cb
 	bool breaked = false;
 	RAnalBlockRecurseContext ctx;
 	ctx.anal = block->anal;
-	RVecAnalBlockPtr_init (&ctx.to_visit);
+	RVecAnalAddr_init (&ctx.to_visit);
 	ctx.visited = r_bitset_new ();
 
 	r_bitset_set (ctx.visited, block->addr);
-	RVecAnalBlockPtr_push_back (&ctx.to_visit, &block);
+	RVecAnalAddr_push_back (&ctx.to_visit, &block->addr);
 
 	RCore *core = ctx.anal->coreb.core;
 	RCons *cons = core->cons;
-	while (!RVecAnalBlockPtr_empty (&ctx.to_visit) && !r_cons_is_breaked (cons)) {
-		RAnalBlock **cur_slot = RVecAnalBlockPtr_last (&ctx.to_visit);
-		RAnalBlock *cur = cur_slot? *cur_slot: NULL;
-		RVecAnalBlockPtr_pop_back (&ctx.to_visit);
-		if (cur && cb (cur, user)) {
-			r_anal_block_successor_addrs_foreach (cur, block_recurse_successor_cb, &ctx);
-		} else {
-			breaked = true;
+	while (!RVecAnalAddr_empty (&ctx.to_visit) && !r_cons_is_breaked (cons)) {
+		const ut64 addr = *RVecAnalAddr_last (&ctx.to_visit);
+		RVecAnalAddr_pop_back (&ctx.to_visit);
+		RAnalBlock *cur = r_anal_get_block_at (ctx.anal, addr);
+		if (cur) {
+			(void)r_ref (cur);
+			if (cb (cur, user)) {
+				if (r_anal_get_block_at (ctx.anal, cur->addr) == cur) {
+					r_anal_block_successor_addrs_foreach (cur, block_recurse_successor_cb, &ctx);
+				}
+			} else {
+				breaked = true;
+			}
+			r_unref (cur);
 		}
 	}
 
 	r_bitset_free (ctx.visited);
-	RVecAnalBlockPtr_fini (&ctx.to_visit);
+	RVecAnalAddr_fini (&ctx.to_visit);
 	return !breaked;
 }
 
