@@ -857,3 +857,233 @@ with Image(image, bounded=True) as disk:
     check_payload(disk, IDS['vanished.bin'], EXPECTED, flags=2, status=-1, prefix=0, conflict=True)
     assert collect_call(lambda cb: ranges(disk.fs, b'/hfs', 1, cb, None)) == (-1, [])
 print('PASS: conflicting allocation geometry retains backup inspection without authorizing free space')
+
+# Reuse the fixture generator for journal corruption without writing images.
+import importlib.util
+sys.dont_write_bytecode = True
+spec = importlib.util.spec_from_file_location('hfsplus_fixtures', FIXTURES / 'generate.py')
+journal_fixtures = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(journal_fixtures)
+
+
+def journal_files(disk):
+    return [(number, flags) for number, name, flags in disk.listing(0)
+            if number & (1 << 62) and name == b'journal.bin']
+
+
+def check_journal_versions(image, block=BLOCK, delta=0, base=0):
+    with Image(image, bounded=True, delta=delta) as disk:
+        versions = journal_files(disk)
+        assert len(versions) == 2, versions
+        for index, (number, flags) in enumerate(versions):
+            expected = b''.join(bytes([65 + i]) * block for i in range(8)) + (b'I' if not index else b'Z') * block
+            found = check_payload(disk, number, expected, flags=2)
+            assert found[-1][1] == delta + base + (116 + index) * block, found
+            assert flags == 3, (number, flags)
+            resource = next(row[1] for row in named_streams(disk, number) if row[0] == b'rsrc')
+            check_payload(disk, resource, b'Journal resource ' + (b'one' if not index else b'two') + b'\n', flags=2)
+        directories = [number for number, name, _ in disk.listing(0) if name == b'history-dir']
+        assert len(directories) == 2
+        for number in directories:
+            children = named_streams(disk, number)
+            assert len(children) == 1 and children[0][0] == b'child.txt', children
+            check_payload(disk, children[0][1], b'child\n', flags=2)
+        check_payload(disk, b'/hfs/live.txt', b'Live HFS+ file\n')
+        assert all(offset + size <= len(disk.image) for offset, size in disk.reads)
+
+
+for little in (False, True):
+    for wrap, split in ((False, False), (True, False), (False, True), (True, True)):
+        image, info = journal_fixtures.build_journal(little=little, wrap=wrap, split=split)
+        check_journal_versions(image, delta=2048)
+        print('PASS: journal versions keep transaction-local names, ancestry, data/resource mappings', little, wrap, split)
+
+for block, sensitive in ((4096, False), (512, True)):
+    image, info = journal_fixtures.build_journal(block=block, sensitive=sensitive)
+    check_journal_versions(image, block)
+    print('PASS: journal mappings preserve HFSX and allocation block geometry', block, sensitive)
+
+image, info = journal_fixtures.build_journal()
+outer = bytearray(16384) + image
+for chunk_info in info['journal_chunks']:
+    chunk = 16384 + info['journal_offset'] + chunk_info['position']
+    for index in range(1, u16(outer, chunk + 2)):
+        position = chunk + 16 + index * 16
+        struct.pack_into('>Q', outer, position, u64(outer, position) + 16384 // 512)
+put16(outer, 1024, 0x4244)
+put32(outer, 1024 + 20, 4096)
+put16(outer, 1024 + 28, 16)
+struct.pack_into('>HHH', outer, 1024 + 124, 0x482b, 2, 32)
+check_journal_versions(outer, delta=4096, base=16384)
+print('PASS: journal history in wrapped HFS+ volumes preserves embedded and mounted offsets')
+
+image, info = journal_fixtures.build_journal(pending=True)
+with Image(image, bounded=True) as disk:
+    versions = journal_files(disk)
+    assert len(versions) == 2, versions
+    for number, _ in versions:
+        check_payload(disk, number, bytes(9 * BLOCK), flags=2, status=-1, prefix=0)
+    assert collect_call(lambda cb: ranges(disk.fs, b'/hfs', 4, cb, None)) == (-1, [])
+print('PASS: complete pending transactions remain discoverable without authorizing recovery or orphan claims')
+
+
+def change_journal_chunk(image, info, index, change, repair=True):
+    offset = info['journal_offset'] + info['journal_chunks'][index]['position']
+    change(image, offset)
+    if repair:
+        put32(image, offset + 8, 0)
+        put32(image, offset + 8, journal_fixtures.checksum(image[offset:offset + 32]))
+
+
+for label, change, repair in (
+        ('header checksum', lambda image, offset: put32(image, offset + 8, 0), False),
+        ('payload checksum', lambda image, offset: image.__setitem__(offset + 512 + 40, 1), False),
+        ('missing payload checksums', lambda image, offset: put32(image, offset + 12, 2), True),
+        ('missing first header', lambda image, offset: put32(image, offset + 12, 1), True),
+        ('bad block count', lambda image, offset: put16(image, offset + 2, 0xffff), True),
+        ('excess bytes used', lambda image, offset: put32(image, offset + 4, 0xffffffff), True),
+        ('out of volume targets', lambda image, offset: struct.pack_into('>Q', image, offset + 32, 0x7fffffffffffffff), True),
+        ('overlapping targets', lambda image, offset: struct.pack_into('>Q', image, offset + 48, u64(image, offset + 32)), True),
+        ('missing per-block checksum', lambda image, offset: put32(image, offset + 44, 0), True),
+        ('stale sequence', lambda image, offset: put32(image, offset + 28, 0xffff0000), True)):
+    image, info = journal_fixtures.build_journal()
+    change_journal_chunk(image, info, 1, change, repair)
+    with Image(image, bounded=True) as disk:
+        versions = journal_files(disk)
+        assert len(versions) <= 1, (label, versions)
+        check_payload(disk, b'/hfs/live.txt', b'Live HFS+ file\n')
+    print('PASS: corrupt journal', label, 'cannot publish a recoverable transaction')
+
+image, info = journal_fixtures.build_journal(split=True)
+change_journal_chunk(image, info, 4, lambda image, offset: put32(image, offset + 28, 42))
+with Image(image, bounded=True) as disk:
+    assert len(journal_files(disk)) == 1
+print('PASS: missing or mismatched continuation headers cannot combine partial historical nodes')
+
+image, info = journal_fixtures.build_journal()
+for bit in range(128, 224):
+    bitmap_set(image, bit, False)
+chunk = info['journal_offset'] + info['journal_chunks'][0]['position']
+leaf = chunk + 512
+value = leaf + 14 + u16(image, leaf + 14) + 2
+put32(image, value + 104, 128)
+put32(image, chunk + 44, journal_fixtures.checksum(image[leaf:leaf + NODE]))
+with Image(image, bounded=True) as disk:
+    first = journal_files(disk)[0][0]
+    check_payload(disk, first, bytes(9 * BLOCK), flags=2, status=-1, prefix=0, conflict=True)
+print('PASS: journal storage remains protected from checked recovery despite cleared allocation bits')
+
+image, info = journal_fixtures.build_journal()
+bitmap_set(image, 116, True)
+with Image(image, bounded=True) as disk:
+    first, second = journal_files(disk)
+    expected = b''.join(bytes([65 + i]) * BLOCK for i in range(8))
+    check_payload(disk, first[0], expected + b'I' * BLOCK, flags=2, status=-1, prefix=8 * BLOCK, conflict=True)
+    check_payload(disk, second[0], expected + b'Z' * BLOCK, flags=2)
+print('PASS: reused historical data stops recovery at the checked prefix without affecting another version')
+
+image, info = journal_fixtures.build_journal()
+bitmap_set(image, 118, True)
+with Image(image, bounded=True) as disk:
+    first = journal_files(disk)[0][0]
+    resource = next(row[1] for row in named_streams(disk, first) if row[0] == b'rsrc')
+    check_payload(disk, resource, b'Journal resource one\n', flags=2, status=-1, prefix=0, conflict=True)
+print('PASS: historical resource forks refuse data currently allocated to another owner')
+
+image, info = journal_fixtures.build_journal()
+change_journal_chunk(image, info, 0, lambda image, offset: struct.pack_into('>Q', image, offset + 48, 0xffffffffffffffff))
+with Image(image, bounded=True) as disk:
+    first, second = journal_files(disk)
+    prefix = b''.join(bytes([65 + i]) * BLOCK for i in range(8))
+    check_payload(disk, first[0], prefix + b'I' * BLOCK, flags=2, status=-1, prefix=8 * BLOCK)
+    check_payload(disk, second[0], prefix + b'Z' * BLOCK, flags=2)
+print('PASS: killed journal blocks cannot borrow overflow mappings from another historical transaction')
+
+image, info = journal_fixtures.build_journal(split=True)
+change_journal_chunk(image, info, 3, lambda image, offset: struct.pack_into('>Q', image, offset + 32, 0xffffffffffffffff))
+with Image(image, bounded=True) as disk:
+    assert len(journal_files(disk)) == 1
+print('PASS: a partially overwritten historical node cannot be completed with current catalog bytes')
+
+image, info = journal_fixtures.build_journal()
+chunk = info['journal_offset'] + info['journal_chunks'][0]['position']
+leaf = chunk + 512
+value = leaf + 14 + u16(image, leaf + 14) + 2
+put32(image, value + 8, 20)
+put32(image, chunk + 44, journal_fixtures.checksum(image[leaf:leaf + NODE]))
+with Image(image, bounded=True) as disk:
+    first = journal_files(disk)[0][0]
+    check_payload(disk, first, bytes(9 * BLOCK), flags=2, status=-1, prefix=0, conflict=True)
+    check_payload(disk, b'/hfs/live.txt', b'Live HFS+ file\n')
+print('PASS: journal CNID reuse refuses historical recovery without replacing the current live file')
+
+image, info = journal_fixtures.build_journal()
+original = bytes(image[INFO['catalog'] + 3 * NODE:INFO['catalog'] + 4 * NODE])
+image[224 * BLOCK:228 * BLOCK] = original[:NODE // 2]
+image[240 * BLOCK:244 * BLOCK] = original[NODE // 2:]
+for header in (1024, len(image) - 1024):
+    image[header + 272:header + 352] = journal_fixtures.fork(4 * NODE, [(20, 24), (224, 4), (240, 4)])
+for bit in list(range(224, 228)) + list(range(240, 244)):
+    bitmap_set(image, bit, True)
+for chunk_info in info['journal_chunks']:
+    chunk = info['journal_offset'] + chunk_info['position']
+    leaf = bytes(image[chunk + 512:chunk + 512 + NODE])
+    overflow = bytes(image[chunk + 512 + NODE:chunk + 512 + 2 * NODE])
+    payload = journal_fixtures.journal_chunk([(224 * BLOCK, leaf[:NODE // 2]),
+        (240 * BLOCK, leaf[NODE // 2:]), (INFO['overflow'] + NODE, overflow)], chunk_info['sequence'])
+    image[chunk:chunk + len(payload)] = payload
+check_journal_versions(image)
+print('PASS: fragmented current metadata mappings reconstruct historical nodes from multiple journal targets')
+
+image, info = journal_fixtures.build_journal()
+failed = info['journal_offset'] + info['journal_chunks'][1]['position'] + 512
+with Image(image, bounded=True, failed=((failed, failed + 512),)) as disk:
+    assert len(journal_files(disk)) == 1
+    check_payload(disk, b'/hfs/live.txt', b'Live HFS+ file\n')
+print('PASS: unreadable historical payloads preserve other complete transactions and current file reads')
+
+image, info = journal_fixtures.build_journal()
+image[1024:1536] = bytes(512)
+check_journal_versions(image)
+print('PASS: alternate volume-header selection retains validated journal history')
+
+image, info = journal_fixtures.build_journal()
+chunk = info['journal_offset'] + info['journal_chunks'][0]['position']
+leaf = chunk + 512
+record = leaf + u16(image, leaf + NODE - 6)
+value = record + u16(image, record) + 2
+put32(image, value + 8, 40)
+put32(image, chunk + 44, journal_fixtures.checksum(image[leaf:leaf + NODE]))
+with Image(image, bounded=True) as disk:
+    first = journal_files(disk)[0][0]
+    check_payload(disk, first, bytes(9 * BLOCK), flags=2, status=-1, prefix=0, conflict=True)
+print('PASS: duplicate catalog identities within one transaction remain explicit conflicts')
+
+image, info = journal_fixtures.build_journal()
+change_journal_chunk(image, info, 0, lambda image, offset: struct.pack_into('>Q', image, offset + 32, INFO['catalog'] // 512))
+with Image(image, bounded=True) as disk:
+    assert len(journal_files(disk)) == 1
+print('PASS: a historical leaf cannot masquerade as the mandatory B-tree header node')
+
+image, info = journal_fixtures.build_journal()
+for version, chunk_info in enumerate(info['journal_chunks']):
+    chunk = info['journal_offset'] + chunk_info['position']
+    leaf = chunk + 512
+    records = []
+    for index in range(u16(image, leaf + 10)):
+        start = leaf + u16(image, leaf + NODE - (index + 1) * 2)
+        end = leaf + u16(image, leaf + NODE - (index + 2) * 2)
+        records.append(bytearray(image[start:end]))
+    put16(records[0], 8, 0xd800)
+    if not version:
+        records.append(journal_fixtures.thread(40, 2, 'journal-restored.bin'))
+    node = journal_fixtures.node(-1, 1, records)[0]
+    image[leaf:leaf + NODE] = node
+    put32(image, chunk + 44, journal_fixtures.checksum(node))
+with Image(image, bounded=True) as disk:
+    names = {name: number for number, name, _ in disk.listing(0) if number & (1 << 62)}
+    assert b'journal-restored.bin' in names and b'cnid-40' in names, names
+    prefix = b''.join(bytes([65 + i]) * BLOCK for i in range(8))
+    check_payload(disk, names[b'journal-restored.bin'], prefix + b'I' * BLOCK, flags=2)
+    check_payload(disk, names[b'cnid-40'], prefix + b'Z' * BLOCK, flags=2)
+print('PASS: historical file threads restore names only within their own transaction')

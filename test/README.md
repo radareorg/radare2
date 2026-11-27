@@ -53,7 +53,8 @@ compiler and does not load a kernel module or access kernel memory.
  * To check HFS+/HFSX allocation, catalog remnants, overflow mappings, Unicode
    names, hard links, resource forks, attributes and checked recovery, run
    `python3 test/scripts/test-hfsplus-io.py` after building. This also checks
-   alternate-header selection, wrapped volumes and conflicting metadata.
+   alternate-header selection, wrapped volumes, conflicting metadata and
+   journal transaction history, checksums, wraparound and version isolation.
  * To check classic HFS deleted names, retained threads, fork recovery, file and
    catalog slack, allocation maps and damaged metadata, run
    `python3 test/scripts/test-hfs-io.py` after building. This includes alternate

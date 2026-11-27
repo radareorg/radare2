@@ -365,13 +365,38 @@ versions cannot establish a complete mapping.
 Allocation maps distinguish free, allocated, bad and unknown blocks. Orphan
 classification and checked recovery require complete ownership: damaged trees,
 unreadable metadata, inconsistent volume flags or a pending/unverifiable journal
-refuse these operations while retaining readable inspection. Journal checking
-accepts a checksummed empty journal; it does not replay transactions or recover
-historical journal versions. Reads never synthesize missing HFS+ file data.
+refuse these operations while retaining readable inspection. Reads never
+synthesize missing HFS+ file data.
 Cached metadata and stream IDs describe a read-only mounted snapshot; remount
 and enumerate IDs again after changing the backing image. Compressed data-fork
-recovery and journal-history recovery remain separate work. Raw compression
+recovery remains separate work. Raw compression
 attributes and resource forks can be extracted through the stream namespace.
+.Pp
+Internal JNLx journals also supply historical catalog and overflow records.
+The reader validates journal and block-list headers, sequence continuity and
+payload checksums in either byte order, including circular wrapping and
+transaction continuations. It scans only the declared journal, up to 2 GiB.
+Only complete historical leaf nodes covered by validated transaction blocks are
+decoded; missing bytes are never filled from the current tree. Metadata targets
+must map through the current catalog or overflow file, including fragmented
+special files. Relocated historical trees and external journals are unsupported.
+.Pp
+Historical entries appear through mdx and mdxj, including directory ID 0.
+Journal candidates have mounted-snapshot IDs with bits 63 and 62 set and reuse
+mie, mgx and the existing resource-fork stream namespace. Enumerate IDs again
+after remounting. Separate transactions retain distinct versions even when
+their names and CNIDs match; directory threads, ancestry, hard links and overflow
+mappings do not combine unrelated transactions. Historical metadata is marked
+DELETED and HEURISTIC as a candidate view, not proof that a file was deleted.
+Current attributes are not attached to historical journal identities.
+.Pp
+Checked historical extraction requires complete current ownership, free data
+blocks and no current CNID owner. Reused storage stops at the checked prefix.
+Missing same-transaction overflow records leave partial mappings rather than
+borrowing another version's extents. Pending transactions remain discoverable
+but do not authorize checked extraction or orphan classification. No journal is
+replayed or written. Unchecksummed, unversioned or incomplete journal records
+are excluded from historical recovery; current readable inspection is retained.
 .Pp
 Classic HFS and HFS+/HFSX try the alternate MDB or volume header when the primary
 cannot supply usable volume metadata. Candidates must have valid geometry,

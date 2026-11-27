@@ -1,0 +1,81 @@
+NAME=HFS+ journal versions retain separate catalog ancestry and resource forks
+FILE=gzip://bins/fs/hfsplus-forensic/journal.img.gz
+CMDS=<<EOF2
+mdxj /root 0xc000000000000002
+mdxj /root 0xc000000000000006
+mgx /root 0x4000000000000005 -
+mgx /root 0x4000000000000007 -
+EOF2
+EXPECT=<<EOF2
+[{"type":"file","size":6,"name":"child.txt","id":13835058055282163715,"deleted":true,"flags":3}]
+[{"type":"file","size":6,"name":"child.txt","id":13835058055282163719,"deleted":true,"flags":3}]
+Journal resource one
+Journal resource two
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=HFS+ journal overflow extents are scoped to each historical transaction
+FILE=gzip://bins/fs/hfsplus-forensic/journal.img.gz
+CMDS=<<EOF2
+mie /root 0xc000000000000001
+mie /root 0xc000000000000005
+EOF2
+EXPECT=<<EOF2
+0x00000000 0x0000c800 512 0x1
+0x00000200 0x0000cc00 512 0x1
+0x00000400 0x0000d000 512 0x1
+0x00000600 0x0000d400 512 0x1
+0x00000800 0x0000d800 512 0x1
+0x00000a00 0x0000dc00 512 0x1
+0x00000c00 0x0000e000 512 0x1
+0x00000e00 0x0000e400 512 0x1
+0x00001000 0x0000e800 512 0x1
+0x00000000 0x0000c800 512 0x1
+0x00000200 0x0000cc00 512 0x1
+0x00000400 0x0000d000 512 0x1
+0x00000600 0x0000d400 512 0x1
+0x00000800 0x0000d800 512 0x1
+0x00000a00 0x0000dc00 512 0x1
+0x00000c00 0x0000e000 512 0x1
+0x00000e00 0x0000e400 512 0x1
+0x00001000 0x0000ea00 512 0x1
+EOF2
+EXPECT_ERR=
+RUN
+
+NAME=HFS+ corrupt journal payloads cannot publish a historical version
+FILE=gzip://bins/fs/hfsplus-forensic/journal.img.gz
+CMDS=<<EOF2
+e io.cache=true
+wx 01 @ 0x12628
+mdxj /root 0xc000000000000002
+mdxj /root 0xc000000000000006
+EOF2
+EXPECT=<<EOF2
+[{"type":"file","size":6,"name":"child.txt","id":13835058055282163715,"deleted":true,"flags":3}]
+[]
+EOF2
+EXPECT_ERR=<<EOF2
+ERROR: Invalid path
+EOF2
+RUN
+
+NAME=HFS+ pending journal history remains inspectable without checked extraction
+FILE=gzip://bins/fs/hfsplus-forensic/journal.img.gz
+CMDS=<<EOF2
+e io.cache=true
+wx 4a4e4c781234567800000000000002000000000000004600000000000000c000000002008798a283000002000000002a @ 0x10000
+miej /root 0xc000000000000001
+mfuj /root orphan
+EOF2
+EXPECT=<<EOF2
+{"ranges":[],"status":"error","flags":7}
+{"ranges":[],"status":"error"}
+EOF2
+EXPECT_ERR=<<EOF2
+WARN: Incomplete HFS+ ownership: retaining readable catalog evidence
+ERROR: Filesystem range enumeration: error
+ERROR: Filesystem range enumeration: error
+EOF2
+RUN

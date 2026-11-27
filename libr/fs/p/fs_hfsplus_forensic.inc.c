@@ -5,9 +5,11 @@
 #include "fs_hfsplus_unicode.inc.c"
 
 // R2R db/cmd/cmd_fs_hfsplus_forensic
+// R2R db/cmd/cmd_fs_hfsplus_journal
 // R2R db/cmd/cmd_fs_hfs_forensic
 
 #define HFS_DELETED_ID (1ULL << 63)
+#define HFS_JOURNAL_MAX_SIZE (1ULL << 31)
 
 // MacRoman code points; other legacy script encodings remain unsupported.
 static const ut16 hfs_macroman[128] = {
@@ -51,6 +53,7 @@ typedef struct {
 } HfsTree;
 
 typedef struct {
+	ut64 epoch;
 	ut32 cnid, start;
 	ut8 type;
 	bool live;
@@ -62,7 +65,7 @@ typedef struct hfs_entry_t HfsEntry;
 typedef struct hfs_stream_t HfsStream;
 
 struct hfs_entry_t {
-	ut64 id, size, time, parent_id;
+	ut64 id, size, time, parent_id, epoch;
 	ut32 cnid, parent, flags, uid, gid, created, link_ref;
 	ut16 mode;
 	ut8 link_kind, private_kind, color;
@@ -84,7 +87,7 @@ struct hfs_stream_t {
 };
 
 typedef struct {
-	ut64 location;
+	ut64 location, epoch;
 	ut32 cnid, parent;
 	char *name;
 	bool live, directory;
@@ -112,7 +115,7 @@ typedef struct {
 	RList *entries, *threads, *streams;
 	HtUP *ids, *live, *children, *directories, *thread_index, *stream_ids, *versions, *inodes;
 	RVecHfsAttribute attrs;
-	ut64 next_stream;
+	ut64 next_stream, next_history, epoch;
 	ut64 bitmap_page;
 	ut32 bitmap_size;
 	ut8 bitmap_cache[4096];
@@ -261,6 +264,9 @@ static void hfs_classic_fork(HfsFS *fs, HfsFork *fork, ut32 size, ut64 physical,
 }
 
 static int hfs_overflow_compare(const HfsOverflow *a, const HfsOverflow *b) {
+	if (a->epoch != b->epoch) {
+		return a->epoch < b->epoch? -1: 1;
+	}
 	if (a->cnid != b->cnid) {
 		return a->cnid < b->cnid? -1: 1;
 	}
@@ -274,7 +280,7 @@ static int hfs_overflow_compare(const HfsOverflow *a, const HfsOverflow *b) {
 }
 
 static HfsOverflow *hfs_overflow_find(HfsFS *fs, ut32 cnid, ut8 type, ut32 start, bool deleted) {
-	HfsOverflow key = { .cnid = cnid, .type = type, .start = start, .live = !deleted };
+	HfsOverflow key = { .epoch = fs->epoch, .cnid = cnid, .type = type, .start = start, .live = !deleted };
 	size_t low = 0, high = RVecHfsOverflow_length (&fs->extra);
 	while (low < high) {
 		size_t mid = low + (high - low) / 2;
@@ -599,7 +605,7 @@ static int hfs_overflow_record(HfsFS *fs, const ut8 *record, ut32 length, ut64 l
 		if (!entry) {
 			valid = false;
 		} else {
-			*entry = (HfsOverflow){ .cnid = r_read_be32 (record + 4), .start = r_read_be32 (record + 8),
+			*entry = (HfsOverflow){ .epoch = fs->epoch, .cnid = r_read_be32 (record + 4), .start = r_read_be32 (record + 8),
 				.type = record[2], .live = live };
 			memcpy (entry->extents, record + 12, sizeof (entry->extents));
 		}
@@ -792,6 +798,17 @@ static bool hfs_add_entry(HfsFS *fs, HfsEntry *entry) {
 	if (!(entry->flags & R_FS_FILE_DELETED) && !ht_up_insert (fs->live, entry->cnid, entry)) {
 		return false;
 	}
+	if (entry->epoch) {
+		RList *versions = ht_up_find (fs->versions, entry->cnid, NULL);
+		RListIter *iter;
+		HfsEntry *other;
+		r_list_foreach (versions, iter, other) {
+			if (other->epoch == entry->epoch) {
+				other->flags |= R_FS_FILE_CONFLICT | R_FS_FILE_PARTIAL;
+				entry->flags |= R_FS_FILE_CONFLICT | R_FS_FILE_PARTIAL;
+			}
+		}
+	}
 	return hfs_bucket_append (fs->versions, entry->cnid, entry)
 		&& (entry->type != 'd' || hfs_bucket_append (fs->directories, entry->cnid, entry));
 }
@@ -924,7 +941,7 @@ static int hfs_catalog_record(HfsFS *fs, const ut8 *record, ut32 length, ut64 lo
 			return 0;
 		}
 		HfsThread *thread = R_NEW0 (HfsThread);
-		*thread = (HfsThread){ .location = location, .cnid = r_read_be32 (record + 2),
+		*thread = (HfsThread){ .location = location, .epoch = fs->epoch, .cnid = r_read_be32 (record + 2),
 			.parent = r_read_be32 (value + 4), .name = name, .live = live, .directory = type == 3 };
 		if (!r_list_append (fs->threads, thread)) {
 			hfs_thread_free (thread);
@@ -958,6 +975,7 @@ static int hfs_catalog_record(HfsFS *fs, const ut8 *record, ut32 length, ut64 lo
 	}
 	HfsEntry *entry = R_NEW0 (HfsEntry);
 	entry->id = live? cnid: HFS_DELETED_ID | location;
+	entry->epoch = fs->epoch;
 	entry->cnid = cnid;
 	entry->parent = parent;
 	entry->mode = mode;
@@ -1122,7 +1140,7 @@ static void hfs_attribute_streams(HfsFS *fs) {
 		bool ambiguous = false;
 		RList *versions = ht_up_find (fs->versions, base->cnid, NULL);
 		r_list_foreach (versions, iter, entry) {
-			if (entry->cnid != base->cnid || (base->live && (entry->flags & R_FS_FILE_DELETED))) {
+			if (entry->epoch || entry->cnid != base->cnid || (base->live && (entry->flags & R_FS_FILE_DELETED))) {
 				continue;
 			}
 			if (owner && owner != entry) {
@@ -1237,6 +1255,9 @@ static HfsEntry *hfs_parent(HfsFS *fs, HfsEntry *entry) {
 	RListIter *iter;
 	HfsEntry *parent, *found = NULL;
 	r_list_foreach (candidates, iter, parent) {
+		if (parent->epoch != entry->epoch && (parent->flags & R_FS_FILE_DELETED)) {
+			continue;
+		}
 		if (entry->created && parent->created && parent->created > entry->created) {
 			continue;
 		}
@@ -1262,7 +1283,7 @@ static void hfs_thread_names(HfsFS *fs) {
 		HfsThread *thread, *found = NULL;
 		bool ambiguous = false;
 		r_list_foreach (threads, thread_iter, thread) {
-			if (thread->directory != (entry->type == 'd') || thread->live == !!(entry->flags & R_FS_FILE_DELETED)) {
+			if (thread->epoch != entry->epoch || thread->directory != (entry->type == 'd') || thread->live == !!(entry->flags & R_FS_FILE_DELETED)) {
 				continue;
 			}
 			if (found && (thread->parent != found->parent || strcmp (thread->name, found->name))) {
@@ -1297,7 +1318,7 @@ static void hfs_thread_names(HfsFS *fs) {
 		RList *versions = ht_up_find (fs->versions, thread->cnid, NULL);
 		RListIter *version_iter;
 		r_list_foreach (versions, version_iter, entry) {
-			if ((entry->flags & R_FS_FILE_DELETED) && entry->parent == thread->parent && !strcmp (entry->name, thread->name)) {
+			if (entry->epoch == thread->epoch && (entry->flags & R_FS_FILE_DELETED) && entry->parent == thread->parent && !strcmp (entry->name, thread->name)) {
 				found = true;
 			}
 		}
@@ -1306,6 +1327,7 @@ static void hfs_thread_names(HfsFS *fs) {
 		}
 		entry = R_NEW0 (HfsEntry);
 		entry->id = HFS_DELETED_ID | thread->location;
+		entry->epoch = thread->epoch;
 		entry->cnid = thread->cnid;
 		entry->parent = thread->parent;
 		entry->type = thread->directory? 'd': 'f';
@@ -1345,6 +1367,9 @@ static HfsEntry *hfs_link_target(HfsFS *fs, HfsEntry *link) {
 	RListIter *iter;
 	HfsEntry *target;
 	r_list_foreach (candidates, iter, target) {
+		if ((target->epoch || link->epoch) && target->epoch != link->epoch) {
+			continue;
+		}
 		HfsEntry *directory = ht_up_find (fs->ids, target->parent_id, NULL);
 		if (!directory || !link->created || (link->created != directory->created && (!root || link->created != root->created))
 				|| (target->flags & R_FS_FILE_DELETED && !deleted)
@@ -1447,11 +1472,239 @@ static void hfs_resolve_names(HfsFS *fs) {
 	ht_up_foreach (fs->children, hfs_sort_children, NULL);
 }
 
+typedef struct {
+	HfsFS *fs;
+	ut64 offset, size;
+	ut32 sector, header_size;
+	bool big;
+} HfsJournal;
+
+static ut32 hfs_checksum(ut32 checksum, const ut8 *data, ut32 size) {
+	ut32 i;
+	for (i = 0; i < size; i++) {
+		checksum = (checksum << 8) ^ (checksum + data[i]);
+	}
+	return checksum;
+}
+
+static ut64 hfs_journal_next(HfsJournal *journal, ut64 position, ut64 size) {
+	ut64 ring = journal->size - journal->sector;
+	return journal->sector + (position - journal->sector + size) % ring;
+}
+
+static bool hfs_journal_read(HfsJournal *journal, ut64 position, ut8 *data, ut32 size) {
+	ut32 first = R_MIN ((ut64)size, journal->size - position);
+	return hfs_disk (journal->fs, journal->offset + position, data, first)
+		&& (first == size || hfs_disk (journal->fs, journal->offset + journal->sector, data + first, size - first));
+}
+
+static bool hfs_journal_payload(HfsJournal *journal, ut64 position, ut32 size, ut32 expected) {
+	ut8 buffer[4096];
+	ut32 checksum = 0;
+	while (size) {
+		ut32 chunk = R_MIN (size, sizeof (buffer));
+		if (!hfs_journal_read (journal, position, buffer, chunk)) {
+			return false;
+		}
+		checksum = hfs_checksum (checksum, buffer, chunk);
+		position = hfs_journal_next (journal, position, chunk);
+		size -= chunk;
+	}
+	return ~checksum == expected;
+}
+
+static bool hfs_journal_chunk(HfsJournal *journal, ut64 position, ut8 *header, HfsFork *snapshot) {
+	ut32 used = r_read_ble32 (header + 4, journal->big);
+	ut32 count = r_read_ble16 (header + 2, journal->big), i;
+	ut64 consumed = journal->header_size;
+	for (i = 1; i < count; i++) {
+		const ut8 *item = header + 16 + i * 16;
+		ut64 block = r_read_ble64 (item, journal->big);
+		ut32 size = r_read_ble32 (item + 8, journal->big);
+		ut32 checksum = r_read_ble32 (item + 12, journal->big);
+		if (!size || size % journal->sector || size > used - consumed) {
+			return false;
+		}
+		ut64 source = hfs_journal_next (journal, position, consumed);
+		consumed += size;
+		if (block == UT64_MAX) {
+			continue;
+		}
+		ut64 target;
+		if (r_mul_overflow_ut64 (block, journal->sector, &target) || target < journal->fs->base) {
+			return false;
+		}
+		target -= journal->fs->base;
+		if (target > journal->fs->size || size > journal->fs->size - target || !checksum
+				|| !hfs_journal_payload (journal, source, size, checksum)) {
+			return false;
+		}
+		ut32 first = R_MIN ((ut64)size, journal->size - source);
+		HfsRun *run = RVecHfsRun_emplace_back (&snapshot->runs);
+		if (!run) {
+			return false;
+		}
+		*run = (HfsRun){ target, journal->offset + source, first };
+		if (first < size) {
+			run = RVecHfsRun_emplace_back (&snapshot->runs);
+			if (!run) {
+				return false;
+			}
+			*run = (HfsRun){ target + first, journal->offset + journal->sector, size - first };
+		}
+	}
+	return consumed == used;
+}
+
+static bool hfs_journal_header(HfsJournal *journal, ut64 position, ut8 *header) {
+	if (!hfs_journal_read (journal, position, header, 32)) {
+		return false;
+	}
+	ut32 expected = r_read_ble32 (header + 8, journal->big);
+	memset (header + 8, 0, 4);
+	ut32 maximum = r_read_ble16 (header, journal->big), count = r_read_ble16 (header + 2, journal->big);
+	ut32 used = r_read_ble32 (header + 4, journal->big), flags = r_read_ble32 (header + 12, journal->big);
+	bool valid = maximum && maximum <= journal->header_size / 16 - 1 && count && count <= maximum
+		&& used >= journal->header_size && used <= journal->size - journal->sector && !(used % journal->sector)
+		&& (flags & 1) && !(flags & ~3U) && ~hfs_checksum (0, header, 32) == expected;
+	return valid && hfs_journal_read (journal, hfs_journal_next (journal, position, 32), header + 32, (count - 1) * 16);
+}
+
+static bool hfs_journal_node(HfsFS *fs, HfsFork *snapshot, HfsTree *tree, ut64 offset, ut8 *node) {
+	ut32 done = 0;
+	while (done < tree->node_size) {
+		HfsRun *run = hfs_run_at (&tree->fork.runs, offset + done);
+		if (!run) {
+			return false;
+		}
+		ut64 within = offset + done - run->logical;
+		ut32 chunk = R_MIN (tree->node_size - done, run->size - within);
+		if (!hfs_fork_read (fs, snapshot, run->physical + within, node + done, chunk)) {
+			return false;
+		}
+		done += chunk;
+	}
+	return node[8] == 255 && node[9] == 1 && hfs_node_bounds (node, tree->node_size);
+}
+
+static void hfs_journal_tree(HfsFS *fs, HfsFork *snapshot, HfsTree *tree, HfsRecordCb callback) {
+	if (!tree->initialized) {
+		return;
+	}
+	ut8 *node = malloc (tree->node_size);
+	if (!node) {
+		return;
+	}
+	RBitset *visited = r_bitset_new ();
+	size_t i, j;
+	for (i = 0; i < RVecHfsRun_length (&tree->fork.runs); i++) {
+		HfsRun *mapping = RVecHfsRun_at (&tree->fork.runs, i);
+		for (j = 0; j < RVecHfsRun_length (&snapshot->runs); j++) {
+			HfsRun *run = RVecHfsRun_at (&snapshot->runs, j);
+			ut64 start = R_MAX (mapping->physical, run->logical);
+			ut64 end = R_MIN (mapping->physical + mapping->size, run->logical + run->size);
+			if (start >= end) {
+				continue;
+			}
+			ut64 logical = mapping->logical + start - mapping->physical;
+			ut64 last = mapping->logical + end - mapping->physical;
+			ut64 id;
+			for (id = logical / tree->node_size; id <= (last - 1) / tree->node_size && id < tree->nodes; id++) {
+				if (!id || r_bitset_test (visited, id) || !r_bitset_set (visited, id)
+						|| !hfs_journal_node (fs, snapshot, tree, id * tree->node_size, node)) {
+					continue;
+				}
+				ut32 k, count = r_read_be16 (node + 10);
+				for (k = 0; k < count; k++) {
+					ut32 length;
+					const ut8 *record = hfs_node_record (node, tree->node_size, k, &length);
+					while (ht_up_find (fs->ids, HFS_DELETED_ID | fs->next_history, NULL)) {
+						fs->next_history++;
+					}
+					callback (fs, record, length, fs->next_history++, false);
+				}
+			}
+		}
+	}
+	r_bitset_free (visited);
+	free (node);
+}
+
+static int hfs_logical_compare(const HfsRun *left, const HfsRun *right) {
+	return left->logical < right->logical? -1: left->logical > right->logical;
+}
+
+static void hfs_journal_transaction(HfsFS *fs, HfsFork *snapshot, ut64 epoch) {
+	RVecHfsRun_sort (&snapshot->runs, hfs_logical_compare);
+	size_t i, extra = RVecHfsOverflow_length (&fs->extra);
+	ut64 end = 0;
+	for (i = 0; i < RVecHfsRun_length (&snapshot->runs); i++) {
+		HfsRun *run = RVecHfsRun_at (&snapshot->runs, i);
+		if (run->logical < end) {
+			return;
+		}
+		end = run->logical + run->size;
+	}
+	fs->epoch = epoch;
+	hfs_journal_tree (fs, snapshot, &fs->overflow, hfs_overflow_record);
+	RVecHfsOverflow_sort (&fs->extra, hfs_overflow_compare);
+	hfs_journal_tree (fs, snapshot, &fs->catalog, hfs_catalog_record);
+	fs->epoch = 0;
+	while (RVecHfsOverflow_length (&fs->extra) > extra) {
+		RVecHfsOverflow_pop_back (&fs->extra);
+	}
+}
+
+static void hfs_journal_scan(HfsJournal *journal, ut64 start, ut64 end, ut32 latest) {
+	ut8 *header = malloc (journal->header_size);
+	if (!header) {
+		return;
+	}
+	HfsFork snapshot = { .size = journal->fs->size };
+	ut64 position = end, remaining = journal->size - journal->sector, epoch = 0;
+	ut32 sequence = 0;
+	while (remaining) {
+		ut64 step = journal->sector;
+		bool valid = hfs_journal_header (journal, position, header);
+		ut32 next = valid? r_read_ble32 (header + 28, journal->big): 0;
+		bool first = valid && (r_read_ble32 (header + 12, journal->big) & 2);
+		valid &= next && (ut32)(latest - next) <= (journal->size - journal->sector) / journal->sector;
+		if (epoch && valid && first && next == sequence + 1) {
+			hfs_journal_transaction (journal->fs, &snapshot, epoch);
+		}
+		if (!valid || first || next != sequence) {
+			RVecHfsRun_clear (&snapshot.runs);
+			epoch = valid && first && position != end? position: 0;
+			sequence = next;
+		}
+		if (valid && epoch) {
+			ut32 used = r_read_ble32 (header + 4, journal->big);
+			ut64 until_start = start >= position? start - position: journal->size - position + start - journal->sector;
+			if (used <= remaining && (!until_start || used <= until_start)
+					&& hfs_journal_chunk (journal, position, header, &snapshot)) {
+				step = used;
+			} else {
+				epoch = 0;
+				RVecHfsRun_clear (&snapshot.runs);
+			}
+		}
+		remaining -= step;
+		position = hfs_journal_next (journal, position, step);
+		if (epoch && (position == start || (!remaining && sequence == latest))) {
+			hfs_journal_transaction (journal->fs, &snapshot, epoch);
+			epoch = 0;
+			RVecHfsRun_clear (&snapshot.runs);
+		}
+	}
+	hfs_fork_fini (&snapshot);
+	free (header);
+}
+
 static bool hfs_journal(HfsFS *fs) {
 	if (fs->classic || !(fs->volume_flags & (1 << 13))) {
 		return true;
 	}
-	ut8 info[52], header[44];
+	ut8 info[52], header[48];
 	ut64 info_offset = (ut64)fs->journal * fs->block_size;
 	if (!fs->journal || !hfs_claim (fs, info_offset, fs->block_size, false)
 			|| !hfs_disk (fs, info_offset, info, sizeof (info))) {
@@ -1464,21 +1717,23 @@ static bool hfs_journal(HfsFS *fs) {
 		return false;
 	}
 	bool big = r_read_be32 (header + 4) == 0x12345678;
-	ut32 magic = big? r_read_be32 (header): r_read_le32 (header);
-	ut32 endian = big? r_read_be32 (header + 4): r_read_le32 (header + 4);
-	ut64 start = big? r_read_be64 (header + 8): r_read_le64 (header + 8);
-	ut64 end = big? r_read_be64 (header + 16): r_read_le64 (header + 16);
-	ut64 declared = big? r_read_be64 (header + 24): r_read_le64 (header + 24);
-	ut32 sector = big? r_read_be32 (header + 40): r_read_le32 (header + 40);
-	ut32 expected = big? r_read_be32 (header + 36): r_read_le32 (header + 36);
+	ut32 magic = r_read_ble32 (header, big), endian = r_read_ble32 (header + 4, big);
+	ut64 start = r_read_ble64 (header + 8, big), end = r_read_ble64 (header + 16, big);
+	ut64 declared = r_read_ble64 (header + 24, big);
+	ut32 sector = r_read_ble32 (header + 40, big), expected = r_read_ble32 (header + 36, big);
+	ut32 header_size = r_read_ble32 (header + 32, big), latest = r_read_ble32 (header + 44, big);
 	memset (header + 36, 0, 4);
-	ut32 checksum = 0;
-	unsigned i;
-	for (i = 0; i < sizeof (header); i++) {
-		checksum = (checksum << 8) ^ (checksum + header[i]);
+	if (magic != 0x4a4e4c78 || endian != 0x12345678 || sector < 512 || (sector & (sector - 1))
+			|| sector >= size || declared != size || start < sector || start >= size || start % sector
+			|| end < sector || end >= size || end % sector || size % sector || ~hfs_checksum (0, header, 44) != expected) {
+		return false;
 	}
-	return magic == 0x4a4e4c78 && endian == 0x12345678 && sector >= 512 && !(sector & (sector - 1))
-		&& sector <= size && declared == size && start >= sector && start < size && start == end && ~checksum == expected;
+	if (latest && size <= HFS_JOURNAL_MAX_SIZE && header_size >= sector && header_size <= size - sector
+			&& header_size <= (1U << 20) && !(header_size % sector)) {
+		HfsJournal journal = { fs, offset, size, sector, header_size, big };
+		hfs_journal_scan (&journal, start, end, latest);
+	}
+	return start == end;
 }
 
 static void hfs_prepare(HfsFS *fs) {
@@ -1490,6 +1745,7 @@ static void hfs_prepare(HfsFS *fs) {
 	fs->threads = r_list_newf (hfs_thread_free);
 	fs->streams = r_list_newf (hfs_stream_free);
 	fs->next_stream = 1ULL << 62;
+	fs->next_history = 1ULL << 62;
 	fs->ids = ht_up_new0 ();
 	fs->live = ht_up_new0 ();
 	fs->children = ht_up_new (NULL, hfs_children_free, NULL);
@@ -1543,6 +1799,7 @@ static void hfs_prepare(HfsFS *fs) {
 		fs->owners_complete &= hfs_tree_init (fs, &fs->attributes)
 			&& hfs_tree_scan (fs, &fs->attributes, hfs_attribute_record, true);
 	}
+	fs->owners_complete &= hfs_journal (fs);
 	hfs_resolve_names (fs);
 	HfsEntry *root = ht_up_find (fs->live, 2, NULL);
 	if (fs->classic && root && fs->catalog_slack.size) {
@@ -1554,7 +1811,6 @@ static void hfs_prepare(HfsFS *fs) {
 		}
 	}
 	hfs_attribute_streams (fs);
-	fs->owners_complete &= hfs_journal (fs);
 	hfs_merge_runs (&fs->owners);
 	hfs_merge_runs (&fs->bad);
 	if (!fs->owners_complete) {
