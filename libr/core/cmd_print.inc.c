@@ -6165,10 +6165,17 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 			saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
 		}
 		r_config_set_i (core->config, "asm.lines.jmp", 0);
-		R_VEC_FOREACH (&f->bbs, iter) {
-			b = *iter;
+		// asm.anal and run hints can split or delete blocks and the function itself
+		const ut64 fcn_addr = f->addr;
+		size_t i;
+		RFreeze *blocks = r_anal_function_freeze_blocks (f);
+		r_freeze_foreach (blocks, i, b) {
+			if (r_anal_get_function_at (core->anal, fcn_addr) != f) {
+				break;
+			}
 			pr_bb (core, f, b, emu, saved_gp, saved_arena, saved_arena_size, type_print, fromHere);
 		}
+		r_freeze_release (blocks);
 		if (emu) {
 			core->anal->gp = saved_gp;
 			if (saved_arena) {

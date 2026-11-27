@@ -309,3 +309,78 @@ EXPECT=<<EOF
 false
 EOF
 RUN
+
+NAME=pdr with asm.anal splitting a walked block
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 7400740074007400740074007400e8120000007400740074007400740074007400740090909090c3
+af
+fs symbols
+f sym.x 1 37
+fs *
+e asm.anal=true
+pdr~call?
+afl~?
+e asm.anal
+EOF
+EXPECT=<<EOF
+1
+2
+true
+EOF
+RUN
+
+NAME=pdr with asm.anal and a call into the middle of its own block
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx eb009090e8faffffff74f7c3
+af
+fs symbols
+f sym.x 1 @ 3
+fs *
+e asm.anal=true
+pdr~call?
+afl~?
+EOF
+EXPECT=<<EOF
+1
+2
+EOF
+RUN
+
+NAME=pdr with a run hint splitting a walked block
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 7400740074007400740074007400e8120000007400740074007400740074007400740090909090c3
+af
+fs symbols
+f sym.x 1 37
+fs *
+"Cr 5 af @ 37" @ 14
+pdr~Cr?
+afl~?
+EOF
+EXPECT=<<EOF
+1
+2
+EOF
+RUN
+
+NAME=pdr with a run hint deleting the walked function
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 7400740074007400740074007400e8120000007400740074007400740074007400740090909090c3
+af
+"Cr 5 af-*" @ 14
+pdr~Cr?
+afl~?
+EOF
+EXPECT=<<EOF
+1
+0
+EOF
+RUN
