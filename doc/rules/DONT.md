@@ -4,7 +4,7 @@ These rules come from about 5,100 human inline review comments on
 radareorg/radare2 pull requests (Dec 2020 to Nov 2026). Rules inside each
 section are ordered roughly by how often reviewers flagged them, and the
 `#NNNNN` numbers are PRs where the comment appears. For the positive rules see
-[DOES.md](DOES.md).
+[MUST.md](MUST.md).
 
 ## Style and formatting
 
@@ -91,6 +91,20 @@ section are ordered roughly by how often reviewers flagged them, and the
   (#26459)
 - **Don't store raw pointers as sdb or ht keys.** Use stable ids or addresses
   with `set_u` or `HtUP`. (#18104, #26251)
+- **Don't use `r_anal_function_alive` to validate a borrow.** It checks whether
+  this function is currently registered in the given `RAnal`. It reads
+  `fcn->addr`, looks it up in `anal`, and compares pointer identity, so both
+  inputs must already be valid. The identity check distinguishes a detached
+  function from a replacement at the same address. Avoid repeating the
+  lookup on paths that cannot change membership.
+- **Don't infer membership or parent lifetime from a reference.** A retained
+  function may have been removed and its blocks detached. Its `anal` pointer
+  and analysis-owned data still require a live `RAnal`. Avoid making the last
+  `r_unref` responsible for unlinking from the registry.
+- **Don't snapshot an iteration that can safely use the live collection.**
+  A freeze preserves the pointer sequence across mutation. Fields can still
+  change and elements can leave the live collection. Use current membership
+  only when the operation requires it.
 
 ## Error handling and logging
 

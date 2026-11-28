@@ -4,7 +4,7 @@ These rules come from about 5,100 human inline review comments on
 radareorg/radare2 pull requests (Dec 2020 to Nov 2026). Rules inside each
 section are ordered roughly by how often reviewers asked for them, and the
 `#NNNNN` numbers are PRs where the comment appears. For the inverse rules see
-[DONTS.md](DONTS.md). For the baseline rules see `AGENTS.md`, `DEVELOPERS.md`
+[DONT.md](DONT.md). For the baseline rules see `AGENTS.md`, `DEVELOPERS.md`
 and `doc/indent-example.c`.
 
 ## Style and formatting
@@ -105,17 +105,44 @@ and `doc/indent-example.c`.
 - **Size bounded copies with `sizeof (dst)`**, never a magic length or the
   source size. If a function takes a `char *` buffer, also pass its size,
   because `sizeof` on a pointer gives 4 or 8. (#22526, #19022, #24587)
-- **Follow ownership contracts.** Free RBuffer with `r_unref` or
-  `r_buf_free`, use `sdb_const_get` when you don't take ownership, drain
-  RStrBuf and PJ with `*_drain`, use `r_json_parsedup`, and annotate
-  transferred arguments with `R_OWNED`. (#25789, #18794, #23090)
-- **Use `RFreeze` for stable iteration when callbacks can change a
-  collection.** Use helpers such as `r_anal_function_freeze_blocks` and
-  `r_anal_freeze_functions`, iterate with `r_freeze_foreach`, and release
-  each view with `r_freeze_release`. Owners using `r_freeze_vec` must call
-  `r_freeze_detach` before mutating or freeing the backing vector. Keep the
-  view on one thread and use ref-counted elements when the view must keep
-  them alive. See [r_freeze.h](../../libr/include/r_util/r_freeze.h).
+- **Annotate ownership at the API boundary.** Use `R_OWNED` for returned
+  allocations, references, and views the caller must release, and for
+  parameters the callee consumes unconditionally. Use `R_UNOWNED` for borrows
+  and add `R_TRANSIENT` when mutation can invalidate the borrowed storage.
+  Document the owner, what ends the borrow, and the release function for
+  owned results. For conditional transfers, document who owns the argument
+  on each outcome. `r_anal_add_function` takes ownership only on success.
+  See [Pointer ownership and lifetime](../borrow.md).
+- **Follow the declared cleanup contract.** Release an RBuffer with `r_unref`
+  or `r_buf_free`, use `sdb_const_get` for a borrow, drain RStrBuf and PJ with
+  `*_drain`, and use `r_json_parsedup`. (#25789, #18794, #23090)
+- **Take a reference before a call that may end a borrow if you still need
+  the object afterward.** Use `r_ref` while the borrow is valid and balance
+  it with `r_unref` on every exit. Copy borrowed data when its storage can
+  change independently of the object. Use `r_unref` to release an extra
+  `RAnalFunction` reference because `r_anal_function_free` also runs the
+  detach path. See [r_ref.h](../../libr/include/r_util/r_ref.h).
+- **Make the registry own membership changes.** Attach and detach through
+  the registry and drop its reference on removal. Complete updates before
+  notifying callbacks when the callback contract permits. If a callback can
+  remove an object, have the registry-owning operation report removal when
+  callers need that outcome, or check membership after the callback before
+  resuming work that requires registration. If a hot path needs frequent
+  membership queries, consider owner-maintained state updated alongside the
+  indexes during attach, removal and teardown. Account for objects still
+  being built before registration as well as removed objects. Name membership
+  predicates for the state they check, such as `is_registered`.
+- **Use `RFreeze` when iteration must survive collection mutation.** Prefer
+  collection helpers such as `r_anal_function_freeze_blocks`. Iterate with
+  `r_freeze_foreach` and pair each acquisition with `r_freeze_release` on
+  every exit. A list snapshot copies pointers and takes element references
+  up front when given an `R_REF_LAYOUT` for the element type. A vector view
+  borrows the backing array until the owner calls `r_freeze_detach` before
+  changing or freeing it. Detach copies the pointers and retains the
+  ref-counted elements. A list snapshot can fail to allocate, and a vector
+  view can become empty if allocation fails at detach. Keep the view on one
+  thread and treat its elements as borrowed. A raw view needs a separate
+  element lifetime guarantee. See [r_freeze.h](../../libr/include/r_util/r_freeze.h).
 - **Zero-initialize** stack buffers and scalars that may be read before they
   are written. (#22517, #20835)
 - **When unsure between a leak and a double free, reproduce with ASAN**
