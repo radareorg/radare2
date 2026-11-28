@@ -383,7 +383,7 @@ pdr
 EOF
 EXPECT=<<EOF
 904: sym.func.100004124 (int64_t arg1, int64_t arg2);
-`- args(x0, x1) vars(36:sp[0x8..0x140])
+`- args(x0, x1) vars(48:sp[0x8..0x140])
 0x100004124      sub sp, sp, 0x140
 0x100004128      str x28, [var_e0h]
 0x10000412c      stp x27, x26, [var_f0h]
@@ -526,31 +526,31 @@ EXPECT=<<EOF
 | // true: 0x100004480  false: 0x1000042d0
 0x1000042d0      sturb w22, [var_bp_78h]
 0x1000042d4      ldr x8, [var_sp_60h]
-0x1000042d8      sturb w8, [var_bp_78h]
+0x1000042d8      sturb w8, [var_77h]
 0x1000042dc      ldr x8, [var_58h]
-0x1000042e0      sturb w8, [var_bp_78h]
+0x1000042e0      sturb w8, [var_76h]
 0x1000042e4      ldr x8, [var_50h]
-0x1000042e8      sturb w8, [var_bp_78h]
+0x1000042e8      sturb w8, [var_75h]
 0x1000042ec      ldr x8, [var_48h]
-0x1000042f0      sturb w8, [var_bp_78h]
+0x1000042f0      sturb w8, [var_74h]
 0x1000042f4      ldr x8, [var_40h]
-0x1000042f8      sturb w8, [var_bp_78h]
+0x1000042f8      sturb w8, [var_73h]
 0x1000042fc      ldr x8, [var_38h]
-0x100004300      sturb w8, [var_bp_78h]
+0x100004300      sturb w8, [var_72h]
 0x100004304      ldr x8, [var_30h]
-0x100004308      sturb w8, [var_bp_78h]
+0x100004308      sturb w8, [var_71h]
 0x10000430c      ldr x8, [var_80h]
 0x100004310      sturb w8, [var_bp_70h]
 0x100004314      ldr x8, [var_28h]
-0x100004318      sturb w8, [var_bp_70h]
+0x100004318      sturb w8, [var_6fh]
 0x10000431c      ldr x8, [var_20h]
-0x100004320      sturb w8, [var_bp_70h]
+0x100004320      sturb w8, [var_6eh]
 0x100004324      ldr x8, [var_18h]
-0x100004328      sturb w8, [var_bp_70h]
+0x100004328      sturb w8, [var_6dh]
 0x10000432c      ldr x8, [var_10h]
-0x100004330      sturb w8, [var_bp_70h]
+0x100004330      sturb w8, [var_6ch]
 0x100004334      ldr x8, [var_8h]
-0x100004338      sturb w8, [var_bp_70h]
+0x100004338      sturb w8, [var_6bh]
 0x10000433c      sub x8, x29, 0x78
 0x100004340      ldrb w19, [x8, x23]
 0x100004344      b 0x100004380

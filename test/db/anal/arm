@@ -830,6 +830,18 @@ e anal.vars.stackname=true
 wx f0b503af2de9000d95b0002001210222032340f2040940f2050c40f2060e0724082509261490139112921193cdf80090cdf804c0cdf808e0039404950596ddf85080cdf81880ddf84ca0cdf81ca0ddf848b0cdf820b0ddf84480cdf82480cdf82890cdf82cc0cdf830e00d940e950f96fff740ff00211090084615b0bde8000df0bd
 aa
 afv~var
+wx 84b000908df80410adf806209df80130bdf802309df8053004b07047 @ 0x200
+wx 84b0adf8000000919df8022004b07047 @ 0x300
+af @ 0x200
+af @ 0x300
+?e adjacent slots
+afv @ 0x200~var
+afvR @ 0x200~var
+afvW @ 0x200~var
+?e narrow first
+afv @ 0x300~var
+afvR @ 0x300~var
+afvW @ 0x300~var
 EOF
 EXPECT=<<EOF
 var int32_t var_74h @ sp+0x0
@@ -854,6 +866,23 @@ var int32_t var_2ch @ sp+0x48
 var int32_t var_28h @ sp+0x4c
 var int32_t var_24h @ sp+0x50
 var int32_t var_8h @ sp+0x6c
+adjacent slots
+var int32_t var_10h @ sp+0x0
+var int8_t var_ch @ sp+0x4
+var int8_t var_bh @ sp+0x5
+var int16_t var_ah @ sp+0x6
+   var_10h  0x20c,0x210
+    var_ch
+    var_ah
+    var_bh  0x214
+   var_10h  0x202
+    var_ch  0x204
+    var_ah  0x208
+    var_bh
+narrow first
+var int32_t var_10h @ sp+0x0
+   var_10h  0x308
+   var_10h  0x302,0x306
 EOF
 RUN
 

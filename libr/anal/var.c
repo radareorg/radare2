@@ -1243,26 +1243,76 @@ static bool var_is_written(const RAnalVar *var) {
 
 static RAnalVar *get_stack_var(RAnal *anal, RAnalFunction *fcn, int delta, int access_size, int var_size, bool fuzzy, bool addr_taken) {
 	RAnalVar **it;
+	RAnalVar *enclosing = NULL;
 	R_VEC_FOREACH (&fcn->vars, it) {
 		RAnalVar *var = *it;
 		bool is_stack = var->kind == R_ANAL_VAR_KIND_SPV || var->kind == R_ANAL_VAR_KIND_BPV;
 		if (is_stack && var->delta == delta) {
 			return var;
 		}
-		if (fuzzy && is_stack && access_size > 0 && access_size < var_size && delta > var->delta && delta < var->delta + var_size) {
-			return var;
+		if (enclosing || !is_stack || delta <= var->delta) {
+			continue;
+		}
+		// an exact match later in the list still wins over an enclosing variable
+		if (fuzzy && access_size > 0 && access_size < var_size && delta < var->delta + var_size) {
+			// a typed variable ends where its type does, not a word later
+			const int typed = R_STR_ISNOTEMPTY (var->type)? (int)(r_anal_type_bitsize (anal, var->type) / 8): 0;
+			const int extent = typed > 0? R_MIN (typed, var_size): var_size;
+			if (delta < var->delta + extent) {
+				enclosing = var;
+			}
 		}
 		// An address taken inside a variable the function stores to belongs to
 		// that variable: the store fixed the extent, and lea establishes none.
-		if (is_stack && addr_taken && delta > var->delta
-			&& R_STR_ISNOTEMPTY (var->type) && var_is_written (var)) {
+		if (!enclosing && addr_taken && R_STR_ISNOTEMPTY (var->type) && var_is_written (var)) {
 			const int extent = (int)(r_anal_type_bitsize (anal, var->type) / 8);
 			if (extent > 0 && delta < var->delta + extent) {
-				return var;
+				enclosing = var;
 			}
 		}
 	}
-	return NULL;
+	return enclosing;
+}
+
+// Recovery names a slot <pfx>_<off>h and types it intN_t after its first access; other spellings are user edits
+static bool var_type_inferred(RAnal *anal, const RAnalVar *var) {
+	const char *t = int_type ((int)(r_anal_type_bitsize (anal, var->type) / 8));
+	return t && !strcmp (var->type, t) && r_str_startswith (var->name, var->isarg? ARGPREFIX "_": VARPREFIX "_");
+}
+
+// A wider access at a variable's own offset outgrows the type its first access inferred.
+// Inferred variables inside the wider extent fold into it, so the result does not depend on access order.
+static void widen_inferred_var(RAnal *anal, RAnalVar *var, int access_size) {
+	const char *wide = int_type (access_size);
+	if (!wide || !strcmp (var->type, wide) || !var_type_inferred (anal, var) || r_anal_type_bitsize (anal, var->type) / 8 >= access_size) {
+		return;
+	}
+	RAnalFunction *fcn = var->fcn;
+	RAnalVar **it;
+	R_VEC_FOREACH (&fcn->vars, it) {
+		const RAnalVar *in = *it;
+		if (in != var && in->kind == var->kind && in->delta > var->delta && in->delta < var->delta + access_size
+			&& (in->isarg != var->isarg || !var_type_inferred (anal, in)
+			|| in->delta + (int)(r_anal_type_bitsize (anal, in->type) / 8) > var->delta + access_size)) {
+			return;
+		}
+	}
+	RVecAnalVarPtr *vars = anal_var_ptr_clone (&fcn->vars);
+	if (!vars) {
+		return;
+	}
+	R_VEC_FOREACH (vars, it) {
+		RAnalVar *in = *it;
+		if (in != var && in->kind == var->kind && in->delta > var->delta && in->delta < var->delta + access_size) {
+			RAnalVarAccess *acc;
+			R_VEC_FOREACH (&in->accesses, acc) {
+				r_anal_var_set_access (anal, var, acc->reg, fcn->addr + acc->offset, acc->type, acc->stackptr);
+			}
+			r_anal_var_delete (anal, in);
+		}
+	}
+	RVecAnalVarPtr_free (vars);
+	r_anal_var_set_type (anal, var, wide);
 }
 
 // True on RISC-style ISAs (ARM/MIPS/PPC/...) whose return address lives in a
@@ -1489,12 +1539,17 @@ static void extract_arg_at(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const c
 		const st64 interior = frame_off != var->delta && aggregate_extent (anal, var)? frame_off - var->delta: 0;
 		r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr - interior);
 		// Revisit inferred arguments after a CC change without replacing user edits.
-		if (!isarg || !var->isarg || var->delta != frame_off) {
-			return;
+		bool revisit = isarg && var->isarg && var->delta == frame_off;
+		if (revisit) {
+			const char *deftype = int_type (inferred_var_size (access_size, var_size));
+			r_strf_var (autoname, 32, "arg_%" PFMT64x "h", R_ABS (anal->opt.varname_stack? frame_off: nameoff));
+			revisit = deftype && !strcmp (var->type, deftype) && !strcmp (var->name, autoname);
 		}
-		const char *deftype = int_type (inferred_var_size (access_size, var_size));
-		r_strf_var (autoname, 32, "arg_%" PFMT64x "h", R_ABS (anal->opt.varname_stack? frame_off: nameoff));
-		if (!deftype || strcmp (var->type, deftype) || strcmp (var->name, autoname)) {
+		// an access wider than the word is a register pair (strd), two slots
+		if (var->delta == frame_off && !addr_taken && access_size <= var_size && !strcmp (anal->config->arch, "arm")) {
+			widen_inferred_var (anal, var, access_size);
+		}
+		if (!revisit) {
 			return;
 		}
 	}
