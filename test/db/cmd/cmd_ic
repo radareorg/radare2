@@ -1725,41 +1725,117 @@ Lre/mobipwn/enovella/MainActivity::Lre/mobipwn/enovella/MainActivity.method.init
 EOF
 RUN
 
-NAME=ic class address follows -B (dex)
+NAME=ic commands follow -B (dex)
 FILE=bins/dex/14d9.dex
 ARGS=-B 0x10000000
 CMDS=<<EOF
 ic~Gps$1$1 ::
 f~class.Lcom_google_progress_Gps_1_1$
+ic Lcom/google/progress/Gps$1$1
+icl~0x1001b878
+ics~Gps$1$1]
+ic,klass/str/Gps$1$1,addr/cols/type
+ick~Gps$1$1.
+ic. @ 0x1001b878
 EOF
 EXPECT=<<EOF
 0x1000e5cc [0x1001b878 - 0x1001b8b0]     56 java class 50 Lcom/google/progress/Gps$1$1 :: Ljava/lang/Object;
 0x1000e5cc 1 class.Lcom_google_progress_Gps_1_1
+class Lcom/google/progress/Gps$1$1
+0x1001b878 method Lcom/google/progress/Gps$1$1 C    Lcom/google/progress/Gps$1$1.method.<init>(Lcom/google/progress/Gps$1;Landroid/location/Location;)V
+0x1001b898 method Lcom/google/progress/Gps$1$1 p    Lcom/google/progress/Gps$1$1.method.run()V
+0x1001b878 0x1001b898
+0x1001b878 [Lcom/google/progress/Gps$1$1] Lcom/google/progress/Gps$1$1.method.<init>(Lcom/google/progress/Gps$1;Landroid/location/Location;)V
+0x1001b898 [Lcom/google/progress/Gps$1$1] Lcom/google/progress/Gps$1$1.method.run()V
+addr       type
+---------------
+0x1001b878 method
+0x1001b898 method
+0x10006bb4 field
+0x10006bbc field
+
+klass.Lcom/google/progress/Gps$1$1.field.var.Lcom/google/progress/Gps$1$1.ifield_this$1:Lcom/google/progress/Gps$1=0x10006bb4
+klass.Lcom/google/progress/Gps$1$1.field.var.Lcom/google/progress/Gps$1$1.ifield_val$location:Landroid/location/Location=0x10006bbc
+klass.Lcom/google/progress/Gps$1$1.method.C.Lcom_google_progress_Gps_1_1.method._init__Lcom_google_progress_Gps_1_Landroid_location_Location__V=0x1001b878
+klass.Lcom/google/progress/Gps$1$1.method.p.Lcom_google_progress_Gps_1_1.method.run__V=0x1001b898
+Lcom/google/progress/Gps$1$1::Lcom/google/progress/Gps$1$1.method.<init>(Lcom/google/progress/Gps$1;Landroid/location/Location;)V
 EOF
 RUN
 
-NAME=ic class address follows the DEX inside an APK
+NAME=ic commands follow the DEX inside an APK
 FILE=apk://bins/dex/14d9.apk
 CMDS=<<EOF
 ic~Gps$1$1 ::
 f~class.Lcom_google_progress_Gps_1_1$
+ic Lcom/google/progress/Gps$1$1
+icl~0x22470
+ics~Gps$1$1]
+ic,klass/str/Gps$1$1,addr/cols/type
+ick~Gps$1$1.
+ic. @ 0x22470
 EOF
 EXPECT=<<EOF
 0x000151c4 [0x00022470 - 0x000224a8]     56 java class 50 Lcom/google/progress/Gps$1$1 :: Ljava/lang/Object;
 0x000151c4 1 class.Lcom_google_progress_Gps_1_1
+class Lcom/google/progress/Gps$1$1
+0x00022470 method Lcom/google/progress/Gps$1$1 C    Lcom/google/progress/Gps$1$1.method.<init>(Lcom/google/progress/Gps$1;Landroid/location/Location;)V
+0x00022490 method Lcom/google/progress/Gps$1$1 p    Lcom/google/progress/Gps$1$1.method.run()V
+0x22470 0x22490
+0x22470 [Lcom/google/progress/Gps$1$1] Lcom/google/progress/Gps$1$1.method.<init>(Lcom/google/progress/Gps$1;Landroid/location/Location;)V
+0x22490 [Lcom/google/progress/Gps$1$1] Lcom/google/progress/Gps$1$1.method.run()V
+addr       type
+---------------
+0x00022470 method
+0x00022490 method
+0x0000d7ac field
+0x0000d7b4 field
+
+klass.Lcom/google/progress/Gps$1$1.field.var.Lcom/google/progress/Gps$1$1.ifield_this$1:Lcom/google/progress/Gps$1=0xd7ac
+klass.Lcom/google/progress/Gps$1$1.field.var.Lcom/google/progress/Gps$1$1.ifield_val$location:Landroid/location/Location=0xd7b4
+klass.Lcom/google/progress/Gps$1$1.method.C.Lcom_google_progress_Gps_1_1.method._init__Lcom_google_progress_Gps_1_Landroid_location_Location__V=0x22470
+klass.Lcom/google/progress/Gps$1$1.method.p.Lcom_google_progress_Gps_1_1.method.run__V=0x22490
+Lcom/google/progress/Gps$1$1::Lcom/google/progress/Gps$1$1.method.<init>(Lcom/google/progress/Gps$1;Landroid/location/Location;)V
 EOF
 RUN
 
-NAME=ic class address follows -B (elf)
+NAME=ic commands follow -B (elf)
 FILE=bins/elf/dwarf3_cpp.elf
 ARGS=-B 0x10000000
 CMDS=<<EOF
 ic~Mammal$
 f~class.Mammal$
+ic Mammal
+icl~0x100011ee
+ics~Mammal]
+ic,klass/str/Mammal,addr/cols/type
+ick~klass.Mammal.
+ic. @ 0x100011ee
 EOF
 EXPECT=<<EOF
 0x1000120c [0x100011ee - 0x1000126d]    127 c++ class 0 Mammal
 0x1000120c 1 class.Mammal
+class Mammal
+0x1000120c method Mammal D    ~Mammal()
+0x1000125a method Mammal      walk()
+0x100011ee method Mammal C    Mammal()
+0x1000122a method Mammal D    ~Mammal()
+0x1000120c 0x1000125a 0x100011ee 0x1000122a
+0x1000120c [Mammal] ~Mammal()
+0x1000125a [Mammal] walk()
+0x100011ee [Mammal] Mammal()
+0x1000122a [Mammal] ~Mammal()
+addr       type
+---------------
+0x1000120c method
+0x1000125a method
+0x100011ee method
+0x1000122a method
+
+klass.Mammal.method.D._Mammal__=0x1000120c
+klass.Mammal.method..walk__=0x1000125a
+klass.Mammal.method.C.Mammal__=0x100011ee
+klass.Mammal.method.D._Mammal__=0x1000122a
+Mammal::Mammal()
 EOF
 RUN
 
@@ -1775,3 +1851,4 @@ EXPECT=<<EOF
 0x00000000 1 class.WKWebViewController
 EOF
 RUN
+
