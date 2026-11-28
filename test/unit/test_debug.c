@@ -6,13 +6,14 @@
 #include <r_util/r_sys.h>
 #include "../../shlr/gdb/include/arch.h"
 #include "minunit.h"
-#if 1
+#if __linux__
 #include <arpa/inet.h>
 #include <errno.h>
 #include <netinet/in.h>
 #include <signal.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/user.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -59,7 +60,7 @@ bool test_gdb_reg_profile_parser(void) {
 	mu_end;
 }
 
-#if 1
+#if __linux__
 static int pick_free_port(void) {
 	int sockfd = socket (AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0) {
@@ -85,7 +86,7 @@ static int pick_free_port(void) {
 }
 #endif
 
-#if 1
+#if __linux__
 static bool write_all(int fd, const char *buf, size_t len) {
 	while (len > 0) {
 		ssize_t ret = write (fd, buf, len);
@@ -467,7 +468,7 @@ static void run_pdebug_server(int port, ut8 fill) {
 #endif
 
 bool test_r2_qnx_attach_reads_regs(void) {
-#if 1
+#if __linux__
 	int port = pick_free_port ();
 	if (port <= 0) {
 		mu_ignore;
@@ -511,7 +512,7 @@ bool test_r2_qnx_attach_reads_regs(void) {
 }
 
 bool test_r2_gdb_remote_open(void) {
-#if 1
+#if __linux__
 	char *gdbserver = r_file_path ("gdbserver");
 	if (!gdbserver) {
 		mu_ignore;
@@ -569,7 +570,7 @@ bool test_r2_gdb_remote_open(void) {
 }
 
 bool test_r2_gdb_oversized_reg_response(void) {
-#if 1
+#if __linux__
 	int port = pick_free_port ();
 	if (port <= 0) {
 		mu_ignore;
@@ -611,7 +612,7 @@ bool test_r2_gdb_oversized_reg_response(void) {
 }
 
 bool test_r2_gdb_long_xml_reg_name(void) {
-#if 1
+#if __linux__
 	int port = pick_free_port ();
 	if (port <= 0) {
 		mu_ignore;
@@ -653,7 +654,7 @@ bool test_r2_gdb_long_xml_reg_name(void) {
 }
 
 bool test_r2_gdb_recursive_xml_include(void) {
-#if 1
+#if __linux__
 	int port = pick_free_port ();
 	if (port <= 0) {
 		mu_ignore;
@@ -695,7 +696,7 @@ bool test_r2_gdb_recursive_xml_include(void) {
 }
 
 bool test_r2_gdb_oversized_xml_regnum(void) {
-#if 1
+#if __linux__
 	int port = pick_free_port ();
 	if (port <= 0) {
 		mu_ignore;
@@ -737,7 +738,7 @@ bool test_r2_gdb_oversized_xml_regnum(void) {
 }
 
 bool test_r_debug_reg_offset(void) {
-#if 1
+#if __linux__
 #ifdef __x86_64__
 #define FPREGS struct user_fpregs_struct
 	FPREGS regs;

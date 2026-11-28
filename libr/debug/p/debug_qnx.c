@@ -85,14 +85,13 @@ static bool r_debug_qnx_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	copy_size = R_MIN (len, size);
 	buflen = R_MAX (len, buflen);
 	if (pd->reg_buf) {
-		if (pd->buf_size < copy_size) {
-			ut8 *new_buf = realloc (pd->reg_buf, copy_size);
+		if (pd->buf_size < buflen) {
+			ut8 *new_buf = realloc (pd->reg_buf, buflen);
 			if (!new_buf) {
 				return false;
 			}
 			pd->reg_buf = new_buf;
-			buflen = copy_size;
-			pd->buf_size = len;
+			pd->buf_size = buflen;
 		}
 	} else {
 		pd->reg_buf = calloc (buflen, 1);
@@ -119,12 +118,14 @@ static bool r_debug_qnx_reg_write(RDebug *dbg, int type, const ut8 *buf, int siz
 	PluginData *pd = R_UNWRAP3 (dbg, current, plugin_data);
 	if (!pd || !pd->reg_buf) {
 		// we cannot write registers before we once read them
+		r_unref (reg);
 		return false;
 	}
 	if (reg) {
 		if (bits != reg->size) {
 			bits = reg->size;
 		}
+		r_unref (reg);
 	}
 	free (r_reg_get_bytes (dbg->reg, type, &buflen));
 	// some implementations of the gdb protocol are acting weird.
