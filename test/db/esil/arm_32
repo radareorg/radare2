@@ -4460,3 +4460,21 @@ EXPECT=<<EOF
 0x60000000
 EOF
 RUN
+
+NAME=bx to a thumb address sets tf
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+aer lr=0x1001
+aer cpsr=0
+wx 1eff2fe1
+aes
+aer?tf
+aer?pc
+EOF
+EXPECT=<<EOF
+0x00000001
+0x00001000
+EOF
+RUN
