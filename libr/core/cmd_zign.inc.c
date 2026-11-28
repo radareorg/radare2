@@ -593,7 +593,7 @@ static void apply_name(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad)
 		return;
 	}
 	// set alternate spelling as realname for the function flag if available
-	if (r_anal_function_alive (core->anal, fcn) && R_STR_ISNOTEMPTY (alt)) {
+	if (r_anal_function_is_registered (fcn) && R_STR_ISNOTEMPTY (alt)) {
 		RFlagItem *nf = r_flag_get (core->flags, fcn->name);
 		if (nf) {
 			r_flag_item_set_realname (core->flags, nf, alt);
@@ -604,12 +604,12 @@ static void apply_name(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad)
 static void apply_sign(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad) {
 	(void)r_ref (fcn);
 	apply_name (core, fcn, it, rad);
-	if (it->types && r_anal_function_alive (core->anal, fcn)) {
+	if (it->types && r_anal_function_is_registered (fcn)) {
 		char *tmp = r_str_newf ("%s;", it->types);
 		r_anal_str_to_fcn (core->anal, fcn, tmp);
 		free (tmp);
 	}
-	if (it->vars && r_anal_function_alive (core->anal, fcn)) {
+	if (it->vars && r_anal_function_is_registered (fcn)) {
 		r_anal_function_set_var_prot (fcn, it->vars);
 	}
 	r_unref (fcn);

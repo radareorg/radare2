@@ -5643,7 +5643,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 		/* ensure we use a proper name */
 		(void)r_ref (fcn);
 		__setFunctionName (core, addr, fcn->name, false);
-		if (r_anal_function_alive (core->anal, fcn)) {
+		if (r_anal_function_is_registered (fcn)) {
 			if (core->anal->opt.vars) {
 				r_core_recover_vars (core, fcn, true);
 			}
@@ -5663,7 +5663,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 			RVecAnalRef *refs = r_anal_function_get_refs (fcn);
 			RAnalRef *ref;
 			R_VEC_FOREACH (refs, ref) {
-				if (!r_anal_function_alive (core->anal, fcn)) {
+				if (!r_anal_function_is_registered (fcn)) {
 					break;
 				}
 				if (!r_bitset_set (visited, ref->addr)) {
@@ -5682,7 +5682,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 					continue;
 				}
 				r_core_anal_fcn (core, ref->addr, fcn->addr, R_ANAL_REF_TYPE_CALL, depth - 1);
-				if (!r_anal_function_alive (core->anal, fcn)) {
+				if (!r_anal_function_is_registered (fcn)) {
 					break;
 				}
 				/* use recursivity here */
@@ -5693,7 +5693,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 					RVecAnalRef *refs1 = r_anal_function_get_refs (f);
 					RAnalRef *ref;
 					R_VEC_FOREACH (refs1, ref) {
-						if (!r_anal_function_alive (core->anal, f)) {
+						if (!r_anal_function_is_registered (f)) {
 							break;
 						}
 						const ut64 raddr = ref->addr;
@@ -5730,7 +5730,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 #endif
 			}
 			RVecAnalRef_free (refs);
-			if (core->anal->opt.vars && r_anal_function_alive (core->anal, fcn)) {
+			if (core->anal->opt.vars && r_anal_function_is_registered (fcn)) {
 				r_core_recover_vars (core, fcn, true);
 			}
 			r_unref (fcn);
@@ -6546,7 +6546,7 @@ static int cmd_af(RCore *core, const char *input) {
 			RAnalFunction *f;
 			size_t i;
 			r_freeze_foreach (fcns, i, f) {
-				if (r_anal_function_alive (core->anal, f)) {
+				if (r_anal_function_is_registered (f)) {
 					r_anal_del_jmprefs (core->anal, f);
 					r_core_anal_undefine (core, f->addr);
 				}
@@ -15468,7 +15468,7 @@ static void anal_aarr(RCore *core) {
 	RAnalFunction *fcn;
 	size_t i;
 	r_freeze_foreach (fcns, i, fcn) {
-		if (!r_anal_function_alive (core->anal, fcn)) {
+		if (!r_anal_function_is_registered (fcn)) {
 			continue;
 		}
 #if 0

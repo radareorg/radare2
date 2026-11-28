@@ -119,9 +119,7 @@ and `doc/indent-example.c`.
 - **Take a reference before a call that may end a borrow if you still need
   the object afterward.** Use `r_ref` while the borrow is valid and balance
   it with `r_unref` on every exit. Copy borrowed data when its storage can
-  change independently of the object. Use `r_unref` to release an extra
-  `RAnalFunction` reference because `r_anal_function_free` also runs the
-  detach path. See [r_ref.h](../../libr/include/r_util/r_ref.h).
+  change independently of the object. See [r_ref.h](../../libr/include/r_util/r_ref.h).
 - **Make the registry own membership changes.** Attach and detach through
   the registry and drop its reference on removal. Complete updates before
   notifying callbacks when the callback contract permits. If a callback can

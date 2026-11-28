@@ -997,13 +997,13 @@ static char *go_function_name_for_apply(RAnal *anal, ut64 addr, const char *safe
 	}
 	(void)r_ref (f);
 	if (r_anal_function_rename (f, safe_name)) {
-		char *name = r_anal_function_alive (anal, f)? strdup (f->name): NULL;
+		char *name = r_anal_function_is_registered (f)? strdup (f->name): NULL;
 		r_unref (f);
 		return name;
 	}
 	char *alt = go_unique_name_for_addr (anal, safe_name, addr);
 	if (alt && r_anal_function_rename (f, alt)) {
-		char *name = r_anal_function_alive (anal, f)? strdup (f->name): NULL;
+		char *name = r_anal_function_is_registered (f)? strdup (f->name): NULL;
 		r_unref (f);
 		free (alt);
 		return name;

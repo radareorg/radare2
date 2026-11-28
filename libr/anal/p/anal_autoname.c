@@ -318,7 +318,7 @@ static void autoname_all(RAnal *anal) {
 		size_t i;
 		bool changed = false;
 		r_freeze_foreach (fcns, i, fcn) {
-			if (!r_anal_function_alive (anal, fcn)) {
+			if (!r_anal_function_is_registered (fcn)) {
 				continue;
 			}
 			char *name = autoname_fcn (anal, fcn, 0);

@@ -807,7 +807,7 @@ static bool switch_apply_flagged(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bl
 	}
 	ut32 i;
 	ut32 last_applied = 0;
-	const bool registered = fcn && r_anal_function_alive (anal, fcn);
+	const bool registered = fcn && r_anal_function_is_registered (fcn);
 	bool removed = false;
 	if (fcn) {
 		(void)r_ref (fcn);
@@ -875,7 +875,7 @@ static bool switch_apply_flagged(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bl
 		if (scan != UT64_MAX) {
 			// a command applies the switch outside any walk, so the case is scanned here
 			r_anal_function_scan_switch_case (anal, fcn, scan);
-			if (registered && !r_anal_function_alive (anal, fcn)) {
+			if (registered && !r_anal_function_is_registered (fcn)) {
 				removed = true;
 				break;
 			}
@@ -1604,7 +1604,7 @@ R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 	RBitset *s = r_bitset_new ();
 	RAnalCaseOp *kase;
 	RListIter *iter;
-	const bool registered = fcn && r_anal_function_alive (anal, fcn);
+	const bool registered = fcn && r_anal_function_is_registered (fcn);
 	bool removed = false;
 	if (fcn) {
 		(void)r_ref (fcn);
@@ -1618,7 +1618,7 @@ R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 		if (scan != UT64_MAX) {
 			// listing is not a walk, so the case is scanned here as it always was
 			r_anal_function_scan_switch_case (anal, fcn, scan);
-			if (registered && !r_anal_function_alive (anal, fcn)) {
+			if (registered && !r_anal_function_is_registered (fcn)) {
 				removed = true;
 				break;
 			}
@@ -1704,7 +1704,7 @@ static RAnalSwitchCursor *switch_cursor_new(RAnal *anal, RAnalFunction *fcn, R_U
 	RAnalSwitchCursor *c = R_NEW0 (RAnalSwitchCursor);
 	c->anal = anal;
 	c->fcn = fcn? r_ref (fcn): NULL;
-	c->registered = fcn && r_anal_function_alive (anal, fcn);
+	c->registered = fcn && r_anal_function_is_registered (fcn);
 	c->block = block? r_ref (block): NULL;
 	c->ip = ip;
 	c->ret0 = ret0;
@@ -1714,7 +1714,7 @@ static RAnalSwitchCursor *switch_cursor_new(RAnal *anal, RAnalFunction *fcn, R_U
 
 // What the walker returns, the way each one has always counted it.
 static int switch_cursor_result(const RAnalSwitchCursor *c) {
-	if (c->registered && !r_anal_function_alive (c->anal, c->fcn)) {
+	if (c->registered && !r_anal_function_is_registered (c->fcn)) {
 		return false;
 	}
 	switch (c->kind) {
@@ -1864,7 +1864,7 @@ static R_TRANSIENT RAnalBlock *switch_cursor_block(RAnalSwitchCursor *c) {
 R_IPI bool r_anal_switch_cursor_step(RAnalSwitchCursor *c, ut64 *target) {
 	R_RETURN_VAL_IF_FAIL (c && target, false);
 	*target = UT64_MAX;
-	if (c->registered && !r_anal_function_alive (c->anal, c->fcn)) {
+	if (c->registered && !r_anal_function_is_registered (c->fcn)) {
 		return false;
 	}
 	(void) switch_cursor_block (c);
@@ -1886,13 +1886,13 @@ R_IPI bool r_anal_switch_cursor_step(RAnalSwitchCursor *c, ut64 *target) {
 R_IPI void r_anal_switch_cursor_finish(RAnalSwitchCursor *c) {
 	R_RETURN_IF_FAIL (c);
 	RAnal *anal = c->anal;
-	const bool alive = !c->registered || r_anal_function_alive (anal, c->fcn);
-	RAnalBlock *block = alive? switch_cursor_block (c): NULL;
+	const bool removed = c->registered && !r_anal_function_is_registered (c->fcn);
+	RAnalBlock *block = removed? NULL: switch_cursor_block (c);
 	switch (c->kind) {
 	case SWITCH_CURSOR_TABLE:
 	case SWITCH_CURSOR_CASETBL: {
 		SwitchLegacyState *t = &c->legacy;
-		if (alive && c->idx > 0) {
+		if (!removed && c->idx > 0) {
 			if (t->default_case == 0) {
 				t->default_case = UT64_MAX;
 			}
@@ -1904,7 +1904,7 @@ R_IPI void r_anal_switch_cursor_finish(RAnalSwitchCursor *c) {
 		break;
 	}
 	case SWITCH_CURSOR_ARM:
-		if (alive && c->idx > 0) {
+		if (!removed && c->idx > 0) {
 			ut64 default_case = c->arm.default_case;
 			if (default_case == 0 || default_case == UT32_MAX) {
 				default_case = UT64_MAX;
@@ -1914,7 +1914,7 @@ R_IPI void r_anal_switch_cursor_finish(RAnalSwitchCursor *c) {
 		break;
 	case SWITCH_CURSOR_ARM64: {
 		SwitchArm64State *t = &c->arm64;
-		if (alive && t->valid_cases) {
+		if (!removed && t->valid_cases) {
 			apply_switch (anal, c->fcn, block, c->ip, c->ip, t->dispatch.tblptr, UT64_MAX,
 				t->valid_cases, t->bounded? t->default_case: UT64_MAX, t->loadsize);
 			// Do not mistake a partial or unbounded table for a complete CFG.

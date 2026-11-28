@@ -50,6 +50,7 @@ static bool function_check_invariants(RAnal *anal) {
 	RListIter *it;
 	RAnalFunction *fcn;
 	r_list_foreach (anal->fcns, it, fcn) {
+		mu_assert_true (r_anal_function_is_registered (fcn), "listed function is registered");
 		mu_assert_ptreq (ht_up_find (anal->ht_addr_fun, fcn->addr, NULL), fcn, "function in addr ht");
 		mu_assert_ptreq (ht_pp_find (anal->ht_name_fun, fcn->name, NULL), fcn, "function in name ht");
 	}
@@ -94,6 +95,7 @@ bool test_r_anal_function_relocate(void) {
 
 	RAnalFunction *pending = r_anal_function_new (anal);
 	pending->addr = fa->addr;
+	mu_assert_false (r_anal_function_is_registered (pending), "pending function sharing an address is unregistered");
 	mu_assert_false (r_anal_function_relocate (pending, fb->addr), "pending relocation rejects occupied address");
 	mu_assert_true (r_anal_function_relocate (pending, 0x5678), "relocate pending function");
 	mu_assert_null (r_anal_get_function_at (anal, pending->addr), "relocating does not register a pending function");
@@ -148,15 +150,15 @@ bool test_r_anal_freeze_functions(void) {
 	mu_assert_null (r_anal_get_function_at (anal, 0x200), "deleted function is unregistered");
 	mu_assert_null (r_anal_get_function_byname (anal, "gone"), "deleted function name is unregistered");
 	RAnalFunction *fcn;
-	size_t i, alive = 0;
+	size_t i, registered = 0;
 	r_freeze_foreach (fcns, i, fcn) {
-		if (r_anal_function_alive (anal, fcn)) {
-			alive++;
+		if (r_anal_function_is_registered (fcn)) {
+			registered++;
 		} else {
 			mu_assert_streq (fcn->name, "gone", "deleted function stays readable");
 		}
 	}
-	mu_assert_eq (alive, 1, "only the kept function is alive");
+	mu_assert_eq (registered, 1, "only the kept function is registered");
 	mu_assert_true (r_anal_function_rename (gone, "renamed"), "renaming a deleted function is harmless");
 	mu_assert_null (r_anal_get_function_byname (anal, "renamed"), "deleted function is not registered again");
 	r_freeze_release (fcns);
@@ -167,12 +169,15 @@ bool test_r_anal_freeze_functions(void) {
 	fcns = r_anal_freeze_functions (anal);
 	mu_assert_notnull (fcns, "snapshot can retain a function");
 	r_anal_purge (anal);
-	mu_assert_false (r_anal_function_alive (anal, kept), "purge detaches the frozen function");
+	mu_assert_false (r_anal_function_is_registered (kept), "purge detaches the frozen function");
 	RAnalFunction *replacement = r_anal_create_function (anal, "replacement", 0x100, 0, NULL);
 	mu_assert_notnull (replacement, "purged entrypoint is available");
-	mu_assert_false (r_anal_function_alive (anal, kept), "reused address does not revive the old function");
+	mu_assert_false (r_anal_function_is_registered (kept), "reused address does not revive the old function");
 	assert_invariants (anal);
+	(void)r_ref (replacement);
 	r_anal_free (anal);
+	mu_assert_false (r_anal_function_is_registered (replacement), "teardown detaches the retained function");
+	r_anal_function_free (replacement);
 	mu_assert_streq (kept->name, "kept", "snapshot keeps function storage after owner teardown");
 	r_freeze_release (fcns);
 	mu_end;
@@ -220,7 +225,7 @@ static void observe_event_function(REvent *ev, int type, void *user, void *data)
 	REventFunction *event = data;
 	RAnalFunction *fcn = event->fcn;
 	test->observed = !strcmp (fcn->name, test->name)
-		&& !r_anal_function_alive (test->anal, fcn);
+		&& !r_anal_function_is_registered (fcn);
 }
 
 bool test_r_anal_function_event_lifetime(void) {
@@ -238,6 +243,7 @@ bool test_r_anal_function_event_lifetime(void) {
 	pending->name = strdup (added.name);
 	mu_assert_false (r_anal_add_function (anal, pending), "removed registration reports failure");
 	mu_assert_true (added.removed && added.observed, "add listeners retain the detached function");
+	mu_assert_false (r_anal_function_is_registered (pending), "listener removal clears registration");
 	mu_assert_eq (r_ref_count (pending), 1, "caller owns failed add");
 	r_anal_function_free (pending);
 	mu_assert_true (r_anal_function_rename (rename, renamed.name), "rename applied before notification");

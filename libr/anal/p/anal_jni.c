@@ -187,7 +187,7 @@ static RAnalFunction *jni_materialize_method(JniScanContext *ctx,
 		r_anal_function_rename (fcn, name);
 	}
 	free (name);
-	if (!r_anal_function_alive (ctx->anal, fcn)) {
+	if (!r_anal_function_is_registered (fcn)) {
 		r_unref (fcn);
 		return NULL;
 	}
@@ -196,7 +196,7 @@ static RAnalFunction *jni_materialize_method(JniScanContext *ctx,
 	}
 	if (RVecAnalBlockPtr_empty (&fcn->bbs)) {
 		r_anal_function (ctx->anal, fcn, fcn->addr, R_ANAL_REF_TYPE_CALL);
-		if (!r_anal_function_alive (ctx->anal, fcn)) {
+		if (!r_anal_function_is_registered (fcn)) {
 			r_unref (fcn);
 			return NULL;
 		}

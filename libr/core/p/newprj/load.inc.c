@@ -811,9 +811,9 @@ static bool rprj_function_resolve(RPrjCursor *cur, int mode, R2ProjectFunction *
 		if (fcn && name) {
 			(void)r_ref (fcn);
 			r_anal_function_rename (fcn, name);
-			const bool alive = r_anal_function_alive (core->anal, fcn);
+			const bool registered = r_anal_function_is_registered (fcn);
 			r_unref (fcn);
-			if (!alive) {
+			if (!registered) {
 				fcn = NULL;
 			}
 		}

@@ -687,9 +687,9 @@ R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *f
 
 R_IPI void r_anal_function_scan_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr) {
 	R_RETURN_IF_FAIL (anal && fcn);
-	const bool registered = r_anal_function_alive (anal, fcn);
+	const bool registered = r_anal_function_is_registered (fcn);
 	(void)r_anal_function_bb (anal, fcn, case_addr);
-	if (registered && !r_anal_function_alive (anal, fcn)) {
+	if (registered && !r_anal_function_is_registered (fcn)) {
 		return;
 	}
 	RAnalBlock *block = r_anal_get_block_at (anal, case_addr);
@@ -1040,7 +1040,7 @@ typedef struct {
 
 static bool walk_block_removed(FcnWalk *w, RAnalBlock *bb) {
 	if (r_anal_get_block_at (w->anal, bb->addr) == bb
-		&& (!w->registered || r_anal_function_alive (w->anal, w->fcn))) {
+		&& (!w->registered || r_anal_function_is_registered (w->fcn))) {
 		return false;
 	}
 	w->failed = true;
@@ -2752,7 +2752,7 @@ static int fcn_walk(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, bool f
 		// blocks added by hand (afb+, projects) keep the entry point they are given
 		.nopskip = follow && anal->opt.nopskip && r_arch_info (anal->arch, R_ARCH_INFO_ISVM) != R_ARCH_INFO_ISVM,
 		.follow = follow,
-		.registered = r_anal_function_alive (anal, fcn),
+		.registered = r_anal_function_is_registered (fcn),
 	};
 	w.is_arm = r_str_startswith (arch, "arm");
 	w.is_mips = !w.is_arm && r_str_startswith (arch, "mips");
@@ -2945,7 +2945,7 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftyp
 		fcn->stack = fcn->maxstack = fcn->reg_save_area = frame;
 	}
 	anal->fcn_depth++;
-	const bool registered = r_anal_function_alive (anal, fcn);
+	const bool registered = r_anal_function_is_registered (fcn);
 	(void)r_ref (fcn);
 	int ret = r_anal_function_bb (anal, fcn, addr);
 	anal->fcn_depth--;
@@ -2953,12 +2953,12 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftyp
 		R_LOG_DEBUG ("Failed to analyze basic block at 0x%"PFMT64x, addr);
 	}
 	// Notify plugins after all basic blocks are analyzed
-	if ((ret >= 0 || ret == R_ANAL_RET_END) && (!registered || r_anal_function_alive (anal, fcn))) {
+	if ((ret >= 0 || ret == R_ANAL_RET_END) && (!registered || r_anal_function_is_registered (fcn))) {
 		const bool naked = !RVecAnalBlockPtr_empty (&fcn->bbs)
 			&& (ut64)fcn->maxstack == fcn->reg_save_area && !fcn->bp_from_sp && !fcn->bp_off;
 		R_MASK_SET (fcn->attrs, R_ANAL_FCN_ATTR_NAKED, naked);
 		r_anal_plugin_action (anal, R_ANAL_PLUGIN_ACTION_ANALYZE_FCN, fcn);
-		if (!registered || r_anal_function_alive (anal, fcn)) {
+		if (!registered || r_anal_function_is_registered (fcn)) {
 			r_anal_function_sort_blocks (fcn);
 		}
 	}
@@ -4053,8 +4053,8 @@ static bool collect_successor(ut64 addr, void *user) {
 	return true;
 }
 
-static bool update_function_alive(const FcnUpdate *update) {
-	return !update->registered || r_anal_function_alive (update->fcn->anal, update->fcn);
+static bool update_function_removed(const FcnUpdate *update) {
+	return update->registered && !r_anal_function_is_registered (update->fcn);
 }
 
 typedef struct {
@@ -4078,7 +4078,7 @@ static bool update_successors(RAnalBlock *block, void *user) {
 		if (!bb || !r_list_contains (bb->fcns, fcn)) {
 			const size_t old_count = RVecAnalBlockPtr_length (&fcn->bbs);
 			r_anal_function_bb (anal, fcn, *addr);
-			if (!update_function_alive (walk->update)) {
+			if (update_function_removed (walk->update)) {
 				return false;
 			}
 			bb = r_anal_get_block_at (anal, *addr);
@@ -4162,7 +4162,7 @@ static void update_analysis(RAnal *anal, RVecFcnUpdate *updates) {
 	anal->opt.jmpmid = true;
 	FcnUpdate *update;
 	R_VEC_FOREACH (updates, update) {
-		if (!update_function_alive (update)) {
+		if (update_function_removed (update)) {
 			continue;
 		}
 		RAnalFunction *fcn = update->fcn;
@@ -4170,7 +4170,7 @@ static void update_analysis(RAnal *anal, RVecFcnUpdate *updates) {
 		if (!bb) {
 			r_anal_function_bb (anal, fcn, fcn->addr);
 			bb = r_anal_get_block_at (anal, fcn->addr);
-			if (!bb || !update_function_alive (update)) {
+			if (!bb || update_function_removed (update)) {
 				continue;
 			}
 		}
@@ -4228,7 +4228,7 @@ static void calc_reachable_and_remove_block(RVecFcnUpdate *updates, RAnalFunctio
 	*update = (FcnUpdate) {
 		.fcn = r_ref (fcn),
 		.reachable = r_bitset_new (),
-		.registered = r_anal_function_alive (fcn->anal, fcn),
+		.registered = r_anal_function_is_registered (fcn),
 	};
 	RAnalBlock *entry = r_anal_get_block_at (fcn->anal, fcn->addr);
 	if (entry) {

@@ -372,6 +372,7 @@ typedef struct r_anal_function_t {
 	bool bp_from_sp; // a prologue copied SP into BP, so BP really is the frame base
 	bool bbs_sorted; // PRIVATE, invalidated by out-of-order additions and afbs
 	ut8 swift_roles; // R_BIN_SWIFT_ROLE_* bits the linkage name gives, UT8_MAX until asked
+	bool registered; // R2_640: PRIVATE, managed by the function registry
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	size_t fingerprint_size;
 	RAnalDiff *diff;
@@ -1100,8 +1101,8 @@ R_API bool r_anal_block_was_modified(RAnalBlock *block);
 /* function.c */
 
 R_API R_OWNED RAnalFunction *r_anal_function_new(RAnal *anal);
-// Release a caller-owned function that has no list entry. Use r_unref for extra references.
-R_API void r_anal_function_free(RAnalFunction *fcn);
+// Dispose of a caller-owned function outside the registry. Use r_unref for extra references.
+R_API void r_anal_function_free(R_OWNED RAnalFunction *fcn);
 
 // Transfer ownership to anal on success. Failure (including removal by an event listener) leaves ownership with the caller.
 R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn);
@@ -1117,6 +1118,11 @@ R_API R_UNOWNED RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr);
 
 // Detach a registered function and release the registry's reference.
 R_API bool r_anal_function_delete(RAnal *anal, RAnalFunction *fcn);
+
+// Reports membership in the function's registry. Requires a valid function pointer.
+static inline bool r_anal_function_is_registered(const RAnalFunction *fcn) {
+	return fcn->registered;
+}
 
 // Change the entrypoint of fcn without registering a function that has not been added yet
 // This can fail (and return false) if there is already another function at the new address
@@ -1161,12 +1167,9 @@ static inline RAnalFunction *r_anal_function_thunk_target(RAnalFunction *fcn) {
 R_API void r_anal_function_sort_blocks(RAnalFunction *fcn);
 // Stable view of fcn->bbs that outlives block or function removal; release with r_freeze_release.
 R_API R_OWNED RFreeze *r_anal_function_freeze_blocks(RAnalFunction *fcn);
-// Referenced snapshot of anal->fcns. Skip items failing r_anal_function_alive.
+// Referenced snapshot of anal->fcns. Use r_anal_function_is_registered when live membership matters.
 // The snapshot can be released after anal is freed. Access to analysis state requires a live anal.
 R_API R_OWNED RFreeze *r_anal_freeze_functions(RAnal *anal);
-static inline bool r_anal_function_alive(RAnal *anal, RAnalFunction *fcn) {
-	return r_anal_get_function_at (anal, fcn->addr) == fcn;
-}
 R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb);
 R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb);
 

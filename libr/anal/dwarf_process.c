@@ -2693,9 +2693,9 @@ R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwar
 				char *dwf_name = r_str_newf ("dbg.%s", value);
 				(void)r_ref (fcn);
 				r_anal_function_rename (fcn, dwf_name);
-				const bool alive = r_anal_function_alive (anal, fcn);
+				const bool registered = r_anal_function_is_registered (fcn);
 				r_unref (fcn);
-				if (!alive) {
+				if (!registered) {
 					fcn = NULL;
 				}
 				free (dwf_name);

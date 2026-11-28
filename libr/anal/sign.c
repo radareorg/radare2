@@ -2606,7 +2606,7 @@ static bool match_metrics(RSignItem *it, struct metric_ctx *ctx) {
 			col = (it->collisions && !cols)? NULL: check_collisions (cols, types);
 		}
 
-		if (!r_anal_function_alive (sm->anal, ctx->fcn)) {
+		if (!r_anal_function_is_registered (ctx->fcn)) {
 			r_list_free (col);
 			r_list_free (cols);
 			free (coldup);
@@ -2890,7 +2890,7 @@ R_API int r_sign_metric_search(RAnal *a, RSignSearchMetrics *sm) {
 	struct metric_ctx ctx = { 0, NULL, sm, NULL, NULL };
 	size_t i;
 	r_freeze_foreach (fcns, i, ctx.fcn) {
-		if (!r_anal_function_alive (a, ctx.fcn)) {
+		if (!r_anal_function_is_registered (ctx.fcn)) {
 			continue;
 		}
 		ctx.it = metric_build_item (sm, ctx.fcn);

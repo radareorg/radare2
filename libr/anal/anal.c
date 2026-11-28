@@ -267,7 +267,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->last_disasm_reg = NULL;
 	anal->stackptr = 0;
 	anal->lineswidth = 0;
-	anal->fcns = r_list_newf ((RListFree)r_anal_function_free);
+	anal->fcns = r_list_newf (r_anal_function_unregister);
 	anal->leaddrs = NULL;
 	anal->imports = r_list_newf (free);
 	r_libstore_new (&anal->libstore, anal, anal_static_plugins, (RListFree)r_anal_plugin_free, NULL, (RLibPluginAddCb)r_anal_plugin_add, NULL);
@@ -547,8 +547,7 @@ R_API void r_anal_purge(RAnal *anal) {
 	r_anal_pin_fini (anal);
 	r_anal_pin_init (anal);
 	r_anal_cc_reset (anal);
-	r_list_free (anal->fcns);
-	anal->fcns = r_list_newf ((RListFree)r_anal_function_free);
+	r_list_purge (anal->fcns);
 	(void)r_anal_xrefs_init (anal);
 	r_anal_purge_imports (anal);
 }

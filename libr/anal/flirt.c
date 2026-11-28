@@ -591,7 +591,7 @@ static bool module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b,
 				RAnalFunction *fcn;
 				size_t i;
 				r_freeze_foreach (fcns, i, fcn) {
-					if (!r_anal_function_alive (anal, fcn)) {
+					if (!r_anal_function_is_registered (fcn)) {
 						continue;
 					}
 					// Compare distances because the sums can wrap.
@@ -606,13 +606,13 @@ static bool module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b,
 						}
 						next_module_function->ninstr += fcn->ninstr;
 						r_anal_function_delete (anal, fcn);
-						if (!r_anal_function_alive (anal, next_module_function)) {
+						if (!r_anal_function_is_registered (next_module_function)) {
 							break;
 						}
 					}
 				}
 				r_freeze_release (fcns);
-				if (!r_anal_function_alive (anal, next_module_function)) {
+				if (!r_anal_function_is_registered (next_module_function)) {
 					r_unref (next_module_function);
 					continue;
 				}
@@ -632,7 +632,7 @@ static bool module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b,
 			char *flirt_name = r_str_newf ("flirt.%s", name);
 			r_anal_function_rename_unique (next_module_function, flirt_name);
 			free (flirt_name);
-			if (r_anal_function_alive (anal, next_module_function)) {
+			if (r_anal_function_is_registered (next_module_function)) {
 				RFlagItem *flag = anal->flb.set (anal->flb.f, next_module_function->name,
 					next_module_function->addr, next_module_function_size);
 				if (flag) {
@@ -705,7 +705,7 @@ static bool node_match_functions(RAnal *anal, const RFlirtNode *root_node) {
 	RAnalFunction *func;
 	size_t i;
 	r_freeze_foreach (fcns, i, func) {
-		if (!r_anal_function_alive (anal, func)) {
+		if (!r_anal_function_is_registered (func)) {
 			continue;
 		}
 		ut64 func_size = r_anal_function_linear_size (func);

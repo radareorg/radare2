@@ -61,7 +61,7 @@ R_API bool r_core_gdiff(RCore *c, RCore *c2) {
 		}
 		size_t j;
 		r_freeze_foreach (fcns, j, fcn) {
-			if (r_anal_function_alive (anal, fcn) && r_str_startswith (fcn->name, "str.")) {
+			if (r_anal_function_is_registered (fcn) && r_str_startswith (fcn->name, "str.")) {
 				r_anal_function_delete (anal, fcn);
 			}
 		}

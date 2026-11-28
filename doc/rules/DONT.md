@@ -91,12 +91,10 @@ section are ordered roughly by how often reviewers flagged them, and the
   (#26459)
 - **Don't store raw pointers as sdb or ht keys.** Use stable ids or addresses
   with `set_u` or `HtUP`. (#18104, #26251)
-- **Don't use `r_anal_function_alive` to validate a borrow.** It checks whether
-  this function is currently registered in the given `RAnal`. It reads
-  `fcn->addr`, looks it up in `anal`, and compares pointer identity, so both
-  inputs must already be valid. The identity check distinguishes a detached
-  function from a replacement at the same address. Avoid repeating the
-  lookup on paths that cannot change membership.
+- **Don't use `r_anal_function_is_registered` to validate a borrow.** The
+  predicate reads membership state from the function, so the pointer must
+  already be valid. A replacement at the same address has its own membership
+  state. Use the predicate where current registration matters.
 - **Don't infer membership or parent lifetime from a reference.** A retained
   function may have been removed and its blocks detached. Its `anal` pointer
   and analysis-owned data still require a live `RAnal`. Avoid making the last

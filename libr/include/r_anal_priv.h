@@ -148,6 +148,7 @@ R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *f
 /* Scan a switch case outside a walk and adopt the block it produced. */
 R_IPI void r_anal_function_scan_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr);
 R_IPI void r_anal_function_vars_fini(RAnalFunction *fcn);
+R_IPI void r_anal_function_unregister(void *data);
 typedef struct r_anal_switch_cursor_t RAnalSwitchCursor;
 /* Apply cases until one needs scanning: true with `*target` set. False once the
  * table is finished, after which only r_anal_switch_cursor_finish may follow. */

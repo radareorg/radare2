@@ -550,7 +550,7 @@ static void function_rename(RAnalFunction *fcn) {
 	if (r_str_startswith (fcn->name, "loc.")) {
 		char *name = r_str_newf ("fcn.%s", fcn->name + 4);
 		(void)r_ref (fcn);
-		if (r_anal_function_rename (fcn, name) && r_anal_function_alive (fcn->anal, fcn)) {
+		if (r_anal_function_rename (fcn, name) && r_anal_function_is_registered (fcn)) {
 			fcn->type = R_ANAL_FCN_TYPE_FCN;
 		}
 		r_unref (fcn);
@@ -1011,7 +1011,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 			r_core_anal_fcn (core, *iter, from, 0, depth - 1);
 		}
 	}
-	if (fcn && is_x86 && (!registered || r_anal_function_alive (core->anal, fcn))) {
+	if (fcn && is_x86 && (!registered || r_anal_function_is_registered (fcn))) {
 		r_anal_function_check_bp_use (fcn);
 		if (!fcn->bp_frame) {
 			r_anal_function_delete_vars_by_kind (fcn, R_ANAL_VAR_KIND_BPV);
@@ -1067,7 +1067,7 @@ error:
 			}
 		}
 	}
-	if (fcn && is_x86 && r_anal_function_alive (core->anal, fcn)) {
+	if (fcn && is_x86 && r_anal_function_is_registered (fcn)) {
 		r_anal_function_check_bp_use (fcn);
 		if (!fcn->bp_frame) {
 			r_anal_function_delete_vars_by_kind (fcn, R_ANAL_VAR_KIND_BPV);
@@ -2228,7 +2228,7 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 		(void)r_ref (fcn);
 	}
 	const bool analyzed = __core_anal_fcn (core, at, from, reftype, depth - 1);
-	if (analyzed && fcn && r_anal_function_alive (core->anal, fcn) && at > fcn->addr) {
+	if (analyzed && fcn && r_anal_function_is_registered (fcn) && at > fcn->addr) {
 		r_anal_function_resize (fcn, at - fcn->addr);
 	}
 	r_unref (fcn);
@@ -2249,7 +2249,7 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 	RAnalFunction *fcn;
 	size_t i;
 	r_freeze_foreach (fcns, i, fcn) {
-		if (r_anal_function_alive (core->anal, fcn) && r_anal_function_contains (fcn, addr)) {
+		if (r_anal_function_is_registered (fcn) && r_anal_function_contains (fcn, addr)) {
 			r_anal_function_delete (core->anal, fcn);
 		}
 	}
