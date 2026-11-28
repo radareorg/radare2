@@ -1433,6 +1433,33 @@ static bool is_default_local(RAnalVar *var, const char *type) {
 	return !*p;
 }
 
+static bool is_inferred_reg_arg(RAnalVar *var) {
+	if (!var->isarg || var->kind != R_ANAL_VAR_KIND_REG || var->comment
+			|| !RVecAnalVarConstraint_empty (&var->constraints) || !r_str_startswith (var->name, "arg")) {
+		return false;
+	}
+	const char *p = var->name + 3;
+	if (!isdigit ((ut8)*p)) {
+		return false;
+	}
+	while (isdigit ((ut8)*p)) {
+		p++;
+	}
+	return !*p;
+}
+
+// The convention only moves the register arguments: drop the ones r2 inferred and keep the user edits
+static void refresh_inferred_args(RCore *core, RAnalFunction *fcn) {
+	size_t i = RVecAnalVarPtr_length (&fcn->vars);
+	while (i > 0) {
+		RAnalVar *var = *RVecAnalVarPtr_at (&fcn->vars, --i);
+		if (is_inferred_reg_arg (var)) {
+			r_anal_var_delete (core->anal, var);
+		}
+	}
+	r_core_recover_vars (core, fcn, false);
+}
+
 // function argument types and names into anal/types
 static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 	char *type_name = r_type_func_key (core->anal->sdb_types, fcn->name);
@@ -7211,9 +7238,12 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		case ' ': { // "afc "
 			char *cc = r_str_trim_dup (input + 3);
+			const char *old_cc = fcn->callconv;
 			if (!r_anal_function_set_callconv (core->anal, fcn, cc)) {
 				const char *asmOs = r_config_get (core->config, "asm.os");
 				R_LOG_ERROR ("afc: Unknown calling convention '%s' for '%s'. See afcl for available types", cc, asmOs);
+			} else if (fcn->callconv != old_cc && core->anal->opt.vars && !RVecAnalBlockPtr_empty (&fcn->bbs)) {
+				refresh_inferred_args (core, fcn);
 			}
 			free (cc);
 		}

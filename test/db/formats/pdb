@@ -94,6 +94,24 @@ thiscall
 arg int32_t arg1 @ ecx
 EOF
 RUN
+
+NAME=idp applies thiscall to a function analyzed before loading the PDB
+FILE=bins/pdb/SimplePDB.exe
+ARGS=-e io.cache=true
+CMDS=<<EOF
+wx 89c8c3 @ 0x401000
+af @ 0x401000
+idp bins/pdb/SimplePDB-thiscall.pdb
+s 0x401000
+afc
+afvr
+EOF
+EXPECT=<<EOF
+thiscall
+arg int32_t arg1 @ ecx
+EOF
+RUN
+
 NAME=idp adds the static functions of the module symbols
 FILE=bins/pdb/SimplePDB.exe
 CMDS=<<EOF
