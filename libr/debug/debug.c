@@ -831,7 +831,9 @@ R_API RDebugReasonType r_debug_wait(RDebug * R_NONNULL dbg, RBreakpointItem ** R
 			/* get the value */
 			pc = r_reg_get_value (dbg->reg, pc_ri);
 
-			if (!r_debug_bp_hit (dbg, pc_ri, pc, &b)) {
+			const bool hit = r_debug_bp_hit (dbg, pc_ri, pc, &b);
+			r_unref (pc_ri);
+			if (!hit) {
 				return R_DEBUG_REASON_ERROR;
 			}
 
@@ -1269,6 +1271,7 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 		bool has_bp = false;
 		RRegItem *ripc = r_reg_get (dbg->reg, "PC", R_REG_TYPE_GPR);
 		RVecDebugChangeReg *vreg = ht_up_find (dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
+		r_unref (ripc);
 		RDebugChangeReg *reg;
 		R_VEC_FOREACH_PREV (vreg, reg) {
 			if (reg->cnum <= dbg->session->cnum) {
@@ -1610,6 +1613,7 @@ R_API bool r_debug_continue_back(RDebug *dbg) {
 
 	RRegItem *ripc = r_reg_get (dbg->reg, "PC", R_REG_TYPE_GPR);
 	RVecDebugChangeReg *vreg = ht_up_find (dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
+	r_unref (ripc);
 	if (!vreg) {
 		R_LOG_ERROR ("cannot find PC change vector");
 		return false;

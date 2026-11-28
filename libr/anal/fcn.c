@@ -411,6 +411,8 @@ static bool is_delta_pointer_table(ReadAhead *ra, RAnal *anal, RAnalFunction *fc
 			if (ri0 && ri1 && ri0->offset == ri1->offset) {
 				*casetbl_addr += omov_aop.disp;
 			}
+			r_unref (ri0);
+			r_unref (ri1);
 		}
 #else
 		if (o_reg_dst && reg_src && !strcmp (o_reg_dst, reg_src) && omov_aop.disp != UT64_MAX) {
@@ -2678,6 +2680,8 @@ analopfinish:
 					}
 					dst_is_variadic = ri0->size == lowest;
 				}
+				r_unref (ri0);
+				r_unref (ri1);
 			}
 #else
 			bool dst_overlaps_variadic = dst && dst->reg && variadic_reg && !strcmp (dst->reg, variadic_reg);

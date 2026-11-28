@@ -1301,7 +1301,9 @@ static RCoreHelpMessage help_msg_axf = {
 };
 
 static char *getFunctionName(RCore *core, ut64 off, const char *name, bool prefix) {
-	if (!name || r_reg_get (core->anal->reg, name, -1)) {
+	RRegItem *ri = name? r_reg_get (core->anal->reg, name, -1): NULL;
+	if (!name || ri) {
+		r_unref (ri);
 		const char *fcnpfx = r_anal_fcn_prefix_at (core->anal, off);
 		return r_str_newf ("%s.%08"PFMT64x, fcnpfx, off);
 	}
@@ -7687,6 +7689,7 @@ static bool reg_name_role_set(RCore *core, const char *name, ut64 n) {
 	RRegItem *r = r_reg_get (core->anal->reg, name, -1);
 	if (r) {
 		r_reg_set_value (core->anal->reg, r, n);
+		r_unref (r);
 		r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
 		r_core_cmdf (core, ".dr*%d", core->anal->config->bits); // XXX: replace in future
 		return true;

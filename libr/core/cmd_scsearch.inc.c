@@ -243,12 +243,8 @@ static void syscall_state_kill_overlapping(SyscallRegMap *map, SyscallRegState *
 	}
 }
 
-static void syscall_state_write(SyscallRegMap *map, SyscallRegState *state, const char *reg, SyscallRegValue value) {
-	RRegItem *item = syscall_reg_item (map, reg);
+static void syscall_state_write_item(SyscallRegMap *map, SyscallRegState *state, RRegItem *item, SyscallRegValue value) {
 	int idx = syscall_regmap_slot_for_item (map, item);
-	if (!item) {
-		return;
-	}
 	if (idx < 0) {
 		idx = syscall_regmap_slot_containing_item (map, item);
 	}
@@ -279,12 +275,8 @@ static void syscall_state_write(SyscallRegMap *map, SyscallRegState *state, cons
 	state->regs[idx] = value;
 }
 
-static SyscallRegValue syscall_state_read(SyscallRegMap *map, SyscallRegState *state, const char *reg) {
-	RRegItem *item = syscall_reg_item (map, reg);
+static SyscallRegValue syscall_state_read_item(SyscallRegMap *map, SyscallRegState *state, RRegItem *item) {
 	int idx = syscall_regmap_slot_for_item (map, item);
-	if (!item) {
-		return syscall_reg_unknown ();
-	}
 	if (idx < 0) {
 		idx = syscall_regmap_slot_containing_item (map, item);
 	}
@@ -305,6 +297,24 @@ static SyscallRegValue syscall_state_read(SyscallRegMap *map, SyscallRegState *s
 	if (item->size < slot->size) {
 		return syscall_reg_unknown ();
 	}
+	return value;
+}
+
+static void syscall_state_write(SyscallRegMap *map, SyscallRegState *state, const char *reg, SyscallRegValue value) {
+	RRegItem *item = syscall_reg_item (map, reg);
+	if (item) {
+		syscall_state_write_item (map, state, item, value);
+		r_unref (item);
+	}
+}
+
+static SyscallRegValue syscall_state_read(SyscallRegMap *map, SyscallRegState *state, const char *reg) {
+	RRegItem *item = syscall_reg_item (map, reg);
+	if (!item) {
+		return syscall_reg_unknown ();
+	}
+	SyscallRegValue value = syscall_state_read_item (map, state, item);
+	r_unref (item);
 	return value;
 }
 
@@ -331,7 +341,10 @@ static bool syscall_op_imm(RAnalOp *op, RAnalValue *src, ut64 *value) {
 static bool syscall_same_reg(SyscallRegMap *map, const char *a, const char *b) {
 	RRegItem *ai = syscall_reg_item (map, a);
 	RRegItem *bi = syscall_reg_item (map, b);
-	return ai && bi && ai->offset == bi->offset && ai->size == bi->size;
+	const bool same = ai && bi && ai->offset == bi->offset && ai->size == bi->size;
+	r_unref (ai);
+	r_unref (bi);
+	return same;
 }
 
 static bool syscall_value_from_src(SyscallRegMap *map, SyscallRegState *state, RAnalOp *op, RAnalValue *src, SyscallRegValue *value) {

@@ -1170,6 +1170,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 					if (reg) {
 						sp_addr = r_reg_get_value (r->anal->reg, reg);
 						stack_map = r_io_map_get_at (r->io, sp_addr);
+						r_unref (reg);
 					}
 				}
 				regname = r_reg_alias_getname (r->anal->reg, R_REG_ALIAS_PC);
@@ -1177,6 +1178,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 					RRegItem *reg = r_reg_get (r->anal->reg, regname, -1);
 					if (reg) {
 						ut64 seek = r_reg_get_value (r->anal->reg, reg);
+						r_unref (reg);
 						r_core_seek (r, seek, true);
 					}
 				}

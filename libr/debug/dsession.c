@@ -167,6 +167,7 @@ R_API ut64 r_debug_add_checkpoint_branch(RDebug *dbg, ut64 parent_id, const char
 	if (ripc) {
 		ut64 data = r_reg_get_value (dbg->reg, ripc);
 		r_debug_session_add_reg_change (session, ripc->arena, ripc->offset, data);
+		r_unref (ripc);
 	}
 
 	return checkpoint.id;

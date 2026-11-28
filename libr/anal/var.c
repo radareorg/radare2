@@ -2389,13 +2389,11 @@ static void assign_reg_argnums(RAnal *anal, RAnalFunction *fcn, RVecAnalVarPtr *
 			continue;
 		}
 		const char *regname = var->regname;
-		RRegItem *ri = NULL;
 		if (!regname) {
-			ri = r_reg_index_get (anal->reg, var->delta);
+			RRegItem *ri = r_reg_index_get (anal->reg, var->delta);
 			regname = ri? ri->name: NULL;
 		}
 		var->argnum = cc_reg_index (anal, fcn->callconv, regname);
-		r_unref (ri);
 	}
 	RVecAnalVarPtr_sort (rvars, var_ptr_comparator);
 	int dense = 0;

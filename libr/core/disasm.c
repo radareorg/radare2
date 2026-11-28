@@ -8961,7 +8961,8 @@ static bool read_ahead(RIO *io, ut8 **buf, size_t *buf_sz, ut64 address, size_t 
 	return r_io_read_at (io, address, *buf + offset_into_buf, bytes_to_read);
 }
 
-static RRegItem *pde_refresh_pc(RCore *core, RReg **reg) {
+static RRegItem *pde_refresh_pc(RCore *core, RReg **reg, RRegItem *pc) {
+	r_unref (pc);
 	*reg = core->anal->reg;
 	return r_reg_get (*reg, "PC", R_REG_TYPE_ALL);
 }
@@ -8972,7 +8973,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 		return 0;
 	}
 	RReg *reg;
-	RRegItem *pc = pde_refresh_pc (core, &reg);
+	RRegItem *pc = pde_refresh_pc (core, &reg, NULL);
 	if (!pc) {
 		return -1;
 	}
@@ -9063,7 +9064,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 		if (invalid_instr) {
 			break;
 		}
-		pc = pde_refresh_pc (core, &reg);
+		pc = pde_refresh_pc (core, &reg, pc);
 		if (!pc) {
 			r_anal_op_fini (&op);
 			break;
@@ -9074,7 +9075,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 		const char *e = r_strbuf_get (&op.esil);
 		if (R_STR_ISNOTEMPTY (e)) {
 			r_esil_parse (esil, e);
-			pc = pde_refresh_pc (core, &reg);
+			pc = pde_refresh_pc (core, &reg, pc);
 			if (!pc) {
 				r_anal_op_fini (&op);
 				break;
@@ -9086,7 +9087,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 		if (end_of_block) {
 			block_start = pcv;
 			r_core_seek_arch_bits (core, block_start);
-			pc = pde_refresh_pc (core, &reg);
+			pc = pde_refresh_pc (core, &reg, pc);
 			if (!pc) {
 				break;
 			}
@@ -9100,6 +9101,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	}
 leave:
 	free (buf);
+	r_unref (pc);
 	r_reg_arena_pop (reg);
 	r_io_cache_pop (core->io);
 	r_config_hold_restore (chold);

@@ -229,6 +229,45 @@ bool test_r_reg_get(void) {
 	mu_end;
 }
 
+bool test_r_reg_get_profile_reload(void) {
+	RReg *reg = r_reg_new ();
+	mu_assert_notnull (reg, "r_reg_new () failed");
+	mu_assert_true (r_reg_set_profile_string (reg, "gpr x0 .64 0 0\nfpu v[2] .128 8 0\n"), "first profile");
+	RReg *clone = r_reg_clone (reg);
+	mu_assert_notnull (clone, "r_reg_clone () failed");
+	RRegItem *x0 = r_reg_get (reg, "x0", -1);
+	RRegItem *v1 = r_reg_get (reg, "v1", -1);
+	RRegItem *cx0 = r_reg_get (clone, "x0", -1);
+	mu_assert_notnull (x0, "x0 in the first profile");
+	mu_assert_notnull (v1, "v1 in the first profile");
+	mu_assert_notnull (cx0, "x0 in the clone");
+
+	// a reload drops the references of the profile, not the ones r_reg_get () handed out
+	mu_assert_true (r_reg_set_profile_string (reg, "gpr r0 .32 0 0\n"), "second profile");
+	mu_assert_true (r_reg_set_profile_string (clone, "gpr r0 .32 0 0\n"), "second profile in the clone");
+	mu_assert_null (r_reg_get (reg, "x0", -1), "x0 left the profile");
+	mu_assert_streq (x0->name, "x0", "held register outlives the reload");
+	mu_assert_eq (x0->size, 64, "held register keeps its size");
+	mu_assert_streq (v1->name, "v1", "held vbank register outlives the reload");
+	mu_assert_streq (cx0->name, "x0", "held cloned register outlives the reload");
+	mu_assert_eq (r_ref_count (x0), 1, "only the caller owns x0");
+	mu_assert_eq (r_ref_count (v1), 1, "only the caller owns v1");
+	mu_assert_eq (r_ref_count (cx0), 1, "only the caller owns the cloned x0");
+	r_unref (x0);
+	r_unref (v1);
+	r_unref (cx0);
+
+	RRegItem *r0 = r_reg_get (reg, "r0", -1);
+	mu_assert_notnull (r0, "r0 in the second profile");
+	mu_assert_eq (r0->size, 32, "r0 size");
+	mu_assert_eq (r_ref_count (r0), 2, "profile and caller own r0");
+	r_unref (r0);
+
+	r_reg_free (clone);
+	r_reg_free (reg);
+	mu_end;
+}
+
 bool test_r_reg_get_list(void) {
 	RList *l;
 	int mask;
@@ -1199,6 +1238,7 @@ int all_tests(void) {
 	mu_run_test (test_r_reg_get_value_flag);
 	mu_run_test (test_r_reg_set_endian);
 	mu_run_test (test_r_reg_get);
+	mu_run_test (test_r_reg_get_profile_reload);
 	mu_run_test (test_r_reg_get_list);
 	mu_run_test (test_r_reg_get_pack);
 	return tests_passed != tests_run;

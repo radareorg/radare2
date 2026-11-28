@@ -17,6 +17,7 @@ static RList *backtrace_x86_32(RDebug *dbg, ut64 at) {
 	list->free = free;
 	ri = (at==UT64_MAX)? r_reg_get (reg, "ebp", R_REG_TYPE_GPR): NULL;
 	_esp = (ut32) ((ri)? r_reg_get_value (reg, ri): at);
+	r_unref (ri);
 		// TODO: implement [stack] map uptrace method too
 	esp = _esp;
 	for (i = 0; i < dbg->options.btdepth; i++) {
@@ -60,10 +61,13 @@ static RList *backtrace_x86_32_anal(RDebug *dbg, ut64 at) {
 
 	ri = (at==UT64_MAX)? r_reg_get (reg, "ebp", R_REG_TYPE_GPR): NULL;
 	_esp = (ut32) ((ri)? r_reg_get_value (reg, ri): at);
+	r_unref (ri);
 		// TODO: implement [stack] map uptrace method too
 	esp = _esp;
 
-	eip = r_reg_get_value (reg, r_reg_get (reg, "eip", R_REG_TYPE_GPR));
+	ri = r_reg_get (reg, "eip", R_REG_TYPE_GPR);
+	eip = r_reg_get_value (reg, ri);
+	r_unref (ri);
 	fcn = r_anal_get_fcn_in (dbg->anal, eip, R_ANAL_FCN_TYPE_NULL);
 	if (fcn) {
 		frame = R_NEW0 (RDebugFrame);

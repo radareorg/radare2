@@ -1532,6 +1532,7 @@ static void r_print_format_register(RPrintFormat *pf, const char *name, const ch
 		} else if (MUSTSEEJSON) {
 			pj_kn (pf->pj, "value", p->get_register_value (p->reg, ri));
 		}
+		r_unref (ri);
 	} else {
 		r_print_printf (p, "Register %s does not exists\n", name);
 	}

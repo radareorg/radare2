@@ -2647,6 +2647,7 @@ static bool integrate_dwarf_var(RAnal *anal, RFlag *flags, RAnalFunction *fcn, c
 			return false;
 		}
 		r_anal_function_set_var (fcn, ri->index, *kind, type, 4, is_arg, var_name);
+		r_unref (ri);
 		return true;
 	}
 	r_anal_function_set_var (fcn, offset - fcn->bp_off, *kind, type, 4, is_arg, var_name);

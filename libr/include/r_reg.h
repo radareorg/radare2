@@ -188,6 +188,7 @@ typedef struct r_reg_flags_t {
 R_IPI void r_reg_free_internal(RReg *reg, bool init);
 R_IPI void r_reg_reindex(RReg *reg);
 R_IPI void r_reg_item_free(RRegItem *item);
+R_IPI void r_reg_item_unref(RRegItem *item);
 
 // lifecicle
 R_API void r_reg_free(RReg *reg);

@@ -879,9 +879,12 @@ static void append_call_args(RCore *core, RStrBuf *out, const char *callee, cons
 		RAnalCCArgSlot slot;
 		const char *reg = NULL;
 		if (cc && slots_known && ((zero && (pointer || !type)) || invalid_pointer)
-				&& r_anal_cc_argslot (anal, cc, index, -1, false, &slot) && slot.reg
-				&& r_reg_get (anal->reg, slot.reg, -1)) {
-			reg = slot.reg;
+				&& r_anal_cc_argslot (anal, cc, index, -1, false, &slot) && slot.reg) {
+			RRegItem *ri = r_reg_get (anal->reg, slot.reg, -1);
+			if (ri) {
+				reg = slot.reg;
+				r_unref (ri);
+			}
 		}
 		free (resolved);
 		free (type);
@@ -983,8 +986,10 @@ static bool promote_call_comment(PDCState *state, RStrBuf *out, char *line) {
 			const bool floating = R_STR_CMP_ANY (ret, "float", "double", "long double");
 			const char *loc = cc? (floating? r_anal_cc_fpret (anal, cc, 0): r_anal_cc_ret (anal, cc, 0)): NULL;
 			const char *reg = loc? r_anal_cc_location_first (anal, loc): NULL;
-			if (reg && r_reg_get (anal->reg, reg, -1)) {
+			RRegItem *ri = reg? r_reg_get (anal->reg, reg, -1): NULL;
+			if (ri) {
 				r_strbuf_appendf (out, "%s = ", reg);
+				r_unref (ri);
 			}
 		}
 		r_strbuf_appendf (out, "%s (", !strcmp (bare, callee)? base: callee);

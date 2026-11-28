@@ -257,11 +257,11 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	}
 
 	item->arena = type2;
-	if (!reg->regset[type2].regs || reg->regset[type2].regs->length == 0) {
-		r_list_free(reg->regset[type2].regs);
-		reg->regset[type2].regs = r_list_newf ((RListFree)r_reg_item_free);
+	if (!reg->regset[type2].regs) {
+		reg->regset[type2].regs = r_list_newf ((RListFree)r_reg_item_unref);
 	}
-	r_list_append (reg->regset[type2].regs, r_ref (item));
+	r_ref_init (item, r_reg_item_free);
+	r_list_append (reg->regset[type2].regs, item);
 	if (!reg->regset[type2].ht_regs) {
 		reg->regset[type2].ht_regs = ht_pp_new0 ();
 	}

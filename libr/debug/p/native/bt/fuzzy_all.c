@@ -103,6 +103,7 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 			return NULL;
 		}
 		sp = r_reg_get_value (reg, ri);
+		r_unref (ri);
 	} else {
 		sp = at;
 	}

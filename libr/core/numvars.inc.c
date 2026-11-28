@@ -939,14 +939,18 @@ static ut64 num_callback(RNum *userptr, const char *str, bool *ok) {
 						RRegItem *r = r_reg_get (core->dbg->reg, bptr, -1);
 						if (r) {
 							free (bptr);
-							return r_reg_get_value (core->dbg->reg, r);
+							const ut64 v = r_reg_get_value (core->dbg->reg, r);
+							r_unref (r);
+							return v;
 						}
 					}
 				} else {
 					RRegItem *r = r_reg_get (core->anal->reg, bptr, -1);
 					if (r) {
 						free (bptr);
-						return r_reg_get_value (core->anal->reg, r);
+						const ut64 v = r_reg_get_value (core->anal->reg, r);
+						r_unref (r);
+						return v;
 					}
 				}
 				free (bptr);
@@ -1033,6 +1037,7 @@ static ut64 num_callback(RNum *userptr, const char *str, bool *ok) {
 						*ok = true;
 					}
 					ret = r_reg_get_value (core->dbg->reg, r);
+					r_unref (r);
 					return ret;
 				}
 			}
@@ -1050,7 +1055,9 @@ static ut64 num_callback(RNum *userptr, const char *str, bool *ok) {
 				if (ok) {
 					*ok = true;
 				}
-				return r_reg_get_value (core->dbg->reg, r);
+				ret = r_reg_get_value (core->dbg->reg, r);
+				r_unref (r);
+				return ret;
 			}
 		}
 		}

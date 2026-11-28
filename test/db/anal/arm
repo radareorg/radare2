@@ -1398,6 +1398,26 @@ var int64_t var_8h @ x29+0x8
 EOF
 RUN
 
+NAME=arm64 argument registers survive a bits switch inside a function
+FILE=malloc://512
+ARGS=-a arm -b 64
+CMDS=<<EOF
+wx 3f010aeb0100000ac0035fd61f2003d5
+wx 0000a0e30000a0e30000a0e31eff2fe1 @ 0x10
+ahb 32 @ 4
+ahb 64 @ 8
+ahb 32 @ 0x10
+af
+afva
+afb
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000008 00:0000 8 j 0x00000010 f 0x00000008
+0x00000008 0x0000000c 00:0000 4
+0x00000010 0x00000020 00:0000 16
+EOF
+RUN
+
 NAME=arm pop pc records return stack displacement
 FILE=malloc://16
 ARGS=-a arm -b 32

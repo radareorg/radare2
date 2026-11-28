@@ -321,8 +321,10 @@ static void _handle_goto(EsilCfgGen *gen, ut32 idx) {
 			}
 		} else {
 			EsilVal *val = R_NEW (EsilVal);
-			if (r_reg_get (gen->esil->anal->reg, atom, -1)) {
+			RRegItem *ri = r_reg_get (gen->esil->anal->reg, atom, -1);
+			if (ri) {
 				val->type = ESIL_VAL_REG;
+				r_unref (ri);
 			} else {
 				val->type = ESIL_VAL_CONST;
 				val->val = r_num_get (NULL, atom);

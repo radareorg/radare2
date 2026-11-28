@@ -544,6 +544,7 @@ static bool gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 		if (bits != reg->size) {
 			bits = reg->size;
 		}
+		r_unref (reg);
 	}
 	free (r_reg_get_bytes (dbg->reg, type, &buflen));
 	// some implementations of the gdb protocol are acting weird.

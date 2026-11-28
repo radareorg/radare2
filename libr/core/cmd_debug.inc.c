@@ -1812,6 +1812,7 @@ static int grab_bits(RCore *core, const char *arg, int *pcbits2) {
 			if (reg) {
 				if (core->rasm->config->bits != reg->size)
 					pcbits = reg->size;
+				r_unref (reg);
 			}
 		}
 	}
@@ -3481,6 +3482,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 							R_LOG_ERROR ("Register %s doesn't have any comments", name);
 						}
 					}
+					r_unref (r);
 				} else {
 					R_LOG_ERROR ("Register %s not found", name);
 				}
@@ -3513,6 +3515,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				if (!r) {
 					continue;
 				}
+				r_unref (r);
 				ut64 off = r_debug_reg_get (core->dbg, arg);
 				if (count == 1) {
 					r_cons_printf (core->cons, "0x%08"PFMT64x"\n", off);
@@ -3771,6 +3774,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				/* note, that negative type forces sync to print the regs from the backend */
 				R_LOG_ERROR ("cannot find vector register '%s'", name);
 			}
+			r_unref (item);
 			free (name);
 		} else if (!str[1]) {
 			//TODO: Do not use this hack to print fpu register
@@ -3946,6 +3950,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				if (core->rasm->config->bits != reg->size) {
 					pcbits = reg->size;
 				}
+				r_unref (reg);
 			}
 			if (str[0] == 'j') {
 				PJ *pj = r_core_pj_new (core);

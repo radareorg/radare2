@@ -120,13 +120,12 @@ R_API int r_reg_type_by_name(const char *str) {
 	return -1;
 }
 
-static void r_reg_item_unref(RRegItem *item) {
+R_IPI void r_reg_item_unref(RRegItem *item) {
 	r_unref (item);
 }
 
 R_IPI void r_reg_item_free(RRegItem *item) {
 	if (item) {
-		// TODO use unref here :?
 		free (item->name);
 		free (item->flags);
 		free (item);
@@ -314,7 +313,8 @@ static RRegItem *vbank_materialize(RReg *reg, RRegVBank *vb, const char *name, i
 	item->packed_size = vb->packed_size;
 	item->offset = vb->offset + index * vb->size;
 	item->index = vb->index + index;
-	r_list_append (reg->regset[vb->arena].regs, r_ref (item));
+	r_ref_init (item, r_reg_item_free);
+	r_list_append (reg->regset[vb->arena].regs, item);
 	if (!reg->regset[vb->arena].ht_regs) {
 		reg->regset[vb->arena].ht_regs = ht_pp_new0 ();
 	}
@@ -494,6 +494,7 @@ R_API RRegItem *r_reg_item_clone(RRegItem *r) {
 	}
 	ri->index = r->index;
 	ri->arena = r->arena;
+	r_ref_init (ri, r_reg_item_free);
 	return ri;
 }
 
@@ -506,7 +507,7 @@ R_API void r_reg_set_copy(RRegSet *d, RRegSet *s) {
 	RRegArena *a;
 	RListIter *iter;
 	d->pool = r_list_newf ((RListFree)r_reg_arena_free);
-	d->regs = r_list_newf ((RListFree)r_reg_item_free);
+	d->regs = r_list_newf ((RListFree)r_reg_item_unref);
 	r_list_foreach (s->pool, iter, a) {
 		RRegArena *na = r_reg_arena_clone (a);
 		RListIter *cloned = r_list_append (d->pool, na);
@@ -577,6 +578,7 @@ R_API bool r_reg_ro_reset(RReg *reg, const char *arg) {
 			RRegItem *ri = r_reg_get (reg, regname, -1);
 			if (ri) {
 				ri->ro = true;
+				r_unref (ri);
 			} else {
 				res = false;
 			}

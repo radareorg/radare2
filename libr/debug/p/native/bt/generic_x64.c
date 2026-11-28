@@ -9,10 +9,10 @@ static RList *backtrace_x86_64(RDebug *dbg, ut64 at) {
 	RReg *reg = dbg->reg;
 	RIOBind *bio = &dbg->iob;
 
-	_rip = r_reg_get_value (reg, r_reg_get (reg, "rip", R_REG_TYPE_GPR));
+	_rip = r_reg_getv (reg, "rip");
 	if (at == UT64_MAX) {
-		_rsp = r_reg_get_value (reg, r_reg_get (reg, "rsp", R_REG_TYPE_GPR));
-		_rbp = r_reg_get_value (reg, r_reg_get (reg, "rbp", R_REG_TYPE_GPR));
+		_rsp = r_reg_getv (reg, "rsp");
+		_rbp = r_reg_getv (reg, "rbp");
 	} else {
 		_rsp = _rbp = at;
 	}
@@ -69,10 +69,10 @@ static RList *backtrace_x86_64_anal(RDebug *dbg, ut64 at) {
 	RIOBind *bio = &dbg->iob;
 	RAnalFunction *fcn;
 
-	_rip = r_reg_get_value (reg, r_reg_get (reg, "rip", R_REG_TYPE_GPR));
+	_rip = r_reg_getv (reg, "rip");
 	if (at == UT64_MAX) {
 		//_rsp = r_reg_get_value (reg, r_reg_get (reg, "rsp", R_REG_TYPE_GPR));
-		_rbp = r_reg_get_value (reg, r_reg_get (reg, "rbp", R_REG_TYPE_GPR));
+		_rbp = r_reg_getv (reg, "rbp");
 	} else {
 		_rbp = at;
 	}

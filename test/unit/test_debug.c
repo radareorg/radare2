@@ -6,14 +6,13 @@
 #include <r_util/r_sys.h>
 #include "../../shlr/gdb/include/arch.h"
 #include "minunit.h"
-#if __linux__
+#if 1
 #include <arpa/inet.h>
 #include <errno.h>
 #include <netinet/in.h>
 #include <signal.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <sys/user.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -60,7 +59,7 @@ bool test_gdb_reg_profile_parser(void) {
 	mu_end;
 }
 
-#if __linux__
+#if 1
 static int pick_free_port(void) {
 	int sockfd = socket (AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0) {
@@ -86,7 +85,7 @@ static int pick_free_port(void) {
 }
 #endif
 
-#if __linux__
+#if 1
 static bool write_all(int fd, const char *buf, size_t len) {
 	while (len > 0) {
 		ssize_t ret = write (fd, buf, len);
@@ -337,10 +336,182 @@ static void run_xml_gdb_server(int port, bool recursive_include, ut32 regnum) {
 	close (sockfd);
 	r_sys_exit (0, true);
 }
+
+// A minimal QNX pdebug target: every reply is well-formed and register and memory
+// reads return exactly the requested number of bytes, all set to fill
+#define PDEBUG_FRAME 0x7e
+#define PDEBUG_ESCAPE 0x7d
+#define PDEBUG_CHANNEL_DEBUG 1
+enum { DStMsg_connect = 0, DStMsg_select = 2, DStMsg_attach = 5, DStMsg_memrd = 9, DStMsg_regrd = 11, DStMsg_protover = 23 };
+enum { DSrMsg_err = 32, DSrMsg_ok, DSrMsg_okstatus, DSrMsg_okdata };
+
+static bool send_pdebug_frame(int fd, const ut8 *msg, size_t len) {
+	ut8 out[2 * 1200];
+	size_t i, n = 0;
+	ut8 checksum = 0;
+	if (len + 1 > sizeof (out) / 2) {
+		return false;
+	}
+	out[n++] = PDEBUG_FRAME;
+	for (i = 0; i <= len; i++) {
+		ut8 byte;
+		if (i < len) {
+			checksum += msg[i];
+			byte = msg[i];
+		} else {
+			byte = 0xff - checksum;
+		}
+		if (byte == PDEBUG_FRAME || byte == PDEBUG_ESCAPE) {
+			out[n++] = PDEBUG_ESCAPE;
+			byte ^= 0x20;
+		}
+		out[n++] = byte;
+	}
+	out[n++] = PDEBUG_FRAME;
+	return write_all (fd, (const char *)out, n);
+}
+
+// Answer one request of len bytes (header included, checksum stripped)
+static void answer_pdebug_request(int fd, const ut8 *req, size_t len, ut8 fill) {
+	ut8 reply[4 + 1200];
+	size_t payload = 0;
+	size_t size_at = 0;
+	ut16 size;
+	// reply header: cmd, subcmd, mid (copied from the request), channel
+	reply[0] = DSrMsg_err;
+	reply[1] = 0;
+	reply[2] = req[2];
+	reply[3] = PDEBUG_CHANNEL_DEBUG;
+	r_write_le32 (reply + 4, EINVAL);
+	payload = 4;
+	switch (req[0]) {
+	case DStMsg_connect:
+	case DStMsg_select:
+		reply[0] = DSrMsg_ok;
+		payload = 0;
+		break;
+	case DStMsg_protover:
+		reply[0] = DSrMsg_okstatus;
+		r_write_le32 (reply + 4, 3);
+		break;
+	case DStMsg_attach:
+		if (len >= 8) {
+			reply[0] = DSrMsg_okdata;
+			memcpy (reply + 4, req + 4, 4); // pid
+			r_write_le32 (reply + 8, 1); // tid
+			payload = 8;
+		}
+		break;
+	case DStMsg_regrd: // hdr, ut16 offset, ut16 size
+	case DStMsg_memrd: // hdr, ut32 spare, ut64 addr, ut16 size
+		size_at = req[0] == DStMsg_regrd? 6: 16;
+		if (len >= size_at + 2) {
+			size = R_MIN (r_read_le16 (req + size_at), 1024);
+			reply[0] = DSrMsg_okdata;
+			memset (reply + 4, fill, size);
+			payload = size;
+		}
+		break;
+	default:
+		break;
+	}
+	send_pdebug_frame (fd, reply, 4 + payload);
+}
+
+static void run_pdebug_server(int port, ut8 fill) {
+	int sockfd = socket (AF_INET, SOCK_STREAM, 0);
+	if (sockfd < 0) {
+		r_sys_exit (1, true);
+	}
+	int one = 1;
+	setsockopt (sockfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof (one));
+	struct sockaddr_in addr;
+	memset (&addr, 0, sizeof (addr));
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+	addr.sin_port = htons (port);
+	if (bind (sockfd, (struct sockaddr *)&addr, sizeof (addr)) < 0 || listen (sockfd, 1) < 0) {
+		close (sockfd);
+		r_sys_exit (1, true);
+	}
+	// r2 connects once when the io plugin opens and again when it attaches
+	for (;;) {
+		int client = accept (sockfd, NULL, NULL);
+		if (client < 0) {
+			close (sockfd);
+			r_sys_exit (1, true);
+		}
+		ut8 msg[2 * 1200];
+		size_t len = 0;
+		bool escaped = false;
+		ut8 ch;
+		while (read_all (client, (char *)&ch, 1)) {
+			if (ch == PDEBUG_ESCAPE) {
+				escaped = true;
+			} else if (ch != PDEBUG_FRAME) {
+				if (len < sizeof (msg)) {
+					msg[len++] = escaped? ch ^ 0x20: ch;
+				}
+				escaped = false;
+			} else if (len > 0) {
+				// the last byte is the checksum; shorter frames only switch the channel
+				if (len >= 5 && len <= 1024 + 5) {
+					answer_pdebug_request (client, msg, len - 1, fill);
+				}
+				len = 0;
+			}
+		}
+		close (client);
+	}
+}
 #endif
 
+bool test_r2_qnx_attach_reads_regs(void) {
+#if 1
+	int port = pick_free_port ();
+	if (port <= 0) {
+		mu_ignore;
+	}
+	pid_t pid = r_sys_fork ();
+	if (pid < 0) {
+		mu_assert ("fork failed", false);
+	}
+	if (pid == 0) {
+		run_pdebug_server (port, 0x2a);
+	}
+
+	r_sys_usleep (500000);
+	char *uri = r_str_newf ("qnx://127.0.0.1:%d", port);
+	// attaching syncs the registers twice; the second sync sees a larger arena.
+	// the served eip becomes the return code of the r2 session
+	const char *argv[] = { "radare2", "-q", "-N", "-a", "x86", "-b", "32", "-d", "-c", "dpa 1;q eip", uri, NULL };
+	int ret = r_main_radare2 (11, argv);
+	int status = 0;
+	int waited = 0;
+	int wpid = 0;
+	while (waited < 20) {
+		wpid = waitpid (pid, &status, WNOHANG);
+		if (wpid == pid) {
+			break;
+		}
+		r_sys_usleep (100000);
+		waited++;
+	}
+	if (wpid == 0) {
+		kill (pid, SIGKILL);
+		waitpid (pid, &status, 0);
+	}
+	free (uri);
+
+	mu_assert_eq (ret, 0x2a2a2a2a, "qnx attach must read the served registers");
+	mu_end;
+#else
+	mu_ignore;
+#endif
+}
+
 bool test_r2_gdb_remote_open(void) {
-#if __linux__
+#if 1
 	char *gdbserver = r_file_path ("gdbserver");
 	if (!gdbserver) {
 		mu_ignore;
@@ -398,7 +569,7 @@ bool test_r2_gdb_remote_open(void) {
 }
 
 bool test_r2_gdb_oversized_reg_response(void) {
-#if __linux__
+#if 1
 	int port = pick_free_port ();
 	if (port <= 0) {
 		mu_ignore;
@@ -440,7 +611,7 @@ bool test_r2_gdb_oversized_reg_response(void) {
 }
 
 bool test_r2_gdb_long_xml_reg_name(void) {
-#if __linux__
+#if 1
 	int port = pick_free_port ();
 	if (port <= 0) {
 		mu_ignore;
@@ -482,7 +653,7 @@ bool test_r2_gdb_long_xml_reg_name(void) {
 }
 
 bool test_r2_gdb_recursive_xml_include(void) {
-#if __linux__
+#if 1
 	int port = pick_free_port ();
 	if (port <= 0) {
 		mu_ignore;
@@ -524,7 +695,7 @@ bool test_r2_gdb_recursive_xml_include(void) {
 }
 
 bool test_r2_gdb_oversized_xml_regnum(void) {
-#if __linux__
+#if 1
 	int port = pick_free_port ();
 	if (port <= 0) {
 		mu_ignore;
@@ -566,7 +737,7 @@ bool test_r2_gdb_oversized_xml_regnum(void) {
 }
 
 bool test_r_debug_reg_offset(void) {
-#if __linux__
+#if 1
 #ifdef __x86_64__
 #define FPREGS struct user_fpregs_struct
 	FPREGS regs;
@@ -645,6 +816,8 @@ int all_tests(void) {
 	mu_run_test (test_r_debug_wide_reg_list);
 	mu_run_test (test_r_debug_use);
 	mu_run_test (test_gdb_reg_profile_parser);
+	// keep this before the -Q sessions below: those exit () instead of returning
+	mu_run_test (test_r2_qnx_attach_reads_regs);
 	mu_run_test (test_r2_gdb_remote_open);
 	mu_run_test (test_r2_gdb_oversized_reg_response);
 	mu_run_test (test_r2_gdb_long_xml_reg_name);
