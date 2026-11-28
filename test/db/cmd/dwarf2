@@ -115,6 +115,20 @@ loaded
 EOF
 RUN
 
+NAME=dwarf parameter types are rendered once, a cycle reads as unknown
+FILE=bins/elf/dwarf_subroutine_type_fanout
+ARGS=-N
+TIMEOUT=10
+CMDS=<<EOF
+tk typedef.cycle
+tk typedef.chain
+EOF
+EXPECT=<<EOF
+void (*)(?, ?, ?)
+void (*)(void (*)(?, ?), void (*)(?, ?))
+EOF
+RUN
+
 NAME=dwarf array with too many dimensions is not imported
 FILE=bins/elf/dwarf_many_dimensions
 ARGS=-N

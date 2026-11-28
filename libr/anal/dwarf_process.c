@@ -291,6 +291,8 @@ static const char *type_qualifier(ut16 tag) {
 	}
 }
 
+static st32 parse_type_at(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *size, int depth);
+
 /**
  * @brief Recursively parses type entry of a certain offset into strbuf
  *        saves type size into *size
@@ -300,11 +302,8 @@ static const char *type_qualifier(ut16 tag) {
  * @param strbuf string to store the type into
  * @param size ptr to size of a type to fill up (can be NULL if unwanted)
  * @return st32 -1 if error else DW_TAG of the entry
- *
- * TODO make cache for type entries, one type is usually referenced
- * multiple times which means it's parsed multiple times instead of once
  */
-static st32 parse_type_at(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *size, int depth) {
+static st32 render_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *size, int depth) {
 	if (depth > DWARF_TYPE_MAX_DEPTH) {
 		R_LOG_DEBUG ("anal.dwarf.parse_type: type chain too deep at 0x%" PFMT64x, offset);
 		return -1;
@@ -478,30 +477,34 @@ static st32 parse_type_at(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64
 }
 
 // a type is rendered once per load, every DIE referring to it reuses the text
-static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *size) {
-	R_RETURN_VAL_IF_FAIL (strbuf, -1);
+static st32 parse_type_at(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *size, int depth) {
 	DwarfType *t = ht_up_find (ctx->types, offset, NULL);
 	if (!t) {
+		// a reference back into a render still in progress is a cycle
+		t = r_arena_calloc (ctx->arena, sizeof (DwarfType) + 1);
+		if (!t) {
+			return -1;
+		}
+		t->tag = -1;
+		ht_up_insert (ctx->types, offset, t);
 		RStrBuf text;
 		r_strbuf_init (&text);
 		ut64 tsize = 0;
-		st32 tag = parse_type_at (ctx, offset, &text, &tsize, 0);
+		st32 tag = render_type (ctx, offset, &text, &tsize, depth);
 		if (text.len > DWARF_TYPE_MAX_LEN) {
 			R_LOG_DEBUG ("anal.dwarf.parse_type: type too long at 0x%" PFMT64x, offset);
 			r_strbuf_set (&text, "");
 			tag = -1;
 		}
-		t = r_arena_alloc (ctx->arena, sizeof (DwarfType) + text.len + 1);
-		if (t) {
-			t->size = tsize;
-			t->tag = tag;
-			memcpy (t->str, r_strbuf_get (&text), text.len + 1);
-			ht_up_insert (ctx->types, offset, t);
+		DwarfType *rendered = r_arena_alloc (ctx->arena, sizeof (DwarfType) + text.len + 1);
+		if (rendered) {
+			rendered->size = tsize;
+			rendered->tag = tag;
+			memcpy (rendered->str, r_strbuf_get (&text), text.len + 1);
+			ht_up_update (ctx->types, offset, rendered);
+			t = rendered;
 		}
 		r_strbuf_fini (&text);
-		if (!t) {
-			return -1;
-		}
 	}
 	if (strbuf->len > DWARF_TYPE_MAX_LEN) {
 		return -1;
@@ -511,6 +514,10 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 		*size = t->size;
 	}
 	return t->tag;
+}
+
+static inline st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *size) {
+	return parse_type_at (ctx, offset, strbuf, size, 0);
 }
 
 /**
