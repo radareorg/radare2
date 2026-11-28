@@ -1288,3 +1288,20 @@ ERROR: Cannot read seed file 'missing'
 ERROR: Cannot read seed from stdin
 EOF
 RUN
+
+NAME=rahash2 -S seed with multiple files
+FILE=-
+CMDS=!rahash2 -a sha256 -qq -S s:123 bins/other/admin.txt bins/other/admin.txt
+EXPECT=<<EOF
+b01b97a284dcf5598a0b7d2035b25c01354e7d632e89f446ee81f6f483c830aa
+b01b97a284dcf5598a0b7d2035b25c01354e7d632e89f446ee81f6f483c830aa
+EOF
+RUN
+
+NAME=rahash2 -S rejected for one-shot hashes on files
+FILE=-
+CMDS=!rahash2 -a xxhash -qq -S s:123 bins/other/admin.txt
+EXPECT_ERR=<<EOF
+ERROR: -S is not supported with xxhash when hashing files
+EOF
+RUN
