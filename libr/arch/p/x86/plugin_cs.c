@@ -440,6 +440,15 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, ut32 *bitsi
 				r_strbuf_slice (sb, 0, blen - 1);
 			}
 		}
+		// in long mode only fs and gs have a base, lea takes the offset without it
+		if (gop->bits == 64 && set != 2 && (op.mem.segment == X86_REG_FS || op.mem.segment == X86_REG_GS)) {
+			const char *segbase = op.mem.segment == X86_REG_FS? "fs_base": "gs_base";
+			if (r_strbuf_length (sb) == 0) {
+				r_strbuf_set (sb, segbase);
+			} else {
+				r_strbuf_appendf (sb, ",%s,+", segbase);
+			}
+		}
 
 		// set = 2 is reserved for lea, where the operand is a memory address,
 		// but the corresponding memory is not loaded.

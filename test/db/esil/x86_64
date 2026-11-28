@@ -3688,3 +3688,34 @@ EXPECT=<<EOF
 0x00000000ffffffff 0x0000000080000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x8000000000000000
 EOF
 RUN
+
+NAME=x86_64 fs and gs operands add the segment base
+FILE=malloc://0x2000
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 648b042500000000
+ao~^esil:
+wx 64488b042528000000
+ao~^esil:
+wx 65488b4308
+ao~^esil:
+wx 644889042528000000
+ao~^esil:
+wx 64488d042528000000
+ao~^esil:
+wx 64488b042528000000
+wv8 0x1122334455667788 @ 0x1028
+aeim
+ar fs_base=0x1000
+aes
+ar rax
+EOF
+EXPECT=<<EOF
+esil: fs_base,[4],rax,=
+esil: 0x28,fs_base,+,[8],rax,=
+esil: 0x8,rbx,+,gs_base,+,[8],rax,=
+esil: rax,0x28,fs_base,+,=[8]
+esil: 0x28,rax,=
+0x1122334455667788
+EOF
+RUN
